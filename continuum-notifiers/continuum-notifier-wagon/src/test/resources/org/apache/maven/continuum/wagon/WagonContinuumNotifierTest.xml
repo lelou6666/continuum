@@ -1,3 +1,22 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
 <plexus>
   <components>
     <component>
@@ -16,7 +35,7 @@
                 <parameters>
                   <property>
                     <name>rootPath</name>
-                      <value>${basedir}/target</value>
+                    <value>${basedir}/target</value>
                   </property>
                   <property>
                     <name>xmlOnly</name>
@@ -29,9 +48,9 @@
         </contexts>
       </configuration>
     </component>
-    
+
     <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
+      <role>org.apache.maven.continuum.notification.Notifier</role>
       <role-hint>wagon</role-hint>
       <implementation>org.apache.maven.continuum.notification.wagon.WagonContinuumNotifier</implementation>
       <requirements>
@@ -52,16 +71,16 @@
         <localRepository>~/.m2/repository</localRepository>
       </configuration>
     </component>
-    
+
     <component>
       <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
-      <implementation>org.apache.maven.continuum.wagon.MockConfigurationService</implementation>
+      <implementation>org.apache.maven.continuum.configuration.ConfigurationServiceMock</implementation>
     </component>
-    
+
     <component>
       <role>org.apache.maven.artifact.manager.WagonManager</role>
       <implementation>org.apache.maven.artifact.manager.DefaultWagonManager</implementation>
     </component>
-    
+
   </components>
 </plexus>

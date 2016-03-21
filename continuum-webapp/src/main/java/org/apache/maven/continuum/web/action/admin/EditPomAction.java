@@ -19,11 +19,11 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
-import com.opensymphony.xwork.ModelDriven;
+import com.opensymphony.xwork2.ModelDriven;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
 import org.apache.maven.artifact.installer.ArtifactInstallationException;
 import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
-import org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper;
-import org.apache.maven.continuum.execution.maven.m2.SettingsConfigurationException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.maven.model.Model;
@@ -31,63 +31,54 @@ import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.shared.app.company.CompanyPomHandler;
 import org.apache.maven.shared.app.configuration.CompanyPom;
 import org.apache.maven.shared.app.configuration.Configuration;
-import org.apache.maven.shared.app.configuration.ConfigurationChangeException;
-import org.apache.maven.shared.app.configuration.ConfigurationStore;
-import org.apache.maven.shared.app.configuration.ConfigurationStoreException;
-import org.apache.maven.shared.app.configuration.InvalidConfigurationException;
-import org.codehaus.plexus.security.rbac.Resource;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureAction;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionBundle;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionException;
+import org.apache.maven.shared.app.configuration.MavenAppConfiguration;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.redback.rbac.Resource;
+import org.codehaus.redback.integration.interceptor.SecureAction;
+import org.codehaus.redback.integration.interceptor.SecureActionBundle;
+import org.codehaus.redback.integration.interceptor.SecureActionException;
 
 import java.io.IOException;
 
 /**
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
- * @version $Id: ConfigurationAction.java 480950 2006-11-30 14:58:35Z evenisse $
- * @plexus.component role="com.opensymphony.xwork.Action"
- * role-hint="editPom"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "editPom", instantiationStrategy = "per-lookup" )
 public class EditPomAction
     extends ContinuumActionSupport
     implements ModelDriven, SecureAction
 {
-    /**
-     * @plexus.requirement
-     */
-    private ConfigurationStore configurationStore;
 
-    /**
-     * The configuration.
-     */
-    private Configuration configuration;
+    @Requirement
+    private MavenAppConfiguration appConfiguration;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private CompanyPomHandler companyPomHandler;
 
     private Model companyModel;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenBuilderHelper helper;
+    private String organizationLogo;
+
+    @Requirement
+    private LocalRepositoryHelper helper;
 
     public String execute()
-        throws IOException, ConfigurationStoreException, InvalidConfigurationException, ConfigurationChangeException,
-        ArtifactInstallationException, SettingsConfigurationException
+        throws IOException, ArtifactInstallationException, SettingsConfigurationException
     {
-        // TODO: hack for passed in String[]
-        String[] logo = (String[]) companyModel.getProperties().get( "organization.logo" );
-        if ( logo != null )
+        if ( organizationLogo != null )
         {
-            companyModel.getProperties().put( "organization.logo", logo[0] );
+            companyModel.getProperties().setProperty( "organization.logo", organizationLogo );
         }
 
         companyPomHandler.save( companyModel, helper.getLocalRepository() );
 
         return SUCCESS;
+    }
+
+    public String input()
+    {
+        return INPUT;
     }
 
     public Object getModel()
@@ -96,10 +87,9 @@ public class EditPomAction
     }
 
     public void prepare()
-        throws ConfigurationStoreException, ProjectBuildingException, ArtifactMetadataRetrievalException,
-        SettingsConfigurationException
+        throws ProjectBuildingException, ArtifactMetadataRetrievalException, SettingsConfigurationException
     {
-        configuration = configurationStore.getConfigurationFromStore();
+        Configuration configuration = appConfiguration.getConfiguration();
 
         CompanyPom companyPom = configuration.getCompanyPom();
         companyModel = companyPomHandler.getCompanyPomModel( companyPom, helper.getLocalRepository() );
@@ -108,6 +98,7 @@ public class EditPomAction
         {
             companyModel = new Model();
             companyModel.setModelVersion( "4.0.0" );
+            companyModel.setPackaging( "pom" );
 
             if ( companyPom != null )
             {
@@ -115,6 +106,23 @@ public class EditPomAction
                 companyModel.setArtifactId( companyPom.getArtifactId() );
             }
         }
+
+        organizationLogo = companyModel.getProperties().getProperty( "organization.logo" );
+    }
+
+    public String getOrganizationLogo()
+    {
+        return organizationLogo;
+    }
+
+    public void setOrganizationLogo( String organizationLogo )
+    {
+        this.organizationLogo = organizationLogo;
+    }
+
+    public Model getCompanyModel()
+    {
+        return companyModel;
     }
 
     public SecureActionBundle getSecureActionBundle()
@@ -125,10 +133,5 @@ public class EditPomAction
         bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_CONFIGURATION, Resource.GLOBAL );
 
         return bundle;
-    }
-
-    public Model getCompanyModel()
-    {
-        return companyModel;
     }
 }

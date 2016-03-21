@@ -1,114 +1,108 @@
 package org.apache.maven.continuum.notification;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import org.apache.maven.continuum.configuration.ConfigurationException;
-import org.apache.maven.continuum.configuration.ConfigurationService;
+import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.dao.ProjectGroupDao;
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.store.ContinuumStore;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.notification.manager.NotifierManager;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
-import org.codehaus.plexus.notification.NotificationException;
-import org.codehaus.plexus.notification.RecipientSource;
-import org.codehaus.plexus.notification.notifier.Notifier;
-import org.codehaus.plexus.notification.notifier.manager.NotifierManager;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="org.apache.maven.continuum.notification.ContinuumNotificationDispatcher"
- *   role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.notification.ContinuumNotificationDispatcher.class, hint = "default" )
 public class DefaultContinuumNotificationDispatcher
-    extends AbstractLogEnabled
     implements ContinuumNotificationDispatcher
 {
-    /**
-     * @plexus.requirement
-     */
-    private ConfigurationService configurationService;
+    private static final Logger log = LoggerFactory.getLogger( DefaultContinuumNotificationDispatcher.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private NotifierManager notifierManager;
 
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement
-     */
-    private RecipientSource recipientSource;
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     // ----------------------------------------------------------------------
     // ContinuumNotificationDispatcher Implementation
     // ----------------------------------------------------------------------
 
-    public void buildStarted( Project project )
+    public void buildStarted( Project project, BuildDefinition buildDefinition )
     {
-        sendNotification( MESSAGE_ID_BUILD_STARTED, project, null );
+        sendNotification( MESSAGE_ID_BUILD_STARTED, project, buildDefinition, null );
     }
 
-    public void checkoutStarted( Project project )
+    public void checkoutStarted( Project project, BuildDefinition buildDefinition )
     {
-        sendNotification( MESSAGE_ID_CHECKOUT_STARTED, project, null );
+        sendNotification( MESSAGE_ID_CHECKOUT_STARTED, project, buildDefinition, null );
     }
 
-    public void checkoutComplete( Project project )
+    public void checkoutComplete( Project project, BuildDefinition buildDefinition )
     {
-        sendNotification( MESSAGE_ID_CHECKOUT_COMPLETE, project, null );
+        sendNotification( MESSAGE_ID_CHECKOUT_COMPLETE, project, buildDefinition, null );
     }
 
-    public void runningGoals( Project project, BuildResult build )
+    public void runningGoals( Project project, BuildDefinition buildDefinition, BuildResult buildResult )
     {
-        sendNotification( MESSAGE_ID_RUNNING_GOALS, project, build );
+        sendNotification( MESSAGE_ID_RUNNING_GOALS, project, buildDefinition, buildResult );
     }
 
-    public void goalsCompleted( Project project, BuildResult build )
+    public void goalsCompleted( Project project, BuildDefinition buildDefinition, BuildResult buildResult )
     {
-        sendNotification( MESSAGE_ID_GOALS_COMPLETED, project, build );
+        sendNotification( MESSAGE_ID_GOALS_COMPLETED, project, buildDefinition, buildResult );
     }
 
-    public void buildComplete( Project project, BuildResult build )
+    public void buildComplete( Project project, BuildDefinition buildDefinition, BuildResult buildResult )
     {
-        sendNotification( MESSAGE_ID_BUILD_COMPLETE, project, build );
+        sendNotification( MESSAGE_ID_BUILD_COMPLETE, project, buildDefinition, buildResult );
+    }
+
+    public void prepareBuildComplete( ProjectScmRoot projectScmRoot )
+    {
+        sendNotification( MESSAGE_ID_PREPARE_BUILD_COMPLETE, projectScmRoot );
     }
 
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
 
-    private void sendNotification( String messageId, Project project, BuildResult build )
+    private void sendNotification( String messageId, Project project, BuildDefinition buildDefinition,
+                                   BuildResult buildResult )
     {
-        Map context = new HashMap();
-
         // ----------------------------------------------------------------------
         // The objects are reread from the store to make sure they're getting the "final"
         // state of the objects. Ideally this should be done on a per notifier basis or the
@@ -121,82 +115,134 @@ public class DefaultContinuumNotificationDispatcher
             // Here we need to get all the project details
             //  - builds are used to detect if the state has changed (TODO: maybe previousState field is better)
             //  - notifiers are used to send the notification
-            project = store.getProjectWithAllDetails( project.getId() );
+            //  - scm results are used to detect if scm failed
+            project = projectDao.getProjectWithAllDetails( project.getId() );
 
-            context.put( CONTEXT_PROJECT, project );
+            ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+                project.getProjectGroup().getId() );
 
-            if ( build != null )
+            Map<String, List<ProjectNotifier>> notifiersMap = new HashMap<String, List<ProjectNotifier>>();
+
+            getProjectNotifiers( project, notifiersMap );
+            getProjectGroupNotifiers( projectGroup, notifiersMap );
+
+            for ( String notifierType : notifiersMap.keySet() )
             {
-                context.put( CONTEXT_BUILD, build );
+                MessageContext context = new MessageContext();
+                context.setProject( project );
+                context.setBuildDefinition( buildDefinition );
 
-                if ( build.getEndTime() != 0 )
+                if ( buildResult != null )
                 {
-                    context.put( CONTEXT_BUILD_OUTPUT,
-                                 configurationService.getBuildOutput( build.getId(), project.getId() ) );
+                    context.setBuildResult( buildResult );
                 }
 
-                context.put( CONTEXT_UPDATE_SCM_RESULT, build.getScmResult() );
+                List<ProjectNotifier> projectNotiiers = notifiersMap.get( notifierType );
+                context.setNotifier( projectNotiiers );
+
+                sendNotification( messageId, context );
             }
-
-
-            ProjectGroup projectGroup = store.getProjectGroupWithBuildDetails( project.getProjectGroup().getId() );
-
-            // perform the project lvl notifications
-            for ( Iterator i = project.getNotifiers().iterator(); i.hasNext(); )
-            {
-                sendNotification( messageId, (ProjectNotifier) i.next(), context );
-            }
-
-            // perform the project group lvl notifications
-            if ( projectGroup.getNotifiers() != null )
-            {
-                for ( Iterator i = projectGroup.getNotifiers().iterator(); i.hasNext(); )
-                {
-                    sendNotification( messageId, (ProjectNotifier) i.next(), context );
-                }
-            }            
         }
         catch ( ContinuumStoreException e )
         {
-            getLogger().error( "Error while population the notification context.", e );
-
-            return;
-        }
-        catch ( ConfigurationException e )
-        {
-            getLogger().error( "Error while population the notification context.", e );
-
-            return;
+            log.error( "Error while population the notification context.", e );
         }
     }
 
-    private void sendNotification( String messageId, ProjectNotifier projectNotifier, Map context )
+    private void sendNotification( String messageId, ProjectScmRoot projectScmRoot )
     {
-        String notifierType = projectNotifier.getType();
-
-        if ( !projectNotifier.isEnabled() )
+        try
         {
-            getLogger().info( notifierType + " notifier (id=" + projectNotifier.getId() + ") is disabled." );
+            ProjectGroup group = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+                projectScmRoot.getProjectGroup().getId() );
 
-            return;
+            Map<String, List<ProjectNotifier>> notifiersMap = new HashMap<String, List<ProjectNotifier>>();
+            getProjectGroupNotifiers( group, notifiersMap );
+
+            for ( String notifierType : notifiersMap.keySet() )
+            {
+                MessageContext context = new MessageContext();
+                context.setProjectScmRoot( projectScmRoot );
+
+                List<ProjectNotifier> projectNotifiers = notifiersMap.get( notifierType );
+                context.setNotifier( projectNotifiers );
+
+                sendNotification( messageId, context );
+            }
+
         }
+        catch ( ContinuumStoreException e )
+        {
+            log.error( "Error while population the notification context.", e );
+        }
+    }
 
-        Map configuration = projectNotifier.getConfiguration();
+    private void sendNotification( String messageId, MessageContext context )
+    {
+        String notifierType = context.getNotifiers().get( 0 ).getType();
 
         try
         {
-            context.put( CONTEXT_PROJECT_NOTIFIER, projectNotifier );
-
             Notifier notifier = notifierManager.getNotifier( notifierType );
 
-            Set recipients = recipientSource.getRecipients( String.valueOf( projectNotifier.getId() ), messageId,
-                                                            configuration, context );
-
-            notifier.sendNotification( messageId, recipients, configuration, context );
+            notifier.sendMessage( messageId, context );
         }
         catch ( NotificationException e )
         {
-            getLogger().error( "Error while trying to use the " + notifierType + "notifier.", e );
+            log.error( "Error while trying to use the " + notifierType + " notifier.", e );
+        }
+    }
+
+    private void getProjectNotifiers( Project project, Map<String, List<ProjectNotifier>> notifiersMap )
+    {
+        if ( project.getNotifiers() != null )
+        {
+            // perform the project level notifications
+            for ( ProjectNotifier notifier : (List<ProjectNotifier>) project.getNotifiers() )
+            {
+                List<ProjectNotifier> notifiers = notifiersMap.get( notifier.getType() );
+                if ( notifiers == null )
+                {
+                    notifiers = new ArrayList<ProjectNotifier>();
+                }
+
+                if ( !notifier.isEnabled() )
+                {
+                    log.info( notifier.getType() + " notifier (id=" + notifier.getId() + ") is disabled." );
+
+                    continue;
+                }
+
+                notifiers.add( notifier );
+                notifiersMap.put( notifier.getType(), notifiers );
+            }
+        }
+    }
+
+    private void getProjectGroupNotifiers( ProjectGroup projectGroup, Map<String, List<ProjectNotifier>> notifiersMap )
+    {
+        // perform the project group level notifications
+        if ( projectGroup.getNotifiers() != null )
+        {
+            for ( ProjectNotifier projectNotifier : (List<ProjectNotifier>) projectGroup.getNotifiers() )
+            {
+                List<ProjectNotifier> projectNotifiers = notifiersMap.get( projectNotifier.getType() );
+                if ( projectNotifiers == null )
+                {
+                    projectNotifiers = new ArrayList<ProjectNotifier>();
+                }
+
+                if ( !projectNotifier.isEnabled() )
+                {
+                    log.info( projectNotifier.getType() + " projectNotifier (id=" + projectNotifier.getId() +
+                                  ") is disabled." );
+
+                    continue;
+                }
+
+                projectNotifiers.add( projectNotifier );
+                notifiersMap.put( projectNotifier.getType(), projectNotifiers );
+            }
         }
     }
 }

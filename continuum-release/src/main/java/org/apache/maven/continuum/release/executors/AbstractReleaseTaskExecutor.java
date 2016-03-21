@@ -1,207 +1,132 @@
 package org.apache.maven.continuum.release.executors;
 
 /*
- * Copyright 2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.continuum.release.ContinuumReleaseException;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
-import org.apache.maven.shared.release.ReleaseManager;
-import org.apache.maven.shared.release.config.ReleaseDescriptor;
-import org.apache.maven.profiles.DefaultProfileManager;
-import org.apache.maven.profiles.ProfileManager;
-import org.apache.maven.project.DuplicateProjectException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.ProjectBuildingException;
-import org.apache.maven.project.ProjectSorter;
+import org.apache.maven.continuum.release.tasks.ReleaseProjectTask;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Settings;
-import org.codehaus.plexus.PlexusConstants;
-import org.codehaus.plexus.PlexusContainer;
-import org.codehaus.plexus.context.Context;
-import org.codehaus.plexus.context.ContextException;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
-import org.codehaus.plexus.util.dag.CycleDetectedException;
+import org.apache.maven.shared.release.ReleaseManager;
+import org.apache.maven.shared.release.ReleaseResult;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.taskqueue.Task;
+import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Edwin Punzalan
  */
 public abstract class AbstractReleaseTaskExecutor
-    implements ReleaseTaskExecutor, Contextualizable
+    implements ReleaseTaskExecutor
 {
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     protected ContinuumReleaseManager continuumReleaseManager;
 
-    /**
-     * @plexus.requirement
-     */
-    protected ReleaseManager releasePluginManager;
+    @Requirement
+    protected ReleaseManager releaseManager;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenProjectBuilder projectBuilder;
-
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder settingsBuilder;
 
-    /**
-     * @plexus.configuration
-     */
-    private String localRepository;
+    protected Settings settings;
 
-    private ProfileManager profileManager;
+    private long startTime;
 
-    private PlexusContainer container;
-
-    private Settings settings;
-
-    protected List getReactorProjects( ReleaseDescriptor descriptor )
-        throws ContinuumReleaseException
+    public void executeTask( Task task )
+        throws TaskExecutionException
     {
-        Settings settings = getSettings();
+        ReleaseProjectTask releaseTask = (ReleaseProjectTask) task;
 
-        List reactorProjects = new ArrayList();
+        setUp( releaseTask );
 
-        MavenProject project;
-        try
-        {
-            project = projectBuilder.buildWithDependencies( getProjectDescriptorFile( descriptor ),
-                                            getLocalRepository(), getProfileManager( settings ) );
-
-            reactorProjects.add( project );
-        }
-        catch ( ProjectBuildingException e )
-        {
-            throw new ContinuumReleaseException( "Failed to build project.", e );
-        }
-        catch ( ArtifactNotFoundException e )
-        {
-            throw new ContinuumReleaseException( "Failed to build project.", e );
-        }
-        catch ( ArtifactResolutionException e )
-        {
-            throw new ContinuumReleaseException( "Failed to build project.", e );
-        }
-
-        for( Iterator modules = project.getModules().iterator(); modules.hasNext(); )
-        {
-            String moduleDir = modules.next().toString();
-
-            File pomFile = new File( project.getBasedir(), moduleDir + "/pom.xml" );
-
-            try
-            {
-                MavenProject reactorProject = projectBuilder.build( pomFile, getLocalRepository(),
-                                                                    getProfileManager( settings ) );
-
-                reactorProjects.add( reactorProject );
-            }
-            catch ( ProjectBuildingException e )
-            {
-                throw new ContinuumReleaseException( "Failed to build project.", e );
-            }
-        }
-
-        try
-        {
-            reactorProjects = new ProjectSorter( reactorProjects ).getSortedProjects();
-        }
-        catch ( CycleDetectedException e )
-        {
-            throw new ContinuumReleaseException( "Failed to sort projects.", e );
-        }
-        catch ( DuplicateProjectException e )
-        {
-            throw new ContinuumReleaseException( "Failed to sort projects.", e );
-        }
-
-        return reactorProjects;
+        execute( releaseTask );
     }
 
-    protected Settings getSettings()
+    protected void setUp( ReleaseProjectTask releaseTask )
+        throws TaskExecutionException
+    {
+        //actual release execution start time
+        setStartTime( System.currentTimeMillis() );
+
+        try
+        {
+            //make sure settings is re-read each time
+            settings = getSettings();
+        }
+        catch ( ContinuumReleaseException e )
+        {
+            ReleaseResult result = createReleaseResult();
+
+            result.appendError( e );
+
+            continuumReleaseManager.getReleaseResults().put( releaseTask.getReleaseId(), result );
+
+            releaseTask.getListener().error( e.getMessage() );
+
+            throw new TaskExecutionException( "Failed to build reactor projects.", e );
+        }
+    }
+
+    protected abstract void execute( ReleaseProjectTask releaseTask )
+        throws TaskExecutionException;
+
+    private Settings getSettings()
         throws ContinuumReleaseException
     {
-        if ( settings == null )
+        try
         {
-            try
-            {
-                settings = settingsBuilder.buildSettings();
-            }
-            catch ( IOException e )
-            {
-                throw new ContinuumReleaseException( "Failed to get Maven Settings.", e );
-            }
-            catch ( XmlPullParserException e )
-            {
-                throw new ContinuumReleaseException( "Failed to get Maven Settings.", e );
-            }
+            settings = settingsBuilder.buildSettings( false );
+        }
+        catch ( IOException e )
+        {
+            throw new ContinuumReleaseException( "Failed to get Maven Settings.", e );
+        }
+        catch ( XmlPullParserException e )
+        {
+            throw new ContinuumReleaseException( "Failed to get Maven Settings.", e );
         }
 
         return settings;
     }
 
-    private File getProjectDescriptorFile( ReleaseDescriptor descriptor )
+    protected ReleaseResult createReleaseResult()
     {
-        String parentPath = descriptor.getWorkingDirectory();
+        ReleaseResult result = new ReleaseResult();
 
-        String pomFilename = descriptor.getPomFileName();
-        if ( pomFilename == null )
-        {
-            pomFilename = "pom.xml";
-        }
+        result.setStartTime( getStartTime() );
 
-        return new File( parentPath, pomFilename );
+        result.setEndTime( System.currentTimeMillis() );
+
+        return result;
     }
 
-    private ArtifactRepository getLocalRepository()
+    protected long getStartTime()
     {
-        return new DefaultArtifactRepository( "local-repository", "file://" + localRepository,
-                                                                                   new DefaultRepositoryLayout() );
+        return startTime;
     }
 
-    private ProfileManager getProfileManager( Settings settings )
+    protected void setStartTime( long startTime )
     {
-        if ( profileManager == null )
-        {
-            profileManager = new DefaultProfileManager( container, settings );
-        }
-
-        return profileManager;
-    }
-
-    public void contextualize( Context context )
-        throws ContextException
-    {
-        container = (PlexusContainer) context.get( PlexusConstants.PLEXUS_KEY );
+        this.startTime = startTime;
     }
 }

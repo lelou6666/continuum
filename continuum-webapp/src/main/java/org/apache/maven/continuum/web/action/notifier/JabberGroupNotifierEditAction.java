@@ -1,39 +1,40 @@
 package org.apache.maven.continuum.web.action.notifier;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Action that deletes a {@link ProjectNotifier} of type 'Jabber' from the 
+ * Action that edits a {@link ProjectNotifier} of type 'Jabber' from the
  * specified {@link ProjectGroup}.
- * 
+ *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: JabberNotifierEditAction.java 465060 2006-10-17 21:24:38Z jmcconnell $
  * @since 1.1
- * 
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="jabberGroupNotifierEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "jabberGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class JabberGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
@@ -53,31 +54,31 @@ public class JabberGroupNotifierEditAction
 
     private boolean group;
 
-    protected void initConfiguration( Map configuration )
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        host = (String) configuration.get( "host" );
+        host = configuration.get( "host" );
 
         if ( configuration.get( "port" ) != null )
         {
-            port = Integer.parseInt( (String) configuration.get( "port" ) );
+            port = Integer.parseInt( configuration.get( "port" ) );
         }
 
-        login = (String) configuration.get( "login" );
+        login = configuration.get( "login" );
 
-        password = (String) configuration.get( "password" );
+        password = configuration.get( "password" );
 
-        domainName = (String) configuration.get( "domainName" );
+        domainName = configuration.get( "domainName" );
 
-        address = (String) configuration.get( "address" );
+        address = configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
 
-        sslConnection = Boolean.valueOf( (String) configuration.get( "sslConnection" ) ).booleanValue();
+        sslConnection = Boolean.valueOf( configuration.get( "sslConnection" ) );
 
-        group = Boolean.valueOf( (String) configuration.get( "isGroup" ) ).booleanValue();
+        group = Boolean.valueOf( configuration.get( "isGroup" ) );
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "host", host );
 
@@ -89,7 +90,7 @@ public class JabberGroupNotifierEditAction
 
         configuration.put( "domainName", domainName );
 
-        configuration.put( "address", address );
+        configuration.put( AbstractContinuumNotifier.ADDRESS_FIELD, address );
 
         configuration.put( "sslConnection", String.valueOf( sslConnection ) );
 

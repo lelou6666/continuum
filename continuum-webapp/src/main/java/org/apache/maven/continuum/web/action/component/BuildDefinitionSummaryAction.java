@@ -1,56 +1,67 @@
 package org.apache.maven.continuum.web.action.component;
 
 /*
- * Copyright 2005-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.web.action.ContinuumActionSupport;
+import org.apache.maven.continuum.web.action.AbstractBuildDefinitionAction;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.BuildDefinitionSummary;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * BuildDefinitionSummaryAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action"
- * role-hint="buildDefinitionSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildDefinitionSummary", instantiationStrategy = "per-lookup" )
 public class BuildDefinitionSummaryAction
-    extends ContinuumActionSupport
+    extends AbstractBuildDefinitionAction
 {
+    private static final Logger logger = LoggerFactory.getLogger( BuildDefinitionSummaryAction.class );
+
     private int projectGroupId;
 
     private String projectGroupName;
 
     private int projectId;
-    
+
+    // Allow dont remove default group build definition in project list 
+    private int defaultGroupDefinitionId;
+
     private ProjectGroup projectGroup;
 
-    private List projectBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> projectBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
 
-    private List groupBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> groupBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
 
-    private List allBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> allBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
+
+    //profileName
 
     public String summarizeForProject()
     {
@@ -59,16 +70,26 @@ public class BuildDefinitionSummaryAction
             projectGroup = getContinuum().getProjectGroupByProjectId( projectId );
             projectGroupId = projectGroup.getId();
             projectGroupName = projectGroup.getName();
+
+            checkViewProjectGroupAuthorization( projectGroupName );
+
             groupBuildDefinitionSummaries = gatherGroupBuildDefinitionSummaries( projectGroupId );
-            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId );
+            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId, projectGroupId );
+
+            fixDefaultBuildDefinitions();
 
             allBuildDefinitionSummaries.addAll( groupBuildDefinitionSummaries );
             allBuildDefinitionSummaries.addAll( projectBuildDefinitionSummaries );
         }
         catch ( ContinuumException e )
         {
-            getLogger().info( "unable to build summary" );
+            logger.info( "unable to build summary" );
             return ERROR;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
         }
 
         return SUCCESS;
@@ -80,39 +101,73 @@ public class BuildDefinitionSummaryAction
         {
             groupBuildDefinitionSummaries = gatherGroupBuildDefinitionSummaries( projectGroupId );
 
-            projectGroup = getContinuum().getProjectGroup( projectGroupId );
+            projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
 
-            for (Iterator i = projectGroup.getProjects().iterator(); i.hasNext(); )
+            checkViewProjectGroupAuthorization( projectGroup.getName() );
+
+            for ( Project project : projectGroup.getProjects() )
             {
-                Project project = (Project)i.next();
-                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId() ) );
+                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId(),
+                                                                                               projectGroupId ) );
 
             }
 
             allBuildDefinitionSummaries.addAll( groupBuildDefinitionSummaries );
             allBuildDefinitionSummaries.addAll( projectBuildDefinitionSummaries );
         }
-        catch (ContinuumException e)
+        catch ( ContinuumException e )
         {
-           getLogger().info( "unable to build summary" );
-           return ERROR;
+            logger.info( "unable to build summary" );
+            return ERROR;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
         }
 
         return SUCCESS;
     }
 
-    private List gatherProjectBuildDefinitionSummaries( int projectId)
+    private void fixDefaultBuildDefinitions()
+    {
+        boolean containsDefaultBDForProject = false;
+
+        for ( BuildDefinitionSummary bds : projectBuildDefinitionSummaries )
+        {
+            if ( bds.isIsDefault() )
+            {
+                containsDefaultBDForProject = true;
+            }
+        }
+
+        for ( BuildDefinitionSummary bds : groupBuildDefinitionSummaries )
+        {
+            if ( bds.isIsDefault() )
+            {
+                defaultGroupDefinitionId = bds.getId();
+            }
+
+            if ( containsDefaultBDForProject )
+            {
+                bds.setIsDefault( false );
+            }
+        }
+    }
+
+    private List<BuildDefinitionSummary> gatherProjectBuildDefinitionSummaries( int projectId, int projectGroupId )
         throws ContinuumException
     {
-        List summaryList = new ArrayList();
+        List<BuildDefinitionSummary> summaryList = new ArrayList<BuildDefinitionSummary>();
 
         Project project = getContinuum().getProjectWithAllDetails( projectId );
-        for ( Iterator i = project.getBuildDefinitions().iterator(); i.hasNext(); )
+        for ( BuildDefinition bd : project.getBuildDefinitions() )
         {
-            BuildDefinitionSummary bds = generateBuildDefinitionSummary( (BuildDefinition) i.next() );
+            BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "PROJECT" );
             bds.setProjectId( project.getId() );
             bds.setProjectName( project.getName() );
+            bds.setProjectGroupId( projectGroupId );
 
             summaryList.add( bds );
         }
@@ -120,17 +175,16 @@ public class BuildDefinitionSummaryAction
         return summaryList;
     }
 
-
-    private List gatherGroupBuildDefinitionSummaries( int projectGroupId )
+    private List<BuildDefinitionSummary> gatherGroupBuildDefinitionSummaries( int projectGroupId )
         throws ContinuumException
     {
-        List summaryList = new ArrayList();
+        List<BuildDefinitionSummary> summaryList = new ArrayList<BuildDefinitionSummary>();
 
-        projectGroup = getContinuum().getProjectGroup( projectGroupId );
+        projectGroup = getContinuum().getProjectGroupWithBuildDetails( projectGroupId );
 
-        for ( Iterator i = projectGroup.getBuildDefinitions().iterator(); i.hasNext(); )
+        for ( BuildDefinition bd : projectGroup.getBuildDefinitions() )
         {
-            BuildDefinitionSummary bds = generateBuildDefinitionSummary( (BuildDefinition) i.next() );
+            BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "GROUP" );
             bds.setProjectGroupId( projectGroup.getId() );
 
@@ -138,20 +192,6 @@ public class BuildDefinitionSummaryAction
         }
 
         return summaryList;
-    }
-
-    private BuildDefinitionSummary generateBuildDefinitionSummary( BuildDefinition bd )
-    {
-        BuildDefinitionSummary bds = new BuildDefinitionSummary();
-
-        bds.setGoals( bd.getGoals() );
-        bds.setId( bd.getId() );
-        bds.setArguments( bd.getArguments() );
-        bds.setBuildFile( bd.getBuildFile() );
-        bds.setScheduleName( bd.getSchedule().getName() );
-        bds.setIsDefault( bd.isDefaultForProject() );
-
-        return bds;
     }
 
     public int getProjectId()
@@ -184,32 +224,32 @@ public class BuildDefinitionSummaryAction
         this.projectGroupName = projectGroupName;
     }
 
-    public List getProjectBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getProjectBuildDefinitionSummaries()
     {
         return projectBuildDefinitionSummaries;
     }
 
-    public void setProjectBuildDefinitionSummaries( List projectBuildDefinitionSummaries )
+    public void setProjectBuildDefinitionSummaries( List<BuildDefinitionSummary> projectBuildDefinitionSummaries )
     {
         this.projectBuildDefinitionSummaries = projectBuildDefinitionSummaries;
     }
 
-    public List getGroupBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getGroupBuildDefinitionSummaries()
     {
         return groupBuildDefinitionSummaries;
     }
 
-    public void setGroupBuildDefinitionSummaries( List groupBuildDefinitionSummaries )
+    public void setGroupBuildDefinitionSummaries( List<BuildDefinitionSummary> groupBuildDefinitionSummaries )
     {
         this.groupBuildDefinitionSummaries = groupBuildDefinitionSummaries;
     }
 
-    public List getAllBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getAllBuildDefinitionSummaries()
     {
         return allBuildDefinitionSummaries;
     }
 
-    public void setAllBuildDefinitionSummaries( List allBuildDefinitionSummaries )
+    public void setAllBuildDefinitionSummaries( List<BuildDefinitionSummary> allBuildDefinitionSummaries )
     {
         this.allBuildDefinitionSummaries = allBuildDefinitionSummaries;
     }
@@ -222,5 +262,10 @@ public class BuildDefinitionSummaryAction
     public void setProjectGroup( ProjectGroup projectGroup )
     {
         this.projectGroup = projectGroup;
+    }
+
+    public int getDefaultGroupDefinitionId()
+    {
+        return defaultGroupDefinitionId;
     }
 }

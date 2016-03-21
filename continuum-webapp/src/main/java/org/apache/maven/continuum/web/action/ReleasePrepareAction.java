@@ -1,55 +1,65 @@
 package org.apache.maven.continuum.web.action;
 
 /*
- * Copyright 2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.continuum.configuration.BuildAgentConfigurationException;
+import org.apache.continuum.model.release.ReleaseListenerSummary;
+import org.apache.continuum.release.distributed.DistributedReleaseUtil;
+import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
+import org.apache.continuum.release.utils.ReleaseHelper;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
+import org.apache.continuum.web.action.AbstractReleaseAction;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.installation.InstallationService;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.release.DefaultReleaseManagerListener;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
 import org.apache.maven.shared.release.ReleaseResult;
-import org.apache.maven.shared.release.versions.VersionInfo;
-import org.apache.maven.shared.release.versions.DefaultVersionInfo;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 /**
  * @author Edwin Punzalan
- *
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="releasePrepare"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releasePrepare", instantiationStrategy = "per-lookup" )
 public class ReleasePrepareAction
-    extends ContinuumActionSupport
+    extends AbstractReleaseAction
 {
     private static final String SCM_SVN_PROTOCOL_PREFIX = "scm:svn";
+
+    private static final String SNAPSHOT_VERSION_SUFFIX = "-SNAPSHOT";
 
     private int projectId;
 
@@ -65,27 +75,76 @@ public class ReleasePrepareAction
 
     private String scmTagBase;
 
-    private List projects = new ArrayList();
+    private String scmCommentPrefix;
 
-    private List projectKeys;
+    private boolean scmUseEditMode = false;
 
-    private List devVersions;
+    private List<Map<String, String>> projects = new ArrayList<Map<String, String>>();
 
-    private List relVersions;
+    private List<String> projectKeys;
+
+    private List<String> devVersions;
+
+    private List<String> relVersions;
 
     private String prepareGoals;
+
+    private String arguments;
 
     private ReleaseResult result;
 
     private ContinuumReleaseManagerListener listener;
 
+    private String projectGroupName = "";
+
+    private List<Profile> profiles;
+
+    private int profileId;
+
+    private boolean autoVersionSubmodules = false;
+
+    private boolean addSchema = true;
+
+    private ReleaseListenerSummary listenerSummary;
+
+    @Requirement
+    private ReleaseHelper releaseHelper;
+
+    @Requirement
+    private LocalRepositoryHelper localRepositoryHelper;
+
     public String input()
         throws Exception
     {
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         Project project = getContinuum().getProject( projectId );
         scmUsername = project.getScmUsername();
         scmPassword = project.getScmPassword();
         scmTag = project.getScmTag();
+
+        if ( scmTag == null )
+        {
+            String version = project.getVersion();
+            int idx = version.indexOf( SNAPSHOT_VERSION_SUFFIX );
+
+            if ( idx >= 0 )
+            {
+                // strip the snapshot version suffix
+                scmTag = project.getArtifactId() + "-" + version.substring( 0, idx );
+            }
+            else
+            {
+                scmTag = project.getArtifactId() + "-" + version;
+            }
+        }
 
         String scmUrl = project.getScmUrl();
         if ( scmUrl.startsWith( SCM_SVN_PROTOCOL_PREFIX ) )
@@ -99,64 +158,117 @@ public class ReleasePrepareAction
             scmTagBase = "";
         }
 
+        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+        //CONTINUUM-1503
+        releaseManager.sanitizeTagName( scmUrl, scmTag );
+
         prepareGoals = "clean integration-test";
 
-        getReleasePluginParameters( project.getWorkingDirectory(), "pom.xml" );
+        String defaultPomName = "pom.xml";
 
-        processProject( project.getWorkingDirectory(), "pom.xml" );
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            DistributedReleaseManager distributedReleaseManager = getContinuum().getDistributedReleaseManager();
+
+            try
+            {
+                getReleasePluginParameters( distributedReleaseManager.getReleasePluginParameters( projectId,
+                                                                                                  defaultPomName ) );
+
+                projects = distributedReleaseManager.processProject( projectId, defaultPomName, autoVersionSubmodules );
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "distributedBuild.releasePrepare.input.error", args ) );
+                return RELEASE_ERROR;
+            }
+        }
+        else
+        {
+            try
+            {
+                String workingDirectory = getContinuum().getWorkingDirectory( project.getId() ).getPath();
+
+                ArtifactRepository localRepo =
+                    localRepositoryHelper.getLocalRepository( project.getProjectGroup().getLocalRepository() );
+
+                getReleasePluginParameters( localRepo, workingDirectory, defaultPomName );
+
+                releaseHelper.buildVersionParams( localRepo, workingDirectory, defaultPomName, autoVersionSubmodules,
+                                                  projects );
+            }
+            catch ( Exception e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "releasePrepare.input.error", args ) );
+                return RELEASE_ERROR;
+            }
+        }
+
+        profiles = this.getContinuum().getProfileService().getAllProfiles();
 
         return SUCCESS;
     }
 
-    private void getReleasePluginParameters( String workingDirectory, String pomFilename )
+    private void getReleasePluginParameters( ArtifactRepository localRepo, String workingDirectory, String pomFilename )
         throws Exception
     {
-        MavenXpp3Reader pomReader = new MavenXpp3Reader();
-        Model model = pomReader.read( new FileReader( new File( workingDirectory, pomFilename ) ) );
+        Map<String, Object> params = releaseHelper.extractPluginParameters( localRepo, workingDirectory, pomFilename );
 
-        if ( model.getBuild() != null && model.getBuild().getPlugins() != null )
+        // TODO: use constants for this
+        if ( params.get( "scm-tag" ) != null )
         {
-            for( Iterator plugins = model.getBuild().getPlugins().iterator(); plugins.hasNext(); )
-            {
-                Plugin plugin = (Plugin) plugins.next();
+            scmTag = (String) params.get( "scm-tag" );
+        }
 
-                if ( plugin.getGroupId() != null && plugin.getGroupId().equals( "org.apache.maven.plugins" ) &&
-                     plugin.getArtifactId() != null && plugin.getArtifactId().equals( "maven-release-plugin" ) )
-                {
-                    Xpp3Dom dom = (Xpp3Dom) plugin.getConfiguration();
+        if ( params.get( "scm-tagbase" ) != null )
+        {
+            scmTagBase = (String) params.get( "scm-tagbase" );
+        }
 
-                    Xpp3Dom configuration = dom.getChild( "releaseLabel" );
-                    if ( configuration != null )
-                    {
-                        scmTag = configuration.getValue();
-                    }
+        if ( params.get( "preparation-goals" ) != null )
+        {
+            prepareGoals = (String) params.get( "preparation-goals" );
+        }
 
-                    configuration = dom.getChild( "tag" );
-                    if ( configuration != null )
-                    {
-                        scmTag = configuration.getValue();
-                    }
+        if ( params.get( "arguments" ) != null )
+        {
+            arguments = (String) params.get( "arguments" );
+        }
 
-                    configuration = dom.getChild( "tagBase" );
-                    if ( configuration != null )
-                    {
-                        scmTagBase = configuration.getValue();
-                    }
+        if ( params.get( "scm-comment-prefix" ) != null )
+        {
+            scmCommentPrefix = (String) params.get( "scm-comment-prefix" );
+        }
 
-                    configuration = dom.getChild( "preparationGoals" );
-                    if ( configuration != null )
-                    {
-                        prepareGoals = configuration.getValue();
-                    }
-                }
-            }
+        if ( params.get( "auto-version-submodules" ) != null )
+        {
+            autoVersionSubmodules = (Boolean) params.get( "auto-version-submodules" );
+        }
+
+        if ( params.get( "add-schema" ) != null )
+        {
+            addSchema = (Boolean) params.get( "add-schema" );
         }
     }
 
     public String execute()
         throws Exception
     {
-        listener = new DefaultReleaseManagerListener();
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
 
         Project project = getContinuum().getProject( projectId );
 
@@ -166,10 +278,77 @@ public class ReleasePrepareAction
             name = project.getArtifactId();
         }
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+        Profile profile = null;
 
-        releaseId = releaseManager.prepare( project, getReleaseProperties(), getRelVersionMap(),
-                                            getDevVersionMap(), listener );
+        if ( profileId != -1 )
+        {
+            profile = getContinuum().getProfileService().getProfile( profileId );
+        }
+
+        String username = getPrincipal();
+
+        Map<String, String> environments = new HashMap<String, String>();
+
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            DistributedReleaseManager distributedReleaseManager = getContinuum().getDistributedReleaseManager();
+
+            environments = getEnvironments( profile, distributedReleaseManager.getDefaultBuildagent( projectId ) );
+
+            try
+            {
+                releaseId = distributedReleaseManager.releasePrepare( project, getReleaseProperties(),
+                                                                      getRelVersionMap(), getDevVersionMap(),
+                                                                      environments, username );
+
+                if ( releaseId == null )
+                {
+                    addActionError( "Failed to release project" );
+                    return RELEASE_ERROR;
+                }
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "distributedBuild.releasePrepare.release.error", args ) );
+                return RELEASE_ERROR;
+            }
+        }
+        else
+        {
+            environments = getEnvironments( profile, null );
+
+            listener = new DefaultReleaseManagerListener();
+
+            listener.setUsername( username );
+
+            String workingDirectory = getContinuum().getWorkingDirectory( projectId ).getPath();
+
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            String executable = getContinuum().getInstallationService().getExecutorConfigurator(
+                InstallationService.MAVEN2_TYPE ).getExecutable();
+
+            if ( environments != null )
+            {
+                String m2Home = environments.get( getContinuum().getInstallationService().getEnvVar(
+                    InstallationService.MAVEN2_TYPE ) );
+                if ( StringUtils.isNotEmpty( m2Home ) )
+                {
+                    executable = m2Home + File.separator + "bin" + File.separator + executable;
+                }
+            }
+
+            releaseId = releaseManager.prepare( project, getReleaseProperties(), getRelVersionMap(), getDevVersionMap(),
+                                                listener, workingDirectory, environments, executable );
+        }
+
+        AuditLog event = new AuditLog( "Release id=" + releaseId, AuditLogConstants.PREPARE_RELEASE );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( username );
+        event.log();
 
         return SUCCESS;
     }
@@ -177,7 +356,33 @@ public class ReleasePrepareAction
     public String viewResult()
         throws Exception
     {
-        result = (ReleaseResult) getContinuum().getReleaseManager().getReleaseResults().get( releaseId );
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            DistributedReleaseManager distributedReleaseManager = getContinuum().getDistributedReleaseManager();
+
+            try
+            {
+                result = distributedReleaseManager.getReleaseResult( releaseId );
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                addActionError( "release" );
+                return "viewResultError";
+            }
+        }
+        else
+        {
+            result = (ReleaseResult) getContinuum().getReleaseManager().getReleaseResults().get( releaseId );
+        }
 
         return "viewResult";
     }
@@ -185,98 +390,116 @@ public class ReleasePrepareAction
     public String checkProgress()
         throws Exception
     {
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         String status;
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+        listenerSummary = new ReleaseListenerSummary();
 
-        listener = (ContinuumReleaseManagerListener) releaseManager.getListeners().get( releaseId );
-
-        if ( listener != null )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            if ( listener.getState() == ContinuumReleaseManagerListener.FINISHED )
+            DistributedReleaseManager distributedReleaseManager = getContinuum().getDistributedReleaseManager();
+            Map listenerMap;
+            try
             {
-                releaseManager.getListeners().remove( releaseId );
+                listenerMap = distributedReleaseManager.getListener( releaseId );
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                addActionError( "Failed to retrieve listener for release: " + releaseId );
+                return "";
+            }
 
-                result = (ReleaseResult) releaseManager.getReleaseResults().get( releaseId );
+            if ( listenerMap != null && !listenerMap.isEmpty() )
+            {
+                int state = DistributedReleaseUtil.getReleaseState( listenerMap );
 
-                status = "finished";
+                if ( state == ContinuumReleaseManagerListener.FINISHED )
+                {
+                    distributedReleaseManager.removeListener( releaseId );
+
+                    result = distributedReleaseManager.getReleaseResult( releaseId );
+
+                    status = "finished";
+                }
+                else
+                {
+                    status = "inProgress";
+                }
+
+                listenerSummary.setPhases( DistributedReleaseUtil.getReleasePhases( listenerMap ) );
+                listenerSummary.setCompletedPhases( DistributedReleaseUtil.getCompletedReleasePhases( listenerMap ) );
+                listenerSummary.setInProgress( DistributedReleaseUtil.getReleaseInProgress( listenerMap ) );
+                listenerSummary.setError( DistributedReleaseUtil.getReleaseError( listenerMap ) );
             }
             else
             {
-                status = "inProgress";
+                throw new Exception( "There is no release on-going or finished with id: " + releaseId );
             }
         }
         else
         {
-            throw new Exception( "There is no release on-going or finished with id: " + releaseId );
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            listenerSummary = releaseManager.getListener( releaseId );
+
+            if ( listenerSummary != null )
+            {
+                if ( listenerSummary.getState() == ContinuumReleaseManagerListener.FINISHED )
+                {
+                    releaseManager.getListeners().remove( releaseId );
+
+                    result = (ReleaseResult) releaseManager.getReleaseResults().get( releaseId );
+
+                    status = "finished";
+                }
+                else
+                {
+                    status = "inProgress";
+                }
+            }
+            else
+            {
+                throw new Exception( "There is no release on-going or finished with id: " + releaseId );
+            }
         }
 
         return status;
     }
 
-    private void processProject( String workingDirectory, String pomFilename )
-        throws Exception
-    {
-        MavenXpp3Reader pomReader = new MavenXpp3Reader();
-        Model model = pomReader.read( new FileReader( new File( workingDirectory, pomFilename ) ) );
-
-        if ( model.getGroupId() == null )
-        {
-            model.setGroupId( model.getParent().getGroupId() );
-        }
-
-        if ( model.getVersion() == null )
-        {
-            model.setVersion( model.getParent().getVersion() );
-        }
-
-        setProperties( model );
-
-        for( Iterator modules = model.getModules().iterator(); modules.hasNext(); )
-        {
-            processProject( workingDirectory + "/" + modules.next().toString(), "pom.xml" );
-        }
-    }
-
-    private void setProperties( Model model )
-        throws Exception
-    {
-        Map params = new HashMap();
-
-        params.put( "key", model.getGroupId() + ":" + model.getArtifactId() );
-
-        if ( model.getName() == null )
-        {
-            model.setName( model.getArtifactId() );
-        }
-        params.put( "name", model.getName() );
-
-        VersionInfo version = new DefaultVersionInfo( model.getVersion() );
-
-        params.put( "release", version.getReleaseVersionString() );
-        params.put( "dev", version.getNextVersion().getSnapshotVersionString() );
-
-        projects.add( params );
-    }
-
-    private Map getDevVersionMap()
+    private Map<String, String> getDevVersionMap()
     {
         return getVersionMap( projectKeys, devVersions );
     }
 
-    private Map getRelVersionMap()
+    private Map<String, String> getRelVersionMap()
     {
         return getVersionMap( projectKeys, relVersions );
     }
 
-    private Map getVersionMap( List keys, List versions )
+    private Map<String, String> getVersionMap( List<String> keys, List<String> versions )
     {
-        Map versionMap = new HashMap();
+        Map<String, String> versionMap = new HashMap<String, String>();
 
         for ( int idx = 0; idx < keys.size(); idx++ )
         {
-            String key = keys.get( idx ).toString();
-            String version = versions.get( idx ).toString();
+            String key = keys.get( idx );
+            String version;
+            if ( !autoVersionSubmodules )
+            {
+                version = versions.get( idx );
+            }
+            else
+            {
+                version = versions.get( 0 );
+            }
 
             versionMap.put( key, version );
         }
@@ -290,47 +513,93 @@ public class ReleasePrepareAction
 
         if ( StringUtils.isNotEmpty( scmUsername ) )
         {
-            p.setProperty( "username", scmUsername );
+            p.setProperty( "scm-username", scmUsername );
         }
 
         if ( StringUtils.isNotEmpty( scmPassword ) )
         {
-            p.setProperty( "password", scmPassword );
+            p.setProperty( "scm-password", scmPassword );
         }
 
-        p.setProperty( "tag", scmTag );
-        p.setProperty( "tagBase", scmTagBase );
-        p.setProperty( "prepareGoals", prepareGoals );
+        if ( StringUtils.isNotEmpty( scmTagBase ) )
+        {
+            p.setProperty( "scm-tagbase", scmTagBase );
+        }
+
+        if ( StringUtils.isNotEmpty( scmCommentPrefix ) )
+        {
+            // CONTINUUM-2619
+            p.setProperty( "scm-comment-prefix", scmCommentPrefix.trim() + " " );
+        }
+
+        p.setProperty( "scm-tag", scmTag );
+        p.setProperty( "preparation-goals", prepareGoals );
+        p.setProperty( "arguments", arguments );
+        p.setProperty( "use-edit-mode", Boolean.toString( scmUseEditMode ) );
+        p.setProperty( "add-schema", Boolean.toString( addSchema ) );
+        p.setProperty( "auto-version-submodules", Boolean.toString( autoVersionSubmodules ) );
 
         return p;
     }
 
-    public List getProjectKeys()
+    private void getReleasePluginParameters( Map context )
+    {
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getScmTag( context, scmTag ) ) )
+        {
+            scmTag = DistributedReleaseUtil.getScmTag( context, scmTag );
+        }
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getScmTagBase( context, scmTagBase ) ) )
+        {
+            scmTagBase = DistributedReleaseUtil.getScmTagBase( context, scmTagBase );
+        }
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getPrepareGoals( context, prepareGoals ) ) )
+        {
+            prepareGoals = DistributedReleaseUtil.getPrepareGoals( context, prepareGoals );
+        }
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getArguments( context, "" ) ) )
+        {
+            arguments = DistributedReleaseUtil.getArguments( context, "" );
+        }
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getScmCommentPrefix( context, "" ) ) )
+        {
+            scmCommentPrefix = DistributedReleaseUtil.getScmCommentPrefix( context, "" );
+        }
+
+        autoVersionSubmodules = DistributedReleaseUtil.getAutoVersionSubmodules( context, false );
+
+        addSchema = DistributedReleaseUtil.getAddSchema( context, true );
+    }
+
+    public List<String> getProjectKeys()
     {
         return projectKeys;
     }
 
-    public void setProjectKeys( List projectKeys )
+    public void setProjectKeys( List<String> projectKeys )
     {
         this.projectKeys = projectKeys;
     }
 
-    public List getDevVersions()
+    public List<String> getDevVersions()
     {
         return devVersions;
     }
 
-    public void setDevVersions( List devVersions )
+    public void setDevVersions( List<String> devVersions )
     {
         this.devVersions = devVersions;
     }
 
-    public List getRelVersions()
+    public List<String> getRelVersions()
     {
         return relVersions;
     }
 
-    public void setRelVersions( List relVersions )
+    public void setRelVersions( List<String> relVersions )
     {
         this.relVersions = relVersions;
     }
@@ -385,12 +654,12 @@ public class ReleasePrepareAction
         this.scmTagBase = scmTagBase;
     }
 
-    public List getProjects()
+    public List<Map<String, String>> getProjects()
     {
         return projects;
     }
 
-    public void setProjects( List projects )
+    public void setProjects( List<Map<String, String>> projects )
     {
         this.projects = projects;
     }
@@ -445,8 +714,98 @@ public class ReleasePrepareAction
         this.prepareGoals = prepareGoals;
     }
 
+    public String getArguments()
+    {
+        return arguments;
+    }
+
+    public void setArguments( String arguments )
+    {
+        this.arguments = arguments;
+    }
+
     public void validate()
     {
-        
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( StringUtils.isEmpty( projectGroupName ) )
+        {
+            projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+        }
+
+        return projectGroupName;
+    }
+
+    public List<Profile> getProfiles()
+    {
+        return profiles;
+    }
+
+    public void setProfiles( List<Profile> profiles )
+    {
+        this.profiles = profiles;
+    }
+
+    public int getProfileId()
+    {
+        return profileId;
+    }
+
+    public void setProfileId( int profileId )
+    {
+        this.profileId = profileId;
+    }
+
+    public boolean isScmUseEditMode()
+    {
+        return scmUseEditMode;
+    }
+
+    public void setScmUseEditMode( boolean scmUseEditMode )
+    {
+        this.scmUseEditMode = scmUseEditMode;
+    }
+
+    public String getScmCommentPrefix()
+    {
+        return scmCommentPrefix;
+    }
+
+    public void setScmCommentPrefix( String scmCommentPrefix )
+    {
+        this.scmCommentPrefix = scmCommentPrefix;
+    }
+
+    public boolean isAutoVersionSubmodules()
+    {
+        return autoVersionSubmodules;
+    }
+
+    public void setAutoVersionSubmodules( boolean autoVersionSubmodules )
+    {
+        this.autoVersionSubmodules = autoVersionSubmodules;
+    }
+
+    public boolean isAddSchema()
+    {
+        return addSchema;
+    }
+
+    public void setAddSchema( boolean addSchema )
+    {
+        this.addSchema = addSchema;
+    }
+
+    public ReleaseListenerSummary getListenerSummary()
+    {
+        return listenerSummary;
+    }
+
+    public void setListenerSummary( ReleaseListenerSummary listenerSummary )
+    {
+        this.listenerSummary = listenerSummary;
     }
 }

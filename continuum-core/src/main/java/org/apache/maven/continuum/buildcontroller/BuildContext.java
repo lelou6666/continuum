@@ -1,24 +1,29 @@
 package org.apache.maven.continuum.buildcontroller;
 
 /*
- * Copyright 2004-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.scm.ScmResult;
 
 import java.util.ArrayList;
@@ -43,15 +48,17 @@ public class BuildContext
 
     private ScmResult oldScmResult;
 
-    private Map actionContext;
+    private Map<String, Object> actionContext;
 
     private ScmResult scmResult;
 
-    private int trigger;
+    private BuildTrigger buildTrigger;
 
     private BuildResult buildResult;
 
-    private List modifiedDependencies;
+    private List<ProjectDependency> modifiedDependencies;
+
+    private boolean cancelled;
 
     public void setStartTime( long startTime )
     {
@@ -123,36 +130,46 @@ public class BuildContext
         return scmResult;
     }
 
-    public Map getActionContext()
+    public Map<String, Object> getActionContext()
     {
         if ( actionContext == null )
         {
-            actionContext = new HashMap();
+            actionContext = new HashMap<String, Object>();
         }
         return actionContext;
     }
 
-    public int getTrigger()
+    public BuildTrigger getBuildTrigger()
     {
-        return trigger;
+        return buildTrigger;
     }
 
-    public void setTrigger( int trigger )
+    public void setBuildTrigger( BuildTrigger buildTrigger )
     {
-        this.trigger = trigger;
+        this.buildTrigger = buildTrigger;
     }
 
-    public List getModifiedDependencies()
+    public List<ProjectDependency> getModifiedDependencies()
     {
         if ( modifiedDependencies == null )
         {
-            modifiedDependencies = new ArrayList();
+            modifiedDependencies = new ArrayList<ProjectDependency>();
         }
         return modifiedDependencies;
     }
 
-    public void setModifiedDependencies( List modifiedDependencies )
+    public void setModifiedDependencies( List<ProjectDependency> modifiedDependencies )
     {
         this.modifiedDependencies = modifiedDependencies;
+    }
+
+    public boolean isCancelled()
+    {
+        return cancelled;
+    }
+
+    public void setCancelled( boolean cancelled )
+    {
+        this.cancelled = cancelled;
     }
 }

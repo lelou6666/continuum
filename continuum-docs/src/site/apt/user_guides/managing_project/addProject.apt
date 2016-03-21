@@ -1,0 +1,254 @@
+ ------
+ Add a Project
+ ------
+ Emmanuel Venisse
+ Olivier Lamy
+ ------
+ Oct 11 2007
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Add a Project
+
+~~%{toc|section=0}
+
+* {Maven project (Maven 2 or Maven 3)}
+
+  From the menu, choose the <<Maven Project>> entry
+
+[../../images/add-m2-project-menu.png] Add a Maven project
+
+  The <<<pom.xml>>> file must be available through one of the following protocols: http, https, or ftp.
+
+  <<Note:>> The file protocol is also supported but is disabled by default for security and must be enabled manually.
+
+~~ TODO: Explain how to enable the file protocol
+
+  The <<<pom.xml>>> can also be uploaded from a local file.
+
+  <<Note:>> This doesn't support multi module projects.
+
+[../../images/add-m2-project.png] Add a Maven project
+
+  You can supply a username and password if the POM URL requires authentication.  This information will be stored in the database in plain text and reused later for SCM checkouts and updates.
+
+  If your SCM stores credentials like CVS or SVN and you want to use the SCM Credentials cache, check the <<Use SCM Credentials Cache>> field.
+
+~~ TODO:  If 'use cached credentials' is checked, then the credentials should NOT be stored in the database.  Need to see whether that's actually true before documenting it.
+
+  You can define the group you want to use or <<Defined by POM>> in this case <<<project.name>>> will be used as <<Project Group>>.
+
+  You cannot add a duplicate project (duplicates would mean another instance of a project with the same groupId, artifactId, and version) in the same Project Group.
+
+  If <<Checkout multi-module project in separate directories>> radio box is selected when a project is added to Continuum, each sub-module POM would be added as an individual Continuum Project.
+  Each of these Continuum projects having it's own working directory. For example, you have a multi-module project with the following structure:
+
++----------------------------+
+simple-multi-module-project
+|-- module-a
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       |   `-- java
+|       |       `-- ...
+|       `-- test
+|           `-- java
+|               `-- ...
+|-- module-b
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       |   `-- java
+|       |       `-- ...
+|       `-- test
+|           `-- java
+|               `-- ...
+`-- pom.xml
++----------------------------+
+
+  This project tree means that there will be three Continuum Projects added in Continuum. Let's say, the top level project was assigned
+  a <<<project id>>> of '1' when it was added in Continuum and module-a got a <<<project id>>> of '2' and module-b got a <<<project id>>> of '3'. Now in
+  Continuum's working directory, you will see these projects checked out as below. Note that their <<<project ids>>> correspond to their own
+  working directories.
+
++----------------------------+
+|-- 1
+|   |-- module-a
+|   |   |-- pom.xml
+|   |   `-- src
+|   |       |-- main
+|   |       |   `-- java
+|   |       |       `-- ...
+|   |       `-- test
+|   |           `-- java
+|   |               `-- ...
+|   |-- module-b
+|   |   |-- pom.xml
+|   |   `-- src
+|   |       |-- main
+|   |       |   `-- java
+|   |       |       `-- ...
+|   |       `-- test
+|   |           `-- java
+|   |               `-- ...
+|   `-- pom.xml
+|-- 2
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       |   `-- java
+|       |       `-- ...
+|       `-- test
+|           `-- java
+|               `-- ...
+`-- 3
+    |-- pom.xml
+    `-- src
+        |-- main
+        |   `-- java
+        |       `-- ...
+        `-- test
+            `-- java
+                `-- ...
++----------------------------+
+
+  You can force Continuum to check out the entire project into a single directory by selecting the <<Checkout multi-module project
+  in single directory>> radio box.
+
+  <<Note:>> If your project has a flat structure similar to the one below, you might want to check out
+  your project into a single directory to be able to release it in Continuum.
+
++----------------------------+
+simple-flat-multi-module
+|-- root-project
+|   `-- pom.xml
+|-- module-a
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       |   `-- java
+|       |       `-- ...
+|       `-- test
+|           `-- java
+|               `-- ...
+`-- module-b
+   |-- pom.xml
+   `-- src
+       `-- main
+           `-- ...
++----------------------------+
+
+  If you want to add the multi-module project as a single Continuum project, select the <<load only root as recursive build>>
+  radio box.
+
+  For a project or POM that was added as a single Continuum project and as it's own project group, the <<<--non-recursive>>>
+  flag in the default project group build definition will be removed. But if the project or POM was added as a single
+  Continuum project to an already existing project group, a project level build definition with the <<<--non-recursive>>> flag
+  stripped from the <<<arguments>>> field will be created for the project and will be set as the project's default build definition.
+  See {{{http://jira.codehaus.org/browse/CONTINUUM-2563} CONTINUUM-2563}} for the related issue.
+
+  You can choose a <<Build Definition Template>> which will be applied to your project.  If you choose a <<Build Definition
+  Template>>, the build definitions from the template will be added in addition to any build definitions that are defined
+  at the project group level.
+
+  When adding projects whose parent project is building on another server,
+  make sure that the <<<settings.xml>>> with the necessary repositories exists in <<<[USER_HOME]/.m2/>>> directory.
+  Continuum uses <<<[USER_HOME]/.m2/settings.xml>>> and not the one found in <<<[M2_HOME]/conf/>>>.
+
+  The scm connection url must be present in the POM and must match the actual location of the pom in the scm repository.
+
+* {Maven 1 project}
+
+  From the menu, choose the <<Maven 1.x Project>> entry
+
+[../../images/add-m1-project-menu.png] Add a Maven 1 project
+
+  The <<<project.xml>>> file must be available through one of the following format : http, https and ftp.
+
+  <<Note:>> The file protocol is off by default for security and must enabled manually.
+
+  The <<<project.xml>>> can also be uploaded from a local file.
+
+  <<Note:>> This doesn't support multi modules project.
+
+  The project you're adding can't use a parent.
+
+[../../images/add-m1-project.png] Add a Maven 1 project
+
+  You can define username/password if the POM URL require an authentication.
+
+  If your SCM store credentials like CVS or SVN and you want to use the SCM Credentials cache, check the <<Use SCM Credentials Cache>> field.
+
+  You can define the group you want to use or <<Defined by POM>>. In this case <<<project.name>>> will be used as the <<Project Group>>.
+
+  You cannot add a duplicate project (duplicates would mean another instance of a project with the same groupId, artifactId, and version) in the same <<Project Group>>.
+
+  You can choose a <<Build Definition Template>> which will be applied to your project.
+
+* {ANT Project}
+
+  From the menu, choose the <<Ant Project>> entry
+
+[../../images/add-ant-project-menu.png] Add an Ant project
+
+    TO WRITE
+
+[../../images/add-ant-project.png] Add an Ant project
+
+* {Shell Project}
+
+  From the menu, choose the <<Shell Project>> entry
+
+[../../images/add-shell-project-menu.png] Add a shell project
+
+    TO WRITE
+
+[../../images/add-shell-project.png] Add a shell script project
+
+* {Add a project from the Project Group}
+
+    From the <<Project Group>>, you can add a project without using the menu. With this operation, the <<Project Group>> will be set to the current group.
+
+[../../images/add-project-from-group.png] Add a project from a project group
+
+* {SCM hints}
+
+** {ClearCase}
+
+    With ClearCase, you can configure SCM things in few ways. For example, you can use, in the scm URL in your POM, the absolute path of your config spec file like this:
+
++----------------------------+
+<scm>
+  <connection>scm:clearcase:absolute_path_of_config_spec</connection>
+</scm>
++----------------------------+
+
+    The SCM URL format used for ClearCase is defined {{{http://maven.apache.org/scm/clearcase.html}here}}
+
+    and you can create a <<<clearcase-settings.xml>>> file under <<<${user.home}/.scm/>>> with the following content:
+
++----------------------------+
+<clearcase-settings>
+    <viewstore>\\mymachine\myvwstore</viewstore>
+    <useVWSParameter>true</useVWSParameter>
+</clearcase-settings>
++----------------------------+
+
+    This configuration won't work with each ClearCase installation because each ClearCase configuration is different, so we recommend reading the
+    {{{http://maven.apache.org/scm/clearcase.html}ClearCase page}} on the Maven SCM site.

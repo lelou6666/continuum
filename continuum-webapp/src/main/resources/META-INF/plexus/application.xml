@@ -1,74 +1,52 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!--
-~ Copyright 2005-2006 The Apache Software Foundation.
-~
-~ Licensed under the Apache License, Version 2.0 (the "License");
-~ you may not use this file except in compliance with the License.
-~ You may obtain a copy of the License at
-~
-~      http://www.apache.org/licenses/LICENSE-2.0
-~
-~ Unless required by applicable law or agreed to in writing, software
-~ distributed under the License is distributed on an "AS IS" BASIS,
-~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-~ See the License for the specific language governing permissions and
-~ limitations under the License.
--->
-<plexus>
-  <load-on-start>
-    <component>
-      <role>org.apache.maven.continuum.Continuum</role>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
-      <role-hint>build-project</role-hint>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
-      <role-hint>check-out-project</role-hint>
-    </component>
-    <component>
-      <role>org.apache.maven.continuum.web.xmlrpc.XmlRpcService</role>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
-      <role-hint>prepare-release</role-hint>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
-      <role-hint>perform-release</role-hint>
-    </component>
-  </load-on-start>
 
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<plexus>
   <components>
-    <!--
-    | The XML-RPC service
-    |-->
     <component>
-      <role>org.apache.maven.continuum.web.xmlrpc.XmlRpcService</role>
-      <implementation>org.apache.maven.continuum.web.xmlrpc.DefaultXmlRpcService</implementation>
-      <description></description>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.xmlrpc.XmlRpcServer</role>
-          <field-name>xmlRpcServer</field-name>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.xmlrpc.ContinuumXmlRpc</role>
-          <field-name>handler</field-name>
-        </requirement>
-      </requirements>
+      <role>org.codehaus.plexus.registry.Registry</role>
+      <implementation>org.codehaus.plexus.registry.commons.CommonsConfigurationRegistry</implementation>
+      <role-hint>commons-configuration</role-hint>
       <configuration>
-        <port>8000</port>
-        <handler-name>continuum</handler-name>
+        <properties>
+          <system/>
+          <jndi prefix="java:comp/env" config-optional="true"/>
+          <xml fileName="${appserver.base}/conf/shared.xml" config-optional="true"
+               config-name="org.apache.maven.shared.app.user" config-at="org.apache.maven.shared.app"
+               config-forceCreate="true"/>
+          <properties fileName="${appserver.base}/conf/security.properties" config-optional="true"
+                      config-at="org.codehaus.plexus.redback"/>
+          <!-- Defaults -->
+          <properties fileName="org/apache/maven/continuum/security.properties"
+                      config-at="org.codehaus.plexus.redback"/>
+        </properties>
       </configuration>
     </component>
+
 
     <!--
     | The mail notifier
     |-->
     <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
+      <role>org.apache.maven.continuum.notification.Notifier</role>
       <role-hint>mail</role-hint>
       <implementation>org.apache.maven.continuum.notification.mail.MailContinuumNotifier</implementation>
       <requirements>
@@ -76,10 +54,14 @@
           <role>org.codehaus.plexus.velocity.VelocityComponent</role>
         </requirement>
         <requirement>
-          <role>org.apache.maven.continuum.store.ContinuumStore</role>
+          <role>org.apache.continuum.dao.ProjectDao</role>
         </requirement>
         <requirement>
-          <role>org.codehaus.plexus.mailsender.MailSender</role>
+          <role>org.apache.continuum.dao.BuildResultDao</role>
+        </requirement>
+        <requirement>
+          <role>mailSender</role>
+          <role-hint>continuum</role-hint>
         </requirement>
         <requirement>
           <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
@@ -87,121 +69,54 @@
         <requirement>
           <role>org.apache.maven.continuum.Continuum</role>
         </requirement>
+        <requirement>
+          <role>org.apache.maven.continuum.reports.surefire.ReportTestSuiteGenerator</role>
+          <field-name>reportTestSuiteGenerator</field-name>
+          <role-hint>default</role-hint>
+        </requirement>
       </requirements>
       <configuration>
         <from-mailbox></from-mailbox>
         <from-name></from-name>
-        <timestamp-format>EEE, d MMM yyyy HH:mm:ss Z</timestamp-format>
-        <includeBuildResult>true</includeBuildResult>
+        <timestamp-format>EEE d MMM yyyy HH:mm:ss Z</timestamp-format>
+        <!-- Customizable mail subject for the actual build.  Use any combination of literal text, or state, project, or build attributes.
+          Examples: 
+            "[continuum] BUILD ${state}: ${project.groupId} ${project.name}"
+              results in "[continuum] BUILD SUCCESSFUL: foo.bar Hello World"
+            
+            "[continuum] BUILD ${state}: ${project.name} ${project.scmTag}" 
+              results in "[continuum] BUILD SUCCESSFULL: Hello World Branch001"
+            
+            "[continuum] BUILD ${state}: ${project.name} ${project.version}" 
+              results in "[continuum] BUILD SUCCESSFUL: Hello World 2.1-SNAPSHOT"
+            
+            "[continuum] BUILD ${state}: ${project.name} ${build.durationTime}" 
+              results in "[continuum] BUILD SUCCESSFUL: Hello World 2 sec"
+            
+            "[continuum] BUILD ${state}: ${project.name}, Build Def - ${build.buildDefinition.description}" 
+              results in "[continuum] BUILD SUCCESSFUL: Hello World, Build Def - Nightly Test Build"
+         -->
+        <buildSubjectFormat>[continuum] BUILD ${state}: ${project.projectGroup.name} - ${project.name} -
+          ${build.buildDefinition.description}
+        </buildSubjectFormat>
+        <prepareBuildSubjectFormat>[continuum] PREPARE BUILD ${state}: ${projectScmRoot.projectGroup.name}
+        </prepareBuildSubjectFormat>
+        <includeBuildSummary>true</includeBuildSummary>
+        <includeTestSummary>true</includeTestSummary>
+        <includeBuildOutput>false</includeBuildOutput>
         <alwaysSend>false</alwaysSend>
-      </configuration>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.notification.RecipientSource</role>
-      <implementation>org.apache.maven.continuum.notification.ContinuumRecipientSource</implementation>
-      <configuration>
         <!--
         Setting this propery will make Continuum send all emails to
         this address instead the address specified in the project
         configuration
         -->
-        <to-override>${mail.override.to.address}</to-override>
-      </configuration>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.mailsender.MailSender</role>
-      <implementation>org.codehaus.plexus.mailsender.javamail.JndiJavamailMailSender</implementation>
-      <configuration>
-        <jndiSessionName>java:comp/env/mail/Session</jndiSessionName>
-      </configuration>
-    </component>
-
-    <!--
-    | The irc notifier
-    |-->
-    <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
-      <role-hint>irc</role-hint>
-      <implementation>org.apache.maven.continuum.notification.irc.IrcContinuumNotifier</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.ircbot.IrcBot</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.store.ContinuumStore</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
-        </requirement>
-      </requirements>
-      <configuration>
-        <alwaysSend>false</alwaysSend>
-      </configuration>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.ircbot.IrcBot</role>
-      <implementation>org.codehaus.plexus.ircbot.DefaultIrcClient</implementation>
-    </component>
-
-    <!--
-    | The jabber notifier
-    |-->
-    <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
-      <role-hint>jabber</role-hint>
-      <implementation>org.apache.maven.continuum.notification.jabber.JabberContinuumNotifier</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.jabber.JabberClient</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.store.ContinuumStore</role>
-        </requirement>
-      </requirements>
-      <configuration>
-        <alwaysSend>false</alwaysSend>
-        <!-- from-address/>
-        <from-password/>
-        <host/>
-        <port/>
-        <sslConnection>true</sslConnection -->
+        <toOverride></toOverride>
       </configuration>
     </component>
 
     <component>
       <role>org.codehaus.plexus.jabber.JabberClient</role>
       <implementation>org.codehaus.plexus.jabber.DefaultJabberClient</implementation>
-    </component>
-
-    <!--
-    | The MSN notifier
-    |-->
-    <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
-      <role-hint>msn</role-hint>
-      <implementation>org.apache.maven.continuum.notification.msn.MsnContinuumNotifier</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.msn.MsnClient</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
-        </requirement>
-        <requirement>
-          <role>org.apache.maven.continuum.store.ContinuumStore</role>
-        </requirement>
-      </requirements>
-      <configuration>
-        <alwaysSend>false</alwaysSend>
-        <!-- from-address/>
-        <from-password/ -->
-      </configuration>
     </component>
 
     <component>
@@ -239,9 +154,9 @@
     </component>
 
     <component>
-      <role>org.codehaus.plexus.formica.validation.Validator</role>
-      <role-hint>url</role-hint>
-      <implementation>org.codehaus.plexus.formica.validation.UrlValidator</implementation>
+      <role>org.apache.maven.continuum.utils.ContinuumUrlValidator</role>
+      <role-hint>continuumUrl</role-hint>
+      <implementation>org.apache.maven.continuum.utils.ContinuumUrlValidator</implementation>
       <configuration>
         <allowedSchemes>
           <allowedScheme>http</allowedScheme>
@@ -286,21 +201,43 @@
           </property>
           <property>
             <name>org.jpox.transactionIsolation</name>
-            <value>READ_UNCOMMITTED</value>
+            <value>READ_COMMITTED</value>
           </property>
           <property>
             <name>org.jpox.poid.transactionIsolation</name>
-            <value>READ_UNCOMMITTED</value>
+            <value>READ_COMMITTED</value>
           </property>
           <property>
             <name>org.jpox.rdbms.dateTimezone</name>
             <value>JDK_DEFAULT_TIMEZONE</value>
           </property>
-          <!-- this is required for MySQL -->
+          <property>
+            <name>org.jpox.cache.level2</name>
+            <value>true</value>
+          </property>
+          <property>
+            <name>org.jpox.cache.level2.type</name>
+            <value>ehcacheclassbased</value>
+          </property>
+          <property>
+            <name>org.jpox.cache.level2.configurationFile</name>
+            <value>/ehcache.xml</value>
+          </property>
+          <property>
+            <name>org.jpox.cache.level2.cacheName</name>
+            <value>default</value>
+          </property>
+          <!-- this is required for some MySQL versions and configurations, see CONTINUUM-1113 -->
           <property>
             <name>org.jpox.rdbms.stringDefaultLength</name>
             <value>255</value>
           </property>
+          <!--
+                    <property>
+                      <name>org.jpox.identifier.case</name>
+                      <value>PreserveCase</value>
+                    </property>
+          -->
         </otherProperties>
       </configuration>
     </component>
@@ -315,7 +252,16 @@
 
         <persistenceManagerFactoryClass>org.jpox.PersistenceManagerFactoryImpl</persistenceManagerFactoryClass>
 
+        <!-- START SNIPPET: mapping -->
         <otherProperties>
+          <property>
+            <name>javax.jdo.option.Mapping</name>
+            <value>default</value>
+            <!-- change this property for SQL Server or Oracle support - CONTINUUM-697 -->
+            <!-- value>mssql</value -->
+            <!-- value>oracle</value -->
+          </property>
+          <!-- END SNIPPET: mapping -->
           <property>
             <name>org.jpox.autoCreateSchema</name>
             <value>true</value>
@@ -338,9 +284,59 @@
           </property>
           <property>
             <name>org.jpox.transactionIsolation</name>
-            <value>READ_UNCOMMITTED</value>
+            <value>READ_COMMITTED</value>
           </property>
+          <property>
+            <name>org.jpox.poid.transactionIsolation</name>
+            <value>READ_COMMITTED</value>
+          </property>
+          <!-- this is required for some MySQL versions and configurations, see CONTINUUM-1113 -->
+          <property>
+            <name>org.jpox.rdbms.stringDefaultLength</name>
+            <value>255</value>
+          </property>
+          <property>
+            <name>org.jpox.autoCreateColumns</name>
+            <value>true</value>
+          </property>
+
+          <!--
+                    <property>
+                      <name>org.jpox.identifier.case</name>
+                      <value>PreserveCase</value>
+                    </property>
+          -->
         </otherProperties>
+      </configuration>
+    </component>
+
+    <component>
+      <role>org.codehaus.plexus.scheduler.Scheduler</role>
+      <implementation>org.codehaus.plexus.scheduler.DefaultScheduler</implementation>
+      <role-hint>default</role-hint>
+      <configuration>
+        <properties>
+          <property>
+            <name>org.quartz.scheduler.instanceName</name>
+            <value>scheduler</value>
+          </property>
+          <property>
+            <name>org.quartz.threadPool.class</name>
+            <value>org.quartz.simpl.SimpleThreadPool</value>
+          </property>
+          <property>
+            <name>org.quartz.threadPool.threadCount</name>
+            <value>1</value>
+          </property>
+          <property>
+            <name>org.quartz.threadPool.threadPriority</name>
+            <value>4</value>
+          </property>
+          <property>
+            <name>org.quartz.jobStore.class</name>
+            <value>org.quartz.simpl.RAMJobStore</value>
+          </property>
+        </properties>
       </configuration>
     </component>
 
@@ -349,145 +345,187 @@
      -->
     <component>
       <role>org.codehaus.plexus.logging.LoggerManager</role>
-      <implementation>org.codehaus.plexus.logging.log4j.Log4JLoggerManager</implementation>
+      <implementation>org.codehaus.plexus.logging.slf4j.Slf4jLoggerManager</implementation>
       <lifecycle-handler>basic</lifecycle-handler>
-
-      <configuration>
-        <threshold>INFO</threshold>
-        <default-appender>console,rolling</default-appender>
-
-        <appenders>
-          <appender>
-            <id>console</id>
-            <threshold>DEBUG</threshold>
-            <type>org.apache.log4j.ConsoleAppender</type>
-            <conversion-pattern>%d [%t] %-5p %-30c{1} - %m%n</conversion-pattern>
-          </appender>
-
-          <appender>
-            <id>rolling</id>
-            <threshold>DEBUG</threshold>
-            <type>org.apache.log4j.DailyRollingFileAppender</type>
-            <conversion-pattern>%-4r [%t] %-5p %c %x - %m%n</conversion-pattern>
-
-            <properties>
-              <property>
-                <name>file</name>
-                <value>${appserver.base}/logs/continuum.log</value>
-              </property>
-              <property>
-                <name>append</name>
-                <value>true</value>
-              </property>
-              <property>
-                <name>datePattern</name>
-                <value>'.'yyyy-MM-dd</value>
-              </property>
-            </properties>
-          </appender>
-
-          <appender>
-            <id>audit</id>
-            <threshold>DEBUG</threshold>
-            <type>org.apache.log4j.DailyRollingFileAppender</type>
-            <conversion-pattern>%-4r [%t] %-5p %c %x - %m%n</conversion-pattern>
-
-            <properties>
-              <property>
-                <name>file</name>
-                <value>${appserver.base}/logs/audit.log</value>
-              </property>
-              <property>
-                <name>append</name>
-                <value>true</value>
-              </property>
-              <property>
-                <name>datePattern</name>
-                <value>'.'yyyy-MM-dd</value>
-              </property>
-            </properties>
-          </appender>
-        </appenders>
-
-        <levels>
-          <!-- Help identify bugs during testing -->
-          <level>
-            <hierarchy>org.apache.maven</hierarchy>
-            <level>DEBUG</level>
-          </level>
-          <level>
-            <hierarchy>org.codehaus.plexus.security</hierarchy>
-            <level>DEBUG</level>
-          </level>
-          <!-- squelch noisy objects (for now) -->
-          <level>
-            <hierarchy>org.codehaus.plexus.mailsender.MailSender</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>org.quartz</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>org.apache.jasper</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>com.opensymphony.xwork</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>com.opensymphony.webwork</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>org.codehaus.plexus.PlexusContainer</hierarchy>
-            <level>INFO</level>
-          </level>
-          <level>
-            <hierarchy>JPOX</hierarchy>
-            <level>WARN</level>
-          </level>
-          <!--
-                    <level>
-                      <hierarchy>JPOX.RDBMS.SQL</hierarchy>
-                      <level>DEBUG</level>
-                    </level>
-          -->
-          <level>
-            <hierarchy>freemarker</hierarchy>
-            <level>WARN</level>
-          </level>
-        </levels>
-      </configuration>
     </component>
 
-    <component>
-      <role>org.codehaus.plexus.security.configuration.UserConfiguration</role>
-      <implementation>org.codehaus.plexus.security.configuration.UserConfiguration</implementation>
-      <configuration>
-        <configs>
-          <config>${user.home}/.m2/security.properties</config>
-          <config>${user.home}/.m2/continuum.properties</config>
-          <config>/org/apache/maven/continuum/security.properties</config>
-        </configs>
-      </configuration>
-    </component>
+    <!-- START SNIPPET: ldap -->
+    <!-- 
+       Ldap Authentication can be enabled by setting enabling these components and setting the following configuration options in your security.properties file
 
+       ============================================================
+       user.manager.impl=ldap
+       ldap.bind.authenticator.enabled=true
+       redback.default.admin=admin
+       security.policy.password.expiration.enabled=false
+
+       ldap.config.hostname=ldap.hostname
+       ldap.config.port=389
+       ldap.config.base.dn=o=com
+       ldap.config.context.factory=com.sun.jndi.ldap.LdapCtxFactory
+       ldap.config.bind.dn=uid=myusername,o=com
+       ldap.config.password=s3cr3t
+       #ldap.config.authentication.method=
+       ============================================================
+
+       * ldap.config.hostname - The hostname of the ldap server
+       * ldap.config.port - The port of the ldap server
+       * ldap.config.base.dn - The baseDn of the ldap system
+       * ldap.config.context.factory - context factory for ldap connections
+       * ldap.config.bind.dn - the core user used for authentication the ldap server, must be able to perform the necessary searches, etc.
+       * ldap.config.password - password for the bindDn for the root ldap connection
+
+       until this process is better documented, the following is the document for configuration ldap with redback
+      
+       http://redback.codehaus.org/integration/ldap.html
+    -->
+
+    <!--
+    
+    this component manages the connection to the ldap server
+     -->
+
+    <!-- component>
+      <role>org.codehaus.plexus.redback.common.ldap.connection.LdapConnectionFactory</role>
+      <role-hint>configurable</role-hint>
+      <implementation>org.codehaus.plexus.redback.common.ldap.connection.ConfigurableLdapConnectionFactory</implementation>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.configuration.UserConfiguration</role>
+        </requirement>
+      </requirements>
+    </component-->
+
+    <!-- 
+
+   this component manages the mapping of attributes in ldap to user information in redback. To configure the mapping, you can add the following properties in your security.properties
+
+      ============================================================
+      ldap.config.mapper.attribute.email=mail
+      ldap.config.mapper.attribute.fullname=givenName
+      ldap.config.mapper.attribute.password=userPassword
+      ldap.config.mapper.attribute.user.id=cn
+      ldap.config.mapper.attribute.user.base.dn=
+      ldap.config.mapper.attribute.user.object.class=inetOrgPerson
+      ldap.config.mapper.attribute.user.filter=(attributeName=value)
+      ============================================================
+
+
+    * email-attribute - The name of the attribute on a user that contains the email address
+    * full-name-attribute - The name of the attribute on a user that contains the users fullName
+    * password-attribute - The name of the attribute containing the users password, used for the authentiction using the user manager and not the ldap bind authenticator
+    * user-id-attribute - The name of the attribute containing the users userId, most commonly cn or sn.
+    * user-base-dn - The base dn that will be subtree searched for users.
+    * user-object-class - the objectClass used in the ldap server for indentifying users, most commonly inetOrgPerson.
+    -->
+
+    <!-- component>
+      <role>org.codehaus.plexus.redback.common.ldap.UserMapper</role>
+      <role-hint>ldap</role-hint>
+      <implementation>org.codehaus.plexus.redback.common.ldap.LdapUserMapper</implementation>
+      <configuration>
+        <email-attribute>email</email-attribute>
+        <full-name-attribute>givenName</full-name-attribute>
+        <password-attribute>userPassword</password-attribute>
+        <user-id-attribute>cn</user-id-attribute>
+        <user-base-dn>o=com</user-base-dn>
+        <user-object-class>inetOrgPerson</user-object-class>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.configuration.UserConfiguration</role>
+        </requirement>
+      </requirements>
+    </component-->
+
+    <!--
+     
+    If caching is desired to improve performance then make uncomment this and make sure the following configuration parameter is in the security.properties
+     
+    user.manager.impl=cached
+    -->
+
+    <!-- component>
+      <role>org.codehaus.plexus.redback.users.UserManager</role>
+      <role-hint>cached</role-hint>
+      <implementation>org.codehaus.plexus.redback.users.cached.CachedUserManager</implementation>
+      <description>CachedUserManager</description>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.users.UserManager</role>
+          <role-hint>ldap</role-hint>
+          <field-name>userImpl</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.cache.Cache</role>
+          <role-hint>users</role-hint>
+          <field-name>usersCache</field-name>
+        </requirement>
+      </requirements>
+    </component-->
+
+    <!-- 
+    
+    if using the user manager authenticator to authenticate the user and not the ldap bind authenticator make sure
+    this definition has the correct password encoder
+    
+    Note: you should probably just use the ldap bind authenticator which is enabled by putting
+    
+    ldap.bind.authenticator.enabled=true
+    
+    in the security.properties
+    -->
+
+    <!-- component>
+      <role>org.codehaus.plexus.redback.policy.UserSecurityPolicy</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.policy.DefaultUserSecurityPolicy</implementation>
+      <description>User Security Policy.</description>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.configuration.UserConfiguration</role>
+          <field-name>config</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.policy.PasswordEncoder</role>
+          <role-hint>sha1</role-hint>
+          <field-name>passwordEncoder</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.policy.UserValidationSettings</role>
+          <field-name>userValidationSettings</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.policy.CookieSettings</role>
+          <role-hint>rememberMe</role-hint>
+          <field-name>rememberMeCookieSettings</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.policy.CookieSettings</role>
+          <role-hint>signon</role-hint>
+          <field-name>signonCookieSettings</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.policy.PasswordRule</role>
+          <field-name>rules</field-name>
+        </requirement>
+      </requirements>
+    </component-->
+    <!-- END SNIPPET: ldap -->
   </components>
 
-  <!-- Override default configuration of components -->
   <lifecycle-handler-manager implementation="org.codehaus.plexus.lifecycle.DefaultLifecycleHandlerManager">
-    <default-lifecycle-handler-id>webapp</default-lifecycle-handler-id>
+    <default-lifecycle-handler-id>plexus</default-lifecycle-handler-id>
     <lifecycle-handlers>
       <lifecycle-handler implementation="org.codehaus.plexus.personality.plexus.PlexusLifecycleHandler">
-        <id>webapp</id>
-        <name>Web Application Component Lifecycle Handler</name>
+        <id>plexus</id>
+        <name>Plexus Lifecycle Handler</name>
         <begin-segment>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.LogEnablePhase"/>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.CompositionPhase"/>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.ContextualizePhase"/>
-          <phase implementation="org.codehaus.plexus.xwork.ConfigurationPhase"/>
+          <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.AutoConfigurePhase"/>
+          <phase implementation="org.codehaus.plexus.registry.RegistryConfigurePhase"/>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.ServiceablePhase"/>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializePhase"/>
           <phase implementation="org.codehaus.plexus.personality.plexus.lifecycle.phase.StartPhase"/>
@@ -506,5 +544,4 @@
       </lifecycle-handler>
     </lifecycle-handlers>
   </lifecycle-handler-manager>
-
 </plexus>

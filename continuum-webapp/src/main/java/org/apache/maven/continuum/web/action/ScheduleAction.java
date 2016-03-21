@@ -1,38 +1,52 @@
 package org.apache.maven.continuum.web.action;
 
 /*
- * Copyright 2004-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import com.opensymphony.xwork2.Preparable;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.security.ContinuumRoleConstants;
+import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureAction;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionBundle;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionException;
+import org.apache.maven.continuum.web.exception.AuthenticationRequiredException;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * @author Nik Gonzalez
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="schedule"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "schedule", instantiationStrategy = "per-lookup"  )
 public class ScheduleAction
     extends ContinuumConfirmAction
-    implements SecureAction
+    implements Preparable
 {
+    private static final Logger logger = LoggerFactory.getLogger( ScheduleAction.class );
+
     private int id;
 
     private boolean active = false;
@@ -65,9 +79,63 @@ public class ScheduleAction
 
     private String year;
 
+    private List<BuildQueue> availableBuildQueues;
+
+    private List<BuildQueue> selectedBuildQueues = new ArrayList<BuildQueue>();
+
+    private List<String> selectedBuildQueuesIds = new ArrayList<String>();
+
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+
+        populateBuildQueues();
+    }
+
+    private void populateBuildQueues()
+        throws ContinuumException
+    {
+        if ( schedule != null )
+        {
+            selectedBuildQueues = schedule.getBuildQueues();
+            for ( BuildQueue bq : selectedBuildQueues )
+            {
+                this.selectedBuildQueuesIds.add( Integer.toString( bq.getId() ) );
+            }
+        }
+
+        availableBuildQueues = getContinuum().getAllBuildQueues();
+
+        // remove selected build queues from available build queues
+        for ( BuildQueue buildQueue : selectedBuildQueues )
+        {
+            if ( availableBuildQueues.contains( buildQueue ) )
+            {
+                availableBuildQueues.remove( buildQueue );
+            }
+        }
+    }
+
     public String summary()
         throws ContinuumException
     {
+        try
+        {
+            checkManageSchedulesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+
+        }
+
         schedules = getContinuum().getSchedules();
 
         return SUCCESS;
@@ -76,6 +144,22 @@ public class ScheduleAction
     public String input()
         throws ContinuumException
     {
+
+        try
+        {
+            checkManageSchedulesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
         if ( id != 0 )
         {
             schedule = getContinuum().getSchedule( id );
@@ -97,6 +181,8 @@ public class ScheduleAction
             name = schedule.getName();
             delay = schedule.getDelay();
             maxJobExecutionTime = schedule.getMaxJobExecutionTime();
+
+            populateBuildQueues();
         }
         else
         {
@@ -110,35 +196,105 @@ public class ScheduleAction
     public String save()
         throws ContinuumException
     {
-        if ( ( "".equals( name ) ) || ( name == null ) ) 
+
+        try
         {
-            getLogger().error( "Can't create schedule. No schedule name was supplied." );
-            addActionError( "buildDefinition.noname.save.error.message");
+            checkManageSchedulesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
+        if ( StringUtils.isBlank( name ) )
+        {
+            logger.error( "Can't create schedule. No schedule name was supplied." );
+            addActionError( getText( "buildDefinition.noname.save.error.message" ) );
+        }
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() &&
+            ( selectedBuildQueuesIds == null || selectedBuildQueuesIds.isEmpty() ) )
+        {
+            addActionError( getText( "schedule.buildqueues.empty.error" ) );
+        }
+        if ( hasErrors() )
+        {
             return ERROR;
+        }
+
+        try
+        {
+            Schedule s = getContinuum().getScheduleByName( name );
+            if ( s != null && id != s.getId() )
+            {
+                addActionError( getText( "schedule.name.already.exists" ) );
+                return ERROR;
+            }
+        }
+        catch ( ContinuumException e )
+        {
+            logger.debug( "Unexpected error getting schedule" );
+        }
+
+        AuditLog event = new AuditLog( getName(), AuditLogConstants.ADD_SCHEDULE );
+        event.setCategory( AuditLogConstants.SCHEDULE );
+        event.setCurrentUser( getPrincipal() );
+
+        if ( id == 0 )
+        {
+            try
+            {
+                getContinuum().addSchedule( setFields( new Schedule() ) );
+                event.log();
+            }
+            catch ( ContinuumException e )
+            {
+                addActionError( getText( "schedule.buildqueues.add.error" ) );
+                return ERROR;
+            }
+            return SUCCESS;
         }
         else
         {
-            if ( id == 0 )
-            {
-                getContinuum().addSchedule( setFields( new Schedule() ) );
-                return SUCCESS;
-            }
-            else
+            try
             {
                 getContinuum().updateSchedule( setFields( getContinuum().getSchedule( id ) ) );
-                return SUCCESS;
-            }   
+                event.setAction( AuditLogConstants.MODIFY_SCHEDULE );
+                event.log();
+            }
+            catch ( ContinuumException e )
+            {
+                addActionError( getText( "schedule.buildqueues.add.error" ) );
+                return ERROR;
+            }
+            return SUCCESS;
         }
     }
 
     private Schedule setFields( Schedule schedule )
+        throws ContinuumException
     {
         schedule.setActive( active );
         schedule.setCronExpression( getCronExpression() );
         schedule.setDelay( delay );
-        schedule.setDescription( description );
+        schedule.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
         schedule.setName( name );
         schedule.setMaxJobExecutionTime( maxJobExecutionTime );
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            // if distributed build don't update schedules
+            schedule.setBuildQueues( null );
+            for ( String id : selectedBuildQueuesIds )
+            {
+                BuildQueue buildQueue = getContinuum().getBuildQueue( Integer.parseInt( id ) );
+                schedule.addBuildQueue( buildQueue );
+            }
+        }
 
         return schedule;
     }
@@ -146,6 +302,21 @@ public class ScheduleAction
     public String confirm()
         throws ContinuumException
     {
+        try
+        {
+            checkManageSchedulesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
         schedule = getContinuum().getSchedule( id );
 
         return SUCCESS;
@@ -154,16 +325,46 @@ public class ScheduleAction
     public String remove()
         throws ContinuumException
     {
+        try
+        {
+            checkManageSchedulesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
         if ( confirmed )
         {
-            getContinuum().removeSchedule( id );
+            try
+            {
+                getContinuum().removeSchedule( id );
+            }
+            catch ( ContinuumException e )
+            {
+                addActionError( getText( "schedule.remove.error" ) );
+                return ERROR;
+            }
         }
         else
-        {    
+        {
             setConfirmationInfo( "Schedule Removal", "removeSchedule", name, "id", "" + id );
-                        
+
+            name = getContinuum().getSchedule( id ).getName();
+
             return CONFIRM;
         }
+
+        AuditLog event = new AuditLog( name, AuditLogConstants.REMOVE_SCHEDULE );
+        event.setCategory( AuditLogConstants.SCHEDULE );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
 
         return SUCCESS;
     }
@@ -325,17 +526,37 @@ public class ScheduleAction
 
     private String getCronExpression()
     {
-        return ( second + " " + minute + " " + hour + " " + dayOfMonth + " " +
-                    month + " " + dayOfWeek + " " + year ).trim();
+        return ( second + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek + " " +
+            year ).trim();
     }
 
-    public SecureActionBundle getSecureActionBundle()
-        throws SecureActionException
+    public List<BuildQueue> getAvailableBuildQueues()
     {
-        SecureActionBundle bundle = new SecureActionBundle();
-        bundle.setRequiresAuthentication( true );
-        bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_SCHEDULES );
+        return availableBuildQueues;
+    }
 
-        return bundle;
+    public void setAvailableBuildQueues( List<BuildQueue> availableBuildQueues )
+    {
+        this.availableBuildQueues = availableBuildQueues;
+    }
+
+    public List<BuildQueue> getSelectedBuildQueues()
+    {
+        return selectedBuildQueues;
+    }
+
+    public void setSelectedBuildQueues( List<BuildQueue> selectedBuildQueues )
+    {
+        this.selectedBuildQueues = selectedBuildQueues;
+    }
+
+    public List<String> getSelectedBuildQueuesIds()
+    {
+        return selectedBuildQueuesIds;
+    }
+
+    public void setSelectedBuildQueuesIds( List<String> selectedBuildQueuesIds )
+    {
+        this.selectedBuildQueuesIds = selectedBuildQueuesIds;
     }
 }

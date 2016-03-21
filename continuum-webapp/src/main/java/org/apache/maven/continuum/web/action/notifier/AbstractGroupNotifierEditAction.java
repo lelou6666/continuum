@@ -1,30 +1,34 @@
 package org.apache.maven.continuum.web.action.notifier;
 
 /*
- * Copyright 2004-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  * Common base class for all Project Group notifier edit actions.
- * 
+ *
  * @author <a href='mailto:rahul.thakur.xdev@gmail.com'>Rahul Thakur</a>
- * @version $Id$
  */
 public abstract class AbstractGroupNotifierEditAction
     extends AbstractNotifierEditActionSupport
@@ -35,12 +39,14 @@ public abstract class AbstractGroupNotifierEditAction
      */
     private int projectGroupId;
 
-    /** 
-     * Creates or updates the {@link ProjectNotifier} instance for the 
+    private String projectGroupName = "";
+
+    /**
+     * Creates or updates the {@link ProjectNotifier} instance for the
      * {@link ProjectGroup} here.<p>
-     * This is used by the subclasses that create/obtain an instance of 
+     * This is used by the subclasses that create/obtain an instance of
      * {@link ProjectNotifier} to be saved.
-     * 
+     *
      * @see org.apache.maven.continuum.web.action.notifier.AbstractNotifierEditActionSupport#saveNotifier(ProjectNotifier)
      */
     protected void saveNotifier( ProjectNotifier notifier )
@@ -48,18 +54,18 @@ public abstract class AbstractGroupNotifierEditAction
     {
         boolean isNew = notifier.getId() <= 0;
         if ( !isNew )
-        {            
+        {
             getContinuum().updateGroupNotifier( projectGroupId, notifier );
         }
         else
-        {         
+        {
             getContinuum().addGroupNotifier( projectGroupId, notifier );
         }
     }
 
     /**
      * @return the notifier
-     * @throws ContinuumException 
+     * @throws ContinuumException
      */
     protected ProjectNotifier getNotifier()
         throws ContinuumException
@@ -81,6 +87,30 @@ public abstract class AbstractGroupNotifierEditAction
     public void setProjectGroupId( int projectGroupId )
     {
         this.projectGroupId = projectGroupId;
+    }
+
+    protected void checkAuthorization()
+        throws AuthorizationRequiredException, ContinuumException
+    {
+        if ( getNotifier() == null )
+        {
+            checkAddProjectGroupNotifierAuthorization( getProjectGroupName() );
+        }
+        else
+        {
+            checkModifyProjectGroupNotifierAuthorization( getProjectGroupName() );
+        }
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( StringUtils.isEmpty( projectGroupName ) )
+        {
+            projectGroupName = getContinuum().getProjectGroup( projectGroupId ).getName();
+        }
+
+        return projectGroupName;
     }
 
 }
