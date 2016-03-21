@@ -17,53 +17,54 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
         <title>
-            <ww:text name="notifier.page.title">
-                <ww:param>Mail</ww:param>
-            </ww:text>
+            <s:text name="notifier.page.title">
+                <s:param>Mail</s:param>
+            </s:text>
         </title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <ww:if test="${projectId > 0}">
-            <ww:url id="actionUrl" action="mailProjectNotifierSave" includeContext="false" includeParams="none" />
-        </ww:if>
-        <ww:else>
-            <ww:url id="actionUrl" action="mailProjectGroupNotifierSave" includeContext="false" includeParams="none"/>
-        </ww:else>
-        
+
         <h3>
-            <ww:text name="notifier.section.title">
-                <ww:param>Mail</ww:param>
-            </ww:text>
+            <s:text name="notifier.section.title">
+                <s:param>Mail</s:param>
+            </s:text>
         </h3>
 
+        <s:actionerror/>
+        <s:actionmessage/>
+
         <div class="axial">
-          <ww:form action="%{actionUrl}" method="post" validate="true">
-            <ww:hidden name="notifierId"/>
-            <ww:hidden name="projectId"/>
-            <ww:hidden name="projectGroupId"/>
-            <ww:hidden name="notifierType"/>
+          <s:form action="%{projectId > 0? 'mailProjectNotifierSave' : 'mailProjectGroupNotifierSave'}" method="post" validate="true">
+            <s:hidden name="notifierId"/>
+            <s:hidden name="projectId"/>
+            <s:hidden name="projectGroupId"/>
+            <s:hidden name="notifierType"/>
+            <s:hidden name="fromGroupPage"/>
             <table>
               <tbody>
-                <ww:textfield label="%{getText('notifier.mail.recipient.label')}" name="address" required="true" />
-                <ww:checkbox label="%{getText('notifier.event.sendOnSuccess')}" name="sendOnSuccess" value="sendOnSuccess" fieldValue="true"/>
-                <ww:checkbox label="%{getText('notifier.event.sendOnFailure')}" name="sendOnFailure" value="sendOnFailure" fieldValue="true"/>
-                <ww:checkbox label="%{getText('notifier.event.sendOnError')}" name="sendOnError" value="sendOnError" fieldValue="true"/>
-                <ww:checkbox label="%{getText('notifier.event.sendOnWarning')}" name="sendOnWarning" value="sendOnWarning" fieldValue="true"/>
+                <s:textfield label="%{getText('notifier.mail.recipient.address.label')}" name="address"  size="100"/>
+                <s:checkbox label="%{getText('notifier.mail.recipient.committers.label')}" name="committers" value="committers" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.mail.recipient.developers.label')}" name="developers" value="developers" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.event.sendOnSuccess')}" name="sendOnSuccess" value="sendOnSuccess" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.event.sendOnFailure')}" name="sendOnFailure" value="sendOnFailure" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.event.sendOnError')}" name="sendOnError" value="sendOnError" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.event.sendOnWarning')}" name="sendOnWarning" value="sendOnWarning" fieldValue="true"/>
+                <s:checkbox label="%{getText('notifier.event.sendOnScmFailure')}" name="sendOnScmFailure" value="sendOnScmFailure" fieldValue="true"/>
               </tbody>
             </table>
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('save')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
-          </ww:form>
+          </s:form>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

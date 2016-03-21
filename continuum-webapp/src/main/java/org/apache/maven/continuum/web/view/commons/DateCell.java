@@ -19,7 +19,6 @@ package org.apache.maven.continuum.web.view.commons;
  * under the License.
  */
 
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.extremecomponents.table.bean.Column;
 import org.extremecomponents.table.cell.DisplayCell;
@@ -30,12 +29,9 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * 
+ * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
  * @deprecated use of cells is discouraged due to lack of i18n and design in java code.
  *             Use jsp:include instead.
- * 
- * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class DateCell
     extends DisplayCell
@@ -54,7 +50,7 @@ public class DateCell
             {
                 Calendar cal = Calendar.getInstance();
 
-                cal.setTimeInMillis( ( (Long) value ).longValue() );
+                cal.setTimeInMillis( (Long) value );
 
                 value = cal.getTime();
             }
@@ -63,7 +59,7 @@ public class DateCell
 
             if ( StringUtils.isEmpty( format ) )
             {
-                format = DateFormatUtils.SMTP_DATETIME_FORMAT.getPattern();
+                format = "MMM dd, yyyy hh:mm:ss aaa z";
             }
 
             value = ExtremeUtils.formatDate( column.getParse(), format, value, locale );

@@ -19,6 +19,7 @@ package org.apache.maven.continuum.web.view.projectview;
  * under the License.
  */
 
+import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.extremecomponents.table.bean.Column;
 import org.extremecomponents.table.cell.DisplayCell;
@@ -27,11 +28,9 @@ import org.extremecomponents.table.core.TableModel;
 /**
  * Used in Project view
  *
+ * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
  * @deprecated use of cells is discouraged due to lack of i18n and design in java code.
  *             Use jsp:include instead.
- *
- * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class NotifierRecipientCell
     extends DisplayCell
@@ -40,42 +39,6 @@ public class NotifierRecipientCell
     {
         ProjectNotifier notifier = (ProjectNotifier) tableModel.getCurrentRowBean();
 
-        if ( "irc".equals( notifier.getType() ) )
-        {
-            String address = "";
-
-            if ( notifier.getConfiguration().get( "host" ) != null )
-            {
-                address += notifier.getConfiguration().get( "host" ) + ":";
-            }
-
-            if ( notifier.getConfiguration().get( "port" ) != null )
-            {
-                address += notifier.getConfiguration().get( "port" ) + ":";
-            }
-
-            if ( notifier.getConfiguration().get( "channel" ) != null )
-            {
-                address += notifier.getConfiguration().get( "channel" );
-            }
-
-            return address;
-        }
-        else
-        {
-            if ( "wagon".equals( notifier.getType() ) )
-            {
-                return notifier.getConfiguration().get( "url" ).toString(); 
-            }
-            
-            if ( notifier.getConfiguration().get( "address" ) == null )
-            {
-                return "";
-            }
-            else
-            {
-                return notifier.getConfiguration().get( "address" ).toString();
-            }
-        }
+        return GenerateRecipentNotifier.generate( notifier );
     }
 }

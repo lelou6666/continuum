@@ -19,48 +19,65 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.config.ConfigurationManager;
+import com.opensymphony.xwork2.config.providers.XWorkConfigurationProvider;
+import com.opensymphony.xwork2.inject.Container;
+import com.opensymphony.xwork2.util.ValueStack;
+import com.opensymphony.xwork2.util.ValueStackFactory;
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.apache.maven.continuum.security.ContinuumRoleConstants;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureAction;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionBundle;
-import org.codehaus.plexus.security.ui.web.interceptor.SecureActionException;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.apache.struts2.interceptor.ServletRequestAware;
+import org.codehaus.plexus.component.annotations.Requirement;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Action to add a Maven project to Continuum, either Maven 1 or Maven 2.
- * 
+ *
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public abstract class AddMavenProjectAction
     extends ContinuumActionSupport
-    implements SecureAction
+    implements ServletRequestAware
 {
-
     private static final long serialVersionUID = -3965565189557706469L;
 
     private static final int DEFINED_BY_POM_GROUP_ID = -1;
+
+    @Requirement
+    private FileSystemManager fsManager;
+
+    private PomMethod pomMethod = PomMethod.HTTP;
 
     private String pomUrl;
 
     private File pomFile;
 
     private String pom = null;
-    
-    private String username;
-    
-    private String password;
 
-    private Collection projectGroups;
+    private String scmUsername;
+
+    private String scmPassword;
+
+    private Collection<ProjectGroup> projectGroups;
 
     private String projectGroupName;
 
@@ -68,27 +85,126 @@ public abstract class AddMavenProjectAction
 
     private boolean disableGroupSelection;
 
-    public String execute()
-        throws ContinuumException
-    {
-        boolean checkProtocol = true;
+    private boolean scmUseCache;
 
-        if ( !StringUtils.isEmpty( pomUrl ) )
+    private int projectGroupId;
+
+    private List<BuildDefinitionTemplate> buildDefinitionTemplates;
+
+    private int buildDefinitionTemplateId;
+
+    private List<String> errorMessages = new ArrayList<String>();
+
+    private HttpServletRequest httpServletRequest;
+
+    public enum PomMethod
+    {
+        HTTP( "add.maven.project.pomMethod.http" ),
+        FILE( "add.maven.project.pomMethod.file" );
+
+        private String textKey;
+
+        PomMethod( String textKey )
+        {
+            this.textKey = textKey;
+        }
+
+        public String getTextKey()
+        {
+            return textKey;
+        }
+    }
+
+    /**
+     * Generates locale-sensitive pom method options.
+     */
+    public Map<PomMethod, String> getPomMethodOptions()
+    {
+        Map<PomMethod, String> options = new LinkedHashMap<PomMethod, String>();
+        for ( PomMethod type : PomMethod.values() )
+        {
+            options.put( type, getText( type.getTextKey() ) );
+        }
+        return options;
+    }
+
+    public void setPomMethod( PomMethod pomMethod )
+    {
+        this.pomMethod = pomMethod;
+    }
+
+    public PomMethod getPomMethod()
+    {
+        return pomMethod;
+    }
+
+    public String execute()
+        throws ContinuumException, BuildDefinitionServiceException
+    {
+        try
+        {
+            initializeProjectGroupName();
+
+            if ( StringUtils.isEmpty( getProjectGroupName() ) )
+            {
+                checkAddProjectGroupAuthorization();
+            }
+            else
+            {
+                checkAddProjectToGroupAuthorization( getProjectGroupName() );
+            }
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        // ctan: hack for WW-3161
+        if ( ActionContext.getContext() == null )
+        {
+            // This fix allow initialization of ActionContext.getContext() to avoid NPE
+            ConfigurationManager configurationManager = new ConfigurationManager();
+            configurationManager.addContainerProvider( new XWorkConfigurationProvider() );
+            com.opensymphony.xwork2.config.Configuration config = configurationManager.getConfiguration();
+            Container container = config.getContainer();
+
+            ValueStack stack = container.getInstance( ValueStackFactory.class ).createValueStack();
+            stack.getContext().put( ActionContext.CONTAINER, container );
+            ActionContext.setContext( new ActionContext( stack.getContext() ) );
+        }
+
+        if ( pomMethod == PomMethod.HTTP && StringUtils.isNotEmpty( pomUrl ) )
         {
             try
             {
                 URL url = new URL( pomUrl );
-                if ( pomUrl.startsWith( "http" ) && !StringUtils.isEmpty( username ) )
+                if ( pomUrl.startsWith( "http" ) && !StringUtils.isEmpty( scmUsername ) )
                 {
+                    String encoding = this.httpServletRequest.getCharacterEncoding();
+                    if ( StringUtils.isEmpty( encoding ) )
+                    {
+                        encoding = System.getProperty( "file.encoding" );
+                    }
+
+                    // URL encode username and password so things like @ or : or / don't corrupt URL
+                    String encodedUsername = URLEncoder.encode( scmUsername, encoding );
+                    String encodedPassword = URLEncoder.encode( scmPassword, encoding );
+
                     StringBuffer urlBuffer = new StringBuffer();
                     urlBuffer.append( url.getProtocol() ).append( "://" );
-                    urlBuffer.append( username ).append( ':' ).append( password ).append( '@' ).append( url.getHost() );
+                    urlBuffer.append( encodedUsername ).append( ':' ).append( encodedPassword ).append( '@' ).append(
+                        url.getHost() );
                     if ( url.getPort() != -1 )
                     {
-                        urlBuffer.append( url.getPort() );
+                        urlBuffer.append( ":" ).append( url.getPort() );
                     }
                     urlBuffer.append( url.getPath() );
-                    
+                    if ( url.getQuery() != null )
+                    {
+                        urlBuffer.append( "?" + url.getQuery() );
+                    }
+
                     pom = urlBuffer.toString();
                 }
                 else
@@ -98,45 +214,90 @@ public abstract class AddMavenProjectAction
             }
             catch ( MalformedURLException e )
             {
-                addActionError( "add.project.unknown.error" );
+                addActionError( getText( "add.project.unknown.error" ) );
                 return doDefault();
+            }
+            catch ( UnsupportedEncodingException e )
+            {
+                addActionError( getText( "add.project.unknown.error" ) );
+                return doDefault();
+            }
+
+        }
+        else if ( pomMethod == PomMethod.FILE && pomFile != null )
+        {
+            try
+            {
+                // CONTINUUM-1897
+                // File.c copyFile to tmp one
+                File tmpPom = File.createTempFile( "continuum_tmp", "tmp" );
+                fsManager.copyFile( pomFile, tmpPom );
+                pom = tmpPom.toURL().toString();
+            }
+            catch ( MalformedURLException e )
+            {
+                // if local file can't be converted to url it's an internal error
+                throw new RuntimeException( e );
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
             }
         }
         else
         {
-            if ( pomFile != null )
-            {
-                try
-                {
-                    pom = pomFile.toURL().toString();
-                    checkProtocol = false;
-                }
-                catch ( MalformedURLException e )
-                {
-                    // if local file can't be converted to url it's an internal error
-                    throw new RuntimeException( e );
-                }
-            }
-            else
-            {
-                // no url or file was filled
-                addActionError( "add.project.field.required.error" );
-                return doDefault();
-            }
+            // no url or file was filled
+            addActionError( getText( "add.project.field.required.error" ) );
+            return doDefault();
         }
 
-        ContinuumProjectBuildingResult result = doExecute( pom, selectedProjectGroup, checkProtocol );
+        boolean checkProtocol = pomMethod == PomMethod.HTTP;
+        ContinuumProjectBuildingResult result = doExecute( pom, selectedProjectGroup, checkProtocol, scmUseCache );
 
         if ( result.hasErrors() )
-        {
-            Iterator it = result.getErrors().iterator();
 
-            while ( it.hasNext() )
+        {
+            for ( String key : result.getErrors() )
             {
-                addActionError( (String) it.next() );
+                String cause = result.getErrorsWithCause().get( key );
+                String msg = getText( key, new String[] { cause } );
+
+                // olamy : weird getText(key, String[]) must do that something like bla bla {0}
+                // here an ugly hack for CONTINUUM-1675
+                if ( key.equals( ContinuumProjectBuildingResult.ERROR_MISSING_SCM ) )
+                {
+                    msg = getResourceBundle().getString( key ) + " " + cause;
+                }
+                if ( !StringUtils.equals( msg, key ) )
+                {
+                    errorMessages.add( msg );
+                }
+                else
+                {
+                    addActionError( msg );
+                }
+
             }
 
             return doDefault();
+        }
+
+        if ( this.getSelectedProjectGroup() > 0 )
+
+        {
+            this.setProjectGroupId( this.getSelectedProjectGroup() );
+            return "projectGroupSummary";
+        }
+
+        if ( result.getProjectGroups() != null && !result.getProjectGroups().
+
+            isEmpty()
+
+            )
+
+        {
+            this.setProjectGroupId( ( result.getProjectGroups().get( 0 ) ).getId() );
+            return "projectGroupSummary";
         }
 
         return SUCCESS;
@@ -144,36 +305,84 @@ public abstract class AddMavenProjectAction
 
     /**
      * Subclasses must implement this method calling the appropiate operation on the continuum service.
-     * 
-     * @param pomUrl url of the pom specified by the user
+     *
+     * @param pomUrl               url of the pom specified by the user
      * @param selectedProjectGroup project group id selected by the user
-     * @param checkProtocol check if the protocol is allowed, use false if the pom is uploaded
+     * @param checkProtocol        check if the protocol is allowed, use false if the pom is uploaded
      * @return result of adding the pom to continuum
      */
-    protected abstract ContinuumProjectBuildingResult doExecute( String pomUrl, int selectedProjectGroup, boolean checkProtocol )
+    protected abstract ContinuumProjectBuildingResult doExecute( String pomUrl, int selectedProjectGroup,
+                                                                 boolean checkProtocol, boolean scmUseCache )
         throws ContinuumException;
 
+    // TODO: Remove this method because a default method return SUCCESS instead of INPUT
     public String doDefault()
+        throws BuildDefinitionServiceException
     {
-        Collection allProjectGroups = getContinuum().getAllProjectGroups();
-        projectGroups = new ArrayList();
+        return input();
+    }
+
+    public String input()
+        throws BuildDefinitionServiceException
+    {
+        try
+        {
+            initializeProjectGroupName();
+
+            if ( StringUtils.isEmpty( getProjectGroupName() ) )
+            {
+                checkAddProjectGroupAuthorization();
+            }
+            else
+            {
+                checkAddProjectToGroupAuthorization( getProjectGroupName() );
+            }
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        Collection<ProjectGroup> allProjectGroups = getContinuum().getAllProjectGroups();
+        projectGroups = new ArrayList<ProjectGroup>();
 
         ProjectGroup defaultGroup = new ProjectGroup();
         defaultGroup.setId( DEFINED_BY_POM_GROUP_ID );
         defaultGroup.setName( "Defined by POM" );
         projectGroups.add( defaultGroup );
 
-        for ( Iterator i = allProjectGroups.iterator(); i.hasNext(); )
+        for ( ProjectGroup pg : allProjectGroups )
         {
-            ProjectGroup pg = (ProjectGroup) i.next();
-            //TODO: must implement same functionality using plexus-security
-            //if ( pg.getPermissions().isWrite() )
-            //{
+            if ( isAuthorizedToAddProjectToGroup( pg.getName() ) )
+            {
                 projectGroups.add( pg );
-            //}
+            }
         }
 
-        if ( disableGroupSelection == true && selectedProjectGroup != DEFINED_BY_POM_GROUP_ID )
+        initializeProjectGroupName();
+        this.setBuildDefinitionTemplates( getContinuum().getBuildDefinitionService().getAllBuildDefinitionTemplate() );
+        return INPUT;
+    }
+
+    protected String hidePasswordInUrl( String url )
+    {
+        int indexAt = url.indexOf( "@" );
+
+        if ( indexAt < 0 )
+        {
+            return url;
+        }
+
+        String s = url.substring( 0, indexAt );
+
+        int pos = s.lastIndexOf( ":" );
+
+        return s.substring( 0, pos + 1 ) + "*****" + url.substring( indexAt );
+    }
+
+    private void initializeProjectGroupName()
+    {
+        if ( disableGroupSelection && selectedProjectGroup != DEFINED_BY_POM_GROUP_ID )
         {
             try
             {
@@ -184,8 +393,6 @@ public abstract class AddMavenProjectAction
                 e.printStackTrace();
             }
         }
-
-        return INPUT;
     }
 
     public String getPom()
@@ -218,19 +425,19 @@ public abstract class AddMavenProjectAction
         this.pomUrl = pomUrl;
     }
 
-    public void setPassword( String password )
+    public void setScmPassword( String scmPassword )
     {
-        this.password = password;
+        this.scmPassword = scmPassword;
     }
 
-    public String getUsername()
+    public String getScmUsername()
     {
-        return username;
+        return scmUsername;
     }
 
-    public void setUsername( String username )
+    public void setScmUsername( String scmUsername )
     {
-        this.username = username;
+        this.scmUsername = scmUsername;
     }
 
     public Collection getProjectGroups()
@@ -268,21 +475,71 @@ public abstract class AddMavenProjectAction
         this.disableGroupSelection = disableGroupSelection;
     }
 
-    public SecureActionBundle getSecureActionBundle()
-        throws SecureActionException
+    public boolean isScmUseCache()
     {
-        SecureActionBundle bundle = new SecureActionBundle();
-        bundle.setRequiresAuthentication( true );
+        return scmUseCache;
+    }
 
-        if ( StringUtils.isEmpty( projectGroupName ) )
-        {
-            bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_ADD_GROUP_OPERATION );
-        }
-        else
-        {
-            bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_ADD_PROJECT_TO_GROUP_OPERATION, projectGroupName );
-        }
+    public void setScmUseCache( boolean scmUseCache )
+    {
+        this.scmUseCache = scmUseCache;
+    }
 
-        return bundle;
+    public int getProjectGroupId()
+    {
+        return projectGroupId;
+    }
+
+    public void setProjectGroupId( int projectGroupId )
+    {
+        this.projectGroupId = projectGroupId;
+    }
+
+    public List<BuildDefinitionTemplate> getBuildDefinitionTemplates()
+    {
+        return buildDefinitionTemplates;
+    }
+
+    public void setBuildDefinitionTemplates( List<BuildDefinitionTemplate> buildDefinitionTemplates )
+    {
+        this.buildDefinitionTemplates = buildDefinitionTemplates;
+    }
+
+    public int getBuildDefinitionTemplateId()
+    {
+        return buildDefinitionTemplateId;
+    }
+
+    public void setBuildDefinitionTemplateId( int buildDefinitionTemplateId )
+    {
+        this.buildDefinitionTemplateId = buildDefinitionTemplateId;
+    }
+
+    private boolean isAuthorizedToAddProjectToGroup( String projectGroupName )
+    {
+        try
+        {
+            checkAddProjectToGroupAuthorization( projectGroupName );
+            return true;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            return false;
+        }
+    }
+
+    public List<String> getErrorMessages()
+    {
+        return errorMessages;
+    }
+
+    public void setErrorMessages( List<String> errorMessages )
+    {
+        this.errorMessages = errorMessages;
+    }
+
+    public void setServletRequest( HttpServletRequest httpServletRequest )
+    {
+        this.httpServletRequest = httpServletRequest;
     }
 }

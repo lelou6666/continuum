@@ -49,166 +49,13 @@
 
     <!--
      |
-     | dynamic role profiles for adding project group management and user roles, wired to memory RBACManager impls for
-     | test
-     |
-    -->
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.DynamicRoleProfile</role>
-      <role-hint>continuum-group-developer</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ProjectGroupDeveloperDynamicRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-      </requirements>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.DynamicRoleProfile</role>
-      <role-hint>continuum-group-user</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ProjectGroupUserDynamicRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-      </requirements>
-    </component>
-     <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>continuum-group-administrator</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ContinuumGroupAdministratorRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-     <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>continuum-guest</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ContinuumGuestRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>continuum-system-administrator</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ContinuumSystemAdministratorRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>continuum-user-administrator</role-hint>
-      <implementation>org.apache.maven.continuum.security.profile.ContinuumUserAdministratorRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-    
-     <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>user-administrator</role-hint>
-      <implementation>org.codehaus.plexus.security.ui.web.role.profile.UserAdministratorRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>system-administrator</role-hint>
-      <implementation>org.codehaus.plexus.security.ui.web.role.profile.SystemAdministratorRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>registered-user</role-hint>
-      <implementation>org.codehaus.plexus.security.ui.web.role.profile.RegisteredUserRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.rbac.profile.RoleProfile</role>
-      <role-hint>guest</role-hint>
-      <implementation>org.codehaus.plexus.security.ui.web.role.profile.GuestRoleProfile</implementation>
-      <requirements>
-        <requirement>
-          <role>org.codehaus.plexus.security.rbac.RBACManager</role>
-          <role-hint>memory</role-hint>
-        </requirement>
-        <requirement>
-          <role>org.codehaus.plexus.PlexusContainer</role>
-          <field-name>container</field-name>
-        </requirement>
-      </requirements>
-    </component>
-
-    <!--
-     |
      | Validators
      |
     -->
     <component>
-      <role>org.codehaus.plexus.formica.validation.Validator</role>
-      <role-hint>url</role-hint>
-      <implementation>org.codehaus.plexus.formica.validation.UrlValidator</implementation>
+      <role>org.apache.maven.continuum.utils.ContinuumUrlValidator</role>
+      <role-hint>continuumUrl</role-hint>
+      <implementation>org.apache.maven.continuum.utils.ContinuumUrlValidator</implementation>
       <configuration>
         <allowedSchemes>
           <allowedScheme>http</allowedScheme>
@@ -218,5 +65,77 @@
         </allowedSchemes>
       </configuration>
     </component>
+
+    <component>
+      <role>org.codehaus.plexus.redback.role.processor.RoleModelProcessor</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.role.processor.DefaultRoleModelProcessor</implementation>
+      <description>DefaultRoleModelProcessor: inserts the components of the model that can be populated into the rbac
+        manager
+      </description>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.rbac.RBACManager</role>
+          <role-hint>memory</role-hint>
+          <field-name>rbacManager</field-name>
+        </requirement>
+      </requirements>
+    </component>
+    <component>
+      <role>org.codehaus.plexus.redback.role.merger.RoleModelMerger</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.role.merger.DefaultRoleModelMerger</implementation>
+      <description>DefaultRoleModelValidator: validates completeness of the model</description>
+    </component>
+    <component>
+      <role>org.codehaus.plexus.redback.role.validator.RoleModelValidator</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.role.validator.DefaultRoleModelValidator</implementation>
+      <description>DefaultRoleModelValidator: validates completeness of the model</description>
+    </component>
+    <component>
+      <role>org.codehaus.plexus.redback.role.template.RoleTemplateProcessor</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.role.template.DefaultRoleTemplateProcessor</implementation>
+      <description>DefaultRoleTemplateProcessor: inserts the components of a template into the rbac manager
+      </description>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.rbac.RBACManager</role>
+          <role-hint>memory</role-hint>
+          <field-name>rbacManager</field-name>
+        </requirement>
+      </requirements>
+    </component>
+    <component>
+      <role>org.codehaus.plexus.redback.role.RoleManager</role>
+      <role-hint>default</role-hint>
+      <implementation>org.codehaus.plexus.redback.role.DefaultRoleManager</implementation>
+      <instantiation-strategy>singleton</instantiation-strategy>
+      <description>RoleProfileManager:</description>
+      <requirements>
+        <requirement>
+          <role>org.codehaus.plexus.redback.role.validator.RoleModelValidator</role>
+          <role-hint>default</role-hint>
+          <field-name>modelValidator</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.role.processor.RoleModelProcessor</role>
+          <role-hint>default</role-hint>
+          <field-name>modelProcessor</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.role.template.RoleTemplateProcessor</role>
+          <role-hint>default</role-hint>
+          <field-name>templateProcessor</field-name>
+        </requirement>
+        <requirement>
+          <role>org.codehaus.plexus.redback.rbac.RBACManager</role>
+          <role-hint>memory</role-hint>
+          <field-name>rbacManager</field-name>
+        </requirement>
+      </requirements>
+    </component>
+
   </components>
 </plexus>

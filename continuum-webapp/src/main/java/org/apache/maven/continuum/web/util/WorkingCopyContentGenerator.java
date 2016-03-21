@@ -19,25 +19,35 @@ package org.apache.maven.continuum.web.util;
  * under the License.
  */
 
-import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
-import java.util.Iterator;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class WorkingCopyContentGenerator
-    extends AbstractLogEnabled
 {
     private File basedir;
 
     private String urlParamSeparator;
 
-    public String generate( Object item, String baseUrl, File basedir )
+    private static final DecimalFormat decFormatter = new DecimalFormat( "###.##" );
+
+    private static final long KILO = 1024;
+
+    private static final long MEGA = 1024 * KILO;
+
+    private static final long GIGA = 1024 * MEGA;
+
+    private boolean odd = false;
+
+    public String generate( List<File> files, String baseUrl, String imagesBaseUrl, File basedir )
     {
         this.basedir = basedir;
         if ( baseUrl.indexOf( "?" ) > 0 )
@@ -49,71 +59,145 @@ public class WorkingCopyContentGenerator
             urlParamSeparator = "?";
         }
 
-        List directoryEntries = (List) item;
-
         StringBuffer buf = new StringBuffer();
 
-        buf.append( "+&nbsp;<a href=\"" + baseUrl + urlParamSeparator + "userDirectory=/\">/</a><br />" );
+        buf.append( "<div class=\"eXtremeTable\" >" );
+        buf.append( "<table class=\"tableRegion\" width=\"100%\">\n" );
 
-        print( directoryEntries, "&nbsp;&nbsp;", baseUrl, buf );
+        buf.append( "<tr class=\"odd\"><td><img src=\"" ).append( imagesBaseUrl ).append(
+            "icon_arrowfolder1_sml.gif\">&nbsp;<a href=\"" ).append( baseUrl ).append( urlParamSeparator ).append(
+            "userDirectory=/\">/</a><br /></td><td>&nbsp;</td><td>&nbsp;</td>" );
+
+        print( basedir, files, baseUrl, imagesBaseUrl, buf );
+
+        buf.append( "</table>\n" );
+        buf.append( "</div>\n" );
 
         return buf.toString();
     }
 
-    private void print( List dirs, String indent, String baseUrl, StringBuffer buf )
+    private void print( File basedir, List<File> files, String baseUrl, String imagesBaseUrl, StringBuffer buf )
     {
-        for ( Iterator i = dirs.iterator(); i.hasNext(); )
+        for ( File f : files )
         {
-            Object obj = i.next();
-
-            print( obj, indent, baseUrl, buf );
+            print( f, getIndent( basedir, f ), baseUrl, imagesBaseUrl, buf );
         }
     }
-    private void print( Object obj, String indent, String baseUrl, StringBuffer buf )
+
+    private void print( File f, String indent, String baseUrl, String imagesBaseUrl, StringBuffer buf )
     {
-        if ( obj instanceof File )
+        String cssClass = odd ? "odd" : "even";
+
+        if ( !f.isDirectory() )
         {
-            File f = (File) obj;;
+            String fileName = f.getName();
 
-            if ( !f.isDirectory() )
+            if ( !".cvsignore".equals( fileName ) && !"vssver.scc".equals( fileName ) &&
+                !".DS_Store".equals( fileName ) && !"release.properties".equals( fileName ) )
             {
-                String fileName = f.getName();
+                String userDirectory;
 
-                if ( !".cvsignore".equals( fileName ) && !"vssver.scc".equals( fileName ) && !".DS_Store".equals( fileName ) )
+                if ( f.getParentFile().getAbsolutePath().equals( basedir.getAbsolutePath() ) )
                 {
-                    String userDirectory = null;
-
-                    if ( f.getParentFile().getAbsolutePath().equals( basedir.getAbsolutePath() ) )
-                    {
-                        userDirectory = "/";
-                    }
-                    else
-                    {
-                        userDirectory = f.getParentFile().getAbsolutePath().substring( basedir.getAbsolutePath().length() + 1 );
-                    }
-
-                    userDirectory = StringUtils.replace( userDirectory, "\\", "/" );
-
-                    buf.append( indent + "&nbsp;&nbsp;&nbsp;<a href=\"" + baseUrl + urlParamSeparator + "userDirectory=" + userDirectory + "&file=" + fileName + "\">" + fileName + "</a><br />" );
+                    userDirectory = "/";
                 }
-            }
-            else
-            {
-                String directoryName = f.getName();
-
-                if ( !"CVS".equals( directoryName ) && !".svn".equals( directoryName ) && !"SCCS".equals( directoryName ) )
+                else
                 {
-                    String userDirectory = f.getAbsolutePath().substring( basedir.getAbsolutePath().length() + 1 );
-
-                    userDirectory = StringUtils.replace( userDirectory, "\\", "/" );
-
-                    buf.append( indent + "+&nbsp;<a href=\"" + baseUrl + urlParamSeparator + "userDirectory=" + userDirectory + "\">" + directoryName + "</a><br />" );
+                    userDirectory = f.getParentFile().getAbsolutePath().substring(
+                        basedir.getAbsolutePath().length() + 1 );
                 }
+
+                userDirectory = StringUtils.replace( userDirectory, "\\", "/" );
+
+                buf.append( "<tr class=\"" ).append( cssClass ).append( "\">" );
+
+                buf.append( "<td width=\"98%\">" ).append( indent ).append( "&nbsp;&nbsp;<img src=\"" ).append(
+                    imagesBaseUrl ).append( "file.gif\">&nbsp;<a href=\"" ).append( baseUrl ).append(
+                    urlParamSeparator ).append( "userDirectory=" ).append( userDirectory ).append( "&file=" ).append(
+                    fileName ).append( "\">" ).append( fileName ).append( "</a></td><td width=\"1%\">" ).append(
+                    getReadableFileSize( f.length() ) ).append( "</td><td width=\"1%\">" ).append( getFormattedDate(
+                    f.lastModified() ) ).append( "</td>\n" );
+                buf.append( "</tr>\n" );
+
+                odd = !odd;
             }
         }
         else
         {
-            print( (List) obj, indent + "&nbsp;&nbsp;", baseUrl, buf );
+            String directoryName = f.getName();
+
+            if ( !"CVS".equals( directoryName ) && !".svn".equals( directoryName ) && !"SCCS".equals( directoryName ) )
+            {
+                String userDirectory = f.getAbsolutePath().substring( basedir.getAbsolutePath().length() + 1 );
+
+                userDirectory = StringUtils.replace( userDirectory, "\\", "/" );
+
+                buf.append( "<tr class=\"" ).append( cssClass ).append( "\">" );
+
+                buf.append( "<td width=\"98%\">" ).append( indent ).append( "<img src=\"" ).append(
+                    imagesBaseUrl ).append( "icon_arrowfolder1_sml.gif\">&nbsp;<a href =\"" ).append( baseUrl ).append(
+                    urlParamSeparator ).append( "userDirectory=" ).append( userDirectory ).append( "\">" ).append(
+                    directoryName ).append( "</a></td><td width=\"1%\">" + "&nbsp;" + "</td><td width=\"1%\">" ).append(
+                    getFormattedDate( f.lastModified() ) ).append( "</td>" );
+                buf.append( "</tr>\n" );
+
+                odd = !odd;
+            }
         }
+    }
+
+    private String getFormattedDate( long timestamp )
+    {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( timestamp );
+        Date date = cal.getTime();
+        String res = new SimpleDateFormat( "MMM dd, yyyy hh:mm:ss aaa z" ).format( date );
+        return StringUtils.replace( res, " ", "&nbsp;" );
+    }
+
+    private static String getReadableFileSize( long fileSizeInBytes )
+    {
+        if ( fileSizeInBytes >= GIGA )
+        {
+            return decFormatter.format( fileSizeInBytes / GIGA ) + "&nbsp;Gb";
+        }
+        else if ( fileSizeInBytes >= MEGA )
+        {
+            return decFormatter.format( fileSizeInBytes / MEGA ) + "&nbsp;Mb";
+        }
+        else if ( fileSizeInBytes >= KILO )
+        {
+            return decFormatter.format( fileSizeInBytes / KILO ) + "&nbsp;Kb";
+        }
+        else if ( fileSizeInBytes > 0 && fileSizeInBytes < KILO )
+        {
+            return decFormatter.format( fileSizeInBytes ) + "&nbsp;b";
+        }
+
+        return "0&nbsp;b";
+    }
+
+    private String getIndent( File basedir, File userFile )
+    {
+        String root = basedir.getAbsolutePath();
+        String userdir;
+        if ( userFile.isDirectory() )
+        {
+            userdir = userFile.getAbsolutePath();
+        }
+        else
+        {
+            userdir = userFile.getParentFile().getAbsolutePath();
+        }
+
+        userdir = userdir.substring( root.length() );
+
+        StringBuffer indent = new StringBuffer();
+        while ( userdir.indexOf( File.separator ) >= 0 )
+        {
+            indent.append( "&nbsp;&nbsp;" );
+            userdir = userdir.substring( userdir.indexOf( File.separator ) + 1 );
+        }
+        return indent.toString();
     }
 }

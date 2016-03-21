@@ -19,25 +19,25 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
+import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
-
-import java.util.Map;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
- * Action that deletes a {@link ProjectNotifier} of type 'IRC' from the specified {@link ProjectGroup}.
- * 
+ * Action that deletes a {@link ProjectNotifier} from a specified {@link Project}.
+ *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: DeleteNotifierAction.java 467122 2006-10-23 20:50:19Z jmcconnell $
- * 
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="deleteProjectNotifier"
  */
-public class DeleteProjectNotifierAction extends ContinuumActionSupport
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "deleteProjectNotifier", instantiationStrategy = "per-lookup" )
+public class DeleteProjectNotifierAction
+    extends ContinuumActionSupport
 {
-
     private int projectId;
 
     /**
@@ -48,43 +48,55 @@ public class DeleteProjectNotifierAction extends ContinuumActionSupport
     private int notifierId;
 
     private String notifierType;
-    
-    private String recipient;    
 
-	public String execute() throws ContinuumException
+    private String recipient;
+
+    private boolean fromGroupPage = false;
+
+    private String projectGroupName = "";
+
+    public String execute()
+        throws ContinuumException
     {
+        try
+        {
+            checkRemoveProjectNotifierAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
         getContinuum().removeNotifier( projectId, notifierId );
+
+        if ( fromGroupPage )
+        {
+            return "to_group_page";
+        }
+
         return SUCCESS;
     }
 
     public String doDefault()
-    	throws ContinuumException
+        throws ContinuumException
     {
-    	ProjectNotifier notifier = getContinuum().getNotifier( projectId, notifierId );
-    	
-    	Map configuration = notifier.getConfiguration();
-    	
-    	notifierType = notifier.getType();
-    	
-    	if ( ( "mail".equals( notifierType ) ) || 
-    		 ( "msn".equals( notifierType ) ) ||
-    		 ( "jabber".equals( notifierType ) ) )
-    	{
-    		recipient = (String) configuration.get( "address" );
-    	}
-    	
-    	if ( "irc".equals( notifierType ) )
-    	{
-    		recipient = (String) configuration.get( "host" );
-    		
-    		if ( configuration.get( "port" ) != null )
-    		{
-    			recipient = recipient + ":" + (String) configuration.get( "port" );
-    		}
-        		
-    		recipient = recipient + ":" + (String) configuration.get( "channel" );
-		}
-    	
+        try
+        {
+            checkRemoveProjectNotifierAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        ProjectNotifier notifier = getContinuum().getNotifier( projectId, notifierId );
+
+        notifierType = notifier.getType();
+
+        recipient = GenerateRecipentNotifier.generate( notifier );
+
         return "delete";
     }
 
@@ -127,15 +139,42 @@ public class DeleteProjectNotifierAction extends ContinuumActionSupport
     {
         this.projectGroupId = projectGroupId;
     }
-    
+
     public String getRecipient()
     {
-		return recipient;
-	}
+        return recipient;
+    }
 
-	public void setRecipient(String recipient)
-	{
-		this.recipient = recipient;
-	}
+    public void setRecipient( String recipient )
+    {
+        this.recipient = recipient;
+    }
 
+    public boolean isFromGroupPage()
+    {
+        return fromGroupPage;
+    }
+
+    public void setFromGroupPage( boolean fromGroupPage )
+    {
+        this.fromGroupPage = fromGroupPage;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( StringUtils.isEmpty( projectGroupName ) )
+        {
+            if ( projectGroupId != 0 )
+            {
+                projectGroupName = getContinuum().getProjectGroup( projectGroupId ).getName();
+            }
+            else
+            {
+                projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+            }
+        }
+
+        return projectGroupName;
+    }
 }

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-/* $Id$
-	
-	This file defines basic default formatting for HTML conforming to Tigris application style. To extend or override these rules for your instance, edit inst.css instead of this file. */
-  /* colors, backgrounds, borders, link indication */
+ /* This file defines basic default formatting for HTML conforming to Tigris application style.
+    To extend or override these rules for your instance, edit inst.css instead of this file. */
+
+ /* colors, backgrounds, borders, link indication */
 body {
   background: #fff;
   color: #000;
@@ -107,7 +107,6 @@ a:active,a:hover,#leftcol a:active,#leftcol a:hover {
   padding-bottom: 15px;
 }
 
-/* dagdag ko ung nasa itaas */
 .app h3 a:link,.app h3 a:visited,.app h4 a:link,.app h4 a:visited {
   color: black !important;
   /* TODO was #fff causing white on white issues for me, so set it black */
@@ -279,7 +278,7 @@ body .grid td {
 }
 
 .warningmessage {
-  height: 48px;
+  height: auto;
   background-position: 0px 0px;
   background-color: white;
   border: 0px 0px 0px 0px;
@@ -287,7 +286,7 @@ body .grid td {
   color: #333;
 }
 
-.errormark,.warningmark,.donemark {
+.errormark,.warningmark,.infomark,.donemark {
   background: url(../images/icon_error_sml.gif) no-repeat;
 }
 
@@ -297,6 +296,10 @@ body .grid td {
 
 .donemark {
   background-image: url(../images/icon_success_sml.gif);
+}
+
+.infomark {
+  background-image: url(../images/icon_info_sml.gif);
 }
 
 .cvsdiff,.cvsblame {
@@ -423,7 +426,7 @@ body,.app h3,.app h4,#rightcol h3,pre,code,#apphead h2 small {
   font-size: small;
 }
 
-small,div#footer,div#login,div.tabs th,div.tabs td,input,select,.paginate,.functnbar,.functnbar2,.functnbar3,#breadcrumbs,.courtesylinks,#rightcol div.help,.colbar,.tasknav,body.docs div#toc,#leftcol,.legend,.bars
+small,div#footer,div#login,div.tabs th,div.tabs td,input,select,button,.paginate,.functnbar,.functnbar2,.functnbar3,#breadcrumbs,.courtesylinks,#rightcol div.help,.colbar,.tasknav,body.docs div#toc,#leftcol,.legend,.bars
   {
   font-size: xx-small;
   voice-family: "\"}\"";
@@ -541,7 +544,6 @@ ol ol ol {
   margin-bottom: 7px;
 }
 
-/* dagdag ko ung nasa itaas */
 .app td,.app th {
   padding: 2px 3px;
 }
@@ -671,9 +673,9 @@ dd {
   padding: 6px 0px 0px 2px;
 }
 
-#legend { /*height: 25px;
-	width: 161px;	
-	overflow: hidden;*/
+#legend {
+  width: 161px;
+  overflow: hidden;
   background: url(../images/legendbg.gif) 8px 0 no-repeat;
   display: block;
 }
@@ -692,36 +694,47 @@ dd {
 }
 
 #litem4 {
-  background: url(../images/checkingout.gif) 134px 5px no-repeat;
+  background: url(../images/workingcopy.gif) 134px 5px no-repeat;
 }
 
 #litem5 {
-  background: url(../images/inqueue.gif) 134px 5px no-repeat;
-  padding-bottom: 8px;
+  background: url(../images/checkingout.gif) 134px 5px no-repeat;
 }
 
 #litem6 {
-  background: url(../images/delete.gif) 134px 5px no-repeat;
+  background: url(../images/inqueue.gif) 134px 5px no-repeat;
+  padding-bottom: 8px;
 }
-
 #litem7 {
-  background: url(../images/edit.gif) 134px 5px no-repeat;
+  background: url(../images/cancelbuild.gif) 134px 5px no-repeat;
 }
 
 #litem8 {
+  background: url(../images/delete.gif) 134px 5px no-repeat;
+}
+
+#litem9 {
+  background: url(../images/edit.gif) 134px 5px no-repeat;
+}
+
+#litem10 {
   background: url(../images/releaseproject.gif) 134px 5px no-repeat;
   padding-bottom: 8px;
 }
 
-#litem9 {
+#litem11 {
   background: url(../images/icon_success_sml.gif) 134px 5px no-repeat;
 }
 
-#litem10 {
+#litem12 {
   background: url(../images/icon_warning_sml.gif) 134px 5px no-repeat;
 }
 
-#litem11 {
+#litem13 {
+  background: url(../images/icon_unknown_sml.gif) 134px 5px no-repeat;
+}
+
+#litem14 {
   background: url(../images/icon_error_sml.gif) 134px 5px no-repeat;
 }
 
@@ -792,10 +805,10 @@ dd {
   color: gray;
   font-weight: bold;
   font-size: 11px;
+  font-style: normal;
   padding: 0px 0px 1px 19px;
 }
 
-/* inedit ko */
 .toolgroup .body div {
   padding-bottom: .3em;
   padding-left: 1em;
@@ -898,7 +911,7 @@ td.filebrowse h3 {
   min-height: 32px;
 }
 
-.errormark,.warningmark,.donemark {
+.errormark,.warningmark,.infomark,.donemark {
   padding-left: 20px;
   min-height: 15px;
 }
@@ -928,7 +941,7 @@ td.filebrowse h3 {
 }
 
 .legend {
-  float: right;
+  float: left;
 }
 
 .legend th,.bars th {

@@ -19,15 +19,16 @@ package org.apache.maven.continuum.notification.mail;
  * under the License.
  */
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class FormatterToolTest
-    extends TestCase
 {
+    @Test
     public void testIntervalFormatting()
         throws Exception
     {
@@ -39,9 +40,9 @@ public class FormatterToolTest
 
         assertEquals( "1m 10s", tool.formatInterval( 0, makeTime( 0, 1, 10 ) ) );
 
-        assertEquals( "1h 0m 0s", tool.formatInterval( 0, makeTime( 1, 0, 0) ) );
+        assertEquals( "1h 0m 0s", tool.formatInterval( 0, makeTime( 1, 0, 0 ) ) );
 
-        assertEquals( "1h 10m 0s", tool.formatInterval( 0, makeTime( 1, 10, 0) ) );
+        assertEquals( "1h 10m 0s", tool.formatInterval( 0, makeTime( 1, 10, 0 ) ) );
 
         assertEquals( "1h 1m 10s", tool.formatInterval( 0, makeTime( 1, 1, 10 ) ) );
 

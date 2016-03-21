@@ -21,11 +21,12 @@ package org.apache.maven.continuum.project.builder;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumProjectBuilderException
     extends Exception
 {
+    private static final long serialVersionUID = 2666582644236201183L;
+
     public ContinuumProjectBuilderException( String message )
     {
         super( message );

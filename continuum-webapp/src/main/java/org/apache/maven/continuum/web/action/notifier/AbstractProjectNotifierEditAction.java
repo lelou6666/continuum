@@ -23,10 +23,10 @@ import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: AbstractNotifierEditAction.java 467122 2006-10-23 20:50:19Z jmcconnell $
  */
 public abstract class AbstractProjectNotifierEditAction
     extends AbstractNotifierEditActionSupport
@@ -36,17 +36,19 @@ public abstract class AbstractProjectNotifierEditAction
      * Identifier for the {@link Project} who's {@link ProjectNotifier} is being edited.
      */
     private int projectId;
-    
+
     /**
      * Identifier for the {@link ProjectGroup} instance that the current {@link Project} is a member of.
      */
     private int projectGroupId;
 
+    private String projectGroupName = "";
+
     /**
      * Save the notifier for the {@link Project} here.<p>
-     * This is used by the subclasses that create/obtain an instance of 
+     * This is used by the subclasses that create/obtain an instance of
      * {@link ProjectNotifier} to be saved.
-     * 
+     *
      * @see org.apache.maven.continuum.web.action.notifier.AbstractNotifierEditActionSupport#saveNotifier(ProjectNotifier)
      */
     protected void saveNotifier( ProjectNotifier notifier )
@@ -74,7 +76,7 @@ public abstract class AbstractProjectNotifierEditAction
 
     /**
      * Returns the identifier for the current project.
-     * 
+     *
      * @return current project's id.
      */
     public int getProjectId()
@@ -84,17 +86,18 @@ public abstract class AbstractProjectNotifierEditAction
 
     /**
      * Sets the id of the current project for this action.
-     * 
+     *
      * @param projectId current project's id.
      */
     public void setProjectId( int projectId )
     {
         this.projectId = projectId;
     }
-    
+
     /**
-     * Returns the identifier for the {@link ProjectGroup} that the 
+     * Returns the identifier for the {@link ProjectGroup} that the
      * {@link Project} is a member of.
+     *
      * @return the projectGroupId
      */
     public int getProjectGroupId()
@@ -103,13 +106,45 @@ public abstract class AbstractProjectNotifierEditAction
     }
 
     /**
-     * Sets the identifier for the {@link ProjectGroup} that the 
+     * Sets the identifier for the {@link ProjectGroup} that the
      * {@link Project} is a member of.
+     *
      * @param projectGroupId the identifier to set
      */
     public void setProjectGroupId( int projectGroupId )
     {
         this.projectGroupId = projectGroupId;
+    }
+
+    protected void checkAuthorization()
+        throws AuthorizationRequiredException, ContinuumException
+    {
+        if ( getNotifier() == null )
+        {
+            checkAddProjectNotifierAuthorization( getProjectGroupName() );
+        }
+        else
+        {
+            checkModifyProjectNotifierAuthorization( getProjectGroupName() );
+        }
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( projectGroupName == null || "".equals( projectGroupName ) )
+        {
+            if ( projectGroupId != 0 )
+            {
+                projectGroupName = getContinuum().getProjectGroup( projectGroupId ).getName();
+            }
+            else
+            {
+                projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+            }
+        }
+
+        return projectGroupName;
     }
 
 }

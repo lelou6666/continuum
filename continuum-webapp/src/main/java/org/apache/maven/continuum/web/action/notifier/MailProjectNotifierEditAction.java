@@ -19,39 +19,62 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-
 /**
- * Action that deletes a {@link ProjectNotifier} of type 'Mail' from the 
+ * Action that edits a {@link ProjectNotifier} of type 'Mail' from the
  * specified {@link Project}.
- * 
+ *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: MailNotifierEditAction.java 465060 2006-10-17 21:24:38Z jmcconnell $
  * @since 1.1
- * 
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="mailProjectNotifierEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "mailProjectNotifierEdit", instantiationStrategy = "per-lookup" )
 public class MailProjectNotifierEditAction
     extends AbstractProjectNotifierEditAction
 {
     private String address;
 
-    protected void initConfiguration( Map configuration )
+    private boolean committers;
+
+    private boolean developers;
+
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        address = (String) configuration.get( "address" );
+        if ( StringUtils.isNotEmpty( configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD ) ) )
+        {
+            address = configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
+        }
+
+        if ( StringUtils.isNotEmpty( configuration.get( AbstractContinuumNotifier.COMMITTER_FIELD ) ) )
+        {
+            committers = Boolean.parseBoolean( configuration.get( AbstractContinuumNotifier.COMMITTER_FIELD ) );
+        }
+
+        if ( StringUtils.isNotEmpty( configuration.get( AbstractContinuumNotifier.DEVELOPER_FIELD ) ) )
+        {
+            developers = Boolean.parseBoolean( configuration.get( AbstractContinuumNotifier.DEVELOPER_FIELD ) );
+        }
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, Object> configuration = new HashMap<String, Object>();
 
-        configuration.put( "address", address );
+        if ( StringUtils.isNotEmpty( address ) )
+        {
+            configuration.put( AbstractContinuumNotifier.ADDRESS_FIELD, address );
+        }
+
+        configuration.put( AbstractContinuumNotifier.COMMITTER_FIELD, String.valueOf( committers ) );
+
+        configuration.put( AbstractContinuumNotifier.DEVELOPER_FIELD, String.valueOf( developers ) );
 
         notifier.setConfiguration( configuration );
     }
@@ -64,5 +87,25 @@ public class MailProjectNotifierEditAction
     public void setAddress( String address )
     {
         this.address = address;
+    }
+
+    public boolean isCommitters()
+    {
+        return committers;
+    }
+
+    public void setCommitters( boolean committers )
+    {
+        this.committers = committers;
+    }
+
+    public boolean isDevelopers()
+    {
+        return developers;
+    }
+
+    public void setDevelopers( boolean developers )
+    {
+        this.developers = developers;
     }
 }

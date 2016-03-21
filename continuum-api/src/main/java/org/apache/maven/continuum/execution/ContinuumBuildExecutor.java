@@ -19,34 +19,45 @@ package org.apache.maven.continuum.execution;
  * under the License.
  */
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.scm.TestResult;
+import org.apache.maven.continuum.model.scm.ChangeSet;
+import org.apache.maven.continuum.model.scm.ScmResult;
 
 import java.io.File;
 import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ContinuumBuildExecutor
 {
     String ROLE = ContinuumBuildExecutor.class.getName();
 
-    ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput )
+    // TODO: stream the build output
+    ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput,
+                                         List<Project> projectsWithCommonScmRoot, String projectScmRootUrl )
         throws ContinuumBuildExecutorException;
 
-    void updateProjectFromCheckOut( File workingDirectory, Project project, BuildDefinition buildDefinition )
+    // TODO: rename to be clearer
+    void updateProjectFromCheckOut( File workingDirectory, Project project, BuildDefinition buildDefinition,
+                                    ScmResult scmResult )
         throws ContinuumBuildExecutorException;
 
     boolean isBuilding( Project project );
 
     void killProcess( Project project );
 
-    List getDeployableArtifacts( File workingDirectory, BuildDefinition buildDefinition )
+    // TODO: are these part of the builder interface, or a separate project/build definition interface?
+    List<Artifact> getDeployableArtifacts( Project project, File workingDirectory, BuildDefinition buildDefinition )
         throws ContinuumBuildExecutorException;
 
-    TestResult getTestResults(Project project)
+    //TODO: Move as a plugin
+    void backupTestFiles( Project project, int buildId, String projectScmRootUrl,
+                          List<Project> projectsWithCommonScmRoot );
+
+    boolean shouldBuild( List<ChangeSet> changes, Project continuumProject, File workingDirectory,
+                         BuildDefinition buildDefinition )
         throws ContinuumBuildExecutorException;
 }

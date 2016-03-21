@@ -19,54 +19,51 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import com.opensymphony.xwork.ActionContext;
+import org.apache.continuum.model.project.ProjectGroupSummary;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.model.project.BuildResult;
-import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.security.ContinuumRoleConstants;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.GroupSummary;
-import org.apache.maven.continuum.web.model.ProjectSummary;
-import org.codehaus.plexus.PlexusContainer;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.codehaus.plexus.security.authorization.AuthorizationException;
-import org.codehaus.plexus.security.system.SecuritySession;
-import org.codehaus.plexus.security.system.SecuritySystem;
-import org.codehaus.plexus.security.system.SecuritySystemConstants;
-import org.codehaus.plexus.xwork.PlexusLifecycleListener;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="groupSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "groupSummary", instantiationStrategy = "per-lookup"  )
 public class GroupSummaryAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( GroupSummaryAction.class );
+
     private String infoMessage;
 
-    private List groups;
+    private List<GroupSummary> groups;
 
-    public String execute()
+    public String browse()
         throws ContinuumException
     {
-        groups = new ArrayList();
+        groups = new ArrayList<GroupSummary>();
 
-        Collection projectGroups = getContinuum().getAllProjectGroupsWithProjects();
+        //TODO: Merge this two requests to one
+        Collection<ProjectGroup> projectGroups = getContinuum().getAllProjectGroups();
+        Map<Integer, ProjectGroupSummary> summaries = getContinuum().getProjectsSummaryByGroups();
 
-        for ( Iterator j = projectGroups.iterator(); j.hasNext(); )
+        for ( ProjectGroup projectGroup : projectGroups )
         {
-            ProjectGroup projectGroup = (ProjectGroup) j.next();
 
-            if ( isAuthorized( projectGroup ) )
+            if ( isAuthorized( projectGroup.getName() ) )
             {
-                getLogger().debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                }
 
                 GroupSummary groupModel = new GroupSummary();
                 groupModel.setId( projectGroup.getId() );
@@ -74,22 +71,11 @@ public class GroupSummaryAction
                 groupModel.setName( projectGroup.getName() );
                 groupModel.setDescription( projectGroup.getDescription() );
 
-                //TODO: Create a summary jpox request so code will be more simple and performance will be better
-                Collection projects = projectGroup.getProjects();
+                ProjectGroupSummary summary = summaries.get( projectGroup.getId() );
 
-                groupModel.setNumProjects( projects.size() );
-
-                Map buildResults = getContinuum().getLatestBuildResults();
-
-                Map buildResultsInSuccess = getContinuum().getBuildResultsInSuccess();
-
-                List projectModels = new ArrayList();
-                int numSuccesses = 0;
-                int numFailures = 0;
-                int numErrors = 0;
-
-                for ( Iterator i = projects.iterator(); i.hasNext(); )
+                if ( summary != null )
                 {
+<<<<<<< HEAD
                     Project project = (Project) i.next();
 
                     if ( groupModel.getProjectType() == null )
@@ -164,17 +150,21 @@ public class GroupSummaryAction
                     }
                     getLogger().debug( "GroupSummaryAction: adding model to group " + model.getName() );
                     projectModels.add( model );
+=======
+                    groupModel.setNumProjects( summary.getNumberOfProjects() );
+                    groupModel.setNumErrors( summary.getNumberOfErrors() );
+                    groupModel.setNumFailures( summary.getNumberOfFailures() );
+                    groupModel.setNumSuccesses( summary.getNumberOfSuccesses() );
+>>>>>>> refs/remotes/apache/trunk
                 }
 
                 //todo wire in the next scheduled build for the project group and a meaningful status message
                 //groupModel.setNextScheduledBuild( "unknown" );
                 //groupModel.setStatusMessage( "none" );
-
-                groupModel.setNumSuccesses( numSuccesses );
-                groupModel.setNumFailures( numFailures );
-                groupModel.setNumErrors( numErrors );
-                groupModel.setProjects( projectModels );
-                getLogger().debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                }
                 groups.add( groupModel );
             }
         }
@@ -182,11 +172,10 @@ public class GroupSummaryAction
         return SUCCESS;
     }
 
-    public List getGroups()
+    public List<GroupSummary> getGroups()
     {
         return groups;
     }
-
 
     public String getInfoMessage()
     {
@@ -198,34 +187,16 @@ public class GroupSummaryAction
         this.infoMessage = infoMessage;
     }
 
-    private boolean isAuthorized( ProjectGroup projectGroup )
+    private boolean isAuthorized( String projectGroupName )
     {
-        // do the authz bit
-        ActionContext context = ActionContext.getContext();
-
-        PlexusContainer container = (PlexusContainer) context.getApplication().get( PlexusLifecycleListener.KEY );
-        SecuritySession securitySession =
-            (SecuritySession) context.getSession().get( SecuritySystemConstants.SECURITY_SESSION_KEY );
-
         try
         {
-            SecuritySystem securitySystem = (SecuritySystem) container.lookup( SecuritySystem.ROLE );
-
-            if ( !securitySystem.isAuthorized( securitySession, ContinuumRoleConstants.CONTINUUM_VIEW_GROUP_OPERATION,
-                                               projectGroup.getName() ) )
-            {
-                return false;
-            }
+            checkViewProjectGroupAuthorization( projectGroupName );
+            return true;
         }
-        catch ( ComponentLookupException cle )
+        catch ( AuthorizationRequiredException authzE )
         {
             return false;
         }
-        catch ( AuthorizationException ae )
-        {
-            return false;
-        }
-
-        return true;
     }
 }

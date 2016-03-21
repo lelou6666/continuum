@@ -19,8 +19,11 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
@@ -28,29 +31,32 @@ import java.util.Map;
  * AddBuildDefinitionToProjectAction:
  *
  * @author: Jesse McConnell <jmcconnell@apache.org>
- * @version: $Id$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="remove-build-definition-from-project"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "remove-build-definition-from-project" )
 public class RemoveBuildDefinitionFromProjectAction
     extends AbstractBuildDefinitionContinuumAction
 {
+    @Requirement
+    private ProjectDao projectDao;
 
-    public void execute( Map map )
+    public void execute( Map context )
         throws Exception
     {
+<<<<<<< HEAD
         BuildDefinition buildDefinition = getBuildDefinition( map );
         long projectId =  getProjectId( map );
+=======
+        BuildDefinition buildDefinition = getBuildDefinition( context );
+        int projectId = getProjectId( context );
+>>>>>>> refs/remotes/apache/trunk
 
-        Project project = store.getProjectWithAllDetails( projectId );
+        Project project = projectDao.getProjectWithAllDetails( projectId );
 
         // removing build definition from project doesn't effect anything if it is the default for the proejct, the
         // default will just change automatically to the default build definition of the project group.
 
         project.removeBuildDefinition( buildDefinition );
 
-        store.updateProject( project );
+        projectDao.updateProject( project );
     }
 }

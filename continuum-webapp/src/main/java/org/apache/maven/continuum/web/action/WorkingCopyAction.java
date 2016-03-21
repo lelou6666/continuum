@@ -19,41 +19,41 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import com.opensymphony.webwork.ServletActionContext;
-import com.opensymphony.webwork.views.util.UrlHelper;
-import com.opensymphony.xwork.ActionContext;
+import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.security.ContinuumRoleConstants;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.apache.maven.continuum.web.util.UrlHelperFactory;
 import org.apache.maven.continuum.web.util.WorkingCopyContentGenerator;
-import org.codehaus.plexus.PlexusContainer;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.codehaus.plexus.security.authorization.AuthorizationException;
-import org.codehaus.plexus.security.system.SecuritySession;
-import org.codehaus.plexus.security.system.SecuritySystem;
-import org.codehaus.plexus.security.system.SecuritySystemConstants;
-import org.codehaus.plexus.xwork.PlexusLifecycleListener;
+import org.apache.struts2.ServletActionContext;
+import org.apache.struts2.views.util.UrlHelper;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
 
-import javax.activation.MimetypesFileTypeMap;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import javax.activation.MimetypesFileTypeMap;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="workingCopy"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "workingCopy", instantiationStrategy = "per-lookup" )
 public class WorkingCopyAction
     extends ContinuumActionSupport
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private WorkingCopyContentGenerator generator;
+
+    @Requirement
+    private DistributedBuildManager distributedBuildManager;
 
     private Project project;
 
@@ -65,8 +65,6 @@ public class WorkingCopyAction
 
     private String currentFileContent;
 
-    private List files;
-
     private String output;
 
     private String projectName;
@@ -75,31 +73,94 @@ public class WorkingCopyAction
 
     private String mimeType = "application/octet-stream";
 
-    private static String FILE_SEPARATOR = System.getProperty( "file.separator" );
+    private static final String FILE_SEPARATOR = System.getProperty( "file.separator" );
+
+    private String projectGroupName = "";
+
+    private String downloadFileName = "";
+
+    private String downloadFileLength = "";
+
+    private InputStream downloadFileInputStream;
 
     public String execute()
         throws ContinuumException
     {
-        files = getContinuum().getFiles( projectId, userDirectory );
+        try
+        {
+            checkViewProjectGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        if ( "release.properties".equals( currentFile ) )
+        {
+            throw new ContinuumException( "release.properties is not accessible." );
+        }
 
         project = getContinuum().getProject( projectId );
 
         projectName = project.getName();
 
-        if ( isAuthorized( project ) )
+        HashMap<String, Object> params = new HashMap<String, Object>();
+
+        params.put( "projectId", projectId );
+
+        params.put( "projectName", projectName );
+
+        UrlHelper urlHelper = UrlHelperFactory.getInstance();
+
+        String baseUrl = urlHelper.buildUrl( "/workingCopy.action", ServletActionContext.getRequest(),
+                                             ServletActionContext.getResponse(), params );
+
+        String imagesBaseUrl = urlHelper.buildUrl( "/images/", ServletActionContext.getRequest(),
+                                                   ServletActionContext.getResponse(), params );
+
+        imagesBaseUrl = imagesBaseUrl.substring( 0, imagesBaseUrl.indexOf( "/images/" ) + "/images/".length() );
+
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            HashMap params = new HashMap();
+            output = distributedBuildManager.generateWorkingCopyContent( projectId, userDirectory, baseUrl,
+                                                                         imagesBaseUrl );
 
-            params.put( "projectId", new Integer( projectId ) );
+            if ( currentFile != null && !currentFile.equals( "" ) )
+            {
+                Map<String, Object> projectFile = distributedBuildManager.getFileContent( projectId, userDirectory,
+                                                                                          currentFile );
 
-            params.put( "projectName", projectName );
+                if ( projectFile == null )
+                {
+                    currentFileContent = "";
+                }
+                else
+                {
+                    downloadFileInputStream = new ByteArrayInputStream( (byte[]) projectFile.get( "downloadFile" ) );
+                    downloadFileLength = (String) projectFile.get( "downloadFileLength" );
+                    downloadFileName = (String) projectFile.get( "downloadFileName" );
+                    currentFileContent = (String) projectFile.get( "fileContent" );
+                    mimeType = (String) projectFile.get( "mimeType" );
 
-            String baseUrl = UrlHelper.buildUrl( "/workingCopy.action", ServletActionContext.getRequest(),
-                                                 ServletActionContext.getResponse(), params );
+                    if ( (Boolean) projectFile.get( "isStream" ) )
+                    {
+                        return "stream";
+                    }
+                }
+            }
+            else
+            {
+                currentFileContent = "";
+            }
+        }
+        else
+        {
+            List<File> files = getContinuum().getFiles( projectId, userDirectory );
 
-            output = generator.generate( files, baseUrl, getContinuum().getWorkingDirectory( projectId ) );
+            output = generator.generate( files, baseUrl, imagesBaseUrl, getContinuum().getWorkingDirectory(
+                projectId ) );
 
-            if ( currentFile != null && currentFile != "" )
+            if ( currentFile != null && !currentFile.equals( "" ) )
             {
                 String dir;
 
@@ -120,6 +181,8 @@ public class WorkingCopyAction
 
                 downloadFile = new File( getContinuum().getWorkingDirectory( projectId ) + dir + currentFile );
                 mimeType = mimeTypesMap.getContentType( downloadFile );
+                downloadFileLength = Long.toString( downloadFile.length() );
+                downloadFileName = downloadFile.getName();
 
                 if ( ( mimeType.indexOf( "image" ) >= 0 ) || ( mimeType.indexOf( "java-archive" ) >= 0 ) ||
                     ( mimeType.indexOf( "java-class" ) >= 0 ) || ( downloadFile.length() > 100000 ) )
@@ -168,9 +231,9 @@ public class WorkingCopyAction
         this.currentFile = currentFile;
     }
 
-    public List getFiles()
+    public String getFile()
     {
-        return files;
+        return currentFile;
     }
 
     public String getOutput()
@@ -183,31 +246,37 @@ public class WorkingCopyAction
         return currentFileContent;
     }
 
-
     public InputStream getInputStream()
         throws ContinuumException
     {
-        FileInputStream fis = null;
-        try
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            fis = new FileInputStream( downloadFile );
+            return downloadFileInputStream;
         }
-        catch ( FileNotFoundException fne )
+        else
         {
-            throw new ContinuumException( "Error accessing file.", fne );
-        }
+            FileInputStream fis;
+            try
+            {
+                fis = new FileInputStream( downloadFile );
+            }
+            catch ( FileNotFoundException fne )
+            {
+                throw new ContinuumException( "Error accessing file.", fne );
+            }
 
-        return fis;
+            return fis;
+        }
     }
 
     public String getFileLength()
     {
-        return Long.toString( downloadFile.length() );
+        return downloadFileLength;
     }
 
     public String getDownloadFilename()
     {
-        return downloadFile.getName();
+        return downloadFileName;
     }
 
     public String getMimeType()
@@ -220,34 +289,14 @@ public class WorkingCopyAction
         return project;
     }
 
-    private boolean isAuthorized( Project project )
+    public String getProjectGroupName()
+        throws ContinuumException
     {
-        // do the authz bit
-        ActionContext context = ActionContext.getContext();
-
-        PlexusContainer container = (PlexusContainer) context.getApplication().get( PlexusLifecycleListener.KEY );
-        SecuritySession securitySession =
-            (SecuritySession) context.getSession().get( SecuritySystemConstants.SECURITY_SESSION_KEY );
-
-        try
+        if ( StringUtils.isEmpty( projectGroupName ) )
         {
-            SecuritySystem securitySystem = (SecuritySystem) container.lookup( SecuritySystem.ROLE );
-
-            if ( !securitySystem.isAuthorized( securitySession, ContinuumRoleConstants.CONTINUUM_VIEW_GROUP_OPERATION,
-                                               project.getProjectGroup().getName() ) )
-            {
-                return false;
-            }
-        }
-        catch ( ComponentLookupException cle )
-        {
-            return false;
-        }
-        catch ( AuthorizationException ae )
-        {
-            return false;
+            projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
         }
 
-        return true;
+        return projectGroupName;
     }
 }

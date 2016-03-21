@@ -19,33 +19,40 @@ package org.apache.maven.continuum.buildqueue;
  * under the License.
  */
 
+import org.apache.continuum.taskqueue.BuildProjectTask;
+import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.TaskQueue;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildQueueTest
     extends AbstractContinuumTest
 {
     private TaskQueue buildQueue;
 
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        buildQueue = (TaskQueue) lookup( TaskQueue.ROLE, "build-project" );
+        buildQueue = lookup( TaskQueue.class, "build-project" );
     }
 
+    @Test
     public void testTestTheQueueWithASingleProject()
         throws Exception
     {
-        Project project = addProject( getStore(), "Build Queue Project 1" );
+        Project project = addProject( "Build Queue Project 1" );
 
         long projectId = project.getId();
 
@@ -67,12 +74,19 @@ public class BuildQueueTest
         assertNextBuildIsNull();
     }
 
+    @Test
     public void testTheQueueWithMultipleProjects()
         throws Exception
     {
+<<<<<<< HEAD
         long projectId1 = addProject( getStore(), "Build Queue Project 2" ).getId();
 
         long projectId2 = addProject( getStore(), "Build Queue Project 3" ).getId();
+=======
+        int projectId1 = addProject( "Build Queue Project 2" ).getId();
+
+        int projectId2 = addProject( "Build Queue Project 3" ).getId();
+>>>>>>> refs/remotes/apache/trunk
 
         buildProject( projectId1, ContinuumProjectState.TRIGGER_SCHEDULED );
 
@@ -96,12 +110,17 @@ public class BuildQueueTest
         assertNextBuildIsNull();
     }
 
+    @Test
     public void testTestTheQueueWithASingleProjectAndForcedBuilds()
         throws Exception
     {
         String name = "Build Queue Project 4";
 
+<<<<<<< HEAD
         long projectId = addProject( getStore(), name ).getId();
+=======
+        int projectId = addProject( name ).getId();
+>>>>>>> refs/remotes/apache/trunk
 
         buildProject( projectId, ContinuumProjectState.TRIGGER_FORCED );
 
@@ -130,7 +149,9 @@ public class BuildQueueTest
     private void buildProject( long projectId, int trigger )
         throws Exception
     {
-        buildQueue.put( new BuildProjectTask( projectId, 0, trigger ) );
+        ProjectGroup group = getDefaultProjectGroup();
+        buildQueue.put( new BuildProjectTask( projectId, 0, new BuildTrigger( trigger, "" ), null, null, null,
+                                              group.getId() ) );
     }
 
     private void assertNextBuildIs( long expectedProjectId )

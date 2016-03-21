@@ -19,71 +19,73 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
-import java.util.Map;
-
+import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
- * Action to delete a {@link ProjectNotifier} instance from a 
+ * Action to delete a {@link ProjectNotifier} instance from a
  * specified {@link ProjectGroup}.
- * 
+ *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: DeleteNotifierAction.java 467122 2006-10-23 20:50:19Z jmcconnell $
  * @since 1.1
- * @plexus.component 
- *   role="com.opensymphony.xwork.Action"  
- *   role-hint="deleteGroupNotifier"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "deleteGroupNotifier", instantiationStrategy = "per-lookup" )
 public class DeleteGroupNotifierAction
     extends ContinuumActionSupport
 {
-
     private int projectGroupId;
-    
+
     private int notifierId;
 
     private String notifierType;
-    
+
     private String recipient;
+
+    private String projectGroupName = "";
 
     public String execute()
         throws ContinuumException
     {
+        try
+        {
+            checkRemoveProjectGroupNotifierAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
         getContinuum().removeGroupNotifier( projectGroupId, notifierId );
+
         return SUCCESS;
     }
 
     public String doDefault()
         throws ContinuumException
     {
+        try
+        {
+            checkRemoveProjectGroupNotifierAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
         ProjectNotifier notifier = getContinuum().getGroupNotifier( projectGroupId, notifierId );
-        
-        Map configuration = notifier.getConfiguration();
-        
+
         notifierType = notifier.getType();
-        
-        if ( ( "mail".equals( notifierType ) ) || 
-             ( "msn".equals( notifierType ) ) ||
-             ( "jabber".equals( notifierType ) ) )
-        {
-            recipient = (String) configuration.get( "address" );
-        }
-        
-        if ( "irc".equals( notifierType ) )
-        {
-            recipient = (String) configuration.get( "host" );
-            
-            if ( configuration.get( "port" ) != null )
-            {
-                recipient = recipient + ":" + (String) configuration.get( "port" );
-            }
-                
-            recipient = recipient + ":" + (String) configuration.get( "channel" );
-        }
-        
+
+        recipient = GenerateRecipentNotifier.generate( notifier );
+
         return "delete";
     }
 
@@ -122,7 +124,7 @@ public class DeleteGroupNotifierAction
     {
         this.projectGroupId = projectGroupId;
     }
-    
+
     public int getProjectId()
     {
         //flags that this is a group notifier
@@ -137,5 +139,16 @@ public class DeleteGroupNotifierAction
     public void setRecipient( String recipient )
     {
         this.recipient = recipient;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( StringUtils.isEmpty( projectGroupName ) )
+        {
+            projectGroupName = getContinuum().getProjectGroup( projectGroupId ).getName();
+        }
+
+        return projectGroupName;
     }
 }

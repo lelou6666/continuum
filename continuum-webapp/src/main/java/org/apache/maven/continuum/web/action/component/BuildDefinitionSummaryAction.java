@@ -23,36 +23,49 @@ import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.web.action.ContinuumActionSupport;
+import org.apache.maven.continuum.web.action.AbstractBuildDefinitionAction;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.BuildDefinitionSummary;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * BuildDefinitionSummaryAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="buildDefinitionSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildDefinitionSummary", instantiationStrategy = "per-lookup" )
 public class BuildDefinitionSummaryAction
-    extends ContinuumActionSupport
+    extends AbstractBuildDefinitionAction
 {
+<<<<<<< HEAD
     private long projectGroupId;
+=======
+    private static final Logger logger = LoggerFactory.getLogger( BuildDefinitionSummaryAction.class );
+
+    private int projectGroupId;
+>>>>>>> refs/remotes/apache/trunk
 
     private String projectGroupName;
 
     private long projectId;
 
+    // Allow dont remove default group build definition in project list 
+    private int defaultGroupDefinitionId;
+
     private ProjectGroup projectGroup;
 
-    private List projectBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> projectBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
 
-    private List groupBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> groupBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
 
-    private List allBuildDefinitionSummaries = new ArrayList();
+    private List<BuildDefinitionSummary> allBuildDefinitionSummaries = new ArrayList<BuildDefinitionSummary>();
+
+    //profileName
 
     public String summarizeForProject()
     {
@@ -61,16 +74,26 @@ public class BuildDefinitionSummaryAction
             projectGroup = getContinuum().getProjectGroupByProjectId( projectId );
             projectGroupId = projectGroup.getId();
             projectGroupName = projectGroup.getName();
+
+            checkViewProjectGroupAuthorization( projectGroupName );
+
             groupBuildDefinitionSummaries = gatherGroupBuildDefinitionSummaries( projectGroupId );
-            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId );
+            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId, projectGroupId );
+
+            fixDefaultBuildDefinitions();
 
             allBuildDefinitionSummaries.addAll( groupBuildDefinitionSummaries );
             allBuildDefinitionSummaries.addAll( projectBuildDefinitionSummaries );
         }
         catch ( ContinuumException e )
         {
-            getLogger().info( "unable to build summary" );
+            logger.info( "unable to build summary" );
             return ERROR;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
         }
 
         return SUCCESS;
@@ -82,12 +105,14 @@ public class BuildDefinitionSummaryAction
         {
             groupBuildDefinitionSummaries = gatherGroupBuildDefinitionSummaries( projectGroupId );
 
-            projectGroup = getContinuum().getProjectGroup( projectGroupId );
+            projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
 
-            for ( Iterator i = projectGroup.getProjects().iterator(); i.hasNext(); )
+            checkViewProjectGroupAuthorization( projectGroup.getName() );
+
+            for ( Project project : projectGroup.getProjects() )
             {
-                Project project = (Project) i.next();
-                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId() ) );
+                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId(),
+                                                                                               projectGroupId ) );
 
             }
 
@@ -96,25 +121,61 @@ public class BuildDefinitionSummaryAction
         }
         catch ( ContinuumException e )
         {
-            getLogger().info( "unable to build summary" );
+            logger.info( "unable to build summary" );
             return ERROR;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
         }
 
         return SUCCESS;
     }
 
+<<<<<<< HEAD
     private List gatherProjectBuildDefinitionSummaries( long projectId )
+=======
+    private void fixDefaultBuildDefinitions()
+    {
+        boolean containsDefaultBDForProject = false;
+
+        for ( BuildDefinitionSummary bds : projectBuildDefinitionSummaries )
+        {
+            if ( bds.isIsDefault() )
+            {
+                containsDefaultBDForProject = true;
+            }
+        }
+
+        for ( BuildDefinitionSummary bds : groupBuildDefinitionSummaries )
+        {
+            if ( bds.isIsDefault() )
+            {
+                defaultGroupDefinitionId = bds.getId();
+            }
+
+            if ( containsDefaultBDForProject )
+            {
+                bds.setIsDefault( false );
+            }
+        }
+    }
+
+    private List<BuildDefinitionSummary> gatherProjectBuildDefinitionSummaries( int projectId, int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException
     {
-        List summaryList = new ArrayList();
+        List<BuildDefinitionSummary> summaryList = new ArrayList<BuildDefinitionSummary>();
 
         Project project = getContinuum().getProjectWithAllDetails( projectId );
-        for ( Iterator i = project.getBuildDefinitions().iterator(); i.hasNext(); )
+        for ( BuildDefinition bd : project.getBuildDefinitions() )
         {
-            BuildDefinitionSummary bds = generateBuildDefinitionSummary( (BuildDefinition) i.next() );
+            BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "PROJECT" );
             bds.setProjectId( project.getId() );
             bds.setProjectName( project.getName() );
+            bds.setProjectGroupId( projectGroupId );
 
             summaryList.add( bds );
         }
@@ -122,17 +183,21 @@ public class BuildDefinitionSummaryAction
         return summaryList;
     }
 
+<<<<<<< HEAD
 
     private List gatherGroupBuildDefinitionSummaries( long projectGroupId )
+=======
+    private List<BuildDefinitionSummary> gatherGroupBuildDefinitionSummaries( int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException
     {
-        List summaryList = new ArrayList();
+        List<BuildDefinitionSummary> summaryList = new ArrayList<BuildDefinitionSummary>();
 
-        projectGroup = getContinuum().getProjectGroup( projectGroupId );
+        projectGroup = getContinuum().getProjectGroupWithBuildDetails( projectGroupId );
 
-        for ( Iterator i = projectGroup.getBuildDefinitions().iterator(); i.hasNext(); )
+        for ( BuildDefinition bd : projectGroup.getBuildDefinitions() )
         {
-            BuildDefinitionSummary bds = generateBuildDefinitionSummary( (BuildDefinition) i.next() );
+            BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "GROUP" );
             bds.setProjectGroupId( projectGroup.getId() );
 
@@ -142,6 +207,7 @@ public class BuildDefinitionSummaryAction
         return summaryList;
     }
 
+<<<<<<< HEAD
     private BuildDefinitionSummary generateBuildDefinitionSummary( BuildDefinition bd )
     {
         BuildDefinitionSummary bds = new BuildDefinitionSummary();
@@ -159,6 +225,9 @@ public class BuildDefinitionSummaryAction
     }
 
     public long getProjectId()
+=======
+    public int getProjectId()
+>>>>>>> refs/remotes/apache/trunk
     {
         return projectId;
     }
@@ -188,32 +257,32 @@ public class BuildDefinitionSummaryAction
         this.projectGroupName = projectGroupName;
     }
 
-    public List getProjectBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getProjectBuildDefinitionSummaries()
     {
         return projectBuildDefinitionSummaries;
     }
 
-    public void setProjectBuildDefinitionSummaries( List projectBuildDefinitionSummaries )
+    public void setProjectBuildDefinitionSummaries( List<BuildDefinitionSummary> projectBuildDefinitionSummaries )
     {
         this.projectBuildDefinitionSummaries = projectBuildDefinitionSummaries;
     }
 
-    public List getGroupBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getGroupBuildDefinitionSummaries()
     {
         return groupBuildDefinitionSummaries;
     }
 
-    public void setGroupBuildDefinitionSummaries( List groupBuildDefinitionSummaries )
+    public void setGroupBuildDefinitionSummaries( List<BuildDefinitionSummary> groupBuildDefinitionSummaries )
     {
         this.groupBuildDefinitionSummaries = groupBuildDefinitionSummaries;
     }
 
-    public List getAllBuildDefinitionSummaries()
+    public List<BuildDefinitionSummary> getAllBuildDefinitionSummaries()
     {
         return allBuildDefinitionSummaries;
     }
 
-    public void setAllBuildDefinitionSummaries( List allBuildDefinitionSummaries )
+    public void setAllBuildDefinitionSummaries( List<BuildDefinitionSummary> allBuildDefinitionSummaries )
     {
         this.allBuildDefinitionSummaries = allBuildDefinitionSummaries;
     }
@@ -226,5 +295,10 @@ public class BuildDefinitionSummaryAction
     public void setProjectGroup( ProjectGroup projectGroup )
     {
         this.projectGroup = projectGroup;
+    }
+
+    public int getDefaultGroupDefinitionId()
+    {
+        return defaultGroupDefinitionId;
     }
 }

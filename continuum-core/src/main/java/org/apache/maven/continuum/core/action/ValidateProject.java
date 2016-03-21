@@ -19,33 +19,30 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.store.ContinuumStore;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="validate-project"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "validate-project" )
 public class ValidateProject
     extends AbstractValidationContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private BuildExecutorManager buildExecutorManager;
 
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private ProjectDao projectDao;
 
     public void execute( Map context )
         throws Exception
@@ -62,25 +59,39 @@ public class ValidateProject
             throw new ContinuumException( "No such executor with id '" + project.getExecutorId() + "'." );
         }
 
+        List<Project> projects = projectDao.getAllProjectsByName();
+
+        for ( Project storedProject : projects )
+        {
+            // CONTINUUM-1445
+            if ( StringUtils.equalsIgnoreCase( project.getName(), storedProject.getName() ) &&
+                StringUtils.equalsIgnoreCase( project.getVersion(), storedProject.getVersion() ) &&
+                StringUtils.equalsIgnoreCase( project.getScmUrl(), storedProject.getScmUrl() ) )
+            {
+                throw new ContinuumException( "A duplicate project already exist '" + storedProject.getName() + "'." );
+            }
+        }
+        /*
         if ( store.getProjectByName( project.getName() ) != null )
         {
             throw new ContinuumException( "A project with the name '" + project.getName() + "' already exist." );
         }
+        */
 
-//        if ( getProjectByScmUrl( scmUrl ) != null )
-//        {
-//            throw new ContinuumStoreException( "A project with the scm url '" + scmUrl + "' already exist." );
-//        }
+        //        if ( getProjectByScmUrl( scmUrl ) != null )
+        //        {
+        //            throw new ContinuumStoreException( "A project with the scm url '" + scmUrl + "' already exist." );
+        //        }
 
         // TODO: Enable
-//        assertStringNotEmpty( project.getPath(), "path" );
-//        assertStringNotEmpty( project.getGroupId(), "group id" );
-//        assertStringNotEmpty( project.getArtifactId(), "artifact id" );
+        //        assertStringNotEmpty( project.getPath(), "path" );
+        //        assertStringNotEmpty( project.getGroupId(), "group id" );
+        //        assertStringNotEmpty( project.getArtifactId(), "artifact id" );
 
-//        if ( project.getProjectGroup() == null )
-//        {
-//            throw new ContinuumException( "A project has to belong to a project group." );
-//        }
+        //        if ( project.getProjectGroup() == null )
+        //        {
+        //            throw new ContinuumException( "A project has to belong to a project group." );
+        //        }
 
         // TODO: validate that the SCM provider id
     }

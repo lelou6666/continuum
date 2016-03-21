@@ -17,26 +17,10 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ page import="java.util.Calendar" %>
-<ww:i18n name="localization.Continuum">
-<%
-  int inceptionYear = 2005;
-  int currentYear = Calendar.getInstance().get( Calendar.YEAR );
-  String copyrightRange = String.valueOf( inceptionYear );
-  if ( inceptionYear != currentYear )
-  {
-    copyrightRange = copyrightRange + "-" + String.valueOf( currentYear );
-  }
-%>
+<s:i18n name="localization.Continuum">
 <div id="footer">
-  <div class="xright">
-    Copyright &copy; <%= copyrightRange %> Apache Software Foundation
-  </div>
-
-  <div class="clear">
-    <hr/>
-
-  </div>
+  <s:property value="continuumFooter" escape="false"/>
 </div>
-</ww:i18n>
+</s:i18n>

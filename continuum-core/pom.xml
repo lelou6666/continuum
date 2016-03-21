@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version='1.0' encoding='UTF-8'?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,30 +18,28 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <artifactId>continuum-parent</artifactId>
-    <groupId>org.apache.maven.continuum</groupId>
-    <version>1.1-SNAPSHOT</version>
+    <artifactId>continuum</artifactId>
+    <groupId>org.apache.continuum</groupId>
+    <version>1.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-core</artifactId>
-  <name>Continuum Core</name>
+  <name>Continuum :: Core</name>
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-quartz</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-mail-sender-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-notification</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -51,38 +50,55 @@
       <artifactId>maven-settings</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
+      <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-notifier-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-reports</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.scm</groupId>
-      <artifactId>maven-scm-provider-svnexe</artifactId>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>file-management</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-velocity</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
+      <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-commons</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-command-line</artifactId>
-      <version>1.0-alpha-2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-component-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
     </dependency>
+    <!-- start - order matters, requires maven 2.0.9+ -->
     <dependency>
-      <groupId>org.apache.maven.wagon</groupId>
-      <artifactId>wagon-provider-api</artifactId>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-artifact-manager</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact-manager</artifactId>
+    </dependency>
+    <!-- end - order matters -->
     <dependency>
       <groupId>org.apache.maven.scm</groupId>
       <artifactId>maven-scm-api</artifactId>
@@ -92,21 +108,16 @@
       <artifactId>maven-project</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-jdo2</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-formica</artifactId>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-action</artifactId>
-      <version>1.0-alpha-6</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -117,29 +128,94 @@
       <artifactId>jpox</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
-      <artifactId>continuum-store</artifactId>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.scm</groupId>
-      <artifactId>maven-scm-manager-plexus</artifactId>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>backport-util-concurrent</groupId>
+      <artifactId>backport-util-concurrent</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>quartz</groupId>
+      <artifactId>quartz</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>jsr250-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-release</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-scm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>redback-rbac-role-manager</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-purge</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-builder</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-distributed-slave-client</artifactId>
     </dependency>
     <dependency>
       <groupId>velocity</groupId>
       <artifactId>velocity</artifactId>
-      <version>1.4</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
-      <artifactId>continuum-release</artifactId>
+      <groupId>org.apache.maven.release</groupId>
+      <artifactId>maven-release-manager</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+    </dependency>
+    <!-- contains redback-core.xml that is needed to instantiate some test classes -->
+    <dependency>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>redback-struts2-integration</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- contains redback.xml that is needed to pass some test classes -->
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-security</artifactId>
+      <scope>runtime</scope>
     </dependency>
+    <!-- A test that goes way too deep into the stack requires this -->
     <dependency>
-      <groupId>org.codehaus.plexus.security</groupId>
-      <artifactId>plexus-security-rbac-profile</artifactId>
+      <groupId>org.apache.maven.wagon</groupId>
+      <artifactId>wagon-http-lightweight</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- === Testing Dependencies === -->
     <dependency>
@@ -148,18 +224,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
+      <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
-      <artifactId>continuum-security</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
-      <artifactId>continuum-configuration</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -173,35 +239,23 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-mail-sender-test</artifactId>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>redback-rbac-memory</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-      <version>1.0.b2</version>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>plexus-spring</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>xerces</groupId>
-      <artifactId>xercesImpl</artifactId>
-      <version>2.6.2</version>
-      <scope>test</scope>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-mail-sender-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus.security</groupId>
-      <artifactId>plexus-security-ui-web-integration</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus.security</groupId>
-      <artifactId>plexus-security-authorization-rbac-store-memory</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -209,66 +263,91 @@
     <plugins>
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-maven-plugin</artifactId>
+        <artifactId>plexus-component-metadata</artifactId>
         <executions>
           <execution>
             <id>generate</id>
             <goals>
-              <goal>descriptor</goal>
+              <goal>generate-metadata</goal>
             </goals>
           </execution>
           <execution>
             <id>merge</id>
-            <!--
             <configuration>
               <descriptors>
-                <descriptor>${basedir}/src/main/resources/META-INF/plexus/components.xml</descriptor>
-                <descriptor>${project.build.directory}/generated-resources/plexus/META-INF/plexus/components.xml</descriptor>
+                <descriptor>${basedir}/src/main/resources/META-INF/plexus/components-fragment.xml</descriptor>
+                <descriptor>${project.build.outputDirectory}/META-INF/plexus/components.xml</descriptor>
               </descriptors>
+              <output>${project.build.outputDirectory}/META-INF/plexus/components.xml</output>
             </configuration>
-            -->
             <goals>
-              <goal>merge-descriptors</goal>
+              <goal>merge-metadata</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <excludes>
+                <!-- this test only test cancelling Taskqueue implementation from plexus-task -->
+                <exclude>**/BuildProjectTaskExecutorTest.*</exclude>
+                <!-- CONTINUUM-2559 -->
+                <exclude>**/MailContinuumNotifierTest.*</exclude>
+                <!-- Requires low memory for meaningful result -->
+                <exclude>**/CleanWorkingDirectoryActionTest.*</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>src/test-projects/**</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <profiles>
     <profile>
-      <id>default</id>
+      <id>lowmem-test</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <os>
+          <family>unix</family>
+        </os>
       </activation>
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.2</version>
-            <configuration>
-              <childDelegation>true</childDelegation>
-              <excludes>
-                <exclude>**/BuildProjectTaskExecutorTest.java</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>it</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.2</version>
-            <configuration>
-              <childDelegation>true</childDelegation>
-            </configuration>
-          </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>lowmem-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>-Xmx2m -Xms2m</argLine>
+                            <includes>
+                                <include>**/CleanWorkingDirectoryActionTest.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
       </build>
     </profile>

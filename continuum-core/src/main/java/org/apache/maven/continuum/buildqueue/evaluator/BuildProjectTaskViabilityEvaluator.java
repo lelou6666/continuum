@@ -19,29 +19,25 @@ package org.apache.maven.continuum.buildqueue.evaluator;
  * under the License.
  */
 
-import org.apache.maven.continuum.buildqueue.BuildProjectTask;
+import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.taskqueue.TaskViabilityEvaluator;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildProjectTaskViabilityEvaluator
-    extends AbstractLogEnabled
     implements TaskViabilityEvaluator
 {
-    /**
-     * @plexus.configuration
-     */
+
+    @Configuration( "" )
     private long requiredBuildInterval;
 
     // ----------------------------------------------------------------------
@@ -51,16 +47,16 @@ public class BuildProjectTaskViabilityEvaluator
     /**
      * Removes duplicate tasks from the list. A duplicate task is one with the same
      * build definition and that's scheduled within the required build interval.
-     *
-     * <p>
+     * <p/>
+     * <p/>
      * &forall; <sub>t1, t2 &isin; tasks</sub> [ t1 &ne; t2 &and; t2.buildDefinition = t2.buildDefinition]:
-     *  if ( t2.timestamp - t1.timestamp < requiredBuildInterval ) remove( t2 ).
+     * if ( t2.timestamp - t1.timestamp < requiredBuildInterval ) remove( t2 ).
      * </p>
      *
      * @param tasks A list of queued tasks to evaluate
      * @return a list of tasks with duplicates removed
      */
-    public Collection evaluate( Collection tasks )
+    public Collection<BuildProjectTask> evaluate( Collection tasks )
     {
         // ----------------------------------------------------------------------
         // This code makes a Map with Lists with one list per project. For each
@@ -69,19 +65,23 @@ public class BuildProjectTaskViabilityEvaluator
         // checked for validity and a list of tasks to remove is returned.
         // ----------------------------------------------------------------------
 
-        Map projects = new HashMap();
+        Map<Integer, List<BuildProjectTask>> projects = new HashMap<Integer, List<BuildProjectTask>>();
 
-        for ( Iterator it = tasks.iterator(); it.hasNext(); )
+        for ( BuildProjectTask task : (Collection<BuildProjectTask>) tasks )
         {
-            BuildProjectTask task = (BuildProjectTask) it.next();
+            int key = task.getProjectId();
 
+<<<<<<< HEAD
             Long key = new Long( task.getProjectId() );
 
             List projectTasks = (List) projects.get( key );
+=======
+            List<BuildProjectTask> projectTasks = projects.get( key );
+>>>>>>> refs/remotes/apache/trunk
 
             if ( projectTasks == null )
             {
-                projectTasks = new ArrayList();
+                projectTasks = new ArrayList<BuildProjectTask>();
 
                 projects.put( key, projectTasks );
             }
@@ -89,11 +89,11 @@ public class BuildProjectTaskViabilityEvaluator
             projectTasks.add( task );
         }
 
-        List toBeRemoved = new ArrayList();
+        List<BuildProjectTask> toBeRemoved = new ArrayList<BuildProjectTask>();
 
-        for ( Iterator it = projects.values().iterator(); it.hasNext(); )
+        for ( List<BuildProjectTask> projectTasks : projects.values() )
         {
-            toBeRemoved.addAll( checkTasks( (List) it.next() ) );
+            toBeRemoved.addAll( checkTasks( projectTasks ) );
         }
 
         return toBeRemoved;
@@ -103,18 +103,14 @@ public class BuildProjectTaskViabilityEvaluator
     //
     // ----------------------------------------------------------------------
 
-    private List checkTasks( List list )
+    private List<BuildProjectTask> checkTasks( List<BuildProjectTask> list )
     {
-        List toBeRemoved = new ArrayList();
+        List<BuildProjectTask> toBeRemoved = new ArrayList<BuildProjectTask>();
 
-        for ( Iterator it = list.iterator(); it.hasNext(); )
+        for ( BuildProjectTask buildProjectTask : list )
         {
-            BuildProjectTask buildProjectTask = (BuildProjectTask) it.next();
-
-            for ( Iterator it2 = list.iterator(); it2.hasNext(); )
+            for ( BuildProjectTask task : list )
             {
-                BuildProjectTask task = (BuildProjectTask) it2.next();
-
                 // check if it's the same task
                 if ( buildProjectTask == task ||
                     buildProjectTask.getBuildDefinitionId() != task.getBuildDefinitionId() )
@@ -126,7 +122,7 @@ public class BuildProjectTaskViabilityEvaluator
                 // If this build is forces, don't remove it
                 // ----------------------------------------------------------------------
 
-                if ( task.getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
+                if ( task.getBuildTrigger().getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
                 {
                     continue;
                 }

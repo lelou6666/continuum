@@ -17,104 +17,201 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
-<%@ taglib uri="/plexusSecuritySystem" prefix="pss" %>
+<%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
 <html>
 
-<ww:i18n name="localization.Continuum">
+<s:i18n name="localization.Continuum">
   <head>
     <title>
-      <ww:text name="projectGroup.page.title"/>
+      <s:text name="projectGroup.page.title"/>
     </title>
+    <meta http-equiv="refresh" content="30"/>
+    <script type="text/javascript">
+
+      <s:url var="addM2ProjectUrl" action="addMavenTwoProjectInput" />
+      <s:url var="addM1ProjectUrl" action="addMavenOneProjectInput" />
+      <s:url var="addProjectUrl" action="addProjectInput" />
+
+      function goToAddProject()
+      {
+        var projectTypes = document.getElementById( "preferredExecutor" );
+        var type = projectTypes.value;
+
+        if ( type != '' )
+        {
+          var form = document.forms[ "addNewProject" ];
+
+          if ( type == 'maven2' )
+          {
+            form.action = '${addM2ProjectUrl}';
+            form.projectType.value = "";
+          }
+          else if ( type == 'maven-1' )
+          {
+            form.action = '${addM1ProjectUrl}';
+            form.projectType.value = "";
+          }
+          else if ( type == 'ant' )
+          {
+            form.action = '${addProjectUrl}';
+            form.projectType.value = "ant";
+          }
+          else if ( type == 'shell' )
+          {
+            form.action = '${addProjectUrl}';
+            form.projectType.value = "shell";
+          }
+
+          form.submit();
+        }
+        else
+        {
+          alert( "Please choose a project type to add from the dropdown list." );
+        }
+      }
+    </script>
   </head>
   <body>
   <div id="h3">
-    <ww:action name="projectGroupTab" executeResult="true">
-      <ww:param name="tabName" value="'Summary'"/>
-    </ww:action>
+    <s:action name="projectGroupTab" executeResult="true">
+      <s:param name="tabName" value="'Summary'"/>
+    </s:action>
 
-    <h3>Project Group</h3>
+    <s:if test="hasActionErrors()">
+      <div class="errormessage">
+        <s:actionerror/>
+      </div>
+    </s:if>
+    <s:if test="hasActionMessages()">
+      <div class="warningmessage">
+        <s:actionmessage/>
+      </div>
+    </s:if>
+
+    <h3><s:text name="projectGroup.information.title"><s:param value="projectGroup.name"/></s:text></h3>
+
     <div class="axial">
       <table border="1" cellspacing="2" cellpadding="3" width="100%">
-        <c1:data label="%{getText('projectGroup.name.label')}" name="projectGroup.name"/>
-        <c1:data label="%{getText('projectGroup.groupId.label')}" name="projectGroup.groupId"/>
-        <c1:data label="%{getText('projectGroup.description.label')}" name="projectGroup.description"/>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.name.label'/>:</label></th>
+          <td><s:property value="projectGroup.name"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.groupId.label'/>:</label></th>
+          <td><s:property value="projectGroup.groupId"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.description.label'/>:</label></th>
+          <td><s:property value="projectGroup.description"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.repository.label'/>:</label></th>
+          <td><s:property value="projectGroup.localRepository.name"/></td>
+        </tr>
+        <s:if test="url != null">
+            <s:url id="projectHomepageUrl" value="%{url}" includeContext="false" includeParams="none"/>
+            <tr class="b">
+              <th><label class="label"><s:text name='projectGroup.url.label'/>:</label></th>
+              <td><a href="${projectHomepageUrl}"><s:property value="url"/></a></td>
+            </tr>
+        </s:if>
       </table>
     </div>
 
-    <pss:ifAnyAuthorized permissions="continuum-build-group,continuum-remove-group" resource="${projectGroup.name}">
-      <h3>Project Group Actions</h3>
+    <h3><s:text name="projectGroup.scmRoot.title"/></h3>
+    <ec:table items="projectScmRoots"
+              var="projectScmRoot"
+              autoIncludeParameters="false"
+              showExports="false"
+              showPagination="false"
+              showStatusBar="false"
+              sortable="false"
+              filterable="false">
+      <ec:row highlightRow="true">
+        <ec:column property="state" title="&nbsp;" width="1%" cell="org.apache.maven.continuum.web.view.StateCell"/>
+        <ec:column property="scmRootAddress" title="projectGroup.scmRoot.label"/>  
+      </ec:row>
+    </ec:table>
+
+    <redback:ifAnyAuthorized permissions="continuum-build-group,continuum-remove-group" resource="${projectGroup.name}">
+      <h3><s:text name="projectGroup.actions.title"/></h3>
 
       <div class="functnbar3">
         <table>
           <tr>
             <td>
-              <pss:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
-                <form action="buildProjectGroup.action" method="post">
-                    <input type="hidden" name="projectGroupId" value="<ww:property value="projectGroupId"/>"/>
-                    <input type="submit" name="build" value="<ww:text name="build"/>"/>
-                </form>
-                </pss:ifAuthorized>
-            <td>
-                <pss:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
-                <form action="editProjectGroup.action" method="post">
-                    <input type="hidden" name="projectGroupId" value="<ww:property value="projectGroupId"/>"/>
-                    <input type="submit" name="edit" value="<ww:text name="edit"/>"/>
-                </form>
-                </pss:ifAuthorized>
+              <table>
+                <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
+                  <s:form action="buildProjectGroup" theme="simple">
+                    <s:hidden name="projectGroupId" />
+                    <s:select theme="simple" name="buildDefinitionId" list="buildDefinitions"
+                               listKey="value" listValue="key" headerKey="-1" headerValue="%{getText('projectGroup.buildDefinition.label')}" />                    
+                    <input type="submit" name="build" value="<s:text name="projectGroup.buildGroup"/>"/>
+                  </s:form>
+                </redback:ifAuthorized>
+              </table>
             </td>
             <td>
-              <pss:ifAuthorized permission="continuum-remove-group" resource="${projectGroup.name}">
-                <form action="removeProjectGroup.action" method="post">
-                    <input type="hidden" name="projectGroupId" value="<ww:property value="projectGroupId"/>"/>
-                    <input type="submit" name="remove" value="<ww:text name="delete"/>"/>
-                </form>
-              </pss:ifAuthorized>
+              <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+                <s:form action="editProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="edit" value="%{getText('edit')}"/>
+                </s:form>
+              </redback:ifAuthorized>
+            </td>
+            <td>
+              <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
+                <s:form action="releaseProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="release" value="%{getText('release')}" />
+                </s:form>
+              </redback:ifAuthorized>
+            </td>
+            <td>
+              <redback:ifAnyAuthorized permissions="continuum-add-project-to-group" resource="${projectGroup.name}">
+                <s:form name="addNewProject">
+                  <s:hidden name="disableGroupSelection" value="true"/>
+                  <s:hidden name="selectedProjectGroup" value="%{projectGroup.id}"/>
+                  <s:hidden name="projectGroupName" value="%{projectGroup.name}"/>
+                  <s:hidden name="projectType" value=""/>
+                </s:form>
+
+                <s:select theme="simple" name="preferredExecutor" list="#@java.util.HashMap@{'maven2' : 'Add M2 Project', 'maven-1' : 'Add M1 Project', 'ant' : 'Add Ant Project', 'shell' : 'Add Shell Project'}"
+                    headerValue="Choose the project type" headerKey="" emptyOption="true" />
+
+                <input type="button" value="<s:text name="add"/>" onclick="goToAddProject()"/>
+              </redback:ifAnyAuthorized>
+            </td>
+            <td>
+              <redback:ifAuthorized permission="continuum-remove-group" resource="${projectGroup.name}">
+                <s:form action="confirmRemoveProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="remove" value="%{getText('projectGroup.deleteGroup')}" />
+                </s:form>
+              </redback:ifAuthorized>
+            </td>
+            <td>
+              <redback:ifAuthorized permission="continuum-build-project-in-group" resource="${projectGroup.name}">
+                <s:form action="cancelGroupBuild" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="cancel" value="%{getText('projectGroup.cancelGroupBuild')}" />
+                </s:form>
+              </redback:ifAuthorized>
             </td>
           </tr>
         </table>
       </div>
-    </pss:ifAnyAuthorized>
-   
-    <ww:action name="projectSummary" executeResult="true" namespace="component">
-      <ww:param name="projectGroupId" value="%{projectGroupId}"/>
-      <ww:param name="projectGroupName" value="%{projectGroup.name}"/>
-    </ww:action>
-    
-    <pss:ifAnyAuthorized permissions="continuum-add-project-to-group" resource="${projectGroup.name}">
-      <div class="functnbar3">
-        <c:url var="addM2ProjectUrl" value="/addMavenTwoProject!default.action">
-          <c:param name="disableGroupSelection" value="true"/>
-          <c:param name="selectedProjectGroup" value="${projectGroup.id}"/>
-          <c:param name="projectGroupName" value="${projectGroup.name}"/>
-        </c:url>
-        <c:url var="addM1ProjectUrl" value="/addMavenOneProject!default.action">
-          <c:param name="disableGroupSelection" value="true"/>
-          <c:param name="selectedProjectGroup" value="${projectGroup.id}"/>
-          <c:param name="projectGroupName" value="${projectGroup.name}"/>
-        </c:url>
-        <table>
-          <tr>
-            <td>
-              <form action="${addM2ProjectUrl}" method="post">
-                <input type="submit" name="addM2Project" value="<ww:text name="add.m2.project.section.title"/>"/>
-              </form>
-            </td>
-            <td>
-              <form action="${addM1ProjectUrl}" method="post">
-                <input type="submit" name="addM1Project" value="<ww:text name="add.m1.project.section.title"/>"/>
-              </form>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </pss:ifAnyAuthorized>
+    </redback:ifAnyAuthorized>
+
+    <s:action name="projectSummary" executeResult="true" namespace="component">
+      <s:param name="projectGroupId" value="projectGroupId" />
+      <s:param name="projectGroupName" value="projectGroup.name" />
+    </s:action>
 
   </div>
   </body>
-</ww:i18n>
+</s:i18n>
 </html>

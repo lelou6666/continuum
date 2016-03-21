@@ -19,49 +19,62 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
-import java.util.Map;
-import java.util.HashMap;
-
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Action that deletes a {@link ProjectNotifier} of type 'Wagon' from the 
+ * Action that edits a {@link ProjectNotifier} of type 'Wagon' from the
  * specified {@link ProjectGroup}.
- * 
+ *
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
- * 
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="wagonGroupNotifierEdit"
  */
 
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "wagonGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class WagonGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
     private String url;
-    
-    protected void initConfiguration( Map configuration )
-    {     
-        url = (String) configuration.get( "url" );
+
+    private String id;
+
+    protected void initConfiguration( Map<String, String> configuration )
+    {
+        url = configuration.get( "url" );
+        id = configuration.get( "id" );
     }
-    
+
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "url", url );
+
+        configuration.put( "id", id );
 
         notifier.setConfiguration( configuration );
     }
 
-    public String getUrl() 
+    public String getUrl()
     {
         return url;
     }
 
-    public void setUrl( String url ) 
+    public void setUrl( String url )
     {
         this.url = url;
+    }
+
+    public String getId()
+    {
+        return id;
+    }
+
+    public void setId( String id )
+    {
+        this.id = id;
     }
 }

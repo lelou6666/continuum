@@ -19,26 +19,41 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.configuration.BuildAgentConfigurationException;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
+import org.apache.continuum.release.distributed.DistributedReleaseUtil;
+import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
+import org.apache.continuum.release.utils.ReleaseHelper;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
+import org.apache.continuum.web.action.AbstractReleaseAction;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.release.DefaultReleaseManagerListener;
-
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
 import org.apache.maven.shared.release.ReleaseResult;
-import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Edwin Punzalan
- *
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="releasePerform"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releasePerform", instantiationStrategy = "per-lookup" )
 public class ReleasePerformAction
-    extends ContinuumActionSupport
+    extends AbstractReleaseAction
 {
     private int projectId;
 
@@ -54,20 +69,79 @@ public class ReleasePerformAction
 
     private String scmTagBase;
 
-    private String goals;
+    private String goals = "clean deploy";
 
-    private boolean useReleaseProfile;
+    private String arguments;
+
+    private boolean useReleaseProfile = true;
 
     private ContinuumReleaseManagerListener listener;
 
     private ReleaseResult result;
 
+    private String projectGroupName = "";
+
+    private List<Profile> profiles;
+
+    private int profileId;
+
+    @Requirement
+    private ReleaseHelper releaseHelper;
+
+    @Requirement
+    private LocalRepositoryHelper localRepositoryHelper;
+
+    private void init()
+        throws Exception
+    {
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            DistributedReleaseManager distributedReleaseManager = getContinuum().getDistributedReleaseManager();
+
+            getReleasePluginParameters( distributedReleaseManager.getReleasePluginParameters( projectId, "pom.xml" ) );
+        }
+        else
+        {
+            Project project = getContinuum().getProject( projectId );
+
+            String workingDirectory = getContinuum().getWorkingDirectory( project.getId() ).getPath();
+
+            ArtifactRepository localRepo =
+                localRepositoryHelper.getLocalRepository( project.getProjectGroup().getLocalRepository() );
+            getReleasePluginParameters( localRepo, workingDirectory, "pom.xml" );
+        }
+    }
+
     public String inputFromScm()
         throws Exception
     {
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        try
+        {
+            init();
+        }
+        catch ( BuildAgentConfigurationException e )
+        {
+            List<Object> args = new ArrayList<Object>();
+            args.add( e.getMessage() );
+
+            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) );
+            return RELEASE_ERROR;
+        }
+
         populateFromProject();
 
         releaseId = "";
+
+        profiles = this.getContinuum().getProfileService().getAllProfiles();
 
         return SUCCESS;
     }
@@ -75,22 +149,113 @@ public class ReleasePerformAction
     public String input()
         throws Exception
     {
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        try
+        {
+            init();
+        }
+        catch ( BuildAgentConfigurationException e )
+        {
+            List<Object> args = new ArrayList<Object>();
+            args.add( e.getMessage() );
+
+            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) );
+            return RELEASE_ERROR;
+        }
+
         return SUCCESS;
+    }
+
+    /**
+     * FIXME olamy is it really the good place to do that ? should be moved to continuum-release
+     * TODO handle remoteTagging
+     */
+    private void getReleasePluginParameters( ArtifactRepository localRepo, String workingDirectory, String pomFilename )
+        throws Exception
+    {
+        Map<String, Object> params = releaseHelper.extractPluginParameters( localRepo, workingDirectory, pomFilename );
+
+        if ( params.get( "use-release-profile" ) != null )
+        {
+            useReleaseProfile = (Boolean) params.get( "use-release-profile" );
+        }
+
+        if ( params.get( "perform-goals" ) != null )
+        {
+            goals = (String) params.get( "perform-goals" );
+        }
+
+        if ( params.get( "arguments" ) != null )
+        {
+            arguments = (String) params.get( "arguments" );
+        }
     }
 
     public String execute()
         throws Exception
     {
-        listener = new DefaultReleaseManagerListener();
+        try
+        {
+            checkBuildProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+        Project project = getContinuum().getProject( projectId );
 
-        //todo should be configurable
-        File performDirectory = new File( getContinuum().getConfiguration().getWorkingDirectory(),
-                                          "releases-" + System.currentTimeMillis() );
-        performDirectory.mkdirs();
+        LocalRepository repository = project.getProjectGroup().getLocalRepository();
 
-        releaseManager.perform( releaseId, performDirectory, goals, useReleaseProfile, listener );
+        String username = getPrincipal();
+
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
+
+            try
+            {
+                releaseManager.releasePerform( projectId, releaseId, goals, arguments, useReleaseProfile, repository,
+                                               username );
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "distributedBuild.releasePerform.release.error", args ) );
+                return RELEASE_ERROR;
+            }
+        }
+        else
+        {
+            listener = new DefaultReleaseManagerListener();
+
+            listener.setUsername( username );
+
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            //todo should be configurable
+            File performDirectory = new File( getContinuum().getConfiguration().getWorkingDirectory(),
+                                              "releases-" + System.currentTimeMillis() );
+            performDirectory.mkdirs();
+
+            releaseManager.perform( releaseId, performDirectory, goals, arguments, useReleaseProfile, listener,
+                                    repository );
+        }
+
+        AuditLog event = new AuditLog( "ReleaseId=" + releaseId, AuditLogConstants.PERFORM_RELEASE );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( username );
+        event.log();
 
         return SUCCESS;
     }
@@ -98,22 +263,66 @@ public class ReleasePerformAction
     public String executeFromScm()
         throws Exception
     {
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
-
-        ReleaseDescriptor descriptor = new ReleaseDescriptor();
-        descriptor.setScmSourceUrl( scmUrl );
-        descriptor.setScmUsername( scmUsername );
-        descriptor.setScmReleaseLabel( scmTag );
-        descriptor.setScmTagBase( scmTagBase );
-
-        do
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            releaseId = String.valueOf( System.currentTimeMillis() );
-        }while ( releaseManager.getPreparedReleases().containsKey( releaseId ) );
+            Project project = getContinuum().getProject( projectId );
 
-        releaseManager.getPreparedReleases().put( releaseId, descriptor );
+            LocalRepository repository = project.getProjectGroup().getLocalRepository();
 
-        return execute();
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
+
+            Profile profile = null;
+            if ( profileId != -1 )
+            {
+                profile = getContinuum().getProfileService().getProfile( profileId );
+            }
+            Map<String, String> environments =
+                getEnvironments( profile, releaseManager.getDefaultBuildagent( projectId ) );
+
+            try
+            {
+                releaseId = releaseManager.releasePerformFromScm( projectId, goals, arguments, useReleaseProfile,
+                                                                  repository, scmUrl, scmUsername, scmPassword, scmTag,
+                                                                  scmTagBase, environments, getPrincipal() );
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "distributedBuild.releasePerform.release.error", args ) );
+                return RELEASE_ERROR;
+            }
+
+            return SUCCESS;
+        }
+        else
+        {
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            ContinuumReleaseDescriptor descriptor = new ContinuumReleaseDescriptor();
+            descriptor.setScmSourceUrl( scmUrl );
+            descriptor.setScmUsername( scmUsername );
+            descriptor.setScmPassword( scmPassword );
+            descriptor.setScmReleaseLabel( scmTag );
+            descriptor.setScmTagBase( scmTagBase );
+
+            if ( profileId != -1 )
+            {
+                Profile profile = getContinuum().getProfileService().getProfile( profileId );
+                descriptor.setEnvironments( getEnvironments( profile, null ) );
+            }
+
+            do
+            {
+                releaseId = String.valueOf( System.currentTimeMillis() );
+            }
+            while ( releaseManager.getPreparedReleases().containsKey( releaseId ) );
+
+            releaseManager.getPreparedReleases().put( releaseId, descriptor );
+
+            return execute();
+        }
     }
 
     private void populateFromProject()
@@ -135,6 +344,21 @@ public class ReleasePerformAction
         }
 
         releaseId = "";
+    }
+
+    private void getReleasePluginParameters( Map context )
+    {
+        useReleaseProfile = DistributedReleaseUtil.getUseReleaseProfile( context, useReleaseProfile );
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getPerformGoals( context, goals ) ) )
+        {
+            goals = DistributedReleaseUtil.getPerformGoals( context, goals );
+        }
+
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getArguments( context, "" ) ) )
+        {
+            arguments = DistributedReleaseUtil.getArguments( context, "" );
+        }
     }
 
     public String getReleaseId()
@@ -245,5 +469,46 @@ public class ReleasePerformAction
     public void setProjectId( int projectId )
     {
         this.projectId = projectId;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( projectGroupName == null || "".equals( projectGroupName ) )
+        {
+            projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+        }
+
+        return projectGroupName;
+    }
+
+    public List<Profile> getProfiles()
+    {
+        return profiles;
+    }
+
+    public void setProfiles( List<Profile> profiles )
+    {
+        this.profiles = profiles;
+    }
+
+    public int getProfileId()
+    {
+        return profileId;
+    }
+
+    public void setProfileId( int profileId )
+    {
+        this.profileId = profileId;
+    }
+
+    public String getArguments()
+    {
+        return arguments;
+    }
+
+    public void setArguments( String arguments )
+    {
+        this.arguments = arguments;
     }
 }

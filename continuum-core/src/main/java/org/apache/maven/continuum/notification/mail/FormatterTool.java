@@ -26,13 +26,12 @@ import java.util.Date;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class FormatterTool
 {
-    private String timestampFormatString;
+    private final String timestampFormatString;
 
-    private ThreadLocal timestampFormat = new ThreadLocal();
+    private final ThreadLocal<SimpleDateFormat> timestampFormat = new ThreadLocal<SimpleDateFormat>();
 
     public FormatterTool( String timestampFormatString )
     {
@@ -87,7 +86,8 @@ public class FormatterTool
 
     public String formatTimestamp( long timestamp )
     {
-        if (timestamp <= 0) {
+        if ( timestamp <= 0 )
+        {
             return null;
         }
         return getSimpleDateFormat( timestampFormat, timestampFormatString ).format( new Date( timestamp ) );
@@ -126,9 +126,9 @@ public class FormatterTool
     //
     // ----------------------------------------------------------------------
 
-    private SimpleDateFormat getSimpleDateFormat( ThreadLocal threadLocal, String format )
+    private SimpleDateFormat getSimpleDateFormat( ThreadLocal<SimpleDateFormat> threadLocal, String format )
     {
-        SimpleDateFormat dateFormat = (SimpleDateFormat) threadLocal.get();
+        SimpleDateFormat dateFormat = threadLocal.get();
 
         if ( dateFormat == null )
         {
@@ -140,8 +140,10 @@ public class FormatterTool
         return dateFormat;
     }
 
-    public String trim(String str) {
-        if (str == null) {
+    public String trim( String str )
+    {
+        if ( str == null )
+        {
             return "";
         }
         return str.trim();

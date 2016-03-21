@@ -19,105 +19,102 @@ package org.apache.maven.continuum.notification.jabber;
  * under the License.
  */
 
-import org.apache.maven.continuum.ContinuumException;
+import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.maven.continuum.configuration.ConfigurationService;
+import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
-import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.apache.maven.continuum.store.ContinuumStore;
-import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.apache.maven.continuum.notification.MessageContext;
+import org.apache.maven.continuum.notification.NotificationException;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.jabber.JabberClient;
 import org.codehaus.plexus.jabber.JabberClientException;
-import org.codehaus.plexus.notification.NotificationException;
+import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
+@Service( "notifier#jabber" )
 public class JabberContinuumNotifier
     extends AbstractContinuumNotifier
 {
+    private static final Logger log = LoggerFactory.getLogger( JabberContinuumNotifier.class );
+
     // ----------------------------------------------------------------------
     // Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private JabberClient jabberClient;
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private ConfigurationService configurationService;
-
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
 
     // ----------------------------------------------------------------------
     // Configuration
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromAddress;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromPassword;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String host;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private int port;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String imDomainName;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private boolean sslConnection;
 
     // ----------------------------------------------------------------------
     // Notifier Implementation
     // ----------------------------------------------------------------------
 
-    public void sendNotification( String source, Set recipients, Map configuration, Map context )
+    public String getType()
+    {
+        return "jabber";
+    }
+
+    public void sendMessage( String messageId, MessageContext context )
         throws NotificationException
     {
-        Project project = (Project) context.get( ContinuumNotificationDispatcher.CONTEXT_PROJECT );
+        Project project = context.getProject();
 
-        ProjectNotifier projectNotifier =
-            (ProjectNotifier) context.get( ContinuumNotificationDispatcher.CONTEXT_PROJECT_NOTIFIER );
+        List<ProjectNotifier> notifiers = context.getNotifiers();
+        BuildDefinition buildDefinition = context.getBuildDefinition();
+        BuildResult build = context.getBuildResult();
+        ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
 
-        BuildResult build = (BuildResult) context.get( ContinuumNotificationDispatcher.CONTEXT_BUILD );
+        boolean isPrepareBuildComplete = messageId.equals(
+            ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+
+        if ( projectScmRoot == null && isPrepareBuildComplete )
+        {
+            return;
+        }
 
         // ----------------------------------------------------------------------
         // If there wasn't any building done, don't notify
         // ----------------------------------------------------------------------
 
-        if ( build == null )
+        if ( build == null && !isPrepareBuildComplete )
         {
             return;
         }
@@ -125,10 +122,20 @@ public class JabberContinuumNotifier
         // ----------------------------------------------------------------------
         //
         // ----------------------------------------------------------------------
+
+        List<String> recipients = new ArrayList<String>();
+        for ( ProjectNotifier notifier : notifiers )
+        {
+            Map<String, String> configuration = notifier.getConfiguration();
+            if ( configuration != null && StringUtils.isNotEmpty( configuration.get( ADDRESS_FIELD ) ) )
+            {
+                recipients.add( configuration.get( ADDRESS_FIELD ) );
+            }
+        }
 
         if ( recipients.size() == 0 )
         {
-            getLogger().info( "No Jabber recipients for '" + project.getName() + "'." );
+            log.info( "No Jabber recipients for '" + project.getName() + "'." );
 
             return;
         }
@@ -137,9 +144,19 @@ public class JabberContinuumNotifier
         //
         // ----------------------------------------------------------------------
 
-        if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
+        if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
         {
-            sendMessage( project, projectNotifier, build, recipients, configuration );
+            for ( ProjectNotifier notifier : notifiers )
+            {
+                buildComplete( project, notifier, build, buildDefinition );
+            }
+        }
+        else if ( isPrepareBuildComplete )
+        {
+            for ( ProjectNotifier notifier : notifiers )
+            {
+                prepareBuildComplete( projectScmRoot, notifier );
+            }
         }
     }
 
@@ -147,66 +164,37 @@ public class JabberContinuumNotifier
     //
     // ----------------------------------------------------------------------
 
-    private String generateMessage( Project project, BuildResult build )
-        throws ContinuumException
-    {
-        int state = project.getState();
-
-        if ( build != null )
-        {
-            state = build.getState();
-        }
-
-        String message;
-
-        if ( state == ContinuumProjectState.OK )
-        {
-            message = "BUILD SUCCESSFUL: " + project.getName();
-        }
-        else if ( state == ContinuumProjectState.FAILED )
-        {
-            message = "BUILD FAILURE: " + project.getName();
-        }
-        else if ( state == ContinuumProjectState.ERROR )
-        {
-            message = "BUILD ERROR: " + project.getName();
-        }
-        else
-        {
-            getLogger().warn( "Unknown build state " + state + " for project " + project.getId() );
-
-            message = "ERROR: Unknown build state " + state + " for " + project.getName() + " project";
-        }
-
-        return message + " " + getReportUrl( project, build, configurationService );
-    }
-
-    private void sendMessage( Project project, ProjectNotifier projectNotifier, BuildResult build, Set recipients,
-                              Map configuration )
+    private void buildComplete( Project project, ProjectNotifier notifier, BuildResult build, BuildDefinition buildDef )
         throws NotificationException
     {
-        String message;
-
         // ----------------------------------------------------------------------
         // Check if the mail should be sent at all
         // ----------------------------------------------------------------------
 
-        BuildResult previousBuild = getPreviousBuild( project, build );
+        BuildResult previousBuild = getPreviousBuild( project, buildDef, build );
 
-        if ( !shouldNotify( build, previousBuild, projectNotifier ) )
+        if ( !shouldNotify( build, previousBuild, notifier ) )
         {
             return;
         }
 
-        try
+        sendMessage( notifier.getConfiguration(), generateMessage( project, build, configurationService ) );
+    }
+
+    private void prepareBuildComplete( ProjectScmRoot projectScmRoot, ProjectNotifier notifier )
+        throws NotificationException
+    {
+        if ( !shouldNotify( projectScmRoot, notifier ) )
         {
-            message = generateMessage( project, build );
-        }
-        catch ( ContinuumException e )
-        {
-            throw new NotificationException( "Can't generate the message.", e );
+            return;
         }
 
+        sendMessage( notifier.getConfiguration(), generateMessage( projectScmRoot, configurationService ) );
+    }
+
+    private void sendMessage( Map<String, String> configuration, String message )
+        throws NotificationException
+    {
         jabberClient.setHost( getHost( configuration ) );
 
         jabberClient.setPort( getPort( configuration ) );
@@ -225,17 +213,20 @@ public class JabberContinuumNotifier
 
             jabberClient.logon();
 
-            for ( Iterator i = recipients.iterator(); i.hasNext(); )
+            if ( configuration != null && StringUtils.isNotEmpty( configuration.get( ADDRESS_FIELD ) ) )
             {
-                String recipient = (String) i.next();
-
-                if ( isGroup( configuration ) )
+                String address = configuration.get( ADDRESS_FIELD );
+                String[] recipients = StringUtils.split( address, "," );
+                for ( String recipient : recipients )
                 {
-                    jabberClient.sendMessageToGroup( recipient, message );
-                }
-                else
-                {
-                    jabberClient.sendMessageToUser( recipient, message );
+                    if ( isGroup( configuration ) )
+                    {
+                        jabberClient.sendMessageToGroup( recipient, message );
+                    }
+                    else
+                    {
+                        jabberClient.sendMessageToUser( recipient, message );
+                    }
                 }
             }
         }
@@ -256,56 +247,17 @@ public class JabberContinuumNotifier
         }
     }
 
-    private BuildResult getPreviousBuild( Project project, BuildResult currentBuild )
-        throws NotificationException
-    {
-        try
-        {
-            // TODO: prefer to remove this and get them up front
-            if ( project.getId() > 0 )
-            {
-                project = store.getProjectWithBuilds( project.getId() );
-            }
-        }
-        catch ( ContinuumStoreException e )
-        {
-            throw new NotificationException( "Unable to obtain project builds", e );
-        }
-        List builds = project.getBuildResults();
-
-        if ( builds.size() < 2 )
-        {
-            return null;
-        }
-
-        BuildResult build = (BuildResult) builds.get( builds.size() - 1 );
-
-        if ( currentBuild != null && build.getId() != currentBuild.getId() )
-        {
-            throw new NotificationException( "INTERNAL ERROR: The current build wasn't the first in the build list. " +
-                "Current build: '" + currentBuild.getId() + "', " + "first build: '" + build.getId() + "'." );
-        }
-
-        return (BuildResult) builds.get( builds.size() - 2 );
-    }
-
-    public void sendNotification( String arg0, Set arg1, Properties arg2 )
-        throws NotificationException
-    {
-        throw new NotificationException( "Not implemented." );
-    }
-
-    private String getHost( Map configuration )
+    private String getHost( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "host" ) )
         {
-            return (String) configuration.get( "host" );
+            return configuration.get( "host" );
         }
         else
         {
             if ( configuration.containsKey( "address" ) )
             {
-                String username = (String) configuration.get( "address" );
+                String username = configuration.get( "address" );
 
                 if ( username.indexOf( "@" ) > 0 )
                 {
@@ -317,17 +269,17 @@ public class JabberContinuumNotifier
         return host;
     }
 
-    private int getPort( Map configuration )
+    private int getPort( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "port" ) )
         {
             try
             {
-                return Integer.parseInt( (String) configuration.get( "port" ) );
+                return Integer.parseInt( configuration.get( "port" ) );
             }
             catch ( NumberFormatException e )
             {
-                getLogger().error( "jabber port isn't a number.", e );
+                log.error( "jabber port isn't a number.", e );
             }
         }
 
@@ -345,11 +297,11 @@ public class JabberContinuumNotifier
         }
     }
 
-    private String getUsername( Map configuration )
+    private String getUsername( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "login" ) )
         {
-            String username = (String) configuration.get( "login" );
+            String username = configuration.get( "login" );
 
             if ( username.indexOf( "@" ) > 0 )
             {
@@ -362,57 +314,43 @@ public class JabberContinuumNotifier
         return fromAddress;
     }
 
-    private String getPassword( Map configuration )
+    private String getPassword( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "password" ) )
         {
-            return (String) configuration.get( "password" );
+            return configuration.get( "password" );
         }
 
         return fromPassword;
     }
 
-    private boolean isSslConnection( Map configuration )
+    private boolean isSslConnection( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "sslConnection" ) )
         {
-            return convertBoolean( (String) configuration.get( "sslConnection" ) );
+            return convertBoolean( configuration.get( "sslConnection" ) );
         }
 
         return sslConnection;
     }
 
-    private String getImDomainName( Map configuration )
+    private String getImDomainName( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "domainName" ) )
         {
-            return (String) configuration.get( "domainName" );
+            return configuration.get( "domainName" );
         }
 
         return imDomainName;
     }
 
-    private boolean isGroup( Map configuration )
+    private boolean isGroup( Map<String, String> configuration )
     {
-        if ( configuration.containsKey( "isGroup" ) )
-        {
-            return convertBoolean( (String) configuration.get( "isGroup" ) );
-        }
-        else
-        {
-            return false;
-        }
+        return configuration.containsKey( "isGroup" ) && convertBoolean( configuration.get( "isGroup" ) );
     }
 
     private boolean convertBoolean( String value )
     {
-        if ( "true".equalsIgnoreCase( value ) || "on".equalsIgnoreCase( value ) || "yes".equalsIgnoreCase( value ) )
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return "true".equalsIgnoreCase( value ) || "on".equalsIgnoreCase( value ) || "yes".equalsIgnoreCase( value );
     }
 }

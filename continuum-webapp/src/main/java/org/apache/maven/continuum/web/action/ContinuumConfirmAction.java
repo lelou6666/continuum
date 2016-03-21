@@ -19,7 +19,7 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-public class ContinuumConfirmAction 
+public class ContinuumConfirmAction
     extends ContinuumActionSupport
 {
 
@@ -37,8 +37,8 @@ public class ContinuumConfirmAction
 
     protected String action;
 
-    protected void setConfirmationInfo( String title, String actionName, String displayString, 
-                                        String propertyName, String propertyValue )
+    protected void setConfirmationInfo( String title, String actionName, String displayString, String propertyName,
+                                        String propertyValue )
     {
         action = actionName;
         confirmationTitle = title;
@@ -89,19 +89,19 @@ public class ContinuumConfirmAction
         return confirmedDisplay;
     }
 
-    public void setConfirmed( boolean _confirmed )
+    public void setConfirmed( boolean confirmed )
     {
-        confirmed = _confirmed;
+        this.confirmed = confirmed;
     }
 
-    public boolean getConfirmed()
+    public boolean isConfirmed()
     {
         return confirmed;
     }
 
-    public void setAction( String _action )
+    public void setAction( String action )
     {
-        action = _action;
+        this.action = action;
     }
 
     public String getAction()

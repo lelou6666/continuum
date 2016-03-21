@@ -19,16 +19,38 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+
 import java.net.URL;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ContinuumProjectBuilder
 {
     String ROLE = ContinuumProjectBuilder.class.getName();
 
     ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password )
+        throws ContinuumProjectBuilderException;
+
+    ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                              boolean recursiveProjects,
+                                                              boolean checkoutInSingleDirectory )
+        throws ContinuumProjectBuilderException;
+
+    ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                              boolean recursiveProjects,
+                                                              BuildDefinitionTemplate buildDefinitionTemplate,
+                                                              boolean checkoutInSingleDirectory )
+        throws ContinuumProjectBuilderException;
+
+    ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                              boolean recursiveProjects,
+                                                              BuildDefinitionTemplate buildDefinitionTemplate,
+                                                              boolean checkoutInSingleDirectory,
+                                                              int projectGroupId )
+        throws ContinuumProjectBuilderException;
+
+    BuildDefinitionTemplate getDefaultBuildDefinitionTemplate()
         throws ContinuumProjectBuilderException;
 }

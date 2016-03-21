@@ -21,11 +21,12 @@ package org.apache.maven.continuum.execution.manager;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class BuildExecutorNotFoundException
     extends Exception
 {
+    private static final long serialVersionUID = 2709593430202284107L;
+
     public BuildExecutorNotFoundException( String message )
     {
         super( message );

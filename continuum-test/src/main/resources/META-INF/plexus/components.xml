@@ -21,20 +21,12 @@
   <components>
     <component>
       <role>org.codehaus.plexus.jdo.JdoFactory</role>
-      <role-hint>continuum</role-hint>
-      <implementation>org.codehaus.plexus.jdo.DefaultConfigurableJdoFactory</implementation>
-      <configuration>
-        <persistenceManagerFactoryClass>org.jpox.PersistenceManagerFactoryImpl</persistenceManagerFactoryClass>
-      </configuration>
-    </component>
-    <component>
-      <role>org.codehaus.plexus.jdo.JdoFactory</role>
       <role-hint>users</role-hint>
-      <implementation>org.codehaus.plexus.jdo.DefaultConfigurableJdoFactory</implementation>
+      <implementation>org.apache.maven.continuum.jdo.MemoryJdoFactory</implementation>
       <configuration>
         <!-- Database Configuration -->
         <driverName>org.hsqldb.jdbcDriver</driverName>
-        <url>jdbc:hsqldb:${plexus.home}/database</url>
+        <url>jdbc:hsqldb:mem:userstest</url>
         <userName>sa</userName>
         <password></password>
         <persistenceManagerFactoryClass>org.jpox.PersistenceManagerFactoryImpl</persistenceManagerFactoryClass>
@@ -68,11 +60,11 @@
           </property>
           <property>
             <name>org.jpox.transactionIsolation</name>
-            <value>READ_UNCOMMITTED</value>
+            <value>READ_COMMITTED</value>
           </property>
           <property>
             <name>org.jpox.poid.transactionIsolation</name>
-            <value>READ_UNCOMMITTED</value>
+            <value>READ_COMMITTED</value>
           </property>
         </otherProperties>
       </configuration>

@@ -19,6 +19,8 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -28,56 +30,41 @@ import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
-import org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="deploy-artifact"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "deploy-artifact" )
 public class DeployArtifactContinuumAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildExecutorManager buildExecutorManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ArtifactDeployer artifactDeployer;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenBuilderHelper builderHelper;
+    @Requirement
+    private LocalRepositoryHelper localRepositoryHelper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ArtifactRepositoryFactory artifactRepositoryFactory;
 
     public void execute( Map context )
@@ -91,6 +78,7 @@ public class DeployArtifactContinuumAction
 
         if ( deploymentRepositoryDirectory != null )
         {
+
             Project project = getProject( context );
 
             ContinuumBuildExecutor buildExecutor = buildExecutorManager.getBuildExecutor( project.getExecutorId() );
@@ -103,15 +91,21 @@ public class DeployArtifactContinuumAction
             {
                 BuildDefinition buildDefinition = getBuildDefinition( context );
 
-                List artifacts = buildExecutor.getDeployableArtifacts(
-                    workingDirectoryService.getWorkingDirectory( project ), buildDefinition );
+                String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
 
-                for ( Iterator i = artifacts.iterator(); i.hasNext(); )
+                List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
+
+                List<Artifact> artifacts = buildExecutor.getDeployableArtifacts( project,
+                                                                                 workingDirectoryService.getWorkingDirectory(
+                                                                                     project, projectScmRootUrl,
+                                                                                     projectsWithCommonScmRoot ),
+                                                                                 buildDefinition );
+
+                LocalRepository repository = project.getProjectGroup().getLocalRepository();
+                ArtifactRepository localRepository = localRepositoryHelper.getLocalRepository( repository );
+
+                for ( Artifact artifact : artifacts )
                 {
-                    Artifact artifact = (Artifact) i.next();
-
-                    ArtifactRepository localRepository = builderHelper.getLocalRepository();
-
                     ArtifactRepositoryLayout repositoryLayout = new DefaultRepositoryLayout();
 
                     if ( !deploymentRepositoryDirectory.exists() )

@@ -19,38 +19,169 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="buildResults"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildResults", instantiationStrategy = "per-lookup" )
 public class BuildResultsListAction
-    extends ContinuumActionSupport
+    extends AbstractBuildAction
 {
+    private static final Logger logger = LoggerFactory.getLogger( BuildResultsListAction.class );
+
+    private static final int MAX_PAGE_LEN = 100;
+
+    private static final int MIN_PAGE_LEN = 10;
+
     private Project project;
 
-    private Collection buildResults;
+    private Collection<BuildResult> buildResults;
+
+    private Collection<String> selectedBuildResults;
 
     private int projectId;
 
+    private int projectGroupId;
+
     private String projectName;
+
+    private String projectGroupName = "";
+
+    private int page;
+
+    private int length = MAX_PAGE_LEN / 4;
 
     public String execute()
         throws ContinuumException
     {
+        try
+        {
+            checkViewProjectGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         project = getContinuum().getProject( projectId );
 
-        buildResults = getContinuum().getBuildResultsForProject( projectId );
+        int adjPage = Math.max( 1, page ), adjLength = Math.max( MIN_PAGE_LEN, Math.min( MAX_PAGE_LEN, length ) );
+
+        page = adjPage;
+        length = adjLength;
+
+        buildResults = getContinuum().getBuildResultsForProject( projectId, ( page - 1 ) * length, length );
 
         return SUCCESS;
+    }
+
+    public String remove()
+        throws ContinuumException
+    {
+        try
+        {
+            checkModifyProjectGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+        if ( this.isConfirmed() )
+        {
+            if ( selectedBuildResults != null && !selectedBuildResults.isEmpty() )
+            {
+                for ( String id : selectedBuildResults )
+                {
+                    int buildId = Integer.parseInt( id );
+
+                    try
+                    {
+                        logger.info( "Removing BuildResult with id=" + buildId );
+
+                        getContinuum().removeBuildResult( buildId );
+
+                        AuditLog event = new AuditLog( "Build Result id=" + buildId,
+                                                       AuditLogConstants.REMOVE_BUILD_RESULT );
+                        event.setCategory( AuditLogConstants.BUILD_RESULT );
+                        event.setCurrentUser( getPrincipal() );
+                        event.log();
+                    }
+                    catch ( ContinuumException e )
+                    {
+                        logger.error( "Error removing BuildResult with id=" + buildId );
+                        addActionError( getText( "buildResult.delete.error", "Unable to delete build result",
+                                                 new Integer( buildId ).toString() ) );
+                    }
+                }
+            }
+            return SUCCESS;
+        }
+        else
+        {
+            List<String> buildResultsRemovable = new ArrayList<String>();
+            if ( selectedBuildResults != null && !selectedBuildResults.isEmpty() )
+            {
+                for ( String id : selectedBuildResults )
+                {
+                    int buildId = Integer.parseInt( id );
+
+                    try
+                    {
+                        if ( canRemoveBuildResult( getContinuum().getBuildResult( buildId ) ) )
+                        {
+                            buildResultsRemovable.add( Integer.toString( buildId ) );
+                        }
+                        else
+                        {
+                            this.addActionMessage( getResourceBundle().getString( "buildResult.cannot.delete" ) );
+                            return SUCCESS;
+                        }
+                    }
+                    catch ( BuildManagerException e )
+                    {
+                        logger.error( e.getMessage() );
+                        throw new ContinuumException( e.getMessage(), e );
+                    }
+                }
+            }
+            this.setSelectedBuildResults( buildResultsRemovable );
+        }
+        return CONFIRM;
+    }
+
+    public int getPage()
+    {
+        return page;
+    }
+
+    public void setPage( int page )
+    {
+        this.page = page;
+    }
+
+    public int getLength()
+    {
+        return length;
+    }
+
+    public void setLength( int length )
+    {
+        this.length = length;
     }
 
     public int getProjectId()
@@ -63,7 +194,7 @@ public class BuildResultsListAction
         this.projectId = projectId;
     }
 
-    public Collection getBuildResults()
+    public Collection<BuildResult> getBuildResults()
     {
         return buildResults;
     }
@@ -81,5 +212,36 @@ public class BuildResultsListAction
     public Project getProject()
     {
         return project;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( StringUtils.isEmpty( projectGroupName ) )
+        {
+            projectGroupName = getContinuum().getProject( projectId ).getProjectGroup().getName();
+        }
+
+        return projectGroupName;
+    }
+
+    public Collection<String> getSelectedBuildResults()
+    {
+        return selectedBuildResults;
+    }
+
+    public void setSelectedBuildResults( Collection<String> selectedBuildResults )
+    {
+        this.selectedBuildResults = selectedBuildResults;
+    }
+
+    public int getProjectGroupId()
+    {
+        return projectGroupId;
+    }
+
+    public void setProjectGroupId( int projectGroupId )
+    {
+        this.projectGroupId = projectGroupId;
     }
 }

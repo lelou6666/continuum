@@ -20,6 +20,7 @@ package org.apache.maven.continuum.web.view.projectview;
  */
 
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.util.StringUtils;
 import org.extremecomponents.table.bean.Column;
 import org.extremecomponents.table.cell.DisplayCell;
 import org.extremecomponents.table.core.TableModel;
@@ -27,11 +28,9 @@ import org.extremecomponents.table.core.TableModel;
 /**
  * Used in Project view
  *
+ * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
  * @deprecated use of cells is discouraged due to lack of i18n and design in java code.
  *             Use jsp:include instead.
- *
- * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class NotifierEventCell
     extends DisplayCell
@@ -61,6 +60,8 @@ public class NotifierEventCell
         {
             event += "Errors";
         }
+
+        event = StringUtils.replace( event, " ", "/" );
 
         return event;
     }

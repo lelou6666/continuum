@@ -17,19 +17,21 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="/plexusSecuritySystem" prefix="pss" %>
+<%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
-<ww:i18n name="localization.Continuum">
+<s:i18n name="localization.Continuum">
   <div id="banner">
     <span id="bannerLeft">
-      <a href="http://maven.apache.org/continuum">
-        <img src="<ww:url value="/images/continuum_logo_75.gif"/>" alt="Continuum" title="Continuum" border="0">
+      <a href="http://continuum.apache.org">
+        <img src="<s:url value="/images/continuum.svg" includeParams="none"/>"
+             onerror="this.src='<s:url value="/images/continuum.png" includeParams="none"/>';this.onerror=null;"
+             alt="Continuum" title="Continuum" border="0">
       </a>
     </span>
     <span id="bannerRight">
-      <ww:action name="companyInfo" executeResult="true"/>
+      <s:action name="companyInfo" executeResult="true"/>
     </span>
 
     <div class="clear">
@@ -40,10 +42,10 @@
   <div id="breadcrumbs">
 
     <div style="float: right;">
-      <a href="http://maven.apache.org/continuum">Continuum</a> |
+      <a href="http://continuum.apache.org">Continuum</a> |
       <a href="http://maven.apache.org/">Maven</a> |
       <a href="http://www.apache.org/">Apache</a>
     </div>
-    <c:import url="/WEB-INF/jsp/pss/include/securityLinks.jsp"/>
+    <%@ include file="/WEB-INF/jsp/redback/include/securityLinks.jsp" %>
   </div>
-</ww:i18n>
+</s:i18n>

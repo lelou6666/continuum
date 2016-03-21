@@ -19,40 +19,67 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.Project;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * AddBuildDefinitionToProjectAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="add-build-definition-to-project"
- *
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-build-definition-to-project" )
 public class AddBuildDefinitionToProjectAction
     extends AbstractBuildDefinitionContinuumAction
 {
 
-    public void execute( Map map )
+    @Requirement
+    private ProjectDao projectDao;
+
+    public void execute( Map context )
         throws Exception
     {
+<<<<<<< HEAD
         BuildDefinition buildDefinition = getBuildDefinition( map );
         long projectId = getProjectId( map );
+=======
+        int projectId = getProjectId( context );
+        Project project = projectDao.getProjectWithAllDetails( projectId );
 
-        Project project = store.getProjectWithAllDetails( projectId );
+        BuildDefinitionTemplate buildDefinitionTemplate = getBuildDefinitionTemplate( context );
 
-        resolveDefaultBuildDefinitionsForProject( buildDefinition, project );
+        if ( buildDefinitionTemplate != null )
+        {
+            for ( BuildDefinition buildDefinition : (List<BuildDefinition>) buildDefinitionTemplate.getBuildDefinitions() )
+            {
+                resolveDefaultBuildDefinitionsForProject( buildDefinition, project );
+>>>>>>> refs/remotes/apache/trunk
 
-        project.addBuildDefinition( buildDefinition );
+                project.addBuildDefinition( buildDefinition );
 
-        store.updateProject( project );
+                if ( buildDefinition.isDefaultForProject() )
+                {
+                    AbstractContinuumAction.setBuildDefinition( context, buildDefinition );
+                }
+            }
+        }
+        else
+        {
+            BuildDefinition buildDefinition = getBuildDefinition( context );
+            resolveDefaultBuildDefinitionsForProject( buildDefinition, project );
 
-        map.put( AbstractContinuumAction.KEY_BUILD_DEFINITION, buildDefinition );
+            project.addBuildDefinition( buildDefinition );
+
+            AbstractContinuumAction.setBuildDefinition( context, buildDefinition );
+        }
+
+        // Save the project
+        projectDao.updateProject( project );
     }
 }

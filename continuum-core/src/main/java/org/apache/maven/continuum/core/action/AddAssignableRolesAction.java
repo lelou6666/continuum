@@ -19,13 +19,14 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.apache.maven.continuum.store.ContinuumStore;
-import org.codehaus.plexus.rbac.profile.RoleProfileException;
-import org.codehaus.plexus.rbac.profile.RoleProfileManager;
-import org.codehaus.plexus.security.rbac.Role;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.redback.role.RoleManager;
+import org.codehaus.plexus.redback.role.RoleManagerException;
 
 import java.util.Map;
 
@@ -33,44 +34,50 @@ import java.util.Map;
  * AddAssignableRolesAction:
  *
  * @author: Jesse McConnell <jmcconnell@apache.org>
- * @version: $ID:$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="add-assignable-roles"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-assignable-roles" )
 public class AddAssignableRolesAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
-    /**
-     * @plexus.requirement role-hint="continuum"
-     */
-    private RoleProfileManager roleManager;
+    @Requirement( hint = "default" )
+    private RoleManager roleManager;
 
     public void execute( Map context )
         throws ContinuumException, ContinuumStoreException
     {
+<<<<<<< HEAD
         long projectGroupId =  getProjectGroupId( context );
+=======
+        int projectGroupId = getProjectGroupId( context );
+>>>>>>> refs/remotes/apache/trunk
 
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetails( projectGroupId );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroup( projectGroupId );
 
         // TODO: make the resource the name of the project group and hide the id from the user
 
         try
         {
-            Role developer = roleManager.getDynamicRole( "continuum-group-developer", projectGroup.getName() );
+            if ( !roleManager.templatedRoleExists( "project-administrator", projectGroup.getName() ) )
+            {
+                roleManager.createTemplatedRole( "project-administrator", projectGroup.getName() );
+            }
+            if ( !roleManager.templatedRoleExists( "project-developer", projectGroup.getName() ) )
+            {
+                roleManager.createTemplatedRole( "project-developer", projectGroup.getName() );
+            }
 
-            Role user = roleManager.getDynamicRole( "continuum-group-user", projectGroup.getName() );
+            if ( !roleManager.templatedRoleExists( "project-user", projectGroup.getName() ) )
+            {
+                roleManager.createTemplatedRole( "project-user", projectGroup.getName() );
+            }
         }
-        catch ( RoleProfileException rpe )
+        catch ( RoleManagerException e )
         {
-            rpe.printStackTrace();
-            throw new ContinuumException( "error generating dynamic role for project " + projectGroup.getName(), rpe );
+            e.printStackTrace();
+            throw new ContinuumException( "error generating templated role for project " + projectGroup.getName(), e );
         }
     }
 }

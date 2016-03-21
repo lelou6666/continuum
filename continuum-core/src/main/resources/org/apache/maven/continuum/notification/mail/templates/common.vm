@@ -15,6 +15,8 @@
  *#
 #macro( shellBuildResult )
 Online report : $reportUrl
+
+#if ( $build )
 Build statistics:
   State: $formatter.formatProjectState( $build.state )
 #if ( $previousBuild )
@@ -30,7 +32,15 @@ Build statistics:
   Exit code: $build.exitCode
   Building machine hostname: $buildHost
   Operating system : $osName
-  Java version : $javaVersion
+  Java Home version : 
+    #foreach ( $javaHomeInformation in $javaHomeInformations )
+      $javaHomeInformation
+    #end  
+    
+  Builder version :
+    #foreach ( $builderVersion in $builderVersions )
+      $builderVersion
+    #end    
 
 #if ( $build.scmResult )
 ****************************************************************************
@@ -65,7 +75,7 @@ Files changed:
 #end
 #end
 #end
-#if ( $changesSinceLastSuccess )
+#if ( $changesSinceLastSuccess && $changesSinceLastSuccess.changes )
 ****************************************************************************
 SCM Changes since last success:
 ****************************************************************************
@@ -112,13 +122,50 @@ $dep.groupId:$dep.artifactId:$dep.version
 #end
 #end
 #end
-#if ( $build.testResult )
+
+#if ( $build.buildDefinition )
+****************************************************************************
+Build Definition:
+****************************************************************************
+#if ( $build.buildDefinition.type )
+#if ( $build.buildDefinition.type == 'ant' )
+Ant build filename: $build.buildDefinition.buildFile   
+Goals: $build.buildDefinition.goals 
+#elseif ( $build.buildDefinition.type == 'shell' )
+shell: $build.buildDefinition.buildFile   
+#else
+POM filename: $build.buildDefinition.buildFile
+Goals: $build.buildDefinition.goals   
+#end
+#else
+POM filename: $build.buildDefinition.buildFile
+Goals: $build.buildDefinition.goals   
+#end
+Arguments: $build.buildDefinition.arguments
+Build Fresh: $build.buildDefinition.buildFresh
+Always Build: $build.buildDefinition.alwaysBuild
+Default Build Definition: $build.buildDefinition.defaultForProject
+Schedule: $build.buildDefinition.schedule.name
+#if ( $build.buildDefinition.profile )
+Profile Name: $build.buildDefinition.profile.name
+#end
+#if ( $build.buildDefinition.description )
+Description: $build.buildDefinition.description
+#end
+#end
+
+#if ( $testResult )
 ****************************************************************************
 Test Summary:
 ****************************************************************************
-Tests: $build.testResult.testCount
-Failures: $build.testResult.failureCount
-Total time: $build.testResult.totalTime
+Tests: $testResult.testCount
+Failures: $testResult.failureCount
+Errors: $testResult.errorCount
+#if( $testResult.testCount != 0)
+#set( $successRate = (($testResult.testCount - ( $testResult.failureCount + $testResult.errorCount)) * 100) / $testResult.testCount)
+Success Rate: $successRate
+#end
+Total time: $testResult.totalTime
 
 #end
 #if ( $build.state == 4 )
@@ -127,32 +174,36 @@ Build Error:
 ****************************************************************************
 $build.error
 
-#if ( $build.testResult && $build.testResult.failureCount > 0)
+#end
+#if ( $includeTestSummary )
+#if ( $testResult && $testResult.failureCount > 0 )
 ****************************************************************************
 Test Failures:
 ****************************************************************************
 
-#foreach( $suite in $build.testResult.suiteResults )
-#if ( $suite.failureCount > 0)
+#foreach( $suite in $testResult.suiteResults )
+#if ( $suite.numberOfFailures > 0)
 $suite.name
-  #foreach( $failure in $suite.failures )
-  $failure.name
+  #foreach( $failure in $suite.reportFailures )
+  $failure.testName :
+  $failure.type
   $failure.exception
 
   #end
 #end
 #end
 #end
-#else
+#end
+#end
+
+#if ( $includeOutput )
+#if ( $buildOutput && $buildOutput != "" )
 ****************************************************************************
 Output:
 ****************************************************************************
-#if ( $buildOutput && $buildOutput != "" )
 $buildOutput
-#else
-There was no output.
-#end
 ****************************************************************************
-
 #end
+#end
+
 #end ## #macro( shellBuildResult )

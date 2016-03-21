@@ -23,8 +23,10 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Holder for results of adding projects to Continuum. Contains added projects, project groups
@@ -32,7 +34,6 @@ import java.util.List;
  *
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public class ContinuumProjectBuildingResult
 {
@@ -81,11 +82,17 @@ public class ContinuumProjectBuildingResult
 
     public static final String ERROR_UNKNOWN = "add.project.unknown.error";
 
-    private List projects = new ArrayList();
+    public static final String ERROR_DUPLICATE_PROJECTS = "add.project.duplicate.error";
 
-    private List projectGroups = new ArrayList();
+    private final List<Project> projects = new ArrayList<Project>();
 
-    private List errors = new ArrayList();
+    private final List<ProjectGroup> projectGroups = new ArrayList<ProjectGroup>();
+
+    private final Map<String, String> errors = new HashMap<String, String>();
+
+    private static final String LS = System.getProperty( "line.separator" );
+
+    private Project rootProject;
 
     public void addProject( Project project )
     {
@@ -104,12 +111,12 @@ public class ContinuumProjectBuildingResult
         projects.add( project );
     }
 
-    public List getProjects()
+    public List<Project> getProjects()
     {
         return projects;
     }
 
-    public List getProjectGroups()
+    public List<ProjectGroup> getProjectGroups()
     {
         return projectGroups;
     }
@@ -132,7 +139,7 @@ public class ContinuumProjectBuildingResult
      */
     public void addError( String errorKey )
     {
-        errors.add( errorKey );
+        errors.put( errorKey, "" );
     }
 
     /**
@@ -142,8 +149,7 @@ public class ContinuumProjectBuildingResult
      */
     public void addError( String errorKey, Object param )
     {
-        // TODO: store the parameters.
-        errors.add( errorKey );
+        errors.put( errorKey, param == null ? "" : param.toString() );
     }
 
     /**
@@ -153,8 +159,10 @@ public class ContinuumProjectBuildingResult
      */
     public void addError( String errorKey, Object params[] )
     {
-        // TODO: store the parameters.
-        errors.add( errorKey );
+        if ( params != null )
+        {
+            errors.put( errorKey, Arrays.asList( params ).toString() );
+        }
     }
 
     /**
@@ -164,7 +172,7 @@ public class ContinuumProjectBuildingResult
      * @return {@link List} &lt; {@link String} >
      * @deprecated Use {@link #getErrors()} instead
      */
-    public List getWarnings()
+    public List<String> getWarnings()
     {
         return getErrors();
     }
@@ -175,7 +183,12 @@ public class ContinuumProjectBuildingResult
      *
      * @return {@link List} &lt; {@link String} >
      */
-    public List getErrors()
+    public List<String> getErrors()
+    {
+        return new ArrayList<String>( errors.keySet() );
+    }
+
+    public Map<String, String> getErrorsWithCause()
     {
         return errors;
     }
@@ -202,13 +215,22 @@ public class ContinuumProjectBuildingResult
             return null;
         }
 
-        StringBuffer message = new StringBuffer();
-        for ( Iterator i = errors.iterator(); i.hasNext(); )
+        StringBuilder message = new StringBuilder();
+        for ( String key : errors.keySet() )
         {
-            String error = (String) i.next();
-            message.append( error );
-            message.append( "\n" );
+            message.append( errors.get( key ) );
+            message.append( LS );
         }
         return message.toString();
+    }
+
+    public Project getRootProject()
+    {
+        return rootProject;
+    }
+
+    public void setRootProject( Project rootProject )
+    {
+        this.rootProject = rootProject;
     }
 }

@@ -19,49 +19,61 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.component.annotations.Component;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-
 /**
- * Action that deletes a {@link ProjectNotifier} of type 'Wagon' from the 
+ * Action that edits a {@link ProjectNotifier} of type 'Wagon' from the
  * specified {@link Project}.
- * 
+ *
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
- * 
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="wagonProjectNotifierEdit"
  */
-
-public class WagonProjectNotifierEditAction 
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "wagonProjectNotifierEdit", instantiationStrategy = "per-lookup" )
+public class WagonProjectNotifierEditAction
     extends AbstractProjectNotifierEditAction
 {
-private String url;
-    
-    protected void initConfiguration( Map configuration )
-    {     
-        url = (String) configuration.get( "url" );
+    private String url;
+
+    private String id;
+
+    protected void initConfiguration( Map<String, String> configuration )
+    {
+        url = configuration.get( "url" );
+        id = configuration.get( "id" );
     }
-    
+
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "url", url );
+
+        configuration.put( "id", id );
 
         notifier.setConfiguration( configuration );
     }
 
-    public String getUrl() 
+    public String getUrl()
     {
         return url;
     }
 
-    public void setUrl( String url ) 
+    public void setUrl( String url )
     {
         this.url = url;
+    }
+
+    public String getId()
+    {
+        return id;
+    }
+
+    public void setId( String id )
+    {
+        this.id = id;
     }
 }

@@ -19,30 +19,27 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="org.codehaus.plexus.action.Action"
- *   role-hint="store-project"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "store-project" )
 public class StoreProjectAction
     extends AbstractContinuumAction
 {
+    private static final String KEY_SCM_USE_CREDENTIALS_CACHE = "useCredentialsCache";
 
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     public void execute( Map context )
         throws ContinuumException, ContinuumStoreException
@@ -55,11 +52,24 @@ public class StoreProjectAction
         //
         // ----------------------------------------------------------------------
 
+        boolean useCredentialsCache = isUseScmCredentialsCache( context, false );
+        // CONTINUUM-1605 don't store username/password
+        if ( useCredentialsCache )
+        {
+            project.setScmUsername( null );
+            project.setScmPassword( null );
+            project.setScmUseCache( true );
+        }
+
         projectGroup.addProject( project );
 
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
+<<<<<<< HEAD
         context.put( KEY_PROJECT_ID, new Long( project.getId() ) );
+=======
+        setProjectId( context, project.getId() );
+>>>>>>> refs/remotes/apache/trunk
 
         // ----------------------------------------------------------------------
         // Set the working directory
@@ -78,6 +88,16 @@ public class StoreProjectAction
 
         project.setWorkingDirectory( projectWorkingDirectory.getAbsolutePath() );
 */
-//        store.updateProject( project );
+        //        store.updateProject( project );
+    }
+
+    public static boolean isUseScmCredentialsCache( Map<String, Object> context, boolean defaultValue )
+    {
+        return getBoolean( context, KEY_SCM_USE_CREDENTIALS_CACHE, defaultValue );
+    }
+
+    public static void setUseScmCredentialsCache( Map<String, Object> context, boolean useScmCredentialsCache )
+    {
+        context.put( KEY_SCM_USE_CREDENTIALS_CACHE, useScmCredentialsCache );
     }
 }

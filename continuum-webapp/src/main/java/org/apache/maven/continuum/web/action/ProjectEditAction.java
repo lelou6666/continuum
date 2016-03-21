@@ -19,21 +19,20 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="projectEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectEdit", instantiationStrategy = "per-lookup"  )
 public class ProjectEditAction
     extends ContinuumActionSupport
 {
-
     private Project project;
 
     private int projectId;
@@ -50,9 +49,20 @@ public class ProjectEditAction
 
     private String scmTag;
 
+    private boolean scmUseCache;
+
     public String save()
         throws ContinuumException
     {
+        try
+        {
+            checkModifyProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         project = getProject( projectId );
 
         project.setName( name );
@@ -60,6 +70,8 @@ public class ProjectEditAction
         project.setVersion( version );
 
         project.setScmUrl( scmUrl );
+
+        project.setScmUseCache( scmUseCache );
 
         project.setScmUsername( scmUsername );
 
@@ -69,12 +81,26 @@ public class ProjectEditAction
 
         getContinuum().updateProject( project );
 
+        AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.MODIFY_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
+
         return SUCCESS;
     }
 
     public String edit()
         throws ContinuumException
     {
+        try
+        {
+            checkModifyProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         project = getProject( projectId );
 
         name = project.getName();
@@ -86,6 +112,8 @@ public class ProjectEditAction
         scmUsername = project.getScmUsername();
 
         scmPassword = project.getScmPassword();
+
+        scmUseCache = project.isScmUseCache();
 
         scmTag = project.getScmTag();
 
@@ -171,5 +199,21 @@ public class ProjectEditAction
     public Project getProject()
     {
         return project;
+    }
+
+    public void setScmUseCache( boolean scmUseCache )
+    {
+        this.scmUseCache = scmUseCache;
+    }
+
+    public boolean isScmUseCache()
+    {
+        return scmUseCache;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        return getProject( projectId ).getProjectGroup().getName();
     }
 }
