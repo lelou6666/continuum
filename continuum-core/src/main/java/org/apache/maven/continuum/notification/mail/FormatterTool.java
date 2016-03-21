@@ -1,19 +1,22 @@
 package org.apache.maven.continuum.notification.mail;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import org.apache.maven.continuum.project.ContinuumProjectState;
@@ -23,13 +26,12 @@ import java.util.Date;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class FormatterTool
 {
-    private String timestampFormatString;
+    private final String timestampFormatString;
 
-    private ThreadLocal timestampFormat = new ThreadLocal();
+    private final ThreadLocal<SimpleDateFormat> timestampFormat = new ThreadLocal<SimpleDateFormat>();
 
     public FormatterTool( String timestampFormatString )
     {
@@ -39,7 +41,7 @@ public class FormatterTool
     // TODO: Add i18n
     public String formatProjectState( int state )
     {
-        if ( state == ContinuumProjectState.NEW )
+        if ( state == ContinuumProjectState.NEW || state == ContinuumProjectState.CHECKEDOUT )
         {
             return "New";
         }
@@ -67,7 +69,7 @@ public class FormatterTool
 
     public String formatTrigger( int trigger )
     {
-        if ( trigger == ContinuumProjectState.TRIGGER_UNKNOWN )
+        if ( trigger == ContinuumProjectState.TRIGGER_SCHEDULED )
         {
             // TODO: fix this
             return "Schedule";
@@ -84,6 +86,10 @@ public class FormatterTool
 
     public String formatTimestamp( long timestamp )
     {
+        if ( timestamp <= 0 )
+        {
+            return null;
+        }
         return getSimpleDateFormat( timestampFormat, timestampFormatString ).format( new Date( timestamp ) );
     }
 
@@ -120,9 +126,9 @@ public class FormatterTool
     //
     // ----------------------------------------------------------------------
 
-    private SimpleDateFormat getSimpleDateFormat( ThreadLocal threadLocal, String format )
+    private SimpleDateFormat getSimpleDateFormat( ThreadLocal<SimpleDateFormat> threadLocal, String format )
     {
-        SimpleDateFormat dateFormat = (SimpleDateFormat) threadLocal.get();
+        SimpleDateFormat dateFormat = threadLocal.get();
 
         if ( dateFormat == null )
         {
@@ -132,5 +138,14 @@ public class FormatterTool
         }
 
         return dateFormat;
+    }
+
+    public String trim( String str )
+    {
+        if ( str == null )
+        {
+            return "";
+        }
+        return str.trim();
     }
 }

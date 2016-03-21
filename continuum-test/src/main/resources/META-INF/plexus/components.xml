@@ -1,3 +1,22 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
 <component-set>
   <components>
     <component>
@@ -9,6 +28,7 @@
     </component>
     <component>
       <role>org.codehaus.plexus.jdo.JdoFactory</role>
+<<<<<<< HEAD
       <implementation>org.codehaus.plexus.jdo.DefaultJdoFactory</implementation>
       <configuration>
         <properties>
@@ -18,10 +38,26 @@
             <value>org.jpox.PersistenceManagerFactoryImpl</value>
           </property>
           <property>
+=======
+      <role-hint>users</role-hint>
+      <implementation>org.apache.maven.continuum.jdo.MemoryJdoFactory</implementation>
+      <configuration>
+        <!-- Database Configuration -->
+        <driverName>org.hsqldb.jdbcDriver</driverName>
+        <url>jdbc:hsqldb:mem:userstest</url>
+        <userName>sa</userName>
+        <password></password>
+        <persistenceManagerFactoryClass>org.jpox.PersistenceManagerFactoryImpl</persistenceManagerFactoryClass>
+
+        <otherProperties>
+          <!-- JPOX and JDO configuration -->
+          <property>
+>>>>>>> refs/remotes/apache/trunk
             <name>org.jpox.autoCreateSchema</name>
             <value>true</value>
           </property>
           <property>
+<<<<<<< HEAD
             <name>org.jpox.autoStartMechanism</name>
             <value>SchemaTable</value>
           </property>
@@ -62,6 +98,37 @@
             <value>READ_UNCOMMITTED</value>
           </property>
         </properties>
+=======
+            <name>org.jpox.validateTables</name>
+            <value>false</value>
+          </property>
+          <property>
+            <name>org.jpox.validateColumns</name>
+            <value>false</value>
+          </property>
+          <property>
+            <name>org.jpox.validateConstraints</name>
+            <value>false</value>
+          </property>
+
+          <property>
+            <name>org.jpox.autoStartMechanism</name>
+            <value>SchemaTable</value>
+          </property>
+          <property>
+            <name>org.jpox.autoStartMechanismMode</name>
+            <value>Ignored</value>
+          </property>
+          <property>
+            <name>org.jpox.transactionIsolation</name>
+            <value>READ_COMMITTED</value>
+          </property>
+          <property>
+            <name>org.jpox.poid.transactionIsolation</name>
+            <value>READ_COMMITTED</value>
+          </property>
+        </otherProperties>
+>>>>>>> refs/remotes/apache/trunk
       </configuration>
     </component>
   </components>

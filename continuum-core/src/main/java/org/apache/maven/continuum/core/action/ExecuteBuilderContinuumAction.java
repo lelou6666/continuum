@@ -1,63 +1,70 @@
 package org.apache.maven.continuum.core.action;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.continuum.dao.BuildResultDao;
+import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.utils.ContinuumUtils;
+import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.configuration.ConfigurationService;
+import org.apache.maven.continuum.execution.ContinuumBuildCancelledException;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutionResult;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.apache.maven.continuum.store.ContinuumStore;
-import org.apache.maven.continuum.utils.ContinuumUtils;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.File;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "execute-builder" )
 public class ExecuteBuilderContinuumAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    private static final String KEY_CANCELLED = "cancelled";
+
+    @Requirement
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildExecutorManager buildExecutorManager;
 
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private BuildResultDao buildResultDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
+    private ProjectDao projectDao;
+
+    @Requirement
     private ContinuumNotificationDispatcher notifier;
 
     public void execute( Map context )
@@ -67,113 +74,136 @@ public class ExecuteBuilderContinuumAction
         // Get parameters from the context
         // ----------------------------------------------------------------------
 
-        Project project = store.getProjectWithBuildDetails( getProjectId( context ) );
+        Project project = projectDao.getProject( getProject( context ).getId() );
 
-        int trigger = getTrigger( context );
+        BuildDefinition buildDefinition = getBuildDefinition( context );
 
-        ScmResult scmResult = getUpdateScmResult( context );
+        BuildTrigger buildTrigger = getBuildTrigger( context );
+
+        ScmResult scmResult = getScmResult( context );
+
+        List<ProjectDependency> updatedDependencies = getUpdatedDependencies( context );
 
         ContinuumBuildExecutor buildExecutor = buildExecutorManager.getBuildExecutor( project.getExecutorId() );
 
         // ----------------------------------------------------------------------
-        // This is really a precondition for this action to execute
+        // Make the buildResult
         // ----------------------------------------------------------------------
 
-        if ( project.getOldState() != ContinuumProjectState.NEW && scmResult.getChanges().size() == 0
-            && trigger != ContinuumProjectState.TRIGGER_FORCED && !isNew( project ) )
-        {
-            getLogger().info( "No files updated, not building. Project id '" + project.getId() + "'." );
+        BuildResult buildResult = new BuildResult();
+        buildResult.setStartTime( new Date().getTime() );
+        buildResult.setState( ContinuumProjectState.BUILDING );
+        buildResult.setTrigger( buildTrigger.getTrigger() );
+        buildResult.setUsername( buildTrigger.getTriggeredBy() );
+        buildResult.setScmResult( scmResult );
+        buildResult.setModifiedDependencies( updatedDependencies );
+        buildResult.setBuildDefinition( getBuildDefinition( context ) );
 
-            project.setState( project.getOldState() );
+        // TX START: This should really be done in a single transaction
+        project.setBuildNumber( project.getBuildNumber() + 1 );
 
-            project.setOldState( 0 );
+        buildResult.setBuildNumber( project.getBuildNumber() );
+        buildResultDao.addBuildResult( project, buildResult );
 
-            store.updateProject( project );
+        project.setLatestBuildId( buildResult.getId() );
+        projectDao.updateProject( project );
+        // TX STOP
 
-            return;
-        }
+        AbstractContinuumAction.setBuildId( context, Integer.toString( buildResult.getId() ) );
 
-        // ----------------------------------------------------------------------
-        // Make the build
-        // ----------------------------------------------------------------------
+        setCancelled( context, false );
 
-        BuildResult build = new BuildResult();
+        buildResult = buildResultDao.getBuildResult( buildResult.getId() );
 
-        build.setStartTime( new Date().getTime() );
-
-        build.setState( ContinuumProjectState.BUILDING );
-
-        build.setTrigger( trigger );
-
-        BuildDefinition buildDefinition = store.getBuildDefinition( getBuildDefinitionId( context ) );
-
-        build.setScmResult( scmResult );
-
-        store.addBuildResult( project, build );
-
-        context.put( KEY_BUILD_ID, Integer.toString( build.getId() ) );
-
-        build = store.getBuildResult( build.getId() );
+        String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+        List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
 
         try
         {
-            notifier.runningGoals( project, build );
+            notifier.runningGoals( project, buildDefinition, buildResult );
 
-            File buildOutputFile = configurationService.getBuildOutputFile( build.getId(), project.getId() );
+            File buildOutputFile = configurationService.getBuildOutputFile( buildResult.getId(), project.getId() );
 
-            ContinuumBuildExecutionResult result = buildExecutor.build( project, buildDefinition, buildOutputFile );
+            ContinuumBuildExecutionResult result = buildExecutor.build( project, buildDefinition, buildOutputFile,
+                                                                        projectsWithCommonScmRoot, projectScmRootUrl );
 
-            build.setState( result.getExitCode() == 0 ? ContinuumProjectState.OK : ContinuumProjectState.FAILED );
+            buildResult.setState( result.getExitCode() == 0 ? ContinuumProjectState.OK : ContinuumProjectState.FAILED );
 
-            build.setExitCode( result.getExitCode() );
+            buildResult.setExitCode( result.getExitCode() );
+        }
+        catch ( ContinuumBuildCancelledException e )
+        {
+            getLogger().info( "Cancelled build" );
+
+            buildResult.setState( ContinuumProjectState.CANCELLED );
+            buildResult.setError(
+                String.format(
+                    "Build was canceled. It may have been canceled manually or exceeded %s's maximum execution time"
+                        + " of %s seconds.",
+                    buildDefinition.getSchedule().getName(),
+                    buildDefinition.getSchedule().getMaxJobExecutionTime() )
+            );
+
+            setCancelled( context, true );
         }
         catch ( Throwable e )
         {
-            getLogger().error( "Error running build", e );
+            getLogger().error( "Error running buildResult", e );
 
-            build.setState( ContinuumProjectState.ERROR );
+            buildResult.setState( ContinuumProjectState.ERROR );
 
-            build.setError( ContinuumUtils.throwableToString( e ) );
+            buildResult.setError( ContinuumUtils.throwableToString( e ) );
         }
         finally
         {
-            build.setEndTime( new Date().getTime() );
+            project = projectDao.getProject( project.getId() );
 
-            if ( build.getState() == ContinuumProjectState.OK )
+            buildResult.setEndTime( new Date().getTime() );
+
+            if ( buildResult.getState() != ContinuumProjectState.OK &&
+                buildResult.getState() != ContinuumProjectState.FAILED &&
+                buildResult.getState() != ContinuumProjectState.ERROR &&
+                buildResult.getState() != ContinuumProjectState.CANCELLED )
             {
-                project.setBuildNumber( project.getBuildNumber() + 1 );
+                buildResult.setState( ContinuumProjectState.ERROR );
             }
 
-            project.setLatestBuildId( build.getId() );
-
-            build.setBuildNumber( project.getBuildNumber() );
-
-            if ( build.getState() != ContinuumProjectState.OK && build.getState() != ContinuumProjectState.FAILED
-                && build.getState() != ContinuumProjectState.ERROR )
-            {
-                build.setState( ContinuumProjectState.ERROR );
-            }
+            // Assumes this build result is the latest for project
+            project.setOldState( project.getState() );
+            project.setState( buildResult.getState() );
 
             // ----------------------------------------------------------------------
-            // Copy over the build result
+            // Copy over the buildResult result
             // ----------------------------------------------------------------------
 
-            store.updateBuildResult( build );
+            buildResultDao.updateBuildResult( buildResult );
 
-            build = store.getBuildResult( build.getId() );
+            buildResult = buildResultDao.getBuildResult( buildResult.getId() );
 
-            store.updateProject( project );
+            notifier.goalsCompleted( project, buildDefinition, buildResult );
 
-            notifier.goalsCompleted( project, build );
+            AbstractContinuumAction.setProject( context, project );
+
+            projectDao.updateProject( project );
+
+            projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+            projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
+
+            // ----------------------------------------------------------------------
+            // Backup test result files
+            // ----------------------------------------------------------------------
+            //TODO: Move as a plugin
+            buildExecutor.backupTestFiles( project, buildResult.getId(), projectScmRootUrl, projectsWithCommonScmRoot );
         }
     }
 
-    // ----------------------------------------------------------------------
-    //
-    // ----------------------------------------------------------------------
-
-    private boolean isNew( Project project )
+    public static boolean isCancelled( Map<String, Object> context )
     {
-        return project.getState() == ContinuumProjectState.NEW;
+        return getBoolean( context, KEY_CANCELLED );
+    }
+
+    private static void setCancelled( Map<String, Object> context, boolean cancelled )
+    {
+        context.put( KEY_CANCELLED, cancelled );
     }
 }

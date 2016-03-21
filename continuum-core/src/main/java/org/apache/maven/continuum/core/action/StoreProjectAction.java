@@ -1,37 +1,45 @@
 package org.apache.maven.continuum.core.action;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "store-project" )
 public class StoreProjectAction
     extends AbstractContinuumAction
 {
-    private ContinuumStore store;
+    private static final String KEY_SCM_USE_CREDENTIALS_CACHE = "useCredentialsCache";
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     public void execute( Map context )
         throws ContinuumException, ContinuumStoreException
@@ -44,11 +52,20 @@ public class StoreProjectAction
         //
         // ----------------------------------------------------------------------
 
+        boolean useCredentialsCache = isUseScmCredentialsCache( context, false );
+        // CONTINUUM-1605 don't store username/password
+        if ( useCredentialsCache )
+        {
+            project.setScmUsername( null );
+            project.setScmPassword( null );
+            project.setScmUseCache( true );
+        }
+
         projectGroup.addProject( project );
 
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        context.put( KEY_PROJECT_ID, new Integer( project.getId() ) );
+        setProjectId( context, project.getId() );
 
         // ----------------------------------------------------------------------
         // Set the working directory
@@ -67,6 +84,16 @@ public class StoreProjectAction
 
         project.setWorkingDirectory( projectWorkingDirectory.getAbsolutePath() );
 */
-//        store.updateProject( project );
+        //        store.updateProject( project );
+    }
+
+    public static boolean isUseScmCredentialsCache( Map<String, Object> context, boolean defaultValue )
+    {
+        return getBoolean( context, KEY_SCM_USE_CREDENTIALS_CACHE, defaultValue );
+    }
+
+    public static void setUseScmCredentialsCache( Map<String, Object> context, boolean useScmCredentialsCache )
+    {
+        context.put( KEY_SCM_USE_CREDENTIALS_CACHE, useScmCredentialsCache );
     }
 }

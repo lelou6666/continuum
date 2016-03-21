@@ -1,72 +1,80 @@
 package org.apache.maven.continuum.initialization;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import org.apache.maven.continuum.model.project.Schedule;
-import org.apache.maven.continuum.model.system.ContinuumUser;
-import org.apache.maven.continuum.model.system.Permission;
-import org.apache.maven.continuum.model.system.UserGroup;
+import org.apache.continuum.dao.LocalRepositoryDao;
+import org.apache.continuum.dao.ProjectGroupDao;
+import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
+import org.apache.continuum.dao.SystemConfigurationDao;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
-import org.apache.maven.continuum.security.ContinuumSecurity;
-import org.apache.maven.continuum.store.ContinuumStore;
+import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.apache.maven.settings.MavenSettingsBuilder;
+import org.apache.maven.settings.Settings;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jpox.SchemaTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  * @todo use this, reintroduce default project group
  */
+@Component( role = org.apache.maven.continuum.initialization.ContinuumInitializer.class, hint = "default" )
 public class DefaultContinuumInitializer
-    extends AbstractLogEnabled
     implements ContinuumInitializer
 {
-    // ----------------------------------------------------------------------
-    // Default values for the default project group
-    // ----------------------------------------------------------------------
-
-    public static final String DEFAULT_PROJECT_GROUP_NAME = "DEFAULT_PROJECT_GROUP";
-
-    public static final String DEFAULT_PROJECT_GROUP_ID = "DEFAULT";
-
-    public static final String DEFAULT_PROJECT_GROUP_DESCRIPTION = "Default Project Group";
-
-    // ----------------------------------------------------------------------
-    // Default values for the default schedule
-    // ----------------------------------------------------------------------
-
-    //TODO: move this to an other place
-    public static final String DEFAULT_SCHEDULE_NAME = "DEFAULT_SCHEDULE";
-
-    private Schedule defaultSchedule;
-
-    private SystemConfiguration systemConf;
+    private static final Logger log = LoggerFactory.getLogger( DefaultContinuumInitializer.class );
 
     // ----------------------------------------------------------------------
     //  Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
-    private ContinuumStore store;
+    @Requirement
+    private LocalRepositoryDao localRepositoryDao;
+
+    @Requirement
+    private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement
+    private SystemConfigurationDao systemConfigurationDao;
+
+    @Requirement
+    private BuildDefinitionService buildDefinitionService;
+
+    @Requirement
+    private MavenSettingsBuilder mavenSettingsBuilder;
 
     // ----------------------------------------------------------------------
     //
@@ -75,170 +83,145 @@ public class DefaultContinuumInitializer
     public void initialize()
         throws ContinuumInitializationException
     {
-        getLogger().info( "Continuum initializer running ..." );
+        log.info( "Continuum initializer running ..." );
+
+        if ( log.isDebugEnabled() )
+        {
+            log.debug( "Dumping JPOX/JDO Schema Details ..." );
+            try
+            {
+                SchemaTool.outputDBInfo( null, true );
+                SchemaTool.outputSchemaInfo( null, true );
+            }
+            catch ( Exception e )
+            {
+                log.debug( "Error while dumping the database schema", e );
+            }
+        }
 
         try
         {
             // System Configuration
-            systemConf = store.getSystemConfiguration();
+            SystemConfiguration systemConf = systemConfigurationDao.getSystemConfiguration();
 
             if ( systemConf == null )
             {
                 systemConf = new SystemConfiguration();
 
-                systemConf = store.addSystemConfiguration( systemConf );
+                systemConf = systemConfigurationDao.addSystemConfiguration( systemConf );
             }
 
-            // Schedule
-            Schedule s = store.getScheduleByName( DEFAULT_SCHEDULE_NAME );
+            createDefaultLocalRepository();
 
-            if ( s == null )
-            {
-                defaultSchedule = createDefaultSchedule();
-
-                defaultSchedule = store.addSchedule( defaultSchedule );
-            }
-
-            // Permission
-            createPermissions();
-
-            createGroups();
-
-            createGuestUser();
+            createDefaultProjectGroup();
         }
         catch ( ContinuumStoreException e )
         {
             throw new ContinuumInitializationException( "Can't initialize default schedule.", e );
         }
+        catch ( BuildDefinitionServiceException e )
+        {
+            throw new ContinuumInitializationException( "Can't get default build definition", e );
+        }
+        log.info( "Continuum initializer end running ..." );
     }
 
-    // ----------------------------------------------------------------------
-    //
-    // ----------------------------------------------------------------------
+    private void createDefaultProjectGroup()
+        throws ContinuumStoreException, BuildDefinitionServiceException
+    {
+        ProjectGroup group;
+        try
+        {
+            group = projectGroupDao.getProjectGroupByGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
+            log.info( "Default Project Group exists" );
+        }
+        catch ( ContinuumObjectNotFoundException e )
+        {
+            Collection<ProjectGroup> pgs = projectGroupDao.getAllProjectGroups();
+            if ( pgs != null && pgs.isEmpty() )
+            {
+                log.info( "create Default Project Group" );
 
-    public Schedule createDefaultSchedule()
+                group = new ProjectGroup();
+
+                group.setName( "Default Project Group" );
+
+                group.setGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
+
+                group.setDescription( "Contains all projects that do not have a group of their own" );
+
+                LocalRepository localRepository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
+
+                group.setLocalRepository( localRepository );
+
+                group = projectGroupDao.addProjectGroup( group );
+
+                BuildDefinitionTemplate bdt = buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate();
+
+                buildDefinitionService.addBuildDefinitionTemplateToProjectGroup( group.getId(), bdt );
+            }
+        }
+    }
+
+    private void createDefaultLocalRepository()
+        throws ContinuumStoreException, ContinuumInitializationException
+    {
+        LocalRepository repository;
+
+        repository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
+
+        Settings settings = getSettings();
+
+        if ( repository == null )
+        {
+            log.info( "create Default Local Repository" );
+
+            repository = new LocalRepository();
+
+            repository.setName( "DEFAULT" );
+
+            repository.setLocation( settings.getLocalRepository() );
+
+            repository = localRepositoryDao.addLocalRepository( repository );
+
+            createDefaultPurgeConfiguration( repository );
+        }
+        else if ( !repository.getLocation().equals( settings.getLocalRepository() ) )
+        {
+            log.info( "updating location of Default Local Repository" );
+
+            repository.setLocation( settings.getLocalRepository() );
+
+            localRepositoryDao.updateLocalRepository( repository );
+        }
+    }
+
+    private void createDefaultPurgeConfiguration( LocalRepository repository )
+        throws ContinuumStoreException
+    {
+        RepositoryPurgeConfiguration repoPurge = new RepositoryPurgeConfiguration();
+
+        repoPurge.setRepository( repository );
+
+        repoPurge.setDefaultPurge( true );
+
+        repositoryPurgeConfigurationDao.addRepositoryPurgeConfiguration( repoPurge );
+    }
+
+    private Settings getSettings()
         throws ContinuumInitializationException
     {
-        Schedule schedule = new Schedule();
-
-        schedule.setName( DEFAULT_SCHEDULE_NAME );
-
-        schedule.setDescription( systemConf.getDefaultScheduleDescription() );
-
-        schedule.setCronExpression( systemConf.getDefaultScheduleCronExpression() );
-
-        schedule.setActive( true );
-
-        return schedule;
-    }
-
-    private void createPermissions()
-        throws ContinuumStoreException
-    {
-        createPermission( "addProject", "Add Projects" );
-
-        createPermission( "editProject", "Edit Projects" );
-
-        createPermission( "deleteProject", "Delete Projects" );
-
-        createPermission( "buildProject", "Build Projects" );
-
-        createPermission( "showProject", "Show Projects" );
-
-        createPermission( "addBuildDefinition", "Add Build Definitions" );
-
-        createPermission( "editBuildDefinition", "Edit Build Definitions" );
-
-        createPermission( "deleteBuildDefinition", "Delete Build Definitions" );
-
-        createPermission( "addNotifier", "Add Notifiers" );
-
-        createPermission( "editNotifier", "Edit Notifiers" );
-
-        createPermission( "deleteNotifier", "Delete Notifiers" );
-
-        createPermission( "manageConfiguration", "Manage Continuum Configuration" );
-
-        createPermission( "manageSchedule", "Manage Schedules" );
-
-        createPermission( "manageUsers", "Manage Users/Groups" );
-    }
-
-    private Permission createPermission( String name, String description)
-        throws ContinuumStoreException
-    {
-        Permission perm = store.getPermission( name );
-
-        if ( perm == null )
+        try
         {
-            perm = new Permission();
-
-            perm.setName( name );
-
-            perm.setDescription( description );
-
-            perm = store.addPermission( perm );
+            return mavenSettingsBuilder.buildSettings( false );
         }
-
-        return perm;
-    }
-
-    private void createGroups()
-        throws ContinuumStoreException
-    {
-        // Continuum Administrator
-        if ( store.getUserGroup( ContinuumSecurity.ADMIN_GROUP_NAME ) == null )
+        catch ( IOException e )
         {
-            List adminPermissions = store.getPermissions();
-
-            UserGroup adminGroup = new UserGroup();
-
-            adminGroup.setName( ContinuumSecurity.ADMIN_GROUP_NAME );
-
-            adminGroup.setDescription( "Continuum Admin Group" );
-
-            adminGroup.setPermissions( adminPermissions );
-
-            adminGroup = store.addUserGroup( adminGroup );
+            throw new ContinuumInitializationException( "Error reading settings file", e );
         }
-
-        // Continuum Guest
-        if ( store.getUserGroup( ContinuumSecurity.GUEST_GROUP_NAME ) == null )
+        catch ( XmlPullParserException e )
         {
-            UserGroup guestGroup = new UserGroup();
-
-            guestGroup.setName( ContinuumSecurity.GUEST_GROUP_NAME );
-
-            guestGroup.setDescription( "Continuum Guest Group" );
-
-            List guestPermissions = new ArrayList();
-
-            guestPermissions.add( store.getPermission( "buildProject" ) );
-
-            guestPermissions.add( store.getPermission( "showProject" ) );
-
-            guestGroup.setPermissions( guestPermissions );
-
-            guestGroup = store.addUserGroup( guestGroup );
-        }
-    }
-
-    private void createGuestUser()
-        throws ContinuumStoreException
-    {
-        if ( store.getGuestUser() == null )
-        {
-            ContinuumUser guest = new ContinuumUser();
-
-            guest.setUsername( "guest" );
-
-            guest.setFullName( "Anonymous User" );
-
-            guest.setGroup( store.getUserGroup( ContinuumSecurity.GUEST_GROUP_NAME ) );
-
-            guest.setGuest( true );
-
-            guest = store.addUser( guest );
+            throw new ContinuumInitializationException( e.getMessage(), e );
         }
     }
 }

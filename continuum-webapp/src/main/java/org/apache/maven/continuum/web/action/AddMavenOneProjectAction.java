@@ -1,122 +1,110 @@
 package org.apache.maven.continuum.web.action;
 
 /*
- * Copyright 2004-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import org.apache.maven.continuum.Continuum;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.io.File;
-import java.net.MalformedURLException;
-
-import com.opensymphony.xwork.ActionSupport;
 
 /**
+ * Add a Maven 1 project to Continuum.
+ *
  * @author Nick Gonzalez
- * @version $Id$
+ * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "addMavenOneProject", instantiationStrategy = "per-lookup"  )
 public class AddMavenOneProjectAction
-    extends ActionSupport
+    extends AddMavenProjectAction
 {
-    private Continuum continuum;
 
-    private String m1PomUrl;
-
-    private File m1PomFile;
-
-    private String m1Pom = null;
-
-    public String execute()
+    protected ContinuumProjectBuildingResult doExecute( String pomUrl, int selectedProjectGroup, boolean checkProtocol,
+                                                        boolean scmUseCache )
+        throws ContinuumException
     {
-        if ( !StringUtils.isEmpty( m1PomUrl ) )
+        ContinuumProjectBuildingResult result = getContinuum().addMavenOneProject( pomUrl, selectedProjectGroup,
+                                                                                   checkProtocol, scmUseCache,
+                                                                                   this.getBuildDefinitionTemplateId() );
+
+        AuditLog event = new AuditLog( hidePasswordInUrl( pomUrl ), AuditLogConstants.ADD_M1_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+
+        if ( result == null || result.hasErrors() )
         {
-            m1Pom = m1PomUrl;
-        }
-        else
-        {
-            if ( m1PomFile != null )
-            {
-                try
-                {
-                    m1Pom = m1PomFile.toURL().toString();
-                }
-                catch ( MalformedURLException e )
-                {
-                    return INPUT;
-                }
-            }
-            else
-            {
-                return INPUT;
-            }
+            event.setAction( AuditLogConstants.ADD_M1_PROJECT_FAILED );
         }
 
-        ContinuumProjectBuildingResult result = null;
+        event.log();
 
-        try
-        {
-            result = continuum.addMavenOneProject( m1Pom );
-        }
-        catch ( ContinuumException e )
-        {
-            return INPUT;
-        }
-
-        if( result.getWarnings().size() > 0 )
-        {
-            addActionMessage( result.getWarnings().toArray().toString() );
-        }
-
-        return SUCCESS;
+        return result;
     }
 
-    public String doDefault()
-    {
-        return INPUT;
-    }
-
+    /**
+     * @deprecated Use {@link #getPom()} instead
+     */
     public String getM1Pom()
     {
-        return m1Pom;
+        return getPom();
     }
 
+    /**
+     * @deprecated Use {@link #setPom(String)} instead
+     */
     public void setM1Pom( String pom )
     {
-        m1Pom = pom;
+        setPom( pom );
     }
 
+    /**
+     * @deprecated Use {@link #getPomFile()} instead
+     */
     public File getM1PomFile()
     {
-        return m1PomFile;
+        return getPomFile();
     }
 
+    /**
+     * @deprecated Use {@link #setPomFile(File)} instead
+     */
     public void setM1PomFile( File pomFile )
     {
-        m1PomFile = pomFile;
+        setPomFile( pomFile );
     }
 
+    /**
+     * @deprecated Use {@link #getPomUrl()} instead
+     */
     public String getM1PomUrl()
     {
-        return m1PomUrl;
+        return getPomUrl();
     }
 
+    /**
+     * @deprecated Use {@link #setPomUrl(String)} instead
+     */
     public void setM1PomUrl( String pomUrl )
     {
-        m1PomUrl = pomUrl;
+        setPomUrl( pomUrl );
     }
 }

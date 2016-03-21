@@ -1,32 +1,49 @@
 package org.apache.maven.continuum.web.view.jsp.ui;
 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.TextProvider;
+import com.opensymphony.xwork2.util.ValueStack;
+import org.apache.struts2.views.jsp.ui.TextareaTag;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-
 import javax.servlet.jsp.JspException;
-
-import com.opensymphony.webwork.views.jsp.ui.TextTag;
-import com.opensymphony.xwork.ActionContext;
-import com.opensymphony.xwork.TextProvider;
-import com.opensymphony.xwork.util.OgnlValueStack;
 
 /**
  * First attempt at creating a date tag for the webwork framework. The tag will
  * format a date by using either a specified format attribute, or by falling
- * back on to a globally defined 'webwork.date' property. 
+ * back on to a globally defined 'webwork.date' property.
  * When nice="true" is specified, it will return a human readable string (in 2 hours, 3 minutes).
- *
+ * <p/>
  * From http://jira.opensymphony.com/browse/WW-805
- * 
+ *
  * @author <a href="mailto:philip.luppens@gmail.com">Philip Luppens</a>
  */
 public class DateTag
-    extends TextTag
+    extends TextareaTag
 {
     /*
      * the name of our property which we will use if the optional format
@@ -35,37 +52,56 @@ public class DateTag
     public final static String DATETAG_PROPERTY = "webwork.date";
 
     public final static String DATETAG_PROPERTY_PAST = "webwork.date.format.past";
+
     public final static String DATETAG_DEFAULT_PAST = "{0} ago";
+
     public final static String DATETAG_PROPERTY_FUTURE = "webwork.date.format.future";
+
     public final static String DATETAG_DEFAULT_FUTURE = "in {0}";
 
     public final static String DATETAG_PROPERTY_SECONDS = "webwork.date.format.seconds";
+
     public final static String DATETAG_DEFAULT_SECONDS = "an instant";
+
     public final static String DATETAG_PROPERTY_MINUTES = "webwork.date.format.minutes";
+
     public final static String DATETAG_DEFAULT_MINUTES = "{0,choice,1#one minute|1<{0} minutes}";
+
     public final static String DATETAG_PROPERTY_HOURS = "webwork.date.format.hours";
-    public final static String DATETAG_DEFAULT_HOURS = "{0,choice,1#one hour|1<{0} hours}{1,choice,0#|1#, one minute|1<, {1} minutes}";
+
+    public final static String DATETAG_DEFAULT_HOURS =
+        "{0,choice,1#one hour|1<{0} hours}{1,choice,0#|1#, one minute|1<, {1} minutes}";
+
     public final static String DATETAG_PROPERTY_DAYS = "webwork.date.format.days";
-    public final static String DATETAG_DEFAULT_DAYS = "{0,choice,1#one day|1<{0} days}{1,choice,0#|1#, one hour|1<, {1} hours}";
+
+    public final static String DATETAG_DEFAULT_DAYS =
+        "{0,choice,1#one day|1<{0} days}{1,choice,0#|1#, one hour|1<, {1} hours}";
+
     public final static String DATETAG_PROPERTY_YEARS = "webwork.date.format.years";
-    public final static String DATETAG_DEFAULT_YEARS = "{0,choice,1#one year|1<{0} years}{1,choice,0#|1#, one day|1<, {1} days}";
+
+    public final static String DATETAG_DEFAULT_YEARS =
+        "{0,choice,1#one year|1<{0} years}{1,choice,0#|1#, one day|1<, {1} days}";
 
     //our optional format parameter
     private String format;
-    private String actualName;
+
     private String nameAttr;
+
     private boolean nice;
+
     private Date date;
+
     private TextProvider tp;
 
     public int doEndTag()
         throws JspException
     {
-        actualName = (String) findString( nameAttr );
+        String actualName = findString( nameAttr );
         String msg = null;
-        OgnlValueStack stack = getStack();
+        ValueStack stack = getStack();
         //find the name on the valueStack, and cast it to a date
         Object dateObj = stack.findValue( actualName );
+
         if ( dateObj != null )
         {
             if ( dateObj instanceof Date )
@@ -75,7 +111,7 @@ public class DateTag
             else if ( dateObj instanceof Long )
             {
                 Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis( ( (Long) dateObj).longValue() );
+                cal.setTimeInMillis( (Long) dateObj );
                 date = cal.getTime();
             }
             else
@@ -84,7 +120,7 @@ public class DateTag
             }
         }
 
-        if ( date != null )
+        if ( date != null && date.getTime() > 0 )
         {
             tp = findProviderInStack();
 
@@ -101,7 +137,7 @@ public class DateTag
             {
                 if ( format == null )
                 {
-                    String globalFormat = null;
+                    String globalFormat;
                     //if the format is not specified, fall back using the defined
                     // property DATETAG_PROPERTY
 
@@ -109,7 +145,8 @@ public class DateTag
 
                     if ( globalFormat != null )
                     {
-                        msg = new SimpleDateFormat( globalFormat, ActionContext.getContext().getLocale() ).format( date );
+                        msg = new SimpleDateFormat( globalFormat, ActionContext.getContext().getLocale() ).format(
+                            date );
                     }
                     else
                     {
@@ -149,10 +186,8 @@ public class DateTag
 
     private TextProvider findProviderInStack()
     {
-        for ( Iterator iterator = getStack().getRoot().iterator(); iterator.hasNext(); )
+        for ( Object o : getStack().getRoot() )
         {
-            Object o = iterator.next();
-
             if ( o instanceof TextProvider )
             {
                 return (TextProvider) o;
@@ -165,7 +200,7 @@ public class DateTag
     public String formatTime( Date date )
     {
         StringBuffer sb = new StringBuffer();
-        List args = new ArrayList();
+        List<Object> args = new ArrayList<Object>();
         long secs = ( new Date().getTime() - date.getTime() ) / 1000;
         long mins = secs / 60;
         int min = (int) mins % 60;
@@ -177,7 +212,7 @@ public class DateTag
 
         if ( Math.abs( secs ) < 60 )
         {
-            args.add( new Long( secs ) );
+            args.add( secs );
             args.add( sb );
             args.add( null );
             sb.append( tp.getText( DATETAG_PROPERTY_SECONDS, DATETAG_DEFAULT_SECONDS, args ) );
@@ -185,7 +220,7 @@ public class DateTag
         }
         else if ( hours == 0 )
         {
-            args.add( new Long( min ) );
+            args.add( (long) min );
             args.add( sb );
             args.add( null );
             sb.append( tp.getText( DATETAG_PROPERTY_MINUTES, DATETAG_DEFAULT_MINUTES, args ) );
@@ -193,24 +228,24 @@ public class DateTag
         }
         else if ( days == 0 )
         {
-            args.add( new Long( hour ) );
-            args.add( new Long( min ) );
-            args.add( sb);
-            args.add( null);
+            args.add( (long) hour );
+            args.add( (long) min );
+            args.add( sb );
+            args.add( null );
             sb.append( tp.getText( DATETAG_PROPERTY_HOURS, DATETAG_DEFAULT_HOURS, args ) );
         }
         else if ( years == 0 )
         {
-            args.add( new Long( days ) );
-            args.add( new Long( hour ) );
+            args.add( (long) days );
+            args.add( (long) hour );
             args.add( sb );
             args.add( null );
             sb.append( tp.getText( DATETAG_PROPERTY_DAYS, DATETAG_DEFAULT_DAYS, args ) );
         }
         else
         {
-            args.add( new Object[]{ new Long( years ) } );
-            args.add( new Object[]{ new Long( day ) } );
+            args.add( new Object[]{(long) years} );
+            args.add( new Object[]{(long) day} );
             args.add( sb );
             args.add( null );
 
@@ -222,15 +257,11 @@ public class DateTag
         {
             //looks like this date is passed
             return tp.getText( DATETAG_PROPERTY_PAST, DATETAG_DEFAULT_PAST, args );
-        } else {
+        }
+        else
+        {
             return tp.getText( DATETAG_PROPERTY_FUTURE, DATETAG_DEFAULT_FUTURE, args );
         }
-    }
-
-    public int doStartTag()
-        throws JspException
-    {
-        return super.doStartTag();
     }
 
     public void setName( String name )
