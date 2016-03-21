@@ -1,0 +1,64 @@
+ ------
+ Parallel Build Queue
+ ------
+ ------
+ 2010-02-18
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Managing Parallel Builds
+
+    Since 1.3.1, Continuum can be configured to checkout and build projects in parallel or concurrently.
+
+* Configuring Parallel Builds
+
+    The number of build queues to be used when checking out or building projects can be configured in the Configuration page, via
+    the Number of Allowed Builds in Parallel field (see {{{./configuration.html} Managing General Configuration}}).
+    The value should be greater than one (1) to be able to create a build queue aside from the default.
+
+    Another thing to note is that if Distributed Builds is enabled, Parallel Builds is automatically disabled. To make it
+    short, you're only allowed to use one of these functionalities at a time in the current implementation.
+
+    To configure parallel builds:
+
+    [[1]] Create a build queue to be used for the projects.
+          Refer to {{{./buildQueue.html} Managing Build Queues}}
+
+    [[2]] Attach the build queue(s) to a build schedule.
+          Refer to {{{./schedules.html} Attaching Build Queue to a Schedule}}
+
+    [[3]] Create or edit the project's build definition to use the build schedule configured with the build queue(s).
+          Refer to {{{../user_guides/managing_builddef/index.html} Managing Build Definitions}}
+
+    []
+
+    A screen similar to the following is displayed under the <<Queues>> page when the project is built (force/sheduled).
+
+[../images/parallelBuildsQueues.png] Queues
+
+* Limitations
+
+    Below are some feature limitations for the current implementation:
+
+    [[1]] Project groups cannot be built multiple times simulateously.
+
+    [[2]] Concurrent build of inter-dependent projects in a group is not yet supported.
+
+    [[3]] All projects in a project group will be enqueued to the same {{{./buildQueue.html} Build Queue}}.
+

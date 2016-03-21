@@ -1,5 +1,6 @@
 Getting Sun Jars
 ----------------
+
 Some jar files can not distributed via http://www.ibiblio.org/maven2 
 (see http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html for further information).
  
@@ -31,36 +32,39 @@ Building on Unix
 
 Run :
 
- $ sh build.sh
+ $ mvn clean install
 
 The output of the build will be in build.log.
 
 To start continuum:
 
- $ cd continuum-plexus-application/target/plexus-test-runtime
- $ ./bin/plexus.sh
+ $ cd continuum-webapp
+ $ mvn jetty:run
+
+Or just deploy the webapp found in continuum-webapp/target.
 
 Building on Windows
 -------------------
 
-NOTE: You need to have the source tree at the root of your disk because continuum build use very long path
+NOTE: You need to have the source tree at the root of your disk because continuum build uses very long path
 and Windows doesn't support path length greater than 250 characters.
 
 Run :
 
- $ build.bat
+ $ mvn clean install
 
 The output of the build will be in build.log.
 
 To start continuum:
 
- $ cd continuum-plexus-application\target\plexus-test-runtime
- $ .\bin\plexus.bat
+ $ cd continuum-webapp
+ $ mvn jetty:run
 
+Or just deploy the webapp found in continuum-webapp/target.
 
 Access continuum's web site
 ---------------------------
 
 Go to:
 
-  http://localhost:8080/continuum/servlet/continuum
+  http://localhost:9090/

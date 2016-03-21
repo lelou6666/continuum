@@ -1,36 +1,38 @@
 package org.apache.maven.continuum.web.action;
 
 /*
- * Copyright 2004-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- *
- * @plexus.component
- *   role="com.opensymphony.xwork.Action"
- *   role-hint="projectEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectEdit", instantiationStrategy = "per-lookup"  )
 public class ProjectEditAction
     extends ContinuumActionSupport
 {
-
     private Project project;
 
     private int projectId;
@@ -47,9 +49,23 @@ public class ProjectEditAction
 
     private String scmTag;
 
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/ProjectEditAction.java
+=======
+    private boolean scmUseCache;
+
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/ProjectEditAction.java
     public String save()
         throws ContinuumException
     {
+        try
+        {
+            checkModifyProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         project = getProject( projectId );
 
         project.setName( name );
@@ -57,6 +73,8 @@ public class ProjectEditAction
         project.setVersion( version );
 
         project.setScmUrl( scmUrl );
+
+        project.setScmUseCache( scmUseCache );
 
         project.setScmUsername( scmUsername );
 
@@ -66,12 +84,26 @@ public class ProjectEditAction
 
         getContinuum().updateProject( project );
 
+        AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.MODIFY_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
+
         return SUCCESS;
     }
 
     public String edit()
         throws ContinuumException
     {
+        try
+        {
+            checkModifyProjectInGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException e )
+        {
+            return REQUIRES_AUTHORIZATION;
+        }
+
         project = getProject( projectId );
 
         name = project.getName();
@@ -83,6 +115,8 @@ public class ProjectEditAction
         scmUsername = project.getScmUsername();
 
         scmPassword = project.getScmPassword();
+
+        scmUseCache = project.isScmUseCache();
 
         scmTag = project.getScmTag();
 
@@ -168,5 +202,21 @@ public class ProjectEditAction
     public Project getProject()
     {
         return project;
+    }
+
+    public void setScmUseCache( boolean scmUseCache )
+    {
+        this.scmUseCache = scmUseCache;
+    }
+
+    public boolean isScmUseCache()
+    {
+        return scmUseCache;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        return getProject( projectId ).getProjectGroup().getName();
     }
 }

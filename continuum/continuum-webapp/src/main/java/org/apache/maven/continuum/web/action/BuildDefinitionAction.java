@@ -1,44 +1,63 @@
 package org.apache.maven.continuum.web.action;
 
 /*
- * Copyright 2005-2006 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionUpdatePolicyConstants;
+import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.model.project.BuildDefinition;
-import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.Schedule;
+import org.apache.maven.continuum.model.system.Profile;
+import org.apache.maven.continuum.profile.ProfileException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.exception.ContinuumActionException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
  * BuildDefinitionAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $ID:$
- * @plexus.component role="com.opensymphony.xwork.Action"
- * role-hint="buildDefinition"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildDefinition", instantiationStrategy = "per-lookup" )
 public class BuildDefinitionAction
     extends ContinuumConfirmAction
 {
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
 
+=======
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
     private int buildDefinitionId;
 
     private int projectId;
@@ -59,10 +78,36 @@ public class BuildDefinitionAction
 
     private String buildFile;
 
-    private Map schedules;
+    private boolean buildFresh;
 
-    private Map profiles;
+    private Map<Integer, String> schedules;
 
+    private List<Profile> profiles;
+
+    private boolean groupBuildDefinition = false;
+
+    private boolean groupBuildView = false;
+
+    private String projectGroupName = "";
+
+    private int profileId;
+
+    private String description;
+
+    private List<String> buildDefinitionTypes;
+
+    private String buildDefinitionType;
+
+    private boolean alwaysBuild;
+
+    private int updatePolicy = BuildDefinitionUpdatePolicyConstants.UPDATE_DESCRIPTION_ALWAYS;
+
+    private Map<Integer, String> buildDefinitionUpdatePolicies;
+
+    @Requirement
+    private BuildDefinitionService buildDefinitionService;
+
+    @Override
     public void prepare()
         throws Exception
     {
@@ -70,25 +115,36 @@ public class BuildDefinitionAction
 
         if ( schedules == null )
         {
-            schedules = new HashMap();
+            schedules = new HashMap<Integer, String>();
 
-            Collection allSchedules = getContinuum().getSchedules();
+            Collection<Schedule> allSchedules = getContinuum().getSchedules();
 
-            for ( Iterator i = allSchedules.iterator(); i.hasNext(); )
+            for ( Schedule schedule : allSchedules )
             {
-                Schedule schedule = (Schedule) i.next();
-
-                schedules.put( new Integer( schedule.getId() ), schedule.getName() );
+                schedules.put( schedule.getId(), schedule.getName() );
             }
         }
 
         // todo: missing from continuum, investigate
         if ( profiles == null )
         {
-            profiles = new HashMap();
+            profiles = this.getContinuum().getProfileService().getAllProfiles();
         }
 
+        buildDefinitionTypes = new ArrayList<String>();
+        buildDefinitionTypes.add( ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR );
+        buildDefinitionTypes.add( ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR );
+        buildDefinitionTypes.add( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
+        buildDefinitionTypes.add( ContinuumBuildExecutorConstants.SHELL_BUILD_EXECUTOR );
 
+        buildDefinitionUpdatePolicies = new HashMap<Integer, String>();
+        String text = getText( "buildDefinition.updatePolicy.always" );
+        buildDefinitionUpdatePolicies.put( BuildDefinitionUpdatePolicyConstants.UPDATE_DESCRIPTION_ALWAYS, text );
+        text = getText( "buildDefinition.updatePolicy.never" );
+        buildDefinitionUpdatePolicies.put( BuildDefinitionUpdatePolicyConstants.UPDATE_DESCRIPTION_NEVER, text );
+        text = getText( "buildDefinition.updatePolicy.newPom" );
+        buildDefinitionUpdatePolicies.put( BuildDefinitionUpdatePolicyConstants.UPDATE_DESCRIPTION_ONLY_FOR_NEW_POM,
+                                           text );
     }
 
     /**
@@ -96,15 +152,38 @@ public class BuildDefinitionAction
      *
      * @return action result
      */
+    @Override
     public String input()
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
         throws ContinuumException
     {
         if ( executor == null )
         {
             if ( projectId != 0 )
+=======
+        throws ContinuumException, ContinuumStoreException, BuildDefinitionServiceException
+    {
+        try
+        {
+            if ( executor == null )
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
             {
-                executor = getContinuum().getProject( projectId ).getExecutorId();
+                if ( projectId != 0 )
+                {
+                    executor = getContinuum().getProject( projectId ).getExecutorId();
+                }
+                else
+                {
+                    List<Project> projects = getContinuum().getProjectGroupWithProjects( projectGroupId ).getProjects();
+
+                    if ( projects.size() > 0 )
+                    {
+                        Project project = projects.get( 0 );
+                        executor = project.getExecutorId();
+                    }
+                }
             }
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
             else
             {
                 Project project = (Project) getContinuum().getProjectGroup( projectGroupId ).getProjects().get( 0 );
@@ -119,24 +198,165 @@ public class BuildDefinitionAction
             arguments = buildDefinition.getArguments();
             buildFile = buildDefinition.getBuildFile();
             defaultBuildDefinition = buildDefinition.isDefaultForProject();
+=======
+
+            if ( buildDefinitionId != 0 )
+            {
+                if ( projectId != 0 )
+                {
+                    checkModifyProjectBuildDefinitionAuthorization( getProjectGroupName() );
+                }
+                else
+                {
+                    checkModifyGroupBuildDefinitionAuthorization( getProjectGroupName() );
+                }
+
+                BuildDefinition buildDefinition = getContinuum().getBuildDefinition( buildDefinitionId );
+                goals = buildDefinition.getGoals();
+                arguments = buildDefinition.getArguments();
+                buildFile = buildDefinition.getBuildFile();
+                buildFresh = buildDefinition.isBuildFresh();
+                scheduleId = buildDefinition.getSchedule().getId();
+                defaultBuildDefinition = buildDefinition.isDefaultForProject();
+                Profile profile = buildDefinition.getProfile();
+                if ( profile != null )
+                {
+                    profileId = profile.getId();
+                }
+                description = buildDefinition.getDescription();
+                buildDefinitionType = buildDefinition.getType();
+                alwaysBuild = buildDefinition.isAlwaysBuild();
+                updatePolicy = buildDefinition.getUpdatePolicy();
+            }
+            else
+            {
+                String preDefinedBuildFile = "";
+
+                if ( projectId != 0 )
+                {
+                    checkAddProjectBuildDefinitionAuthorization( getProjectGroupName() );
+                    BuildDefinition bd = getContinuum().getDefaultBuildDefinition( projectId );
+                    if ( bd != null )
+                    {
+                        preDefinedBuildFile = bd.getBuildFile();
+                    }
+                }
+                else
+                {
+                    checkAddGroupBuildDefinitionAuthorization( getProjectGroupName() );
+                    List<BuildDefinition> bds = getContinuum().getBuildDefinitionsForProjectGroup( projectGroupId );
+                    if ( bds != null && !bds.isEmpty() )
+                    {
+                        preDefinedBuildFile = bds.get( 0 ).getBuildFile();
+                    }
+                }
+
+                if ( StringUtils.isEmpty( preDefinedBuildFile ) )
+                {
+                    if ( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR.equals( executor ) )
+                    {
+                        buildFile =
+                            ( (BuildDefinition) buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate().getBuildDefinitions().get(
+                                0 ) ).getBuildFile();
+                        buildDefinitionType = ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR;
+                    }
+                    else if ( ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR.equals( executor ) )
+                    {
+                        buildFile =
+                            ( (BuildDefinition) buildDefinitionService.getDefaultMavenOneBuildDefinitionTemplate().getBuildDefinitions().get(
+                                0 ) ).getBuildFile();
+                        buildDefinitionType = ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR;
+                    }
+                    else if ( ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR.equals( executor ) )
+                    {
+                        buildFile =
+                            ( (BuildDefinition) buildDefinitionService.getDefaultAntBuildDefinitionTemplate().getBuildDefinitions().get(
+                                0 ) ).getBuildFile();
+                        buildDefinitionType = ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR;
+                    }
+                    else
+                    {
+                        buildDefinitionType = ContinuumBuildExecutorConstants.SHELL_BUILD_EXECUTOR;
+                    }
+                }
+                else
+                {
+                    buildFile = preDefinedBuildFile;
+                }
+            }
+
+            // if buildDefinitionType is null it will find with the executor
+            if ( StringUtils.isEmpty( buildDefinitionType ) )
+            {
+                if ( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR.equals( executor ) )
+                {
+                    buildDefinitionType = ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR;
+                }
+                else if ( ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR.equals( executor ) )
+                {
+                    buildDefinitionType = ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR;
+                }
+                else if ( ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR.equals( executor ) )
+                {
+                    buildDefinitionType = ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR;
+                }
+                else
+                {
+                    buildDefinitionType = ContinuumBuildExecutorConstants.SHELL_BUILD_EXECUTOR;
+                }
+            }
+
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            return REQUIRES_AUTHORIZATION;
         }
 
-        return INPUT;
+        return SUCCESS;
+    }
+
+    public String saveBuildDefinition()
+        throws ContinuumException, ProfileException
+    {
+        if ( projectId != 0 && !groupBuildDefinition )
+        {
+            return saveToProject();
+        }
+        else
+        {
+            return saveToGroup();
+        }
     }
 
     public String saveToProject()
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
         throws ContinuumException
+=======
+        throws ContinuumException, ProfileException
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
     {
+
+        AuditLog event = null;
+        String resource = "Project id=" + projectId + ":" + goals + " " + arguments;
 
         try
         {
             if ( buildDefinitionId == 0 )
             {
+                checkAddProjectBuildDefinitionAuthorization( getProjectGroupName() );
+
                 getContinuum().addBuildDefinitionToProject( projectId, getBuildDefinitionFromInput() );
+
+                event = new AuditLog( resource, AuditLogConstants.ADD_GOAL );
             }
             else
             {
+                checkModifyProjectBuildDefinitionAuthorization( getProjectGroupName() );
+
                 getContinuum().updateBuildDefinitionForProject( projectId, getBuildDefinitionFromInput() );
+
+                event = new AuditLog( resource, AuditLogConstants.MODIFY_GOAL );
             }
         }
         catch ( ContinuumActionException cae )
@@ -144,22 +364,54 @@ public class BuildDefinitionAction
             addActionError( cae.getMessage() );
             return INPUT;
         }
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
+=======
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        event.setCategory( AuditLogConstants.BUILD_DEFINITION );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
+
+        if ( groupBuildView )
+        {
+            return "success_group";
+        }
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
 
         return SUCCESS;
     }
 
     public String saveToGroup()
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
         throws ContinuumException
+=======
+        throws ContinuumException, ProfileException
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
     {
         try
         {
+            BuildDefinition newBuildDef = getBuildDefinitionFromInput();
+
+            if ( getContinuum().getBuildDefinitionsForProjectGroup( projectGroupId ).size() == 0 )
+            {
+                newBuildDef.setDefaultForProject( true );
+            }
+
             if ( buildDefinitionId == 0 )
             {
-                getContinuum().addBuildDefinitionToProjectGroup( projectGroupId, getBuildDefinitionFromInput() );
+                checkAddGroupBuildDefinitionAuthorization( getProjectGroupName() );
+
+                getContinuum().addBuildDefinitionToProjectGroup( projectGroupId, newBuildDef );
             }
             else
             {
-                getContinuum().updateBuildDefinitionForProjectGroup( projectGroupId, getBuildDefinitionFromInput() );
+                checkModifyGroupBuildDefinitionAuthorization( getProjectGroupName() );
+
+                getContinuum().updateBuildDefinitionForProjectGroup( projectGroupId, newBuildDef );
             }
         }
         catch ( ContinuumActionException cae )
@@ -167,15 +419,57 @@ public class BuildDefinitionAction
             addActionError( cae.getMessage() );
             return INPUT;
         }
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
+=======
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
 
-        return SUCCESS;
+        if ( projectId != 0 )
+        {
+            String resource = "Project id=" + projectId + ":" + goals + " " + arguments;
+            AuditLog event = null;
+            if ( buildDefinitionId == 0 )
+            {
+                event = new AuditLog( resource, AuditLogConstants.ADD_GOAL );
+            }
+            else
+            {
+                event = new AuditLog( resource, AuditLogConstants.MODIFY_GOAL );
+            }
+            event.setCategory( AuditLogConstants.BUILD_DEFINITION );
+            event.setCurrentUser( getPrincipal() );
+            event.log();
+            return SUCCESS;
+        }
+        else
+        {
+            String resource = "Project Group id=" + projectGroupId + ":" + goals + " " + arguments;
+            AuditLog event = null;
+            if ( buildDefinitionId == 0 )
+            {
+                event = new AuditLog( resource, AuditLogConstants.ADD_GOAL );
+            }
+            else
+            {
+                event = new AuditLog( resource, AuditLogConstants.MODIFY_GOAL );
+            }
+            event.setCategory( AuditLogConstants.BUILD_DEFINITION );
+            event.setCurrentUser( getPrincipal() );
+            event.log();
+            return "success_group";
+        }
     }
 
     public String removeFromProject()
         throws ContinuumException
     {
-        if ( confirmed )
+        try
         {
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
             getContinuum().removeBuildDefinitionFromProject( projectId, buildDefinitionId );
 
             return SUCCESS;
@@ -183,26 +477,79 @@ public class BuildDefinitionAction
         else
         {            
             return CONFIRM;
+=======
+            checkRemoveProjectBuildDefinitionAuthorization( getProjectGroupName() );
+
+            if ( confirmed )
+            {
+                getContinuum().removeBuildDefinitionFromProject( projectId, buildDefinitionId );
+
+                String resource = "Project id=" + projectId + ":" + goals + " " + arguments;
+                AuditLog event = new AuditLog( resource, AuditLogConstants.REMOVE_GOAL );
+                event.setCategory( AuditLogConstants.BUILD_DEFINITION );
+                event.setCurrentUser( getPrincipal() );
+                event.log();
+
+                return SUCCESS;
+            }
+            else
+            {
+                BuildDefinition buildDefinition = getContinuum().getBuildDefinition( buildDefinitionId );
+                this.description = buildDefinition.getDescription();
+                this.goals = buildDefinition.getGoals();
+                return CONFIRM;
+            }
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
         }
     }
 
     public String removeFromProjectGroup()
         throws ContinuumException
     {
-        if ( confirmed )
+        try
         {
+<<<<<<< HEAD:continuum/continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
             getContinuum().removeBuildDefinitionFromProject( projectGroupId, buildDefinitionId );
 
             return SUCCESS;
+=======
+            checkRemoveGroupBuildDefinitionAuthorization( getProjectGroupName() );
+
+            if ( confirmed )
+            {
+                getContinuum().removeBuildDefinitionFromProjectGroup( projectGroupId, buildDefinitionId );
+
+                String resource = "Project Group id=" + projectGroupId + ":" + goals + " " + arguments;
+                AuditLog event = new AuditLog( resource, AuditLogConstants.REMOVE_GOAL );
+                event.setCategory( AuditLogConstants.BUILD_DEFINITION );
+                event.setCurrentUser( getPrincipal() );
+                event.log();
+
+                return SUCCESS;
+            }
+            else
+            {
+                BuildDefinition buildDefinition = getContinuum().getBuildDefinition( buildDefinitionId );
+                this.description = buildDefinition.getDescription();
+                this.goals = buildDefinition.getGoals();
+                return CONFIRM;
+            }
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/action/BuildDefinitionAction.java
         }
-        else
+        catch ( AuthorizationRequiredException authzE )
         {
-            return CONFIRM;
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
         }
     }
 
     private BuildDefinition getBuildDefinitionFromInput()
-        throws ContinuumActionException
+        throws ContinuumActionException, ProfileException
     {
 
         Schedule schedule;
@@ -213,7 +560,7 @@ public class BuildDefinitionAction
         }
         catch ( ContinuumException e )
         {
-            addActionError( "unable to get schedule" );
+            addActionError( getText( "unable to get schedule" ) );
             throw new ContinuumActionException( "unable to get schedule" );
         }
 
@@ -226,9 +573,21 @@ public class BuildDefinitionAction
         buildDefinition.setGoals( goals );
         buildDefinition.setArguments( arguments );
         buildDefinition.setBuildFile( buildFile );
+        buildDefinition.setBuildFresh( buildFresh );
         buildDefinition.setDefaultForProject( defaultBuildDefinition );
         buildDefinition.setSchedule( schedule );
-
+        if ( profileId != -1 )
+        {
+            Profile profile = getContinuum().getProfileService().getProfile( profileId );
+            if ( profile != null )
+            {
+                buildDefinition.setProfile( profile );
+            }
+        }
+        buildDefinition.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
+        buildDefinition.setType( buildDefinitionType );
+        buildDefinition.setAlwaysBuild( alwaysBuild );
+        buildDefinition.setUpdatePolicy( updatePolicy );
         return buildDefinition;
     }
 
@@ -237,7 +596,7 @@ public class BuildDefinitionAction
         return buildDefinitionId;
     }
 
-    public void setBuildDefinitionId( int buildDefinitionId )
+    public void setBuildDefinitionId( final int buildDefinitionId )
     {
         this.buildDefinitionId = buildDefinitionId;
     }
@@ -247,7 +606,7 @@ public class BuildDefinitionAction
         return projectId;
     }
 
-    public void setProjectId( int projectId )
+    public void setProjectId( final int projectId )
     {
         this.projectId = projectId;
     }
@@ -257,7 +616,7 @@ public class BuildDefinitionAction
         return projectGroupId;
     }
 
-    public void setProjectGroupId( int projectGroupId )
+    public void setProjectGroupId( final int projectGroupId )
     {
         this.projectGroupId = projectGroupId;
     }
@@ -267,7 +626,7 @@ public class BuildDefinitionAction
         return scheduleId;
     }
 
-    public void setScheduleId( int scheduleId )
+    public void setScheduleId( final int scheduleId )
     {
         this.scheduleId = scheduleId;
     }
@@ -277,17 +636,19 @@ public class BuildDefinitionAction
         return defaultBuildDefinition;
     }
 
-    public void setDefaultBuildDefinition( boolean defaultBuildDefinition )
+    public void setDefaultBuildDefinition( final boolean defaultBuildDefinition )
     {
         this.defaultBuildDefinition = defaultBuildDefinition;
     }
 
+    @Override
     public boolean isConfirmed()
     {
         return confirmed;
     }
 
-    public void setConfirmed( boolean confirmed )
+    @Override
+    public void setConfirmed( final boolean confirmed )
     {
         this.confirmed = confirmed;
     }
@@ -297,7 +658,7 @@ public class BuildDefinitionAction
         return executor;
     }
 
-    public void setExecutor( String executor )
+    public void setExecutor( final String executor )
     {
         this.executor = executor;
     }
@@ -307,7 +668,7 @@ public class BuildDefinitionAction
         return goals;
     }
 
-    public void setGoals( String goals )
+    public void setGoals( final String goals )
     {
         this.goals = goals;
     }
@@ -317,7 +678,7 @@ public class BuildDefinitionAction
         return arguments;
     }
 
-    public void setArguments( String arguments )
+    public void setArguments( final String arguments )
     {
         this.arguments = arguments;
     }
@@ -327,28 +688,136 @@ public class BuildDefinitionAction
         return buildFile;
     }
 
-    public void setBuildFile( String buildFile )
+    public void setBuildFile( final String buildFile )
     {
         this.buildFile = buildFile;
     }
 
-    public Map getSchedules()
+    public boolean isBuildFresh()
+    {
+        return buildFresh;
+    }
+
+    public void setBuildFresh( final boolean buildFresh )
+    {
+        this.buildFresh = buildFresh;
+    }
+
+    public Map<Integer, String> getSchedules()
     {
         return schedules;
     }
 
-    public void setSchedules( Map schedules )
+    public void setSchedules( final Map<Integer, String> schedules )
     {
         this.schedules = schedules;
     }
 
-    public Map getProfiles()
+    public List<Profile> getProfiles()
     {
         return profiles;
     }
 
-    public void setProfiles( Map profiles )
+    public void setProfiles( final List<Profile> profiles )
     {
         this.profiles = profiles;
+    }
+
+    public boolean isGroupBuildDefinition()
+    {
+        return groupBuildDefinition;
+    }
+
+    public void setGroupBuildDefinition( final boolean groupBuildDefinition )
+    {
+        this.groupBuildDefinition = groupBuildDefinition;
+    }
+
+    public String getProjectGroupName()
+        throws ContinuumException
+    {
+        if ( projectGroupName == null || "".equals( projectGroupName ) )
+        {
+            if ( projectGroupId != 0 )
+            {
+                projectGroupName = getContinuum().getProjectGroup( projectGroupId ).getName();
+            }
+            else
+            {
+                projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+            }
+        }
+
+        return projectGroupName;
+    }
+
+    public int getProfileId()
+    {
+        return profileId;
+    }
+
+    public void setProfileId( final int profileId )
+    {
+        this.profileId = profileId;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription( final String description )
+    {
+        this.description = description;
+    }
+
+    public String getBuildDefinitionType()
+    {
+        return buildDefinitionType;
+    }
+
+    public void setBuildDefinitionType( final String buildDefinitionType )
+    {
+        this.buildDefinitionType = buildDefinitionType;
+    }
+
+    public List<String> getBuildDefinitionTypes()
+    {
+        return buildDefinitionTypes;
+    }
+
+    public boolean isAlwaysBuild()
+    {
+        return alwaysBuild;
+    }
+
+    public void setAlwaysBuild( final boolean alwaysBuild )
+    {
+        this.alwaysBuild = alwaysBuild;
+    }
+
+    public boolean isGroupBuildView()
+    {
+        return groupBuildView;
+    }
+
+    public void setGroupBuildView( final boolean groupBuildView )
+    {
+        this.groupBuildView = groupBuildView;
+    }
+
+    public int getUpdatePolicy()
+    {
+        return updatePolicy;
+    }
+
+    public void setUpdatePolicy( int updatePolicy )
+    {
+        this.updatePolicy = updatePolicy;
+    }
+
+    public Map<Integer, String> getBuildDefinitionUpdatePolicies()
+    {
+        return buildDefinitionUpdatePolicies;
     }
 }

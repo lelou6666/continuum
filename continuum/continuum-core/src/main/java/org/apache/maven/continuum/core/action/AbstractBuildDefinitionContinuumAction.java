@@ -1,47 +1,51 @@
 package org.apache.maven.continuum.core.action;
 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.continuum.dao.BuildDefinitionDao;
+import org.apache.continuum.dao.ScheduleDao;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.initialization.DefaultContinuumInitializer;
+import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.BuildDefinition;
+import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.Schedule;
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.store.ContinuumStore;
-import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Requirement;
 
-import java.util.Iterator;
 import java.util.List;
-/*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * AbstractBuildDefinitionContinuumAction:
  *
- * @author: Jesse McConnell <jmcconnell@apache.org>
- * @version: $ID:$
+ * @author Jesse McConnell <jmcconnell@apache.org>
  */
 public abstract class AbstractBuildDefinitionContinuumAction
     extends AbstractContinuumAction
 {
+    @Requirement
+    private BuildDefinitionDao buildDefinitionDao;
 
-    /**
-     * @plexus.requirement
-     */
-    ContinuumStore store;
+    @Requirement
+    private ScheduleDao scheduleDao;
 
     protected void resolveDefaultBuildDefinitionsForProject( BuildDefinition buildDefinition, Project project )
         throws ContinuumException
@@ -51,20 +55,21 @@ public abstract class AbstractBuildDefinitionContinuumAction
             // if buildDefinition passed in is not default then we are done
             if ( buildDefinition.isDefaultForProject() )
             {
-                BuildDefinition storedDefinition =
-                    store.getDefaultBuildDefinitionForProject( project.getId() );
+                BuildDefinition storedDefinition = buildDefinitionDao.getDefaultBuildDefinitionForProject(
+                    project.getId() );
 
                 if ( storedDefinition != null )
                 {
                     storedDefinition.setDefaultForProject( false );
 
-                    store.storeBuildDefinition( storedDefinition );
+                    buildDefinitionDao.storeBuildDefinition( storedDefinition );
                 }
             }
         }
         catch ( ContinuumObjectNotFoundException nfe )
         {
-            getLogger().debug( getClass().getName() + ": safely ignoring the resetting of old build definition becuase it didn't exist" );
+            getLogger().debug( getClass().getName() +
+                                   ": safely ignoring the resetting of old build definition becuase it didn't exist" );
         }
         catch ( ContinuumStoreException cse )
         {
@@ -74,14 +79,15 @@ public abstract class AbstractBuildDefinitionContinuumAction
 
     /**
      * resolves build definition defaults between project groups and projects
-     *
+     * <p/>
      * 1) project groups have default build definitions
      * 2) if project has default build definition, that overrides project group definition
      * 3) changing parent default build definition does not effect project if it has a default declared
-     * 4) project groups much have a default build definition
+     * 4) project groups must have a default build definition
      *
      * @param buildDefinition
      * @param projectGroup
+     * @throws ContinuumException
      */
     protected void resolveDefaultBuildDefinitionsForProjectGroup( BuildDefinition buildDefinition,
                                                                   ProjectGroup projectGroup )
@@ -89,26 +95,37 @@ public abstract class AbstractBuildDefinitionContinuumAction
     {
         try
         {
-            BuildDefinition storedDefinition =
-                                store.getDefaultBuildDefinitionForProjectGroup( projectGroup.getId() );
+            List<BuildDefinition> storedDefinitions = buildDefinitionDao.getDefaultBuildDefinitionsForProjectGroup(
+                projectGroup.getId() );
 
-            // if buildDefinition passed in is not default then we are done
-            if ( buildDefinition.isDefaultForProject() )
+            for ( BuildDefinition storedDefinition : storedDefinitions )
             {
-                if ( storedDefinition != null && storedDefinition.getId() != buildDefinition.getId() )  
+                // if buildDefinition passed in is not default then we are done
+                if ( buildDefinition.isDefaultForProject() )
                 {
-                    storedDefinition.setDefaultForProject( false );
+                    if ( storedDefinition != null && storedDefinition.getId() != buildDefinition.getId() )
+                    {
+                        if ( buildDefinition.getType() != null && buildDefinition.getType().equals(
+                            storedDefinition.getType() ) )
+                        {
+                            //Required to get build def from store because storedDefinition is readonly
+                            BuildDefinition def = buildDefinitionDao.getBuildDefinition( storedDefinition.getId() );
+                            def.setDefaultForProject( false );
 
-                    store.storeBuildDefinition( storedDefinition );
+                            buildDefinitionDao.storeBuildDefinition( def );
+                        }
+                    }
                 }
-            }
-            else
-            {
-                //make sure we are not wacking out default build definition, that would be bad
-                if ( buildDefinition.getId() == storedDefinition.getId() )
+                else
                 {
-                    getLogger().info( "processing this build definition would result in no default build definition for project group" );
-                    throw new ContinuumException( "processing this build definition would result in no default build definition for project group" );
+                    //make sure we are not wacking out default build definition, that would be bad
+                    if ( buildDefinition.getId() == storedDefinition.getId() )
+                    {
+                        getLogger().info(
+                            "processing this build definition would result in no default build definition for project group" );
+                        throw new ContinuumException(
+                            "processing this build definition would result in no default build definition for project group" );
+                    }
                 }
             }
         }
@@ -127,17 +144,16 @@ public abstract class AbstractBuildDefinitionContinuumAction
      * @param buildDefinition
      * @throws ContinuumException
      */
-    protected void updateBuildDefinitionInList( List buildDefinitions, BuildDefinition buildDefinition )
+    protected void updateBuildDefinitionInList( List<BuildDefinition> buildDefinitions,
+                                                BuildDefinition buildDefinition )
         throws ContinuumException
     {
         try
         {
             BuildDefinition storedDefinition = null;
 
-            for ( Iterator i = buildDefinitions.iterator(); i.hasNext(); )
+            for ( BuildDefinition bd : buildDefinitions )
             {
-                BuildDefinition bd = (BuildDefinition) i.next();
-
                 if ( bd.getId() == buildDefinition.getId() )
                 {
                     storedDefinition = bd;
@@ -149,6 +165,8 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 storedDefinition.setGoals( buildDefinition.getGoals() );
                 storedDefinition.setArguments( buildDefinition.getArguments() );
                 storedDefinition.setBuildFile( buildDefinition.getBuildFile() );
+                storedDefinition.setBuildFresh( buildDefinition.isBuildFresh() );
+                storedDefinition.setUpdatePolicy( buildDefinition.getUpdatePolicy() );
 
                 // special case of this is resolved in the resolveDefaultBuildDefinitionsForProjectGroup method
                 storedDefinition.setDefaultForProject( buildDefinition.isDefaultForProject() );
@@ -158,7 +176,7 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 {
                     try
                     {
-                        schedule = store.getScheduleByName( DefaultContinuumInitializer.DEFAULT_SCHEDULE_NAME );
+                        schedule = scheduleDao.getScheduleByName( ConfigurationService.DEFAULT_SCHEDULE_NAME );
                     }
                     catch ( ContinuumStoreException e )
                     {
@@ -167,12 +185,20 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 }
                 else
                 {
-                    schedule = store.getSchedule( buildDefinition.getSchedule().getId() );
+                    schedule = scheduleDao.getSchedule( buildDefinition.getSchedule().getId() );
                 }
 
                 storedDefinition.setSchedule( schedule );
 
-                store.storeBuildDefinition( storedDefinition );
+                storedDefinition.setProfile( buildDefinition.getProfile() );
+
+                storedDefinition.setDescription( buildDefinition.getDescription() );
+
+                storedDefinition.setType( buildDefinition.getType() );
+
+                storedDefinition.setAlwaysBuild( buildDefinition.isAlwaysBuild() );
+
+                buildDefinitionDao.storeBuildDefinition( storedDefinition );
             }
             else
             {
