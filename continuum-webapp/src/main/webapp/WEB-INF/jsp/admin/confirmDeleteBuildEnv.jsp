@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -38,9 +41,17 @@
           </p>
         </div>
         <div class="functnbar3">
+<<<<<<< HEAD
           <s:form action="deleteBuildEnv!delete.action" method="post">
             <input type="hidden" name="profile.id" value="${profile.id}" />
             <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
+=======
+          <s:form action="deleteBuildEnv" method="post">
+            <s:token/>
+            <input type="hidden" name="profile.id" value="${profile.id}" />
+            <s:submit value="%{getText('delete')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+>>>>>>> refs/remotes/apache/trunk
           </s:form>
         </div>
       </div>

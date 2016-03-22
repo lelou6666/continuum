@@ -22,7 +22,7 @@
   <parent>
     <artifactId>continuum-data-management</artifactId>
     <groupId>org.apache.continuum</groupId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-legacy</artifactId>
@@ -36,42 +36,24 @@
           <execution>
             <id>modello-continuum-metadata</id>
             <goals>
-              <goal>jpox-metadata-class</goal>
               <goal>java</goal>
               <goal>stax-reader</goal>
               <goal>stax-writer</goal>
             </goals>
           </execution>
-          <execution>
-            <id>jpox-jdo-mapping</id>
-            <goals>
-              <goal>jpox-jdo-mapping</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/classes/META-INF</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>jpox-jdo-mapping-replication</id>
-            <goals>
-              <goal>jpox-jdo-mapping</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/classes/META-INF</outputDirectory>
-              <replicationParameters>true</replicationParameters>
-            </configuration>
-          </execution>
         </executions>
         <configuration>
           <version>1.0.9</version>
           <packageWithVersion>true</packageWithVersion>
-          <model>src/main/mdo/continuum.xml</model>
+          <models>
+            <model>src/main/mdo/continuum.xml</model>
+          </models>
+          <useJava5>true</useJava5>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>jpox-maven-plugin</artifactId>
-        <version>1.1.6</version>
         <executions>
           <execution>
             <goals>
@@ -84,31 +66,10 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>hack-sources</id>
-            <phase>process-sources</phase>
-            <configuration>
-              <tasks>
-                <!-- Workaround for MODELLO-89 -->
-                <replace file="target/generated-sources/modello/org/apache/maven/continuum/model/project/v1_0_9/ContinuumModelloMetadata.java" token="project;" value="project.v1_0_9;" />
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>hack-resources</id>
             <phase>process-classes</phase>
             <configuration>
               <tasks>
-                <!-- Workaround for MODELLO-91 -->
-                <replace dir="target/classes/META-INF" token="name=&quot;notifiertype&quot;" value="name=&quot;type&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;resultstate&quot;" value="name=&quot;state&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;resulttrigger&quot;" value="name=&quot;trigger&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;projectstate&quot;" value="name=&quot;state&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;changecomment&quot;" value="name=&quot;comment&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;changedate&quot;" value="name=&quot;date&quot;" />
-                <replace dir="target/classes/META-INF" token="name=&quot;scheduledelay&quot;" value="name=&quot;delay&quot;" />
                 <move file="target/classes/META-INF/package.jdorepl" tofile="target/classes/META-INF/package.jdorepl109" />
                 <move file="target/classes/META-INF/package.jdo" tofile="target/classes/META-INF/package.jdo109" />
                 <delete file="target/classes/package.jdo" />
@@ -119,6 +80,40 @@
               <goal>run</goal>
             </goals>
           </execution>
+          <execution>
+            <id>copy-resources</id>
+            <!-- Need to perform the workaround for MODELLO-91 first -->
+            <phase>process-classes</phase>
+            <configuration>
+              <tasks>
+                <copy file="target/classes/META-INF/package.jdorepl109" todir="target/classes" />
+                <copy file="target/classes/META-INF/package.jdo109" todir="target/classes" />
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>replace</goal>
+            </goals>
+            <configuration>
+              <basedir>${basedir}</basedir>
+              <includes>
+                <include>target/generated-sources/**</include>
+              </includes>
+              <token>Generated by Modello.*</token>
+              <value>Generated by Modello</value>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
@@ -127,13 +122,6 @@
     <dependency>
       <groupId>net.java.dev.stax-utils</groupId>
       <artifactId>stax-utils</artifactId>
-      <version>20060502</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.bea.xml</groupId>
-          <artifactId>jsr173-ri</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -142,7 +130,6 @@
     <dependency>
       <groupId>stax</groupId>
       <artifactId>stax-api</artifactId>
-      <version>1.0.1</version>
     </dependency>
   </dependencies>
 </project>

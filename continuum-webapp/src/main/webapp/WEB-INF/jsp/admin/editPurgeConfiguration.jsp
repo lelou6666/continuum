@@ -16,10 +16,14 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
+<<<<<<< HEAD
 
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
   <head>
@@ -32,16 +36,23 @@
 
     <div class="axial">
       <s:form action="savePurgeConfig" method="post" validate="true">
+<<<<<<< HEAD
         <c:if test="${!empty actionErrors}">
           <div class="errormessage">
             <s:iterator value="actionErrors">
               <p><s:text name="<s:property/>" /></p>
+=======
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:iterator value="actionErrors">
+              <p><s:property/></p>
+>>>>>>> refs/remotes/apache/trunk
             </s:iterator>
           </div>
-        </c:if>
-        <c:choose>
-	    <c:when test="${(!empty repositories) || purgeType == 'directory' }">
+        </s:if>
+        <s:if test="repositories.size() > 0 || purgeType == 'directory'">
           <table>
+<<<<<<< HEAD
             <c:choose>
               <c:when test="${purgeType == 'repository'}">
                 <s:select label="%{getText('purgeConfig.repository.label')}" name="repositoryId" list="repositories" required="true"/>
@@ -52,10 +63,21 @@
             </c:choose>
             <s:textfield label="%{getText('purgeConfig.daysOlder.label')}" name="daysOlder"/>
             <s:textfield label="%{getText('purgeConfig.retentionCount.label')}" name="retentionCount"/>
+=======
+            <s:if test="purgeType == 'repository'">
+                <s:select label="%{getText('purgeConfig.repository.label')}" name="repositoryId" list="repositories" requiredLabel="true"/>
+            </s:if>
+            <s:else>
+                <s:select label="%{getText('purgeConfig.directoryType.label')}" name="directoryType" list="directoryTypes"/>
+            </s:else>
+            <s:textfield label="%{getText('purgeConfig.daysOlder.label')}" name="daysOlder" size="100"/>
+            <s:textfield label="%{getText('purgeConfig.retentionCount.label')}" name="retentionCount" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
             <s:checkbox label="%{getText('purgeConfig.deleteAll.label')}" name="deleteAll"/>
             <s:if test="purgeType == 'repository'">
               <s:checkbox label="%{getText('purgeConfig.deleteReleasedSnapshots.label')}" name="deleteReleasedSnapshots"/>
             </s:if>
+<<<<<<< HEAD
             <c:choose>
               <c:when test="${defaultPurgeConfiguration == true}">
                 <s:hidden name="defaultPurgeConfiguration"/>
@@ -68,17 +90,38 @@
             <s:select label="%{getText('purgeConfig.schedule.label')}" name="scheduleId" list="schedules"
                        headerKey="-1" headerValue=""/>
             <s:textfield label="%{getText('purgeConfig.description.label')}" name="description"/>
+=======
+            <s:if test="defaultPurgeConfiguration">
+                <s:hidden name="defaultPurgeConfiguration"/>
+                <s:label label="%{getText('purgeConfig.defaultPurge.label')}" value="true"/>
+            </s:if>
+            <s:else>
+                <s:checkbox label="%{getText('purgeConfig.defaultPurge.label')}" name="defaultPurgeConfiguration" value="defaultPurgeConfiguration" fieldValue="true"/>
+            </s:else>
+            <s:select label="%{getText('purgeConfig.schedule.label')}" name="scheduleId" list="schedules"
+                       headerKey="-1" headerValue=""/>
+            <s:textfield label="%{getText('purgeConfig.description.label')}" name="description" size="100"/>
+            <s:checkbox label="%{getText('purgeConfig.enabled.label')}" name="enabled"/>
+>>>>>>> refs/remotes/apache/trunk
           </table>
           <s:hidden name="purgeConfigId"/>
           <s:hidden name="purgeType"/>
           <div class="functnbar3">
-            <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
           </div>
+<<<<<<< HEAD
         </c:when>
         <c:otherwise>
           <div class="warningmessage" style="color: red"><s:text name="purgeConfig.no.repositories" /></div>
         </c:otherwise>
       </c:choose>
+=======
+        </s:if>
+        <s:else>
+          <div class="warningmessage" style="color: red"><s:text name="purgeConfig.no.repositories" /></div>
+        </s:else>
+>>>>>>> refs/remotes/apache/trunk
       </s:form>
     </div>
   </div>

@@ -26,6 +26,7 @@ import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
@@ -40,32 +41,36 @@ import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.jdo.PlexusJdoUtils;
+import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.annotation.Resource;
 import javax.jdo.Extent;
 import javax.jdo.JDOUserException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.DaoUtils"
  */
+@Repository( "daoUtils" )
+@Component( role = org.apache.continuum.dao.DaoUtils.class )
 public class DaoUtilsImpl
     extends AbstractDao
     implements DaoUtils
 {
-    /**
-     * @plexus.requirement role="org.apache.continuum.dao.ProjectDao"
-     */
+
+    @Resource
+    @Requirement( role = org.apache.continuum.dao.ProjectDao.class )
     private ProjectDao projectDao;
 
     public void closeStore()
@@ -75,8 +80,8 @@ public class DaoUtilsImpl
 
     public void eraseDatabase()
     {
-        PlexusJdoUtils.removeAll( getPersistenceManager(), BuildDefinitionTemplate.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), BuildResult.class );
+        PlexusJdoUtils.removeAll( getPersistenceManager(), BuildDefinitionTemplate.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ContinuumReleaseResult.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ProjectScmRoot.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ProjectGroup.class );
@@ -86,6 +91,7 @@ public class DaoUtilsImpl
         PlexusJdoUtils.removeAll( getPersistenceManager(), LocalRepository.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), DirectoryPurgeConfiguration.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), Schedule.class );
+        PlexusJdoUtils.removeAll( getPersistenceManager(), BuildQueue.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), Profile.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), Installation.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ScmResult.class );
@@ -95,6 +101,11 @@ public class DaoUtilsImpl
         PlexusJdoUtils.removeAll( getPersistenceManager(), ProjectDependency.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ChangeSet.class );
         PlexusJdoUtils.removeAll( getPersistenceManager(), ChangeFile.class );
+    }
+
+    public void rebuildStore() {
+        closeStore();
+        storeUtilities.buildFactory();
     }
 
     /**
@@ -111,10 +122,6 @@ public class DaoUtilsImpl
                 try
                 {
                     pmf.close();
-                }
-                catch ( SecurityException e )
-                {
-                    throw e;
                 }
                 catch ( JDOUserException e )
                 {
@@ -145,38 +152,34 @@ public class DaoUtilsImpl
      * ones inherited by their project group
      *
      * @param scheduleId
-     * @return
+     * @return mapping of project ids to lists of build definition ids
      * @throws org.apache.maven.continuum.store.ContinuumStoreException
-     *
      * @todo Move to a better place
      */
-    public Map getAggregatedProjectIdsAndBuildDefinitionIdsBySchedule( int scheduleId )
+    public Map<Integer, Object> getAggregatedProjectIdsAndBuildDefinitionIdsBySchedule( int scheduleId )
         throws ContinuumStoreException
     {
-        Map projectSource = getProjectIdsAndBuildDefinitionsIdsBySchedule( scheduleId );
-        Map projectGroupSource = getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( scheduleId );
+        Map<Integer, Object> projectSource = getProjectIdsAndBuildDefinitionsIdsBySchedule( scheduleId );
+        Map<Integer, Object> projectGroupSource = getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( scheduleId );
 
-        Map aggregate = new HashMap();
+        Map<Integer, Object> aggregate = new HashMap<Integer, Object>();
 
-        // start out by checking if we have projects with this scheduleId
+        // Pre-load result with definitions from projects with the schedule id
         if ( projectSource != null )
         {
             aggregate.putAll( projectSource );
         }
 
-        // iterate through the project groups and make sure we are not walking
-        // over projects that
-        // might define their own build definitions
+        // Ensure project group definitions are used only if project build definitions do not exist
         if ( projectGroupSource != null )
         {
-            for ( Iterator i = projectGroupSource.keySet().iterator(); i.hasNext(); )
+            for ( Integer projectGroupId : projectGroupSource.keySet() )
             {
-                Integer projectGroupId = (Integer) i.next();
-                List projectsInGroup = projectDao.getProjectsInGroup( projectGroupId.intValue() );
+                List<Project> projectsInGroup = projectDao.getProjectsInGroup( projectGroupId );
 
-                for ( Iterator j = projectsInGroup.iterator(); j.hasNext(); )
+                for ( Project p : projectsInGroup )
                 {
-                    Integer projectId = new Integer( ( (Project) j.next() ).getId() );
+                    Integer projectId = p.getId();
                     if ( !aggregate.keySet().contains( projectId ) )
                     {
                         aggregate.put( projectId, projectGroupSource.get( projectGroupId ) );
@@ -193,7 +196,7 @@ public class DaoUtilsImpl
      * @throws ContinuumStoreException
      * @todo Move to a better place
      */
-    public Map getProjectIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
+    public Map<Integer, Object> getProjectIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
         throws ContinuumStoreException
     {
         PersistenceManager pm = getPersistenceManager();
@@ -218,7 +221,7 @@ public class DaoUtilsImpl
 
             query.setResult( "this.id, buildDef.id" );
 
-            List result = (List) query.execute( new Integer( scheduleId ) );
+            List result = (List) query.execute( scheduleId );
 
             Map projects = new HashMap();
 
@@ -263,11 +266,11 @@ public class DaoUtilsImpl
 
     /**
      * @param scheduleId
-     * @return
+     * @return mapping of project group ids to lists of corresponding build definition ids
      * @throws ContinuumStoreException
      * @todo Move to a better place
      */
-    public Map getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
+    public Map<Integer, Object> getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
         throws ContinuumStoreException
     {
         PersistenceManager pm = getPersistenceManager();
@@ -329,5 +332,4 @@ public class DaoUtilsImpl
         }
         return null;
     }
-
 }

@@ -22,11 +22,19 @@
 <html>
   <s:i18n name="localization.Continuum">
     <head>
+<<<<<<< HEAD
 				<META HTTP-EQUIV="refresh" CONTENT="2;url=<s:url includeParams="all"/>"/>
+=======
+				<META HTTP-EQUIV="refresh" CONTENT="2;url=<s:url includeParams="NONE"/>"/>
+>>>>>>> refs/remotes/apache/trunk
     </head>
     <body>
 			<img src="images/wait.gif">
 			<b><s:text name="wait.addprocessing.processing"/></b>
 		</body>
 	</s:i18n>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> refs/remotes/apache/trunk

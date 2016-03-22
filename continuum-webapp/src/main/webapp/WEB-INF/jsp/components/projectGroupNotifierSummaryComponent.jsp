@@ -19,15 +19,19 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 <s:i18n name="localization.Continuum">
 
+<<<<<<< HEAD
   <h3>Project Group Notifiers of ${projectGroup.name} group</h3>
   <c:if test="${not empty projectGroupNotifierSummaries}">
+=======
+  <h3><s:text name="projectGroupNotifierSummaryComponent.groupNotifiers"><s:param value="projectGroup.name"/></s:text></h3>
+  <s:if test="projectGroupNotifierSummaries.size() > 0">
+>>>>>>> refs/remotes/apache/trunk
   <ec:table items="projectGroupNotifierSummaries"
             var="projectGroupNotifierSummary"
+            autoIncludeParameters="false"
             showExports="false"
             showPagination="false"
             showStatusBar="false"
@@ -41,9 +45,15 @@
       <ec:column property="editActions" title="&nbsp;" width="1%">
         <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
           <s:url id="editUrl" action="editProjectGroupNotifier" namespace="/">
+<<<<<<< HEAD
             <s:param name="projectGroupId">${pageScope.projectGroupNotifierSummary.projectGroupId}</s:param>
             <s:param name="notifierId">${pageScope.projectGroupNotifierSummary.id}</s:param>
             <s:param name="notifierType">${pageScope.projectGroupNotifierSummary.type}</s:param>
+=======
+            <s:param name="projectGroupId" value="#attr.projectGroupNotifierSummary.projectGroupId"/>
+            <s:param name="notifierId" value="#attr.projectGroupNotifierSummary.id"/>
+            <s:param name="notifierType" value="#attr.projectGroupNotifierSummary.type"/>
+>>>>>>> refs/remotes/apache/trunk
           </s:url>
           <s:a href="%{editUrl}">
             <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
@@ -55,11 +65,18 @@
       </ec:column>    
       <ec:column property="deleteActions" title="&nbsp;" width="1%">
         <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
           <s:url id="removeUrl" action="deleteProjectGroupNotifier!default.action" namespace="/">
             <s:param name="projectGroupId">${pageScope.projectGroupNotifierSummary.projectGroupId}</s:param>
             <s:param name="notifierId">${pageScope.projectGroupNotifierSummary.id}</s:param>
             <s:param name="notifierType">${pageScope.projectGroupNotifierSummary.type}</s:param>
             <s:param name="confirmed" value="false"/>
+=======
+          <s:url id="removeUrl" action="deleteProjectGroupNotifier_default.action" namespace="/">
+            <s:param name="projectGroupId" value="#attr.projectGroupNotifierSummary.projectGroupId"/>
+            <s:param name="notifierId" value="#attr.projectGroupNotifierSummary.id"/>
+            <s:param name="notifierType" value="#attr.projectGroupNotifierSummary.type"/>
+>>>>>>> refs/remotes/apache/trunk
           </s:url>
         <s:a href="%{removeUrl}">
           <img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
@@ -71,6 +88,7 @@
       </ec:column>      
     </ec:row>
   </ec:table>
+<<<<<<< HEAD
   </c:if>
 
   <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
@@ -79,25 +97,49 @@
       <s:form action="%{addUrl}" method="post">
         <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
         <s:submit value="%{getText('add')}"/>
+=======
+  </s:if>
+
+  <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+    <div class="functnbar3">
+      <s:set var="addUrl" value="%{'addProjectGroupNotifier'}" />
+      <s:form action="%{addUrl}" method="post">
+        <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
+        <s:submit value="%{getText('add')}" theme="simple"/>
+>>>>>>> refs/remotes/apache/trunk
         </s:form>
     </div>
   </redback:ifAuthorized>
 
+<<<<<<< HEAD
   <c:if test="${not empty projectNotifierSummaries}">
     <h3>Project Notifiers</h3>
+=======
+  <s:if test="projectNotifierSummaries.size() > 0">
+    <h3><s:text name="projectGroupNotifierSummaryComponent.projectNotifiers"/></h3>
+>>>>>>> refs/remotes/apache/trunk
     <ec:table items="projectNotifierSummaries"
               var="projectNotifierSummary"
+              autoIncludeParameters="false"
               showExports="false"
               showPagination="false"
               showStatusBar="false"
               filterable="false"
               sortable="false">
       <ec:row>
+<<<<<<< HEAD
         <ec:column property="projectName" title="PROJECT NAME">
           <s:url id="projectUrl" action="projectView" namespace="/" includeParams="none">
             <s:param name="projectId">${pageScope.projectNotifierSummary.projectId}</s:param>
           </s:url>
         <s:a href="%{projectUrl}">${pageScope.projectNotifierSummary.projectName}</s:a>
+=======
+        <ec:column property="projectName" title="projectView.project.name">
+          <s:url id="projectUrl" action="projectView" namespace="/" includeParams="none">
+            <s:param name="projectId" value="#attr.projectNotifierSummary.projectId"/>
+          </s:url>
+        <s:a href="%{projectUrl}"><s:property value="#attr.projectNotifierSummary.projectName"/></s:a>
+>>>>>>> refs/remotes/apache/trunk
         </ec:column>
         <ec:column property="type" title="projectView.notifier.type"/>
         <ec:column property="recipient" title="projectView.notifier.recipient"/>
@@ -105,6 +147,7 @@
         <!-- ec:column property="sender" title="projectView.notifier.sender"/ -->
         <ec:column property="editActions" title="&nbsp;" width="1%">
           <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
             <c:choose>
               <c:when test="${!pageScope.projectNotifierSummary.fromProject}">
                 <s:url id="editUrl" action="editProjectNotifier" namespace="/" includeParams="none">
@@ -112,16 +155,31 @@
                   <s:param name="projectId">${pageScope.projectNotifierSummary.projectId}</s:param>
                   <s:param name="notifierId">${pageScope.projectNotifierSummary.id}</s:param>
                   <s:param name="notifierType">${pageScope.projectNotifierSummary.type}</s:param>
+=======
+              <s:if test="!#attr.projectNotifierSummary.fromProject">
+                <s:url id="editUrl" action="editProjectNotifier" namespace="/" includeParams="none">
+                  <s:param name="projectGroupId" value="#attr.projectNotifierSummary.projectGroupId"/>
+                  <s:param name="projectId" value="#attr.projectNotifierSummary.projectId"/>
+                  <s:param name="notifierId" value="#attr.projectNotifierSummary.id"/>
+                  <s:param name="notifierType" value="#attr.projectNotifierSummary.type"/>
+>>>>>>> refs/remotes/apache/trunk
                   <s:param name="fromGroupPage" value="true"/>
                 </s:url>
                 <s:a href="%{editUrl}">
                   <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
                 </s:a>
+<<<<<<< HEAD
               </c:when>
               <c:otherwise>
                 <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
               </c:otherwise>
             </c:choose>
+=======
+              </s:if>
+              <s:else>
+                <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
+              </s:else>
+>>>>>>> refs/remotes/apache/trunk
           </redback:ifAuthorized>
           <redback:elseAuthorized>
             <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
@@ -129,6 +187,7 @@
         </ec:column>
         <ec:column property="deleteActions" title="&nbsp;" width="1%">
           <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
             <c:choose>
               <c:when test="${!pageScope.projectNotifierSummary.fromProject}">
                 <s:url id="removeUrl" action="deleteProjectNotifier" namespace="/">
@@ -136,16 +195,30 @@
                   <s:param name="projectId">${pageScope.projectNotifierSummary.projectId}</s:param>
                   <s:param name="notifierId">${pageScope.projectNotifierSummary.id}</s:param>
                   <s:param name="confirmed" value="false"/>
+=======
+              <s:if test="!#attr.projectNotifierSummary.fromProject">
+                <s:url id="removeUrl" action="deleteProjectNotifier_default.action" namespace="/">
+                  <s:param name="projectGroupId" value="#attr.projectNotifierSummary.projectGroupId"/>
+                  <s:param name="projectId" value="#attr.projectNotifierSummary.projectId"/>
+                  <s:param name="notifierId" value="#attr.projectNotifierSummary.id"/>
+>>>>>>> refs/remotes/apache/trunk
                   <s:param name="fromGroupPage" value="true"/>
                 </s:url>
                 <s:a href="%{removeUrl}">
                   <img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
                 </s:a>
+<<<<<<< HEAD
               </c:when>
               <c:otherwise>
                 <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
               </c:otherwise>
             </c:choose>
+=======
+              </s:if>
+              <s:else>
+                <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
+              </s:else>
+>>>>>>> refs/remotes/apache/trunk
           </redback:ifAuthorized>
           <redback:elseAuthorized>
             <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
@@ -153,5 +226,9 @@
         </ec:column>
       </ec:row>
     </ec:table>
+<<<<<<< HEAD
   </c:if>
+=======
+  </s:if>
+>>>>>>> refs/remotes/apache/trunk
 </s:i18n>

@@ -37,17 +37,29 @@
           <br/>
           &nbsp;&nbsp;&nbsp;
           <select name="preparedReleaseId">
+<<<<<<< HEAD
             <s:if test="preparedReleaseName != null">
               <option selected value="<s:property value="preparedReleaseId"/>">
                 <s:property value="preparedReleaseName"/>
               </option>
             </s:if>
+=======
+            <s:iterator value="preparedReleases">
+              <option selected value="<s:property value="key"/>">
+                <s:property value="value"/>
+              </option>
+            </s:iterator>
+>>>>>>> refs/remotes/apache/trunk
             <option value=""><s:text name="releaseProject.provideReleaseParameters"/></option>
           </select>
           <br/>
         </p>
         <input name="projectId" type="hidden" value="<s:property value="projectId"/>"/>
+<<<<<<< HEAD
         <s:submit value="Submit"/>
+=======
+        <s:submit value="%{getText('submit')}"/>
+>>>>>>> refs/remotes/apache/trunk
       </s:form>
     </body>
   </s:i18n>

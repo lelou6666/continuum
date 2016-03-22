@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -32,12 +35,17 @@
           <p>
             <strong>
                 <s:text name="deleteProjects.confirmation.message">
+<<<<<<< HEAD
                     <s:param><s:property value="selectedProjectsNames"/></s:param>
+=======
+                    <s:param value="selectedProjectsNames"/>
+>>>>>>> refs/remotes/apache/trunk
                 </s:text>
             </strong>
           </p>
         </div>
         <div class="functnbar3">
+<<<<<<< HEAD
           <s:form action="ProjectsList.action" method="post">
             <s:iterator value="selectedProjects">
               <input type="hidden" value="<s:property/>" name="selectedProjects"/>
@@ -45,6 +53,16 @@
             <input type="hidden" name="projectGroupId" value="${projectGroupId}" />
             <input type="hidden" name="methodToCall" value="remove" />
             <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
+=======
+          <s:form action="projectsList" theme="simple">
+            <s:iterator value="selectedProjects" var="selectedProject">
+              <s:hidden name="selectedProjects" value="%{top}"/>
+            </s:iterator>
+            <s:hidden name="projectGroupId" value="%{projectGroupId}" />
+            <s:hidden name="methodToCall" value="remove"/>
+            <s:submit value="%{getText('delete')}"/>
+            <s:submit type="button" name="Cancel" value="%{getText('cancel')}" onclick="history.back();"/>
+>>>>>>> refs/remotes/apache/trunk
           </s:form>
         </div>
       </div>

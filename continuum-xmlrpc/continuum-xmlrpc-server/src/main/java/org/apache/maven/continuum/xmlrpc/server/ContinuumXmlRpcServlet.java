@@ -34,24 +34,23 @@ import org.codehaus.plexus.component.repository.exception.ComponentLifecycleExce
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.redback.authentication.AuthenticationException;
 import org.codehaus.plexus.redback.authentication.PasswordBasedAuthenticationDataSource;
-import org.codehaus.plexus.redback.policy.AccountLockedException;
+import org.codehaus.plexus.redback.policy.PolicyViolationException;
 import org.codehaus.plexus.redback.system.DefaultSecuritySession;
 import org.codehaus.plexus.redback.system.SecuritySystem;
 import org.codehaus.plexus.redback.users.UserNotFoundException;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class ContinuumXmlRpcServlet
     extends HttpServlet
@@ -112,10 +111,10 @@ public class ContinuumXmlRpcServlet
         {
             XmlRpcServerConfigImpl cfg = (XmlRpcServerConfigImpl) server.getConfig();
             cfg.setEnabledForExtensions( true );
-            PropertiesHandlerMapping mapping =
-                (PropertiesHandlerMapping) lookup( PropertyHandlerMapping.class.getName() );
-            mapping.setRequestProcessorFactoryFactory(
-                (RequestProcessorFactoryFactory) lookup( RequestProcessorFactoryFactory.class.getName() ) );
+            PropertiesHandlerMapping mapping = (PropertiesHandlerMapping) lookup(
+                PropertyHandlerMapping.class.getName() );
+            mapping.setRequestProcessorFactoryFactory( (RequestProcessorFactoryFactory) lookup(
+                RequestProcessorFactoryFactory.class.getName() ) );
             mapping.load();
             mapping.setAuthenticationHandler( getAuthenticationHandler() );
             server.setHandlerMapping( mapping );
@@ -128,62 +127,60 @@ public class ContinuumXmlRpcServlet
 
     private AbstractReflectiveHandlerMapping.AuthenticationHandler getAuthenticationHandler()
     {
-        AbstractReflectiveHandlerMapping.AuthenticationHandler handler =
-            new AbstractReflectiveHandlerMapping.AuthenticationHandler()
+        return new AbstractReflectiveHandlerMapping.AuthenticationHandler()
+        {
+            public boolean isAuthorized( XmlRpcRequest pRequest )
             {
-                public boolean isAuthorized( XmlRpcRequest pRequest )
+                if ( pRequest.getConfig() instanceof ContinuumXmlRpcConfig )
                 {
-                    if ( pRequest.getConfig() instanceof ContinuumXmlRpcConfig )
+                    ContinuumXmlRpcConfig config = (ContinuumXmlRpcConfig) pRequest.getConfig();
+
+                    try
                     {
-                        ContinuumXmlRpcConfig config = (ContinuumXmlRpcConfig) pRequest.getConfig();
-
-                        try
+                        // if username is null, then treat this as a guest user with an empty security session
+                        if ( config.getBasicUserName() == null )
                         {
-                            // if username is null, then treat this as a guest user with an empty security session
-                            if ( config.getBasicUserName() == null )
-                            {
-                                config.setSecuritySession( new DefaultSecuritySession() );
+                            config.setSecuritySession( new DefaultSecuritySession() );
 
-                                return true;
-                            }
-                            else
-                            {
-                                // otherwise treat this as an authn required session, and if the credentials are invalid
-                                // do not default to guest privileges 
-                                PasswordBasedAuthenticationDataSource authdatasource =
-                                    new PasswordBasedAuthenticationDataSource();
-                                authdatasource.setPrincipal( config.getBasicUserName() );
-                                authdatasource.setPassword( config.getBasicPassword() );
-
-                                config.setSecuritySession( securitySystem.authenticate( authdatasource ) );
-
-                                return config.getSecuritySession().isAuthenticated();
-                            }
+                            return true;
                         }
-                        catch ( AuthenticationException e )
+                        else
                         {
-                            e.printStackTrace();
-                            return false;
-                        }
-                        catch ( AccountLockedException e )
-                        {
-                            e.printStackTrace();
-                            return false;
-                        }
-                        catch ( UserNotFoundException e )
-                        {
-                            e.printStackTrace();
-                            return false;
+                            // otherwise treat this as an authn required session, and if the credentials are invalid
+                            // do not default to guest privileges
+                            PasswordBasedAuthenticationDataSource authdatasource =
+                                new PasswordBasedAuthenticationDataSource();
+                            authdatasource.setPrincipal( config.getBasicUserName() );
+                            authdatasource.setPassword( config.getBasicPassword() );
+
+                            config.setSecuritySession( securitySystem.authenticate( authdatasource ) );
+
+                            return config.getSecuritySession().isAuthenticated();
                         }
                     }
-                    else
+                    catch ( AuthenticationException e )
                     {
-                        System.out.println( "unknown xml rpc configiration object found..." );
+                        e.printStackTrace();
+                        return false;
+                    }
+                    catch ( PolicyViolationException e )
+                    {
+                        e.printStackTrace();
+                        return false;
+                    }
+                    catch ( UserNotFoundException e )
+                    {
+                        e.printStackTrace();
                         return false;
                     }
                 }
-            };
-        return handler;
+                else
+                {
+                    System.out.println( "unknown xml rpc configiration object found..." );
+                    return false;
+                }
+            }
+        };
     }
 
     public void doPost( HttpServletRequest pRequest, HttpServletResponse pResponse )
@@ -215,8 +212,8 @@ public class ContinuumXmlRpcServlet
         PlexusContainer pc;
         try
         {
-            pc = new DefaultPlexusContainer( "default", keys, "META-INF/plexus/application.xml",
-                                             new ClassWorld( "plexus.core", getClass().getClassLoader() ) );
+            pc = new DefaultPlexusContainer( "default", keys, "META-INF/plexus/application.xml", new ClassWorld(
+                "plexus.core", getClass().getClassLoader() ) );
 
             context.setAttribute( PlexusConstants.PLEXUS_KEY, pc );
         }

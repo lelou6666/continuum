@@ -22,6 +22,7 @@ package org.apache.maven.continuum.web.action.notifier;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +32,13 @@ import java.util.Map;
  * specified {@link ProjectGroup}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id: MsnNotifierEditAction.java 465060 2006-10-17 21:24:38Z jmcconnell $
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="msnGroupNotifierEdit"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "msnGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class MsnGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
@@ -43,18 +48,18 @@ public class MsnGroupNotifierEditAction
 
     private String address;
 
-    protected void initConfiguration( Map configuration )
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        login = (String) configuration.get( "login" );
+        login = configuration.get( "login" );
 
-        password = (String) configuration.get( "password" );
+        password = configuration.get( "password" );
 
-        address = (String) configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
+        address = configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "login", login );
 

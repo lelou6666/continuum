@@ -22,18 +22,19 @@ package org.apache.maven.continuum.scheduler;
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Schedule;
-import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.scheduler.AbstractJob;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+import org.slf4j.Logger;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class ContinuumBuildJob
     extends AbstractJob
 {
+    public static final String BUILD_GROUP = "BUILD_GROUP";
+
     public void execute( JobExecutionContext context )
     {
         if ( isInterrupted() )

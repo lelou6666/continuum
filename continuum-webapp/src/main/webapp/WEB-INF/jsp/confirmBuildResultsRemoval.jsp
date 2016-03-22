@@ -18,8 +18,11 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -37,6 +40,7 @@
           </div>
         </s:if>
         <!-- in this case we come from the build result edit -->
+<<<<<<< HEAD
         <s:if test="buildId">
           <c:set var="action" value="removeBuildResult.action" />
         </s:if>
@@ -55,6 +59,23 @@
           </s:if>
           <s:else>
             <input type="hidden" value="<s:property value="buildId"/>" name="selectedBuildResults" />
+=======
+        <s:form action="%{buildId ? 'removeBuildResult' : 'removeBuildResults'}" theme="simple">
+          <s:token/>
+          <s:hidden name="projectGroupId"/>
+          <s:hidden name="projectId"/>
+          <s:if test="buildId">
+            <s:hidden name="buildId"/>
+          </s:if>
+          <s:hidden name="confirmed" value="true"/>
+          <s:if test="selectedBuildResults">
+            <s:iterator value="selectedBuildResults" var="resultId">
+              <s:hidden name="selectedBuildResults" value="%{resultId}" />
+            </s:iterator>
+          </s:if>
+          <s:else>
+            <s:hidden name="selectedBuildResults" value="buildId" />
+>>>>>>> refs/remotes/apache/trunk
           </s:else>
           
           <s:actionerror/>
@@ -71,6 +92,7 @@
 
           <div class="functnbar3">
             <s:if test="buildId > 0">
+<<<<<<< HEAD
               <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
             </s:if>
             <s:elseif test="selectedBuildResults.size > 0">
@@ -79,8 +101,16 @@
             <s:else>
               <input type="submit" value="<s:text name="cancel"/>" onClick="history.back()"/>
             </s:else>
+=======
+              <s:submit value="%{getText('delete')}" theme="simple"/>
+            </s:if>
+            <s:elseif test="selectedBuildResults.size > 0">
+              <s:submit value="%{getText('delete')}" theme="simple"/>
+            </s:elseif>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+>>>>>>> refs/remotes/apache/trunk
           </div>
-        </form>
+        </s:form>
         </div>
       </div>
     </body>

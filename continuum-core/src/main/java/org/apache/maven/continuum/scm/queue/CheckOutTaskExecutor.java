@@ -20,36 +20,37 @@ package org.apache.maven.continuum.scm.queue;
  */
 
 import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.taskqueue.CheckOutTask;
 import org.apache.maven.continuum.core.action.AbstractContinuumAction;
+import org.apache.maven.continuum.core.action.CheckoutProjectContinuumAction;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.action.ActionManager;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.taskqueue.execution.TaskExecutor"
- * role-hint="check-out-project"
  */
+@Component( role = org.codehaus.plexus.taskqueue.execution.TaskExecutor.class, hint = "check-out-project",
+    instantiationStrategy = "per-lookup" )
 public class CheckOutTaskExecutor
-    extends AbstractLogEnabled
     implements TaskExecutor
 {
-    /**
-     * @plexus.requirement
-     */
+    private static final Logger log = LoggerFactory.getLogger( CheckOutTaskExecutor.class );
+
+    @Requirement
     private ActionManager actionManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
     // ----------------------------------------------------------------------
@@ -59,6 +60,8 @@ public class CheckOutTaskExecutor
     public void executeTask( Task t )
         throws TaskExecutionException
     {
+        log.info( "Checkout task executor.." );
+
         CheckOutTask task = (CheckOutTask) t;
 
         int projectId = task.getProjectId();
@@ -71,7 +74,7 @@ public class CheckOutTaskExecutor
         }
         catch ( ContinuumStoreException ex )
         {
-            getLogger().error( "Internal error while getting the project.", ex );
+            log.error( "Internal error while getting the project.", ex );
 
             return;
         }
@@ -80,15 +83,20 @@ public class CheckOutTaskExecutor
 
         Map<String, Object> context = new HashMap<String, Object>();
 
-        context.put( AbstractContinuumAction.KEY_PROJECT_ID, new Integer( projectId ) );
+        AbstractContinuumAction.setProjectId( context, projectId );
 
-        context.put( AbstractContinuumAction.KEY_PROJECT, project );
+        AbstractContinuumAction.setProject( context, project );
 
-        context.put( AbstractContinuumAction.KEY_WORKING_DIRECTORY, workingDirectory );
+        AbstractContinuumAction.setWorkingDirectory( context, workingDirectory );
 
-        context.put( AbstractContinuumAction.KEY_SCM_USERNAME, task.getScmUserName() );
+        CheckoutProjectContinuumAction.setScmUsername( context, task.getScmUserName() );
 
-        context.put( AbstractContinuumAction.KEY_SCM_PASSWORD, task.getScmPassword() );
+        CheckoutProjectContinuumAction.setScmPassword( context, task.getScmPassword() );
+
+        AbstractContinuumAction.setProjectScmRootUrl( context, task.getScmRootUrl() );
+
+        AbstractContinuumAction.setListOfProjectsInGroupWithCommonScmRoot( context,
+                                                                           task.getProjectsWithCommonScmRoot() );
 
         try
         {

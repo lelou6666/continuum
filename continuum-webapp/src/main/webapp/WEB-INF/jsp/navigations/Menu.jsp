@@ -19,12 +19,13 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
+<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
 <s:i18n name="localization.Continuum">
 <div id="navcolumn">
   <div id="projectmenu" class="toolgroup">
-    <div class="label">Continuum</div>
+    <div class="label"><s:text name="menu.continuum"/></div>
     <div>
       <div class="body">
         <s:url id="aboutUrl" action="about" namespace="/" includeParams="none"/>
@@ -48,14 +49,22 @@
       </div>
       <div>
         <div class="body">
+<<<<<<< HEAD
           <s:url id="addMavenTwoProjectUrl" action="addMavenTwoProjectInput" method="input" namespace="/"
+=======
+          <s:url id="addMavenTwoProjectUrl" action="addMavenTwoProjectInput" namespace="/"
+>>>>>>> refs/remotes/apache/trunk
                   includeParams="none"/>
           <s:a href="%{addMavenTwoProjectUrl}">
             <s:text name="menu.add.m2Project"/>
           </s:a>
         </div>
         <div class="body">
+<<<<<<< HEAD
           <s:url id="addMavenOneProjectUrl" action="addMavenOneProjectInput" method="input" namespace="/"
+=======
+          <s:url id="addMavenOneProjectUrl" action="addMavenOneProjectInput" namespace="/"
+>>>>>>> refs/remotes/apache/trunk
                   includeParams="none"/>
           <s:a href="%{addMavenOneProjectUrl}">
             <s:text name="menu.add.m1Project"/>
@@ -82,7 +91,7 @@
   </redback:ifAuthorized>
 
 
-  <redback:ifAnyAuthorized permissions="continuum-manage-build-templates,continuum-manage-schedules,continuum-manage-configuration,continuum-manage-users,continuum-manage-installations,continuum-manage-profiles,continuum-view-queues,continuum-manage-repositories,continuum-manage-purging">
+  <redback:ifAnyAuthorized permissions="continuum-manage-build-templates,continuum-manage-schedules,continuum-manage-configuration,continuum-manage-users,continuum-manage-installations,continuum-manage-profiles,continuum-manage-queues,continuum-manage-repositories,continuum-manage-purging">
     <div id="projectmenu" class="toolgroup">
       <div class="label">
         <s:text name="menu.administration"/>
@@ -97,7 +106,11 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-purging">
+<<<<<<< HEAD
           <s:url id="purgeConfigListUrl" action="purgeConfigList" namespace="/admin" includeParams="none"/>
+=======
+          <s:url id="purgeConfigListUrl" action="displayPurge" namespace="/admin" includeParams="none"/>
+>>>>>>> refs/remotes/apache/trunk
           <div class="body">
             <s:a href="%{purgeConfigListUrl}">
               <s:text name="menu.administration.purge"/>
@@ -113,7 +126,11 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-installations">
+<<<<<<< HEAD
           <s:url id="configurationUrl" action="installationsList" namespace="/admin" method="list" includeParams="none"/>
+=======
+          <s:url id="configurationUrl" action="installationsList" namespace="/admin" includeParams="none"/>
+>>>>>>> refs/remotes/apache/trunk
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.installations"/>
@@ -121,21 +138,32 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-profiles">
+<<<<<<< HEAD
           <s:url id="configurationUrl" action="buildEnvList" namespace="/admin" method="list" includeParams="none"/>
+=======
+          <s:url id="configurationUrl" action="buildEnvList" namespace="/admin" includeParams="none"/>
+>>>>>>> refs/remotes/apache/trunk
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.profile"/>
             </s:a>
+<<<<<<< HEAD
           </div> 
         </redback:ifAuthorized> 
         <redback:ifAuthorized permission="continuum-view-queues">
           <s:url id="queueUrls" action="displayQueues" namespace="/admin" method="display" includeParams="none"/>
+=======
+          </div>
+        </redback:ifAuthorized>
+        <redback:ifAuthorized permission="continuum-manage-queues">
+          <s:url id="queueUrls" action="displayQueues" namespace="/admin" includeParams="none"/>
+>>>>>>> refs/remotes/apache/trunk
           <div class="body">
             <s:a href="%{queueUrls}">
               <s:text name="menu.administration.queues"/>
             </s:a>
           </div> 
-        </redback:ifAuthorized> 
+        </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-build-templates">
           <s:url id="buildDefinitionTemplatesUrl" action="buildDefinitionTemplates" namespace="/admin" includeParams="none"/>
           <div class="body">
@@ -145,7 +173,11 @@
           </div> 
         </redback:ifAuthorized>        
         <redback:ifAuthorized permission="continuum-manage-configuration">               
+<<<<<<< HEAD
           <s:url id="configurationUrl" action="configuration" namespace="/admin" method="input" includeParams="none"/>
+=======
+          <s:url id="configurationUrl" action="configuration" namespace="/admin" includeParams="none"/>
+>>>>>>> refs/remotes/apache/trunk
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.configuration"/>
@@ -176,8 +208,70 @@
     </div>
   </redback:ifAnyAuthorized>
 
+  <redback:ifAuthorized permission="continuum-view-report">
+    <div id="projectmenu" class="toolgroup">
+      <div class="label">
+        <s:text name="menu.reports"/>
+      </div>
+      <div>
+        <div class="body">
+          <s:url id="viewProjectBuildsReportUrl" action="viewProjectBuildsReport" namespace="/" includeParams="none"/>
+          <s:a href="%{viewProjectBuildsReportUrl}">
+            <s:text name="menu.reports.projectBuilds"/>
+          </s:a> 
+        </div>
+      </div>
+    </div>
+  </redback:ifAuthorized>
+
+  <c1:ifBuildTypeEnabled buildType="distributed">
+    <redback:ifAnyAuthorized permissions="continuum-manage-distributed-builds,continuum-view-release">
+      <div id="projectmenu" class="toolgroup">
+        <div class="label">
+          <s:text name="menu.distributedBuilds"/>
+        </div>    
+        <div>
+          <redback:ifAuthorized permission="continuum-manage-distributed-builds">    
+            <s:url id="buildAgentList" action="buildAgentList" namespace="/security" includeParams="none" />
+            <div class="body">
+              <s:a href="%{buildAgentList}">
+                <s:text name="menu.distributedBuilds.buildAgents"/>
+              </s:a>
+            </div>
+          </redback:ifAuthorized>
+          <redback:ifAuthorized permission="continuum-view-release">
+            <s:url id="releasesUrl" action="viewReleases" namespace="/" includeParams="none"/>
+            <div class="body">
+              <s:a href="%{releasesUrl}">
+                <s:text name="menu.distributedBuilds.releases"/>
+              </s:a>
+            </div>
+          </redback:ifAuthorized>            
+        </div>
+      </div>
+    </redback:ifAnyAuthorized>
+  </c1:ifBuildTypeEnabled>
+  
+  <c1:ifBuildTypeEnabled buildType="parallel">
+    <redback:ifAuthorized permission="continuum-manage-parallel-builds">
+      <div id="projectmenu" class="toolgroup">
+        <div class="label">
+          <s:text name="menu.parallelBuilds"/>
+        </div>    
+        <div>
+          <s:url id="buildQueueListUrl" action="buildQueueList" namespace="/admin" includeParams="none"/>
+          <div class="body">
+            <s:a href="%{buildQueueListUrl}">
+              <s:text name="menu.parallelBuilds.build.queue"/>
+            </s:a>
+          </div>          
+        </div>
+      </div>
+    </redback:ifAuthorized>
+  </c1:ifBuildTypeEnabled>
+  
   <div id="projectmenu" class="toolgroup">
-    <div class="label">Legend</div>
+    <div class="label"><s:text name="legend.title"/></div>
     <div id="legend">
       <div id="litem1" class="body"><s:text name="legend.buildNow"/></div>
       <div id="litem2" class="body"><s:text name="legend.buildHistory"/></div>
@@ -191,8 +285,17 @@
       <div id="litem10" class="body"><s:text name="legend.release"/></div>
       <div id="litem11" class="body"><s:text name="legend.buildInSuccess"/></div>
       <div id="litem12" class="body"><s:text name="legend.buildInFailure"/></div>
+<<<<<<< HEAD
       <div id="litem13" class="body"><s:text name="legend.buildInError"/></div>
     </div>
   </div>
 </div>
 </s:i18n>
+=======
+      <div id="litem13" class="body"><s:text name="legend.buildInUnknown"/></div>
+      <div id="litem14" class="body"><s:text name="legend.buildInError"/></div>
+    </div>
+  </div>
+</div>
+</s:i18n>
+>>>>>>> refs/remotes/apache/trunk

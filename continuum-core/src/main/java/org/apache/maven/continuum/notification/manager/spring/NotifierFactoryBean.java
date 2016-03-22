@@ -34,12 +34,11 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class NotifierFactoryBean
     implements FactoryBean, ApplicationContextAware
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( NotifierFactoryBean.class );
 
     private ApplicationContext applicationContext;
 
@@ -48,8 +47,8 @@ public class NotifierFactoryBean
     {
         Map<String, Notifier> notifiers = new HashMap<String, Notifier>();
 
-        Map<String, Notifier> beans =
-            BeanFactoryUtils.beansOfTypeIncludingAncestors( applicationContext, Notifier.class );
+        Map<String, Notifier> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors( applicationContext,
+                                                                                      Notifier.class );
 
         for ( Notifier notifier : beans.values() )
         {

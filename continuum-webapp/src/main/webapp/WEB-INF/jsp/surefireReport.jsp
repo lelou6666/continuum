@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib prefix="c1" uri="continuum" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -29,20 +27,23 @@
     <body>
       <div id="h3">
 
-        <jsp:include page="/WEB-INF/jsp/navigations/ProjectMenu.jsp">
-          <jsp:param name="tab" value="view"/>
-        </jsp:include>
+        <jsp:include page="/WEB-INF/jsp/navigations/ProjectMenu.jsp" />
 
         <h3>
             <s:text name="surefireReport.section.title">
               <s:param><s:property value="projectName"/></s:param>
+<<<<<<< HEAD
               <s:param><s:property value="buildId"/></s:param>
+=======
+              <s:param><s:property value="project.buildNumber"/></s:param>
+>>>>>>> refs/remotes/apache/trunk
             </s:text>
         </h3>
 
         <h4><s:text name="surefireReport.summary"/></h4>
         <ec:table items="testSummaryList"
                   var="summary"
+                  autoIncludeParameters="false"
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -60,6 +61,7 @@
         <h4><s:text name="surefireReport.packageList"/></h4>
         <ec:table items="testPackageList"
                   var="report"
+                  autoIncludeParameters="false"
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -67,7 +69,7 @@
                   filterable="false">
           <ec:row>
             <ec:column property="name" title="surefireReport.package">
-              <a href="#<c:out value="${pageScope.report.name}"/>"><c:out value="${pageScope.report.name}"/></a>
+              <a href="#<s:property value="#attr.report.name"/>"><s:property value="#attr.report.name"/></a>
             </ec:column>
             <ec:column property="tests" title="surefireReport.tests"/>
             <ec:column property="errors" title="surefireReport.errors"/>
@@ -81,6 +83,7 @@
           <h5><a name="<s:property value="name"/>"><s:property value="name"/></a></h5>
           <ec:table items="children"
                     var="report"
+                    autoIncludeParameters="false"
                     showExports="false"
                     showPagination="false"
                     showStatusBar="false"
@@ -99,7 +102,7 @@
                 </ec:column>
               </s:else>
               <ec:column property="name" title="surefireReport.class">
-                <a href="#<c:out value="${pageScope.report.id}"/>"><c:out value="${pageScope.report.name}"/></a>
+                <a href="#<s:property value="#attr.report.id"/>"><s:property value="#attr.report.name"/></a>
               </ec:column>
               <ec:column property="tests" title="surefireReport.tests"/>
               <ec:column property="errors" title="surefireReport.errors"/>
@@ -116,6 +119,7 @@
             <h5><a name="<s:property value="id"/>"><s:property value="name"/></a></h5>
             <ec:table items="children"
                       var="testCase"
+                      autoIncludeParameters="false"
                       showExports="false"
                       showPagination="false"
                       showStatusBar="false"
@@ -128,10 +132,8 @@
                     <img src="<s:url value="/images/icon_error_sml.gif" includeParams="none"/>" alt="<s:text name="message.error"/>" title="<s:text name="message.error"/>"/>
                   </ec:column>
                   <ec:column property="name" title="surefireReport.testCase" sortable="false">
-                    <c:out value="${pageScope.testCase.name}"/><br/><br/>
-                    <pre>
-                      <c:out value="${pageScope.testCase.failureDetails}"/>
-                    </pre>
+                    <s:property value="#attr.testCase.name"/><br/><br/>
+                    <div class="pre-wrap"><s:property value="#attr.testCase.failureDetails"/><div>
                   </ec:column>
                 </s:if>
                 <s:else>

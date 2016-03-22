@@ -19,15 +19,21 @@
 
 <%@ taglib prefix="s" uri="/struts-tags" %>
 <html>
+<s:i18n name="localization.Continuum">
 <head>
+<<<<<<< HEAD
   <title>Edit Company POM</title>
   <s:head/>
+=======
+  <title><s:text name="companyPom.page.title"/></title>
+>>>>>>> refs/remotes/apache/trunk
 </head>
 
 <body>
-<h1>Company POM</h1>
+<h3><s:text name="companyPom.section.title"/></h3>
 
 <s:actionmessage/>
+<<<<<<< HEAD
 <s:form method="post" action="saveCompanyPom" namespace="/admin" validate="true" theme="xhtml">
   <s:label name="companyModel.groupId" label="Group ID"/>
   <s:label name="companyModel.artifactId" label="Artifact ID"/>
@@ -38,17 +44,35 @@
       <i>(The version will automatically be incremented when you save this form)</i>
     </td>
   </tr>
+=======
+<s:form method="post" action="saveCompanyPom" namespace="/admin" validate="true">
+  <s:token/>
+  <s:label name="companyModel.groupId" label="%{getText('appearance.companyPom.groupId')}"/>
+  <s:label name="companyModel.artifactId" label="%{getText('appearance.companyPom.artifactId')}"/>
+  <s:label name="companyModel.version" label="%{getText('appearance.companyPom.version')}">
+    <s:param name="after">
+      &nbsp;<i>(<s:text name="companyPom.autoIncrementVersion"/>)</i>
+    </s:param>
+  </s:label>
+>>>>>>> refs/remotes/apache/trunk
   <tr>
     <td></td>
-    <td><h2>Organization</h2></td>
+    <td><h2><s:text name="companyPom.organization"/></h2></td>
   </tr>
+<<<<<<< HEAD
   <s:textfield name="companyModel.organization.name" size="40" label="Name"/>
   <s:textfield name="companyModel.organization.url" size="70" label="URL"/>
   <%-- TODO: how to get it to be a string, not a String[]? --%>
   <s:textfield name="companyModel.properties['organization.logo']" size="70" label="Logo URL"/>
   <s:submit value="Save"/>
+=======
+  <s:textfield name="companyModel.organization.name" size="40" label="%{getText('appearance.companyPom.organizationName.label')}"/>
+  <s:textfield name="companyModel.organization.url" size="70" label="%{getText('appearance.companyPom.organizationUrl.label')}"/>
+  <s:textfield name="organizationLogo" size="70" label="%{getText('appearance.companyPom.organizationLogoUrl.label')}"/>
+  <s:submit value="%{getText('save')}"/>
+>>>>>>> refs/remotes/apache/trunk
 </s:form>
 
 </body>
-
+</s:i18n>
 </html>

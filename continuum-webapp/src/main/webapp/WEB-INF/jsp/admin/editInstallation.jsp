@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
 <s:i18n name="localization.Continuum">
   <head>
@@ -33,7 +36,11 @@
       <s:text name="installation.section.title"/>
     </h3>
 
+<<<<<<< HEAD
     <s:form action="saveInstallation!save" method="post">
+=======
+    <s:form action="saveInstallation" method="post">
+>>>>>>> refs/remotes/apache/trunk
 
       <s:if test="hasActionErrors()">
         <h3>Action Error</h3>
@@ -48,30 +55,51 @@
           <tbody>
             <s:hidden name="installation.installationId" />
             <s:hidden name="installationType" />
+<<<<<<< HEAD
             <s:textfield label="%{getText('installation.name.label')}" name="installation.name"
                             required="true"/>
+=======
+            <s:hidden name="displayTypes" />
+            <s:hidden name="varNameUpdatable" />
+            <s:hidden name="varNameDisplayable" />
+            <s:textfield label="%{getText('installation.name.label')}" name="installation.name"
+                            requiredLabel="true" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
             <s:if test="displayTypes">
               <s:select label="%{getText('installation.type.label')}" name="installation.type" list="typesLabels" />
             </s:if>
             <s:if test="varNameUpdatable">
               <s:if test="varNameDisplayable">
+<<<<<<< HEAD
                 <s:textfield label="%{getText('installation.varName.label')}" name="installation.varName" required="true" />
+=======
+                <s:textfield label="%{getText('installation.varName.label')}" name="installation.varName" requiredLabel="true" size="100" />
+>>>>>>> refs/remotes/apache/trunk
               </s:if>
             </s:if>
             <s:else>
               <s:if test="varNameDisplayable">
+<<<<<<< HEAD
                 <s:textfield label="%{getText('installation.varName.label')}" name="installation.varName" required="true" readonly="true"/>
               </s:if>
             </s:else>
             <s:textfield label="%{getText('installation.value.label')}" name="installation.varValue"
                           required="true"/>
+=======
+                <s:textfield label="%{getText('installation.varName.label')}" name="installation.varName" requiredLabel="true" readonly="true" size="100"/>
+              </s:if>
+            </s:else>
+            <s:textfield label="%{getText('installation.value.label')}" name="installation.varValue"
+                          requiredLabel="true" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
             <s:if test="%{(automaticProfileDisplayable && installation == null) || (installation.installationId == 0)}">
               <s:checkbox label="%{getText('installation.automaticProfile.label')}" name="automaticProfile" />
             </s:if>
           </tbody>
         </table>
         <div class="functnbar3">
-          <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+          <s:submit value="%{getText('save')}" theme="simple"/>
+          <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
         </div>
 
       </div>

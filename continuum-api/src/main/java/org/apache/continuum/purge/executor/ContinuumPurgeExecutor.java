@@ -1,6 +1,5 @@
 package org.apache.continuum.purge.executor;
 
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,13 +21,12 @@ package org.apache.continuum.purge.executor;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public interface ContinuumPurgeExecutor
 {
     String ROLE = ContinuumPurgeExecutor.class.getName();
-    
+
     void purge( String path )
         throws ContinuumPurgeExecutorException;
 }

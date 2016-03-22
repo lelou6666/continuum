@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -56,6 +59,7 @@
           <s:form name="editProject" action="projectSave" method="post" validate="true">
             <table>
               <tbody>
+<<<<<<< HEAD
                 <s:textfield label="%{getText('projectEdit.project.name.label')}" name="name" required="true"/>
                 <s:textfield label="%{getText('projectEdit.project.version.label')}" name="version" required="true"/>
                 <s:textfield label="%{getText('projectEdit.project.scmUrl.label')}" name="scmUrl" required="true"
@@ -65,10 +69,22 @@
                 <s:textfield label="%{getText('projectEdit.project.scmUsername.label')}" name="scmUsername"/>
                 <s:password label="%{getText('projectEdit.project.scmPassword.label')}" name="scmPassword"/>
                 <s:textfield label="%{getText('projectEdit.project.scmTag.label')}" name="scmTag"/>
+=======
+                <s:textfield label="%{getText('projectEdit.project.name.label')}" name="name" requiredLabel="true" size="100"/>
+                <s:textfield label="%{getText('projectEdit.project.version.label')}" name="version" requiredLabel="true" size="100"/>
+                <s:textfield label="%{getText('projectEdit.project.scmUrl.label')}" name="scmUrl" requiredLabel="true"
+                             onchange="checkUseCache()" size="100"/>
+                <s:checkbox label="%{getText('projectEdit.project.scmUseCache.label')}" name="scmUseCache"
+                             onclick="checkUseCache()" size="100"/>
+                <s:textfield label="%{getText('projectEdit.project.scmUsername.label')}" name="scmUsername" size="100"/>
+                <s:password label="%{getText('projectEdit.project.scmPassword.label')}" name="scmPassword" size="100"/>
+                <s:textfield label="%{getText('projectEdit.project.scmTag.label')}" name="scmTag" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
               </tbody>
             </table>
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('save')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
             <s:hidden name="projectId"/>
           </s:form>
@@ -76,4 +92,8 @@
       </div>
     </body>
   </s:i18n>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> refs/remotes/apache/trunk

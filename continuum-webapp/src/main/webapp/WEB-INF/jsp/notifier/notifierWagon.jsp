@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -44,7 +47,11 @@
         </h3>
 
         <div class="axial">
+<<<<<<< HEAD
           <s:form action="%{actionUrl}" method="post" validate="true">
+=======
+          <s:form action="%{projectId > 0? 'wagonProjectNotifierSave' : 'wagonProjectGroupNotifierSave'}" method="post" validate="true">
+>>>>>>> refs/remotes/apache/trunk
             <s:hidden name="notifierId"/>
             <s:hidden name="projectId"/>
             <s:hidden name="projectGroupId"/>
@@ -53,8 +60,13 @@
 
             <table>
               <tbody>
+<<<<<<< HEAD
                 <s:textfield label="%{getText('notifier.wagon.url.label')}" name="url" required="true" />
                 <s:textfield label="%{getText('notifier.wagon.id.label')}" name="id" required="true" />
+=======
+                <s:textfield label="%{getText('notifier.wagon.url.label')}" name="url" requiredLabel="true" size="100" />
+                <s:textfield label="%{getText('notifier.wagon.id.label')}" name="id" requiredLabel="true" size="100" />
+>>>>>>> refs/remotes/apache/trunk
                 <s:checkbox label="%{getText('notifier.event.sendOnSuccess')}" name="sendOnSuccess" value="sendOnSuccess" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnFailure')}" name="sendOnFailure" value="sendOnFailure" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnError')}" name="sendOnError" value="sendOnError" fieldValue="true"/>
@@ -63,7 +75,8 @@
             </table>
 
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('save')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
           </s:form>
         </div>

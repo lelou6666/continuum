@@ -19,24 +19,29 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+import org.apache.continuum.model.project.ProjectGroupSummary;
+import org.apache.continuum.model.project.ProjectSummaryResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.ProjectDao"
  */
+@Repository( "projectDao" )
+@Component( role = org.apache.continuum.dao.ProjectDao.class )
 public class ProjectDaoImpl
     extends AbstractDao
     implements ProjectDao
@@ -55,7 +60,7 @@ public class ProjectDaoImpl
     public Project getProject( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId );
+        return getObjectById( Project.class, projectId );
     }
 
     public Project getProject( String groupId, String artifactId, String version )
@@ -147,40 +152,51 @@ public class ProjectDaoImpl
         }
     }
 
-    // todo get this natively supported in the store
     public List<Project> getProjectsWithDependenciesByGroupId( int projectGroupId )
     {
-        List<Project> allProjects =
-            getAllObjectsDetached( Project.class, "name ascending", PROJECT_DEPENDENCIES_FETCH_GROUP );
+        PersistenceManager pm = getPersistenceManager();
 
-        List<Project> groupProjects = new ArrayList<Project>();
+        Transaction tx = pm.currentTransaction();
 
-        for ( Project project : allProjects )
+        try
         {
-            if ( project.getProjectGroup().getId() == projectGroupId )
-            {
-                groupProjects.add( project );
-            }
+            tx.begin();
+
+            Extent extent = pm.getExtent( Project.class, true );
+
+            Query query = pm.newQuery( extent, "projectGroup.id == " + projectGroupId );
+
+            pm.getFetchPlan().addGroup( PROJECT_DEPENDENCIES_FETCH_GROUP );
+            List<Project> result = (List<Project>) query.execute();
+
+            result = (List<Project>) pm.detachCopyAll( result );
+
+            tx.commit();
+
+            return result;
         }
-        return groupProjects;
+        finally
+        {
+            rollback( tx );
+        }
     }
 
     public Project getProjectWithBuilds( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_WITH_BUILDS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_WITH_BUILDS_FETCH_GROUP );
     }
 
     public Project getProjectWithBuildDetails( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_BUILD_DETAILS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_BUILD_DETAILS_FETCH_GROUP );
     }
 
     public Project getProjectWithCheckoutResult( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_WITH_CHECKOUT_RESULT_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_WITH_CHECKOUT_RESULT_FETCH_GROUP );
     }
 
     public Project getProjectWithScmDetails( int projectId )
@@ -206,9 +222,9 @@ public class ProjectDaoImpl
 
             query.setOrdering( "name ascending" );
 
-            List result = (List) query.execute();
+            List<Project> result = (List<Project>) query.execute();
 
-            result = (List) pm.detachCopyAll( result );
+            result = (List<Project>) pm.detachCopyAll( result );
 
             tx.commit();
 
@@ -241,9 +257,9 @@ public class ProjectDaoImpl
 
             pm.getFetchPlan().addGroup( PROJECTGROUP_PROJECTS_FETCH_GROUP );
 
-            List result = (List) query.execute();
+            List<Project> result = (List<Project>) query.execute();
 
-            result = (List) pm.detachCopyAll( result );
+            result = (List<Project>) pm.detachCopyAll( result );
 
             tx.commit();
 
@@ -255,23 +271,16 @@ public class ProjectDaoImpl
         }
     }
 
-
-    public List<Project> getAllProjectsWithAllDetails()
-    {
-        return getAllObjectsDetached( Project.class, "name ascending", PROJECT_ALL_DETAILS_FETCH_GROUP );
-    }
-
     public Project getProjectWithAllDetails( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_ALL_DETAILS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_ALL_DETAILS_FETCH_GROUP );
     }
 
     public List<Project> getAllProjectsByName()
     {
         return getAllObjectsDetached( Project.class, "name ascending", null );
     }
-
 
     public List<Project> getAllProjectsByNameWithDependencies()
     {
@@ -296,5 +305,85 @@ public class ProjectDaoImpl
                 "unable to find project group containing project with id: " + projectId );
 
         }
+    }
+
+    public Project getProjectWithDependencies( int projectId )
+        throws ContinuumStoreException
+    {
+        return getObjectById( Project.class, projectId, PROJECT_DEPENDENCIES_FETCH_GROUP );
+    }
+
+    public Map<Integer, ProjectGroupSummary> getProjectsSummary()
+    {
+        PersistenceManager pm = getPersistenceManager();
+
+        Transaction tx = pm.currentTransaction();
+
+        try
+        {
+            tx.begin();
+
+            Extent extent = pm.getExtent( Project.class );
+
+            Query query = pm.newQuery( extent );
+
+            query.setResult( "projectGroup.id as projectGroupId, state as projectState, count(state) as size" );
+
+            query.setResultClass( ProjectSummaryResult.class );
+
+            query.setGrouping( "projectGroup.id, state" );
+
+            List<ProjectSummaryResult> results = (List<ProjectSummaryResult>) query.execute();
+
+            Map<Integer, ProjectGroupSummary> summaries = processProjectGroupSummary( results );
+
+            tx.commit();
+
+            return summaries;
+        }
+        finally
+        {
+            rollback( tx );
+        }
+    }
+
+    private Map<Integer, ProjectGroupSummary> processProjectGroupSummary( List<ProjectSummaryResult> results )
+    {
+        Map<Integer, ProjectGroupSummary> map = new HashMap<Integer, ProjectGroupSummary>();
+
+        for ( ProjectSummaryResult result : results )
+        {
+            ProjectGroupSummary summary;
+            int projectGroupId = result.getProjectGroupId();
+            int size = new Long( result.getSize() ).intValue();
+            int state = result.getProjectState();
+
+            if ( map.containsKey( projectGroupId ) )
+            {
+                summary = map.get( projectGroupId );
+            }
+            else
+            {
+                summary = new ProjectGroupSummary( projectGroupId );
+            }
+
+            summary.addProjects( size );
+
+            if ( state == 2 )
+            {
+                summary.addNumberOfSuccesses( size );
+            }
+            else if ( state == 3 )
+            {
+                summary.addNumberOfFailures( size );
+            }
+            else if ( state == 4 )
+            {
+                summary.addNumberOfErrors( size );
+            }
+
+            map.put( projectGroupId, summary );
+        }
+        return map;
     }
 }

@@ -17,11 +17,14 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+>>>>>>> refs/remotes/apache/trunk
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-
 <html>
 <s:i18n name="localization.Continuum">
   <head>
@@ -33,21 +36,27 @@
       <s:text name="installationsList.section.title"/>
     </h3>  
 
+<<<<<<< HEAD
     <c:if test="${not empty installations}">
+=======
+    <s:if test="installations.size() > 0">
+>>>>>>> refs/remotes/apache/trunk
     <ec:table items="installations"
               var="installation"
+              autoIncludeParameters="false"
               showExports="false"
               showPagination="false"
               showStatusBar="false"
               sortable="false"
               filterable="false">
       <ec:row highlightRow="true">
-        <ec:column property="name" title="Name" style="white-space: nowrap" />
-        <ec:column property="type" title="Type" style="white-space: nowrap" />
-        <ec:column property="varName" title="Env Var Name" style="white-space: nowrap" />
-        <ec:column property="varValue" title="Value/Path" style="white-space: nowrap" />
+        <ec:column property="name" title="installation.name.label" style="white-space: nowrap" />
+        <ec:column property="type" title="installation.type.label" style="white-space: nowrap" />
+        <ec:column property="varName" title="installation.varName.label" style="white-space: nowrap" />
+        <ec:column property="varValue" title="installation.value.label" style="white-space: nowrap" />
         
         <ec:column property="id" title="&nbsp;" width="1%">
+<<<<<<< HEAD
           <a href="editInstallation!edit.action?installation.installationId=<c:out value="${installation.installationId}"/>">
             <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" />
           </a>  
@@ -62,6 +71,29 @@
     </c:if>
     <div class="functnbar3">
       <s:form action="installationsTypeChoice!listTypes.action" method="post">
+=======
+          <s:url var="editUrl" action="editInstallation">
+            <s:param name="installation.installationId" value="#attr.installation.installationId" />
+          </s:url>
+          <s:a href="%{editUrl}">
+            <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" />
+          </s:a>
+        </ec:column>   
+        <ec:column property="id" title="&nbsp;" width="1%">
+          <s:url var="deleteUrl" action="deleteInstallation">
+            <s:param name="installation.installationId" value="#attr.installation.installationId" />
+            <s:param name="installation.name" value="#attr.installation.name" />
+          </s:url>
+          <s:a href="%{deleteUrl}">
+            <img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0" />
+          </s:a>
+        </ec:column>             
+      </ec:row>
+    </ec:table>
+    </s:if>
+    <div class="functnbar3">
+      <s:form action="installationsTypeChoice" method="post">
+>>>>>>> refs/remotes/apache/trunk
         <s:submit value="%{getText('add')}"/>
       </s:form>
     </div>  

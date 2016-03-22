@@ -19,6 +19,7 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.Map;
 
 import org.apache.continuum.dao.BuildDefinitionDao;
@@ -26,10 +27,16 @@ import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.taskqueue.manager.TaskQueueManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.buildqueue.BuildProjectTask;
+=======
+import org.apache.continuum.buildmanager.BuildsManager;
+import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.utils.build.BuildTrigger;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
+<<<<<<< HEAD
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.taskqueue.TaskQueueException;
@@ -108,11 +115,100 @@ public class CreateBuildProjectTaskAction
             }
             else
             {
+=======
+import org.apache.maven.continuum.model.scm.ScmResult;
+import org.apache.maven.continuum.project.ContinuumProjectState;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
+ */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "create-build-project-task" )
+public class CreateBuildProjectTaskAction
+    extends AbstractContinuumAction
+{
+    @Requirement
+    private BuildExecutorManager executorManager;
+
+    @Requirement
+    private ProjectDao projectDao;
+
+    @Requirement( hint = "parallel" )
+    private BuildsManager parallelBuildsManager;
+
+    public synchronized void execute( Map context )
+        throws Exception
+    {
+        List<Project> projects = AbstractContinuumAction.getListOfProjects( context );
+        Map<Integer, BuildDefinition> projectsBuildDefinitionsMap =
+            AbstractContinuumAction.getProjectsBuildDefinitionsMap( context );
+        Map<Integer, ScmResult> scmResultMap = AbstractContinuumAction.getScmResultMap( context );
+        List<Project> projectsToBeBuilt = new ArrayList<Project>();
+        BuildTrigger buildTrigger = AbstractContinuumAction.getBuildTrigger( context );
+        int projectGroupId = AbstractContinuumAction.getProjectGroupId( context );
+
+        // update state of each project first
+        for ( Project project : projects )
+        {
+            BuildDefinition buildDefinition = projectsBuildDefinitionsMap.get( project.getId() );
+
+            if ( parallelBuildsManager.isInAnyBuildQueue( project.getId(), buildDefinition.getId() ) )
+            {
+                getLogger().info( "Project '" + project.getName() + "' is already in build queue." );
+                continue;
+            }
+
+            if ( parallelBuildsManager.isInAnyCheckoutQueue( project.getId() ) )
+            {
+                parallelBuildsManager.removeProjectFromCheckoutQueue( project.getId() );
+            }
+
+            try
+            {
+                /**
+                 * The following can (and probably should) be simplified to:
+                 *
+                 * If project is building in executor or its state is UPDATING:
+                 *   * Skip the project and log it
+                 *
+                 * If project state is not in { NEW, CHECKEDOUT, OK, FAILED, ERROR }:
+                 *   * Set the project's state to ERROR
+                 *
+                 * Lastly, record the project's original state and add it to the list of projects to build
+                 */
+                if ( project.getState() != ContinuumProjectState.NEW &&
+                    project.getState() != ContinuumProjectState.CHECKEDOUT &&
+                    project.getState() != ContinuumProjectState.OK &&
+                    project.getState() != ContinuumProjectState.FAILED &&
+                    project.getState() != ContinuumProjectState.ERROR )
+                {
+                    ContinuumBuildExecutor executor = executorManager.getBuildExecutor( project.getExecutorId() );
+
+                    if ( executor.isBuilding( project ) || project.getState() == ContinuumProjectState.UPDATING )
+                    {
+                        // project is building
+                        getLogger().info( "Project '" + project.getName() + "' already being built." );
+
+                        continue;
+                    }
+                    else
+                    {
+                        project.setState( ContinuumProjectState.ERROR );
+                    }
+                }
+>>>>>>> refs/remotes/apache/trunk
                 project.setOldState( project.getState() );
 
                 projectDao.updateProject( project );
 
                 project = projectDao.getProject( project.getId() );
+<<<<<<< HEAD
             }
 
             BuildDefinition buildDefinition = buildDefinitionDao.getBuildDefinition( buildDefinitionId );
@@ -143,5 +239,18 @@ public class CreateBuildProjectTaskAction
             getLogger().error( "Error while enqueuing object", e );
             throw new ContinuumException( "Error while enqueuing object.", e );
         }
+=======
+
+                projectsToBeBuilt.add( project );
+            }
+            catch ( ContinuumStoreException e )
+            {
+                getLogger().error( "Error while creating build object", e );
+            }
+        }
+
+        parallelBuildsManager.buildProjects( projectsToBeBuilt, projectsBuildDefinitionsMap, buildTrigger, scmResultMap,
+                                             projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

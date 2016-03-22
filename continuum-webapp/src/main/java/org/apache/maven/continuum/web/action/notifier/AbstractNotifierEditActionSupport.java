@@ -32,7 +32,6 @@ import java.util.Map;
  * the extending clases.
  *
  * @author <a href='mailto:rahul.thakur.xdev@gmail.com'>Rahul Thakur</a>
- * @version $Id$
  * @since 1.1
  */
 public abstract class AbstractNotifierEditActionSupport
@@ -327,13 +326,13 @@ public abstract class AbstractNotifierEditActionSupport
      *
      * @param configuration map of configuration key-value pairs.
      */
-    protected abstract void initConfiguration( Map configuration );
+    protected abstract void initConfiguration( Map<String, String> configuration );
 
     /**
      * Sets the configuration for the specified {@link ProjectNotifier}
      * instance.
      *
-     * @param notifier
+     * @param notifier The project notifier.
      * @see #initConfiguration(Map)
      */
     protected abstract void setNotifierConfiguration( ProjectNotifier notifier );

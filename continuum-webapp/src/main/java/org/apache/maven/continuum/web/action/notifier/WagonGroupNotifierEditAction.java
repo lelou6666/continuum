@@ -21,6 +21,7 @@ package org.apache.maven.continuum.web.action.notifier;
 
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,9 +31,13 @@ import java.util.Map;
  * specified {@link ProjectGroup}.
  *
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
+<<<<<<< HEAD
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="wagonGroupNotifierEdit"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "wagonGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class WagonGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
@@ -40,14 +45,15 @@ public class WagonGroupNotifierEditAction
 
     private String id;
 
-    protected void initConfiguration( Map configuration )
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        url = (String) configuration.get( "url" );
+        url = configuration.get( "url" );
+        id = configuration.get( "id" );
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "url", url );
 

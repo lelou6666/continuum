@@ -22,14 +22,20 @@ package org.apache.maven.continuum.utils;
 import org.apache.maven.continuum.model.project.Project;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface WorkingDirectoryService
 {
     String ROLE = WorkingDirectoryService.class.getName();
 
     File getWorkingDirectory( Project project );
+
+    File getWorkingDirectory( Project project, boolean shouldSet );
+
+    File getWorkingDirectory( Project project, String projectScmRootUrl, List<Project> projects );
+
+    File getWorkingDirectory( Project project, String projectScmRootUrl, List<Project> projects, boolean shouldSet );
 }

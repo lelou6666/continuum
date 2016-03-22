@@ -17,6 +17,7 @@
   ~ under the License.
   --%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib prefix="c1" uri="continuum" %>
 <html>
   <s:i18n name="localization.Continuum">
@@ -54,3 +55,39 @@
     </body>
   </s:i18n>
 </html>
+=======
+<html>
+  <s:i18n name="localization.Continuum">
+    <head>
+      <title><s:text name="scmResult.page.title"/></title>
+    </head>
+    <body>
+      <div id="h3">
+        <s:action name="projectGroupTab" executeResult="true"/>
+        <h3>
+          <s:text name="scmResult.section.title"/>
+        </h3>
+        <div class="axial">
+          <table border="1" cellspacing="2" cellpadding="3" width="100%">
+            <tr class="b">
+              <th><label class="label"><s:text name='scmResult.projectGroupName'/>:</label></th>
+              <td><s:property value="projectGroupName"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='scmResult.scmRootAddress'/>:</label></th>
+              <td><s:property value="projectScmRoot.scmRootAddress"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='scmResult.state'/>:</label></th>
+              <td>${state}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <h4><s:text name="scmResult.scmError"/></h4>
+        <div class="cmd-output pre-wrap"><s:property value="projectScmRoot.error"/></div>
+      </div>
+    </body>
+  </s:i18n>
+</html>
+>>>>>>> refs/remotes/apache/trunk

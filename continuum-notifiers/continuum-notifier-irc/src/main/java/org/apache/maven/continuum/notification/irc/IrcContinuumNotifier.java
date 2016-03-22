@@ -40,39 +40,35 @@ import org.schwering.irc.lib.ssl.SSLDefaultTrustManager;
 import org.schwering.irc.lib.ssl.SSLIRCConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Resource;
 
 /**
  * <b>This implementation assumes there aren't concurrent acces to the IRCConnection</b>
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.notification.Notifier" role-hint="irc"
  */
+@Service( "notifier#irc" )
 public class IrcContinuumNotifier
     extends AbstractContinuumNotifier
     implements Disposable
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( IrcContinuumNotifier.class );
 
     // ----------------------------------------------------------------------
     // Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.configuration default-value="6667"
-     */
-    private int defaultPort;
+    private int defaultPort = 6667;
 
     /**
      * key is upper(hostname) + port + upper(nick) + upper(alternateNick)
@@ -233,14 +229,24 @@ public class IrcContinuumNotifier
 
         ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
 
+<<<<<<< HEAD
         boolean isPrepareBuildComplete = 
             messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
         
+=======
+        boolean isPrepareBuildComplete = messageId.equals(
+            ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+
+>>>>>>> refs/remotes/apache/trunk
         if ( projectScmRoot == null && isPrepareBuildComplete )
         {
             return;
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         // ----------------------------------------------------------------------
         // If there wasn't any building done, don't notify
         // ----------------------------------------------------------------------
@@ -299,9 +305,15 @@ public class IrcContinuumNotifier
         {
             return;
         }
+<<<<<<< HEAD
         
         sendMessage( projectNotifier.getConfiguration(), generateMessage( projectScmRoot, configurationService ) );
     }    
+=======
+
+        sendMessage( projectNotifier.getConfiguration(), generateMessage( projectScmRoot, configurationService ) );
+    }
+>>>>>>> refs/remotes/apache/trunk
 
     private void sendMessage( Map<String, String> configuration, String message )
         throws NotificationException

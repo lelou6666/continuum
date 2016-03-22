@@ -17,10 +17,10 @@
  * under the License.
  */
 
-/* $Id$
-	
-	This file defines basic default formatting for HTML conforming to Tigris application style. To extend or override these rules for your instance, edit inst.css instead of this file. */
-  /* colors, backgrounds, borders, link indication */
+ /* This file defines basic default formatting for HTML conforming to Tigris application style.
+    To extend or override these rules for your instance, edit inst.css instead of this file. */
+
+ /* colors, backgrounds, borders, link indication */
 body {
   background: #fff;
   color: #000;
@@ -278,7 +278,7 @@ body .grid td {
 }
 
 .warningmessage {
-  height: 48px;
+  height: auto;
   background-position: 0px 0px;
   background-color: white;
   border: 0px 0px 0px 0px;
@@ -286,7 +286,7 @@ body .grid td {
   color: #333;
 }
 
-.errormark,.warningmark,.donemark {
+.errormark,.warningmark,.infomark,.donemark {
   background: url(../images/icon_error_sml.gif) no-repeat;
 }
 
@@ -296,6 +296,10 @@ body .grid td {
 
 .donemark {
   background-image: url(../images/icon_success_sml.gif);
+}
+
+.infomark {
+  background-image: url(../images/icon_info_sml.gif);
 }
 
 .cvsdiff,.cvsblame {
@@ -422,7 +426,7 @@ body,.app h3,.app h4,#rightcol h3,pre,code,#apphead h2 small {
   font-size: small;
 }
 
-small,div#footer,div#login,div.tabs th,div.tabs td,input,select,.paginate,.functnbar,.functnbar2,.functnbar3,#breadcrumbs,.courtesylinks,#rightcol div.help,.colbar,.tasknav,body.docs div#toc,#leftcol,.legend,.bars
+small,div#footer,div#login,div.tabs th,div.tabs td,input,select,button,.paginate,.functnbar,.functnbar2,.functnbar3,#breadcrumbs,.courtesylinks,#rightcol div.help,.colbar,.tasknav,body.docs div#toc,#leftcol,.legend,.bars
   {
   font-size: xx-small;
   voice-family: "\"}\"";
@@ -727,6 +731,10 @@ dd {
 }
 
 #litem13 {
+  background: url(../images/icon_unknown_sml.gif) 134px 5px no-repeat;
+}
+
+#litem14 {
   background: url(../images/icon_error_sml.gif) 134px 5px no-repeat;
 }
 
@@ -797,6 +805,7 @@ dd {
   color: gray;
   font-weight: bold;
   font-size: 11px;
+  font-style: normal;
   padding: 0px 0px 1px 19px;
 }
 
@@ -902,7 +911,7 @@ td.filebrowse h3 {
   min-height: 32px;
 }
 
-.errormark,.warningmark,.donemark {
+.errormark,.warningmark,.infomark,.donemark {
   padding-left: 20px;
   min-height: 15px;
 }

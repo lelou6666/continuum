@@ -21,14 +21,13 @@ package org.apache.maven.continuum.store;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumObjectNotFoundException
     extends ContinuumStoreException
 {
-	private static final long serialVersionUID = 6022595625968612620L;
+    private static final long serialVersionUID = 6022595625968612620L;
 
-	public ContinuumObjectNotFoundException( String message )
+    public ContinuumObjectNotFoundException( String message )
     {
         super( message );
     }

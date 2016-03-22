@@ -17,15 +17,22 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
+=======
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+>>>>>>> refs/remotes/apache/trunk
 <s:i18n name="localization.Continuum">
 <html>
 <head>
   <title>
+<<<<<<< HEAD
     <c:choose>
       <c:when test="${param.errorCode == 403 || param.errorCode == 404 || param.errorCode == 500}">
         <s:text name="error.%{param.errorCode}.title"/>
@@ -87,8 +94,55 @@
     </tr>
   </tbody>
 </table>
+=======
+      <s:if test="#parameters.errorCode == 403">
+        <s:text name="error.403.title"/>
+      </s:if>
+      <s:elseif test="#parameters.errorCode == 404">
+        <s:text name="error.404.title"/>
+      </s:elseif>
+      <s:elseif test="#parameters.errorCode == 500">
+        <s:text name="error.500.title"/>
+      </s:elseif>
+      <s:else>
+        <s:text name="error.page.title"/>
+      </s:else>
+  </title>
+</head>
 
-<%@ include file="/WEB-INF/jsp/navigations/DefaultBottom.jsp" %>
+<body>
+  <div id="h3">
+    <h3>
+        <s:if test="#parameters.errorCode == 403">
+          <s:text name="error.403.section.title"/>
+        </s:if>
+        <s:elseif test="#parameters.errorCode == 404">
+          <s:text name="error.404.section.title"/>
+        </s:elseif>
+        <s:elseif test="#parameters.errorCode == 500">
+          <s:text name="error.500.section.title"/>
+        </s:elseif>
+        <s:else>
+          The URL requested results to an unknown error (Error <s:property value="errorCode"/>).
+        </s:else>
+    </h3>
+>>>>>>> refs/remotes/apache/trunk
+
+    <div class="errormessage">
+        <s:if test="#parameters.errorCode == 403">
+          <s:text name="error.403.message"/>
+        </s:if>
+        <s:elseif test="#parameters.errorCode == 404">
+          <s:text name="error.404.message"/>
+        </s:elseif>
+        <s:elseif test="#parameters.errorCode == 500">
+          <s:text name="error.500.message"/>
+        </s:elseif>
+        <s:else>
+          The URL requested results to an unknown error (Error <s:property value="errorCode"/>).
+        </s:else>
+    </div>
+  </div>
 </body>
 </html>
 </s:i18n>

@@ -19,7 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -31,6 +30,7 @@
         <s:set name="schedules" value="schedules" scope="request"/>
         <ec:table items="schedules"
                   var="schedule"
+                  autoIncludeParameters="false"
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -45,14 +45,28 @@
             <ec:column property="active" title="schedules.table.active"/>
             <ec:column property="editActions" title="&nbsp;" width="1%">
                 <s:url id="editScheduleUrl" action="schedule">
+<<<<<<< HEAD
                   <s:param name="id">${pageScope.schedule.id}</s:param>
+=======
+                  <s:param name="id" value="#attr['schedule'].id"/>
+>>>>>>> refs/remotes/apache/trunk
                 </s:url>
                 <s:a href="%{editScheduleUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" /></s:a>
             </ec:column>
             <ec:column property="editActions" title="&nbsp;" width="1%">
+<<<<<<< HEAD
                 <s:url id="removeScheduleUrl" action="removeSchedule">
                   <s:param name="id">${pageScope.schedule.id}</s:param>
                   <s:param name="name">${pageScope.schedule.name}</s:param>
+=======
+                <s:set var="tname" value="'remScheduleToken' + #attr['schedule'].id" scope="page"/>
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removeScheduleUrl" action="removeSchedule">
+                  <s:param name="id" value="#attr['schedule'].id"/>
+                  <s:param name="name" value="#attr['schedule'].name"/>
+                  <s:param name="struts.token.name" value="#attr['tname']" />
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+>>>>>>> refs/remotes/apache/trunk
                 </s:url>
                 <s:a href="%{removeScheduleUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
             </ec:column>

@@ -20,7 +20,6 @@
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -35,7 +34,11 @@
         </s:action>
     
         <s:action name="projectGroupNotifierSummary" executeResult="true" namespace="component">
+<<<<<<< HEAD
           <s:param name="projectGroupId">${projectGroupId}</s:param>
+=======
+          <s:param name="projectGroupId" value="projectGroupId"/>
+>>>>>>> refs/remotes/apache/trunk
         </s:action>
       </div>
     </body>

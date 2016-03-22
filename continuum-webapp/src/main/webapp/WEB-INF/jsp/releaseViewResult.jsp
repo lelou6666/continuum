@@ -30,6 +30,7 @@
       <h4><s:text name="releaseViewResult.summary"/></h4>
       <div class="axial">
         <table border="1" cellspacing="2" cellpadding="3" width="100%">
+<<<<<<< HEAD
           <c1:data label="%{getText('releaseViewResult.projectName')}">
             <s:param name="after"><s:property value="projectName"/></s:param>
           </c1:data>
@@ -44,14 +45,44 @@
           </c1:data>
           <c1:data label="%{getText('releaseViewResult.state')}">
             <s:param name="after">
+=======
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.projectName'/>:</label></th>
+            <td><s:property value="projectName"/></td>
+          </tr>
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.releaseGoal'/>:</label></th>
+            <td><s:property value="releaseGoal"/></td>
+          </tr>
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.startTime'/>:</label></th>
+            <td><c1:date name="result.startTime"/></td>
+          </tr>
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.endTime'/>:</label></th>
+            <td><c1:date name="result.endTime"/></td>
+          </tr>
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.state'/>:</label></th>
+            <td>
+>>>>>>> refs/remotes/apache/trunk
               <s:if test="result.resultCode == 0">
                 <s:text name="releaseViewResult.success"/>
               </s:if>
               <s:else>
                 <s:text name="releaseViewResult.error"/>
               </s:else>
+<<<<<<< HEAD
             </s:param>
           </c1:data>
+=======
+            </td>
+          </tr>
+          <tr class="b">
+            <th><label class="label"><s:text name='releaseViewResult.username'/>:</label></th>
+            <td><s:property value="username"/></td>
+          </tr>
+>>>>>>> refs/remotes/apache/trunk
         </table>
       </div>
 
@@ -61,12 +92,16 @@
             <s:text name="releaseViewResult.noOutput"/>
         </s:if>
         <s:else>
+<<<<<<< HEAD
           <div style="width:100%; height:500px; overflow:auto; border-style: solid; border-width: 1px">
             <pre><s:property value="result.output"/></pre>
           </div>
+=======
+          <div class="cmd-output pre-wrap"><s:property value="result.output"/></div>
+>>>>>>> refs/remotes/apache/trunk
         </s:else>
       </p>
-      <input type="button" value="Back" onClick="history.go(-1)">
+      <input type="button" value="<s:text name="back"/>" onClick="history.go(-1)">
 
     </body>
   </s:i18n>

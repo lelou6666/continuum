@@ -19,31 +19,96 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.List;
-
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.ReaderFactory;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Add a Maven 2 project to Continuum.
  *
  * @author Nick Gonzalez
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="addMavenTwoProject"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "addMavenTwoProject", instantiationStrategy = "per-lookup" )
 public class AddMavenTwoProjectAction
     extends AddMavenProjectAction
 {
+
+    @Override
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+        setImportType( ImportType.SEPARATE_SCM );
+    }
+
+    public enum ImportType
+    {
+        SEPARATE_SCM( "add.m2.project.importType.projectPerModuleSeparateScm", true, false ),
+        SINGLE_SCM( "add.m2.project.importType.projectPerModuleSingleScm", true, true ),
+        SINGLE_MULTI_MODULE( "add.m2.project.importType.singleMultiModule", false, false );
+
+        private String textKey;
+
+        private boolean recursiveImport;
+
+        private boolean singleDirCheckout;
+
+        ImportType( String textKey, boolean recursiveImport, boolean singleCheckout )
+        {
+            this.textKey = textKey;
+            this.recursiveImport = recursiveImport;
+            this.singleDirCheckout = singleCheckout;
+        }
+
+        public String getTextKey()
+        {
+            return textKey;
+        }
+
+        public boolean isSingleCheckout()
+        {
+            return singleDirCheckout;
+        }
+
+        public boolean isRecursiveImport()
+        {
+            return recursiveImport;
+        }
+    }
+
+    /**
+     * Generates locale-sensitive import options.
+     */
+    public Map<ImportType, String> getImportOptions()
+    {
+        Map<ImportType, String> options = new LinkedHashMap<ImportType, String>();
+        for ( ImportType type : ImportType.values() )
+        {
+            options.put( type, getText( type.getTextKey() ) );
+        }
+        return options;
+    }
+
     // TODO: remove this part once uploading of an m2 project with modules is supported ( CONTINUUM-1098 )
     public static final String ERROR_UPLOADING_M2_PROJECT_WITH_MODULES = "add.m2.project.upload.modules.error";
 
@@ -51,7 +116,7 @@ public class AddMavenTwoProjectAction
 
     public static final String FILE_SCHEME = "file:/";
 
-    private boolean nonRecursiveProject;
+    private ImportType importType;
 
     protected ContinuumProjectBuildingResult doExecute( String pomUrl, int selectedProjectGroup, boolean checkProtocol,
                                                         boolean scmUseCache )
@@ -59,63 +124,78 @@ public class AddMavenTwoProjectAction
     {
         ContinuumProjectBuildingResult result = null;
 
+        ImportType importType = getImportType();
+        boolean recursiveImport = importType.isRecursiveImport();
+        boolean checkoutInSingleDirectory = importType.isSingleCheckout();
+
         // TODO: remove this part once uploading of an m2 project with modules is supported ( CONTINUUM-1098 )
-        if ( checkProtocol == false )
+        boolean preventModulesInFileUpload = !checkProtocol && recursiveImport;
+        if ( preventModulesInFileUpload )
         {
-            MavenXpp3Reader m2pomReader = new MavenXpp3Reader();
-
-            try
+            List modules = fileToModel( urlToFile( pomUrl ) ).getModules();
+            if ( modules != null && modules.size() != 0 )
             {
-                String filePath = pomUrl;
-
-                if ( !filePath.startsWith( FILE_SCHEME + "/" ) && filePath.startsWith( FILE_SCHEME ) )
-                {
-                    //Little hack for linux (CONTINUUM-1169)
-                    filePath = StringUtils.replace( filePath, FILE_SCHEME, FILE_SCHEME + "/" );
-                }
-
-                if ( filePath.startsWith( FILE_SCHEME ) )
-                {
-                    filePath = filePath.substring( FILE_SCHEME.length() );
-                }
-
-                Model model = m2pomReader.read( new FileReader( filePath ) );
-
-                List modules = model.getModules();
-
-                if ( modules != null && modules.size() != 0 )
-                {
-                    result = new ContinuumProjectBuildingResult();
-                    result.addError( ERROR_UPLOADING_M2_PROJECT_WITH_MODULES );
-                }
-            }
-            catch ( FileNotFoundException e )
-            {
-                throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
-            }
-            catch ( IOException e )
-            {
-                throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
-            }
-            catch ( XmlPullParserException e )
-            {
-                throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
+                result = new ContinuumProjectBuildingResult();
+                result.addError( ERROR_UPLOADING_M2_PROJECT_WITH_MODULES );
             }
         }
 
         if ( result == null )
         {
             result = getContinuum().addMavenTwoProject( pomUrl, selectedProjectGroup, checkProtocol, scmUseCache,
-                                                        !this.isNonRecursiveProject(), this.getBuildDefinitionTemplateId() );
+                                                        recursiveImport, this.getBuildDefinitionTemplateId(),
+                                                        checkoutInSingleDirectory );
         }
 
+        AuditLog event = new AuditLog( hidePasswordInUrl( pomUrl ), AuditLogConstants.ADD_M2_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+
+        if ( result == null || result.hasErrors() )
+        {
+            event.setAction( AuditLogConstants.ADD_M2_PROJECT_FAILED );
+        }
+
+        event.log();
         return result;
     }
-    
-    public String doDefault()
-        throws BuildDefinitionServiceException
+
+    private Model fileToModel( File pomFile )
+        throws ContinuumException
     {
-        return super.doDefault();
+        MavenXpp3Reader m2pomReader = new MavenXpp3Reader();
+        try
+        {
+            return m2pomReader.read( ReaderFactory.newXmlReader( pomFile ) );
+        }
+        catch ( FileNotFoundException e )
+        {
+            throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
+        }
+        catch ( IOException e )
+        {
+            throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
+        }
+        catch ( XmlPullParserException e )
+        {
+            throw new ContinuumException( ERROR_READING_POM_EXCEPTION_MESSAGE, e );
+        }
+    }
+
+    private File urlToFile( String url )
+    {
+        if ( !url.startsWith( FILE_SCHEME + "/" ) && url.startsWith( FILE_SCHEME ) )
+        {
+            //Little hack for linux (CONTINUUM-1169)
+            url = StringUtils.replace( url, FILE_SCHEME, FILE_SCHEME + "/" );
+        }
+
+        if ( url.startsWith( FILE_SCHEME ) )
+        {
+            url = url.substring( FILE_SCHEME.length() );
+        }
+
+        return new File( url );
     }
 
     /**
@@ -150,14 +230,13 @@ public class AddMavenTwoProjectAction
         setPomUrl( pomUrl );
     }
 
-    public boolean isNonRecursiveProject()
+    public ImportType getImportType()
     {
-        return nonRecursiveProject;
+        return importType;
     }
 
-    public void setNonRecursiveProject( boolean nonRecursiveProject )
+    public void setImportType( ImportType importType )
     {
-        this.nonRecursiveProject = nonRecursiveProject;
+        this.importType = importType;
     }
-
 }

@@ -26,21 +26,23 @@ import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.notification.MessageContext;
 import org.apache.maven.continuum.notification.NotificationException;
+<<<<<<< HEAD
 import org.apache.maven.continuum.project.ContinuumProjectState;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.notification.Notifier"
- * role-hint="console"
  */
+@Component( role = org.apache.maven.continuum.notification.Notifier.class, hint = "console" )
 public class ConsoleNotifier
     extends AbstractContinuumNotifier
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( ConsoleNotifier.class );
 
     // ----------------------------------------------------------------------
     // Notifier Implementation
@@ -142,11 +144,14 @@ public class ConsoleNotifier
         }
     }
 
+<<<<<<< HEAD
     private void prepareBuildStarted( ProjectScmRoot projectScmRoot )
     {
         out( projectScmRoot, "Prepare build started." );
     }
 
+=======
+>>>>>>> refs/remotes/apache/trunk
     private void prepareBuildComplete( ProjectScmRoot projectScmRoot )
     {
         if ( StringUtils.isEmpty( projectScmRoot.getError() ) )

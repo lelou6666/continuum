@@ -19,29 +19,25 @@ package org.apache.maven.continuum.buildqueue.evaluator;
  * under the License.
  */
 
-import org.apache.maven.continuum.buildqueue.BuildProjectTask;
+import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.taskqueue.TaskViabilityEvaluator;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildProjectTaskViabilityEvaluator
-    extends AbstractLogEnabled
     implements TaskViabilityEvaluator
 {
-    /**
-     * @plexus.configuration
-     */
+
+    @Configuration( "" )
     private long requiredBuildInterval;
 
     // ----------------------------------------------------------------------
@@ -73,9 +69,9 @@ public class BuildProjectTaskViabilityEvaluator
 
         for ( BuildProjectTask task : (Collection<BuildProjectTask>) tasks )
         {
-            Integer key = new Integer( task.getProjectId() );
+            int key = task.getProjectId();
 
-            List<BuildProjectTask> projectTasks = (List<BuildProjectTask>) projects.get( key );
+            List<BuildProjectTask> projectTasks = projects.get( key );
 
             if ( projectTasks == null )
             {
@@ -89,9 +85,9 @@ public class BuildProjectTaskViabilityEvaluator
 
         List<BuildProjectTask> toBeRemoved = new ArrayList<BuildProjectTask>();
 
-        for ( Iterator it = projects.values().iterator(); it.hasNext(); )
+        for ( List<BuildProjectTask> projectTasks : projects.values() )
         {
-            toBeRemoved.addAll( checkTasks( (List) it.next() ) );
+            toBeRemoved.addAll( checkTasks( projectTasks ) );
         }
 
         return toBeRemoved;
@@ -120,7 +116,7 @@ public class BuildProjectTaskViabilityEvaluator
                 // If this build is forces, don't remove it
                 // ----------------------------------------------------------------------
 
-                if ( task.getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
+                if ( task.getBuildTrigger().getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
                 {
                     continue;
                 }

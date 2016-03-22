@@ -24,7 +24,6 @@ import org.apache.maven.continuum.model.project.Schedule;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public interface SchedulesActivator
 {
@@ -50,10 +49,40 @@ public interface SchedulesActivator
         throws SchedulesActivationException;
 
     /**
+     * Activate schedule only for PurgeConfiguration associated.
+     *
+     * @throws SchedulesActivationException
+     */
+    void activatePurgeSchedule( Schedule schedule, Continuum continuum )
+        throws SchedulesActivationException;
+
+    /**
+     * Activate schedule only for BuildDefinitions associated.
+     *
+     * @throws SchedulesActivationException
+     */
+    void activateBuildSchedule( Schedule schedule, Continuum continuum )
+        throws SchedulesActivationException;
+
+    /**
      * Unactivate schedule by looking at the scheduling information contained within.
      *
      * @throws SchedulesActivationException
      */
     void unactivateSchedule( Schedule schedule, Continuum continuum )
+        throws SchedulesActivationException;
+
+    /**
+     * Unactivate schedule purgeConfigurations if it is not in a purgeConfiguration.
+     */
+    void unactivateOrphanPurgeSchedule( Schedule schedule )
+        throws SchedulesActivationException;
+
+    /**
+     * Unactivate schedule buildDefinitions if it is not in a buildDefinition.
+     *
+     * @throws SchedulesActivationException
+     */
+    void unactivateOrphanBuildSchedule( Schedule schedule )
         throws SchedulesActivationException;
 }

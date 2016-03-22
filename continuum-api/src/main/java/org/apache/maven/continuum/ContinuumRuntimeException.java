@@ -25,9 +25,9 @@ package org.apache.maven.continuum;
 public class ContinuumRuntimeException
     extends RuntimeException
 {
-	private static final long serialVersionUID = 2345304356025303153L;
+    private static final long serialVersionUID = 2345304356025303153L;
 
-	public ContinuumRuntimeException( String message, Exception cause )
+    public ContinuumRuntimeException( String message, Exception cause )
     {
         super( message, cause );
     }

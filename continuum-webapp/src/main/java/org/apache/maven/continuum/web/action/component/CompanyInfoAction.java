@@ -20,16 +20,26 @@ package org.apache.maven.continuum.web.action.component;
  */
 
 import com.opensymphony.xwork2.ActionSupport;
+<<<<<<< HEAD
 import org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper;
+=======
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.model.Model;
 import org.apache.maven.shared.app.company.CompanyPomHandler;
 import org.apache.maven.shared.app.configuration.MavenAppConfiguration;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 /**
  * Stores the company information for displaying on the page.
+<<<<<<< HEAD
  *
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="companyInfo"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "companyInfo", instantiationStrategy = "per-lookup" )
 public class CompanyInfoAction
     extends ActionSupport
 {
@@ -39,20 +49,14 @@ public class CompanyInfoAction
 
     private String companyName;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private CompanyPomHandler handler;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenAppConfiguration appConfiguration;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenBuilderHelper helper;
+    @Requirement
+    private LocalRepositoryHelper helper;
 
     public String execute()
         throws Exception

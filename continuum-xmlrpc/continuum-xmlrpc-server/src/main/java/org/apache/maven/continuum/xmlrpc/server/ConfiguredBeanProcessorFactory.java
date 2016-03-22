@@ -24,45 +24,41 @@ import org.apache.xmlrpc.XmlRpcRequest;
 import org.apache.xmlrpc.server.RequestProcessorFactoryFactory;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.xmlrpc.server.RequestProcessorFactoryFactory"
  */
+@Component( role = org.apache.xmlrpc.server.RequestProcessorFactoryFactory.class )
 public class ConfiguredBeanProcessorFactory
     implements RequestProcessorFactoryFactory, Initializable, Contextualizable
 {
-    /**
-     * @plexus.requirement role="org.apache.maven.continuum.xmlrpc.server.ContinuumXmlRpcComponent"
-     */
-    private Map xmlrpcComponents;
+    private static final Logger log = LoggerFactory.getLogger( ConfiguredBeanProcessorFactory.class );
 
-    /**
-     * @plexus.requirement
-     */
-    private Listener listener;
+    @Requirement( role = org.apache.maven.continuum.xmlrpc.server.ContinuumXmlRpcComponent.class )
+    private Map<String, Object> xmlrpcComponents;
 
-    private Map componentsMapping = new HashMap();
+    private Map<String, String> componentsMapping = new HashMap<String, String>();
 
     PlexusContainer container;
 
     public void initialize()
         throws InitializationException
     {
-        for ( Iterator i = xmlrpcComponents.keySet().iterator(); i.hasNext(); )
+        for ( String key : xmlrpcComponents.keySet() )
         {
-            String key = (String) i.next();
             String className = xmlrpcComponents.get( key ).getClass().getName();
             componentsMapping.put( className, key );
         }
@@ -91,7 +87,7 @@ public class ConfiguredBeanProcessorFactory
     protected Object getRequestProcessor( Class cls )
         throws XmlRpcException
     {
-        listener.getLogger().debug( "Load '" + cls.getName() + "' handler." );
+        log.debug( "Load '" + cls.getName() + "' handler." );
 
         Object obj = null;
         try
@@ -100,7 +96,7 @@ public class ConfiguredBeanProcessorFactory
         }
         catch ( ComponentLookupException e )
         {
-            listener.getLogger().error( "Can't load component.", e );
+            log.error( "Can't load component.", e );
         }
 
         if ( obj == null )
@@ -113,14 +109,14 @@ public class ConfiguredBeanProcessorFactory
 
     private String getComponentKey( Class cls )
     {
-        return (String) componentsMapping.get( cls.getName() );
+        return componentsMapping.get( cls.getName() );
     }
 
     private Object getComponent( Class cls )
         throws ComponentLookupException
     {
         String key = getComponentKey( cls );
-        listener.getLogger().debug( "load component:" );
+        log.debug( "load component:" + key );
         return container.lookup( ContinuumXmlRpcComponent.class.getName(), key );
     }
 

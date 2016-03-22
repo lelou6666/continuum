@@ -21,49 +21,44 @@ package org.apache.maven.continuum.web.checks.security;
 
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.role.RoleManager;
 import org.codehaus.plexus.redback.role.RoleManagerException;
 import org.codehaus.plexus.redback.system.check.EnvironmentCheck;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * RoleProfileEnvironmentCheck:
  *
  * @author: Jesse McConnell <jmcconnell@apache.org>
- * @version: $ID:$
- * @plexus.component role="org.codehaus.plexus.redback.system.check.EnvironmentCheck"
- * role-hint="continuum-role-profile-check"
  */
+@Component( role = org.codehaus.plexus.redback.system.check.EnvironmentCheck.class, hint = "continuum-role-profile-check" )
 public class RoleProfileEnvironmentCheck
-    extends AbstractLogEnabled
     implements EnvironmentCheck
 {
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    private static final Logger log = LoggerFactory.getLogger( RoleProfileEnvironmentCheck.class );
+
+    @Requirement( hint = "default" )
     private RoleManager roleManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private Continuum continuum;
 
     public void validateEnvironment( List list )
     {
         try
         {
-            getLogger().info( "Checking roles list." );
+            log.info( "Checking roles list." );
 
-            Collection projectGroups = continuum.getAllProjectGroups();
+            Collection<ProjectGroup> projectGroups = continuum.getAllProjectGroups();
 
-            for ( Iterator i = projectGroups.iterator(); i.hasNext(); )
+            for ( ProjectGroup group : projectGroups )
             {
-                ProjectGroup group = (ProjectGroup) i.next();
-
                 // gets the role, making it if it doesn't exist
                 //TODO: use continuum.executeAction( "add-assignable-roles", context ); or something like that to avoid code duplication
                 if ( !roleManager.templatedRoleExists( "project-administrator", group.getName() ) )

@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -26,6 +29,7 @@
     </head>
     <body>
       <div id="axial" class="h3">
+<<<<<<< HEAD
       
         <s:if test="projectId > 0">
             <s:url id="actionUrl" value="addProjectNotifier!execute" includeParams="none" />
@@ -33,12 +37,18 @@
         <s:else>
             <s:url id="actionUrl" value="addProjectGroupNotifier!execute" includeParams="none" />
         </s:else>
+=======
+>>>>>>> refs/remotes/apache/trunk
        
         <h3><s:text name="notifier.section.add.title"/></h3>
 
         <div class="axial">
                 
+<<<<<<< HEAD
           <s:form action="%{actionUrl}" method="post">
+=======
+          <s:form action="%{projectId > 0? 'addProjectNotifier_submit' : 'addProjectGroupNotifier_submit'}" method="post">
+>>>>>>> refs/remotes/apache/trunk
             <s:hidden name="projectId"/>
             <s:hidden name="projectGroupId"/>
             <table>
@@ -48,7 +58,8 @@
               </tbody>
             </table>
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('submit')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('submit')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
           </s:form>
         </div>

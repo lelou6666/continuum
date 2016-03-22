@@ -27,17 +27,26 @@
     <body>
       <h2><s:text name="releaseInProgress.section.title"/></h2>
       <h3><s:property value="name"/></h3>
+<<<<<<< HEAD
       <p>
         The release goal is currently initializing...
       </p>
       <p>
         Please wait while the server prepares your project for release.
       </p>
+=======
+      <p><s:text name="releaseInProgress.currently.initializing"/></p>
+      <p><s:text name="releaseInProgress.please.wait"/></p>
+>>>>>>> refs/remotes/apache/trunk
       <s:form action="releaseInProgress" method="get">
         <s:hidden name="projectId"/>
         <s:hidden name="releaseId"/>
         <s:hidden name="releaseGoal"/>
+<<<<<<< HEAD
         <s:submit value="Refresh"/>
+=======
+        <s:submit value="%{getText('refresh')}"/>
+>>>>>>> refs/remotes/apache/trunk
       </s:form>
     </body>
   </s:i18n>

@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
 <html>
@@ -33,9 +31,9 @@
     <meta http-equiv="refresh" content="30"/>
     <script type="text/javascript">
 
-      <c:url var="addM2ProjectUrl" value="/addMavenTwoProjectInput!input.action" />
-      <c:url var="addM1ProjectUrl" value="/addMavenOneProjectInput!input.action" />
-      <c:url var="addProjectUrl" value="/addProjectInput.action" />
+      <s:url var="addM2ProjectUrl" action="addMavenTwoProjectInput" />
+      <s:url var="addM1ProjectUrl" action="addMavenOneProjectInput" />
+      <s:url var="addProjectUrl" action="addProjectInput" />
 
       function goToAddProject()
       {
@@ -81,6 +79,7 @@
     <s:action name="projectGroupTab" executeResult="true">
       <s:param name="tabName" value="'Summary'"/>
     </s:action>
+<<<<<<< HEAD
 
     <h3><s:text name="projectGroup.information.title"/></h3>
     <div class="axial">
@@ -92,13 +91,60 @@
         <s:if test="url != null">
             <s:url id="projectHomepageUrl" value="%{url}" includeContext="false" includeParams="none"/>
         	<c1:data label="%{getText('projectGroup.url.label')}" name="url" valueLink="%{'${projectHomepageUrl}'}"/>  
+=======
+
+    <s:if test="hasActionErrors()">
+      <div class="errormessage">
+        <s:actionerror/>
+      </div>
+    </s:if>
+    <s:if test="hasActionMessages()">
+      <div class="warningmessage">
+        <s:actionmessage/>
+      </div>
+    </s:if>
+
+    <h3><s:text name="projectGroup.information.title"><s:param value="projectGroup.name"/></s:text></h3>
+
+    <div class="axial">
+      <table border="1" cellspacing="2" cellpadding="3" width="100%">
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.name.label'/>:</label></th>
+          <td><s:property value="projectGroup.name"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.groupId.label'/>:</label></th>
+          <td><s:property value="projectGroup.groupId"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.description.label'/>:</label></th>
+          <td><s:property value="projectGroup.description"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.repository.label'/>:</label></th>
+          <td><s:property value="projectGroup.localRepository.name"/></td>
+        </tr>
+        <s:if test="url != null">
+            <s:url id="projectHomepageUrl" value="%{url}" includeContext="false" includeParams="none"/>
+            <tr class="b">
+              <th><label class="label"><s:text name='projectGroup.url.label'/>:</label></th>
+              <td><a href="${projectHomepageUrl}"><s:property value="url"/></a></td>
+            </tr>
+>>>>>>> refs/remotes/apache/trunk
         </s:if>
       </table>
     </div>
 
+<<<<<<< HEAD
     <h3><ww:text name="projectGroup.scmRoot.title"/></h3>
     <ec:table items="projectScmRoots"
               var="projectScmRoot"
+=======
+    <h3><s:text name="projectGroup.scmRoot.title"/></h3>
+    <ec:table items="projectScmRoots"
+              var="projectScmRoot"
+              autoIncludeParameters="false"
+>>>>>>> refs/remotes/apache/trunk
               showExports="false"
               showPagination="false"
               showStatusBar="false"
@@ -109,6 +155,7 @@
         <ec:column property="scmRootAddress" title="projectGroup.scmRoot.label"/>  
       </ec:row>
     </ec:table>
+<<<<<<< HEAD
 
     <redback:ifAnyAuthorized permissions="continuum-build-group,continuum-remove-group" resource="${projectGroup.name}">
       <h3><s:text name="projectGroup.actions.title"/></h3>
@@ -120,6 +167,11 @@
           </s:iterator>
         </div>
       </c:if>
+=======
+
+    <redback:ifAnyAuthorized permissions="continuum-build-group,continuum-remove-group" resource="${projectGroup.name}">
+      <h3><s:text name="projectGroup.actions.title"/></h3>
+>>>>>>> refs/remotes/apache/trunk
 
       <div class="functnbar3">
         <table>
@@ -127,29 +179,52 @@
             <td>
               <table>
                 <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
                   <form action="buildProjectGroup.action" method="post">
                     <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
                     <s:select theme="simple" name="buildDefinitionId" list="buildDefinitions"
                                listKey="value" listValue="key" headerKey="-1" headerValue="%{getText('projectGroup.buildDefinition.label')}" />                    
                     <input type="submit" name="build" value="<s:text name="projectGroup.buildGroup"/>"/>
                   </form>
+=======
+                  <s:form action="buildProjectGroup" theme="simple">
+                    <s:hidden name="projectGroupId" />
+                    <s:select theme="simple" name="buildDefinitionId" list="buildDefinitions"
+                               listKey="value" listValue="key" headerKey="-1" headerValue="%{getText('projectGroup.buildDefinition.label')}" />                    
+                    <input type="submit" name="build" value="<s:text name="projectGroup.buildGroup"/>"/>
+                  </s:form>
+>>>>>>> refs/remotes/apache/trunk
                 </redback:ifAuthorized>
               </table>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
                 <form action="editProjectGroup.action" method="post">
                   <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
                   <input type="submit" name="edit" value="<s:text name="edit"/>"/>
                 </form>
+=======
+                <s:form action="editProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="edit" value="%{getText('edit')}"/>
+                </s:form>
+>>>>>>> refs/remotes/apache/trunk
               </redback:ifAuthorized>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
                 <form action="releaseProjectGroup.action" method="post">
                   <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
                   <input type="submit" name="release" value="<s:text name="release"/>"/>
                 </form>
+=======
+                <s:form action="releaseProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="release" value="%{getText('release')}" />
+                </s:form>
+>>>>>>> refs/remotes/apache/trunk
               </redback:ifAuthorized>
             </td>
             <td>
@@ -164,15 +239,30 @@
                 <s:select theme="simple" name="preferredExecutor" list="#@java.util.HashMap@{'maven2' : 'Add M2 Project', 'maven-1' : 'Add M1 Project', 'ant' : 'Add Ant Project', 'shell' : 'Add Shell Project'}"
                     headerValue="Choose the project type" headerKey="" emptyOption="true" />
 
-                <input type="button" value="Add" onclick="goToAddProject()"/>
+                <input type="button" value="<s:text name="add"/>" onclick="goToAddProject()"/>
               </redback:ifAnyAuthorized>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-remove-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
                 <form action="removeProjectGroup.action" method="post">
                   <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
                   <input type="submit" name="remove" value="<s:text name="projectGroup.deleteGroup"/>"/>
                 </form>
+=======
+                <s:form action="confirmRemoveProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="remove" value="%{getText('projectGroup.deleteGroup')}" />
+                </s:form>
+              </redback:ifAuthorized>
+            </td>
+            <td>
+              <redback:ifAuthorized permission="continuum-build-project-in-group" resource="${projectGroup.name}">
+                <s:form action="cancelGroupBuild" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="cancel" value="%{getText('projectGroup.cancelGroupBuild')}" />
+                </s:form>
+>>>>>>> refs/remotes/apache/trunk
               </redback:ifAuthorized>
             </td>
           </tr>
@@ -181,8 +271,13 @@
     </redback:ifAnyAuthorized>
 
     <s:action name="projectSummary" executeResult="true" namespace="component">
+<<<<<<< HEAD
       <s:param name="projectGroupId">${projectGroupId}</s:param>
       <s:param name="projectGroupName">${projectGroup.name}</s:param>
+=======
+      <s:param name="projectGroupId" value="projectGroupId" />
+      <s:param name="projectGroupName" value="projectGroup.name" />
+>>>>>>> refs/remotes/apache/trunk
     </s:action>
 
   </div>

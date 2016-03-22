@@ -19,22 +19,30 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 
 import javax.servlet.http.HttpServletRequest;
 
+=======
+import com.opensymphony.xwork2.Preparable;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.configuration.ContinuumConfigurationException;
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.configuration.ConfigurationStoringException;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
-import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.struts2.ServletActionContext;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
+<<<<<<< HEAD
 
 import com.opensymphony.xwork2.Preparable;
 
@@ -42,11 +50,24 @@ import com.opensymphony.xwork2.Preparable;
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="configuration"
+=======
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "configuration", instantiationStrategy = "per-lookup" )
 public class ConfigurationAction
     extends ContinuumActionSupport
     implements Preparable, SecureAction
 {
+    private static final Logger log = LoggerFactory.getLogger( ConfigurationAction.class );
+
     private String workingDirectory;
 
     private String buildOutputDirectory;
@@ -54,10 +75,16 @@ public class ConfigurationAction
     private String deploymentRepositoryDirectory;
 
     private String baseUrl;
-    
+
     private String releaseOutputDirectory;
 
+    private int numberOfAllowedBuildsinParallel = 1;
+
     private boolean requireReleaseOutput;
+
+    private boolean distributedBuildEnabled;
+
+    private String sharedSecretPassword;
 
     public void prepare()
     {
@@ -67,18 +94,21 @@ public class ConfigurationAction
         if ( workingDirectoryFile != null )
         {
             workingDirectory = workingDirectoryFile.getAbsolutePath();
+            validateDir( "workingDirectory", workingDirectoryFile );
         }
 
         File buildOutputDirectoryFile = configuration.getBuildOutputDirectory();
         if ( buildOutputDirectoryFile != null )
         {
             buildOutputDirectory = buildOutputDirectoryFile.getAbsolutePath();
+            validateDir( "buildOutputDirectory", buildOutputDirectoryFile );
         }
 
         File deploymentRepositoryDirectoryFile = configuration.getDeploymentRepositoryDirectory();
         if ( deploymentRepositoryDirectoryFile != null )
         {
             deploymentRepositoryDirectory = deploymentRepositoryDirectoryFile.getAbsolutePath();
+            validateDir( "deploymentRepositoryDirectory", deploymentRepositoryDirectoryFile );
         }
 
         baseUrl = configuration.getUrl();
@@ -88,37 +118,62 @@ public class ConfigurationAction
             HttpServletRequest request = ServletActionContext.getRequest();
             baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() +
                 request.getContextPath();
-            getLogger().info( "baseUrl='" + baseUrl + "'" );
+            log.info( "baseUrl='" + baseUrl + "'" );
         }
 
         File releaseOutputDirectoryFile = configuration.getReleaseOutputDirectory();
         if ( releaseOutputDirectoryFile != null )
         {
             releaseOutputDirectory = releaseOutputDirectoryFile.getAbsolutePath();
+            validateDir( "releaseOutputDirectory", releaseOutputDirectoryFile );
         }
-        
+
+        numberOfAllowedBuildsinParallel = configuration.getNumberOfBuildsInParallel();
+
+        if ( numberOfAllowedBuildsinParallel == 0 )
+        {
+            numberOfAllowedBuildsinParallel = 1;
+        }
+
         String requireRelease = ServletActionContext.getRequest().getParameter( "requireReleaseOutput" );
-        setRequireReleaseOutput( new Boolean( requireRelease ) );
+        setRequireReleaseOutput( Boolean.valueOf( requireRelease ) );
+
+        distributedBuildEnabled = configuration.isDistributedBuildEnabled();
+
+        sharedSecretPassword = configuration.getSharedSecretPassword();
     }
 
     public String input()
     {
         if ( isRequireReleaseOutput() )
         {
-            addActionError( "configuration.releaseOutputDirectory.required" );
+            addActionError( getText( "configuration.releaseOutputDirectory.required" ) );
         }
-        
+
+        if ( numberOfAllowedBuildsinParallel <= 0 )
+        {
+            addActionError( getText( "configuration.numberOfBuildsInParallel.invalid" ) );
+        }
+
         return INPUT;
     }
 
     public String save()
-        throws ConfigurationStoringException, ContinuumStoreException, ContinuumConfigurationException
+        throws ConfigurationStoringException
     {
+        if ( numberOfAllowedBuildsinParallel <= 0 )
+        {
+            addActionError( "Number of Allowed Builds in Parallel must be greater than zero." );
+            return INPUT;
+        }
+
         ConfigurationService configuration = getContinuum().getConfiguration();
 
         configuration.setWorkingDirectory( new File( workingDirectory ) );
 
         configuration.setBuildOutputDirectory( new File( buildOutputDirectory ) );
+
+        configuration.setNumberOfBuildsInParallel( numberOfAllowedBuildsinParallel );
 
         if ( StringUtils.isNotEmpty( deploymentRepositoryDirectory ) )
         {
@@ -139,17 +194,45 @@ public class ConfigurationAction
         }
         else if ( isRequireReleaseOutput() )
         {
-            addActionError( "configuration.releaseOutputDirectory.required" );
-            return ERROR;
+            addActionError( getText( "configuration.releaseOutputDirectory.required" ) );
+            return INPUT;
         }
         else
         {
             configuration.setReleaseOutputDirectory( null );
         }
 
-        configuration.store();
+        configuration.setDistributedBuildEnabled( distributedBuildEnabled );
+
+        configuration.setSharedSecretPassword( sharedSecretPassword );
+
+        try
+        {
+            configuration.store();
+        }
+        catch ( ContinuumConfigurationException cce )
+        {
+            log.error( "failed to save configuration", cce );
+            addActionError( getText( "configuration.save.failed" ) );
+            return INPUT;
+        }
 
         return SUCCESS;
+    }
+
+    private void validateDir( String fieldName, File dir )
+    {
+        if ( dir.exists() )
+        {
+            if ( !dir.isDirectory() )
+            {
+                addFieldError( fieldName, getText( "configuration.dir.notdir" ) );
+            }
+            if ( !dir.canWrite() )
+            {
+                addFieldError( fieldName, getText( "configuration.dir.notwritable" ) );
+            }
+        }
     }
 
     public String getWorkingDirectory()
@@ -216,9 +299,39 @@ public class ConfigurationAction
     {
         return requireReleaseOutput;
     }
-    
+
     public void setRequireReleaseOutput( boolean requireReleaseOutput )
     {
         this.requireReleaseOutput = requireReleaseOutput;
+    }
+
+    public int getNumberOfAllowedBuildsinParallel()
+    {
+        return numberOfAllowedBuildsinParallel;
+    }
+
+    public void setNumberOfAllowedBuildsinParallel( int numberOfAllowedBuildsinParallel )
+    {
+        this.numberOfAllowedBuildsinParallel = numberOfAllowedBuildsinParallel;
+    }
+
+    public boolean isDistributedBuildEnabled()
+    {
+        return distributedBuildEnabled;
+    }
+
+    public void setDistributedBuildEnabled( boolean distributedBuildEnabled )
+    {
+        this.distributedBuildEnabled = distributedBuildEnabled;
+    }
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+        this.sharedSecretPassword = sharedSecretPassword;
+    }
+
+    public String getSharedSecretPassword()
+    {
+        return sharedSecretPassword;
     }
 }

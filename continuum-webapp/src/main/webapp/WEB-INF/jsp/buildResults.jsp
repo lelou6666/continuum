@@ -19,8 +19,8 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
+
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -39,12 +39,34 @@
                 <s:param><s:property value="project.name"/></s:param>
             </s:text>
         </h3>
+<<<<<<< HEAD
         <form id="buildResultsForm" action="removeBuildResults.action" method="post">
           <s:hidden name="projectGroupId"/>
           <s:hidden name="projectId"/>
           <s:set name="buildResults" value="buildResults" scope="request"/>
+=======
+
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+
+        <%@ include file="buildResultsPager.jspf" %>
+        <s:form id="buildResultsForm" action="removeBuildResults" theme="simple">
+          <s:token/>
+          <s:set name="buildResults" value="buildResults" scope="request"/>
+          <s:hidden name="projectGroupId"/>
+          <s:hidden name="projectId"/>
+>>>>>>> refs/remotes/apache/trunk
           <ec:table items="buildResults"
                     var="buildResult"
+                    autoIncludeParameters="false"
                     showExports="false"
                     showPagination="false"
                     showStatusBar="false"
@@ -57,6 +79,7 @@
                 </ec:column>
               </redback:ifAuthorized>
               <ec:column property="buildNumberIfNotZero" title="buildResults.buildNumber">
+<<<<<<< HEAD
                   <s:if test="pageScope.buildResult.state == 2">
                       <c:out value="${pageScope.buildResult.buildNumber}"/>
                   </s:if>
@@ -83,10 +106,37 @@
                   <s:param name="projectGroupId">${projectGroupId}</s:param>
                 </s:url>
                 <s:a href="%{buildResultUrl}"><s:text name="buildResults.result"/></s:a>
+=======
+                <s:property value="#attr.buildResult.buildNumber"/>
               </ec:column>
+              <ec:column property="state" headerStyle="text-align: center;" style="text-align: center;" title="buildResults.result" cell="org.apache.maven.continuum.web.view.buildresults.StateCell"/>
+              <ec:column property="trigger" title="buildResult.trigger">
+                  <s:if test="#attr.buildResult.trigger == 1">
+                    <s:text name="buildResult.trigger.1"/>
+                  </s:if>
+                  <s:else>
+                    <s:text name="buildResult.trigger.0"/>
+                  </s:else>
+              </ec:column>
+              <ec:column property="duration" title="buildResults.duration">
+                  <s:if test="#attr.buildResult.endTime > 0">
+                    <s:property value="#attr.buildResult.durationTime"/>
+                  </s:if>
+                  <s:else>
+                    <s:text name="buildResults.startedSince"/> : <s:property value="#attr.buildResult.elapsedTime"/>
+                  </s:else>
+>>>>>>> refs/remotes/apache/trunk
+              </ec:column>
+              <ec:column property="startTime" title="buildResults.startTime" cell="date" format="yyyy-MM-dd HH:mm z"/>
+              <ec:column property="endTime" title="buildResults.endTime" cell="date" format="yyyy-MM-dd HH:mm z"/>
+              <ec:column property="buildDefinition.description" title="buildResults.buildDefinition.description" />
             </ec:row>
           </ec:table>
+<<<<<<< HEAD
           <c:if test="${not empty buildResults}">
+=======
+          <s:if test="buildResults.size() > 0">
+>>>>>>> refs/remotes/apache/trunk
             <div class="functnbar3">
               <table>
                 <tbody>
@@ -100,8 +150,14 @@
                 </tbody>
               </table>
             </div>
+<<<<<<< HEAD
           </c:if>
         </form>
+=======
+          </s:if>
+        </s:form>
+        <%@ include file="buildResultsPager.jspf" %>
+>>>>>>> refs/remotes/apache/trunk
       </div>
     </body>
   </s:i18n>

@@ -1,6 +1,5 @@
 package org.apache.maven.continuum.initialization;
 
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,10 +21,11 @@ package org.apache.maven.continuum.initialization;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public interface ContinuumInitializer
 {
+    String DEFAULT_PROJECT_GROUP_GROUP_ID = "default";
+
     String ROLE = ContinuumInitializer.class.getName();
 
     void initialize()

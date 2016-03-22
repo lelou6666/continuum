@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE orm PUBLIC
     "-//Sun Microsystems, Inc.//DTD Java Data Objects Mapping Metadata 2.0//EN"
@@ -40,3 +41,68 @@
     </class>
   </package>
 </orm>
+=======
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<!DOCTYPE orm PUBLIC
+    "-//Sun Microsystems, Inc.//DTD Java Data Objects Mapping Metadata 2.0//EN"
+    "http://java.sun.com/dtd/jdo_orm_2_0.dtd">
+
+<orm>
+  <package name="org.apache.maven.continuum.model.project">
+    <class name="ProjectGroup">
+      <field name="description">
+        <column length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+    <class name="Project">
+      <field name="description">
+        <column length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+    <class name="BuildResult">
+      <field name="error">
+        <column length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+  </package>
+  <package name="org.apache.maven.continuum.model.scm">
+    <class name="ScmResult">
+      <field name="exception">
+        <column name="exceptionstring" length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+    <class name="ChangeSet">
+      <field name="comment">
+        <column name="changecomment" length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+  </package>
+  <package name="org.apache.continuum.model.project">
+    <class name="ProjectScmRoot">
+      <field name="error">
+        <column length="4000" jdbc-type="VARCHAR"/>
+      </field>
+    </class>
+  </package>
+</orm>
+>>>>>>> refs/remotes/apache/trunk

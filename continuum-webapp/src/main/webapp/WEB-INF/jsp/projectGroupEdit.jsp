@@ -17,9 +17,13 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+>>>>>>> refs/remotes/apache/trunk
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 <html>
   <s:i18n name="localization.Continuum">
@@ -32,6 +36,7 @@
 
         <div class="axial">
           <s:form action="saveProjectGroup" method="post" validate="true">
+<<<<<<< HEAD
               <s:if test="projectInCOQueue">
                 <div class="label">
                     <p><s:text name="%{getText('project.in.checkout.queue.error')}"/></p>
@@ -42,9 +47,25 @@
                 <s:iterator value="actionErrors">
                   <p><s:text name="<s:property/>" /></p>
                 </s:iterator>
+=======
+            <s:if test="projectInCOQueue">
+              <div class="label">
+                <p><s:text name="project.in.checkout.queue.error"/></p>
               </div>
-              </c:if>
+            </s:if>
+            <s:if test="hasActionErrors()">
+              <div class="errormessage">
+                <s:actionerror/>
+              </div>
+            </s:if>
+            <s:if test="hasActionMessages()">
+              <div class="warningmessage">
+                <s:actionmessage/>
+>>>>>>> refs/remotes/apache/trunk
+              </div>
+            </s:if>
             <table>
+<<<<<<< HEAD
               <tbody>
                 <s:hidden name="projectGroupId"/>
                 <s:textfield label="%{getText('projectGroup.name.label')}" name="name" required="true" disabled="%{projectInCOQueue}"/>
@@ -85,6 +106,44 @@
                   <input type="button" value="<s:text name="back"/>" onClick="history.go(-1)">
                 </c:otherwise>
               </c:choose>
+=======
+              <s:hidden name="projectGroupId"/>
+              <s:textfield label="%{getText('projectGroup.name.label')}" name="name" requiredLabel="true" disabled="%{projectInCOQueue}" size="100"/>
+              <s:textfield label="%{getText('projectGroup.groupId.label')}" disabled="true" name="projectGroup.groupId" size="100"/>
+              <s:textfield label="%{getText('projectGroup.description.label')}" name="description" disabled="%{projectInCOQueue}" size="100"/>
+              <s:select label="%{getText('projectGroup.repository.label')}" name="repositoryId" list="repositories"
+                         listKey="id" listValue="name" disabled="%{disabledRepositories}"/>
+              <s:textfield label="%{getText('projectGroup.url.label')}" name="url" disabled="%{projectInCOQueue}" size="100"/>
+            </table>
+            <s:if test="projectList.size() > 0">
+              <h3><s:text name="projectGroup.edit.section.projects.title"/></h3>
+              <div class="eXtremeTable">
+                <table id="projects_table" border="1" cellspacing="2" cellpadding="3" class="tableRegion" width="100%">
+                  <thead>
+                    <tr>
+                      <td class="tableHeader"><s:text name="projectGroup.edit.project.name"/></td>
+                      <td class="tableHeader"><s:text name="projectGroup.edit.move.to.group"/></td>
+                    </tr>
+                  </thead>
+                  <tbody class="tableBody">
+                    <s:iterator value="projectList" status="rowCounter">
+                      <tr class="<s:if test="#rowCounter.odd == true">odd</s:if><s:else>even</s:else>">
+                        <td><s:select cssStyle="width:200px" label="%{name}" name="projects[%{id}]" list="projectGroups" value="%{projectGroup.id}" disabled="%{projectInCOQueue}"/></td>
+                      </tr>
+                    </s:iterator>
+                  </tbody>
+                </table>
+              </div>
+            </s:if>
+            <div class="functnbar3">
+                <s:if test="!projectInCOQueue">
+                  <s:submit value="%{getText('save')}" theme="simple"/>
+                  <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+                </s:if>
+                <s:else>
+                  <input type="button" value="<s:text name="back"/>" onClick="history.go(-1)">
+                </s:else>
+>>>>>>> refs/remotes/apache/trunk
             </div>
           </s:form>
         </div>

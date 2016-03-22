@@ -25,12 +25,17 @@
         <meta http-equiv="refresh" content="10;url=<s:url includeParams="all" />"/>
     </head>
     <body>
+<<<<<<< HEAD
       <h2><s:text name="releaseInProgress.section.title"/></h2>
       <h3><s:property value="name"/></h3>
+=======
+      <h3><s:text name="releaseInProgress.section.title"/> - <s:property value="projectName"/></h3>
+>>>>>>> refs/remotes/apache/trunk
       <div class="axial">
-        <table width="100%">
+        <table class="releasePhases">
           <tr>
             <th><s:text name="releaseInProgress.status"/></th>
+<<<<<<< HEAD
             <th width="100%"><s:text name="releaseInProgress.phase"/></th>
           </tr>
           <s:iterator value="listener.phases">
@@ -48,11 +53,34 @@
                 <s:else>
                   <img src="<s:url value='/images/icon_error_sml.gif' includeParams="none"/>"
                        alt="Error" title="Error" border="0">
+=======
+            <th><s:text name="releaseInProgress.phase"/></th>
+          </tr>
+          <s:iterator value="listenerSummary.phases">
+            <tr>
+              <td>
+              <s:if test="listenerSummary.completedPhases.contains( top )">
+                <img src="<s:url value='/images/icon_success_sml.gif' includeParams="none"/>"
+                     alt="<s:text name="done"/>" title="<s:text name="done"/>" border="0">
+              </s:if>
+              <s:elseif test="listenerSummary.inProgress.equals( top )">
+                <s:if test="listenerSummary.error == null">
+                  <img src="<s:url value='/images/building.gif' includeParams="none"/>"
+                       alt="<s:text name="in.progress"/>" title="<s:text name="in.progress"/>" border="0">
+                </s:if>
+                <s:else>
+                  <img src="<s:url value='/images/icon_error_sml.gif' includeParams="none"/>"
+                       alt="<s:text name="error"/>" title="<s:text name="error"/>" border="0">
+>>>>>>> refs/remotes/apache/trunk
                 </s:else>
               </s:elseif>
               <s:else>
                 <img src="<s:url value='/images/inqueue.gif' includeParams="none"/>"
+<<<<<<< HEAD
                      alt="Queued" title="Queued" border="0">
+=======
+                     alt="<s:text name="queued"/>" title="<s:text name="queued"/>" border="0">
+>>>>>>> refs/remotes/apache/trunk
               </s:else>
               </td>
               <td><s:property/></td>
@@ -65,7 +93,11 @@
         <s:hidden name="projectId"/>
         <s:hidden name="releaseId"/>
         <s:hidden name="releaseGoal"/>
+<<<<<<< HEAD
         <s:submit value="Refresh"/>
+=======
+        <s:submit value="%{getText('refresh')}"/>
+>>>>>>> refs/remotes/apache/trunk
       </s:form>
     </body>
   </s:i18n>

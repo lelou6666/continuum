@@ -21,14 +21,13 @@ package org.apache.maven.continuum.initialization;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class ContinuumInitializationException
     extends Exception
 {
-	private static final long serialVersionUID = 7629046230318917696L;
+    private static final long serialVersionUID = 7629046230318917696L;
 
-	public ContinuumInitializationException( String message )
+    public ContinuumInitializationException( String message )
     {
         super( message );
     }

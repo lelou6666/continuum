@@ -25,18 +25,26 @@
     </head>
     <body>
       <h3>
+<<<<<<< HEAD
         <s:text name="releaseProject.section.title">
           <s:param><s:property value="projectName"/></s:param>
         </s:text>
+=======
+        <s:text name="releaseProject.rollbackWarning.section.title"/>
+>>>>>>> refs/remotes/apache/trunk
       </h3>
-      <p>This will revert all changes made by the previous release?</p>
+      <p><s:text name="releaseProject.rollbackWarning"/></p>
       <table>
         <tr>
           <td>
             <s:form action="releaseRollback" method="post">
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
+<<<<<<< HEAD
               <s:submit value="Rollback Changes"/>
+=======
+              <s:submit value="%{getText('rollback')}" theme="simple"/>
+>>>>>>> refs/remotes/apache/trunk
             </s:form>
           </td>
           <td>
@@ -44,7 +52,11 @@
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
               <s:hidden name="releaseGoal"/>
+<<<<<<< HEAD
               <s:submit value="Cancel"/>
+=======
+              <s:submit value="%{getText('cancel')}" theme="simple"/>
+>>>>>>> refs/remotes/apache/trunk
             </s:form>
           </td>
         </tr>

@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
@@ -37,12 +35,20 @@
         <s:param name="tabName" value="'ReleaseResults'"/>
       </s:action>
     
+<<<<<<< HEAD
       <h3><s:text name="projectGroup.releaseResults.section.title"><s:param>${projectGroup.name}</s:param></s:text></h3>
       
       <form id="releaseResultsForm" action="removeReleaseResults.action" method="post">
         <s:hidden name="projectGroupId"/>
+=======
+      <h3><s:property value="%{ getText('projectGroup.releaseResults.section.title', { projectGroup.name }) }"/></h3>
+      
+      <s:form id="releaseResultsForm" action="removeReleaseResults" theme="simple">
+        <s:token/>
+>>>>>>> refs/remotes/apache/trunk
         <ec:table items="releaseResults"
                 var="result"
+                autoIncludeParameters="false"
                 showExports="false"
                 showPagination="false"
                 showStatusBar="false"
@@ -59,6 +65,7 @@
             <ec:column property="startTime" title="releaseResults.startTime" cell="date"/>
             <ec:column property="endTime" title="releaseResults.endTime" cell="date"/>
             <ec:column property="resultCode" title="releaseResults.state">
+<<<<<<< HEAD
               <s:if test="pageScope.result.resultCode == 0">
                 <s:text name="releaseViewResult.success"/>
               </s:if>
@@ -70,18 +77,39 @@
                <s:url id="viewReleaseResultUrl" action="viewReleaseResult">
                  <s:param name="releaseResultId">${pageScope.result.id}</s:param>
                  <s:param name="projectGroupId">${projectGroupId}</s:param>
+=======
+                <s:if test="#attr.result.resultCode == 0">
+                  <s:text name="releaseViewResult.success"/>
+                </s:if>
+                <s:else>
+                  <s:text name="releaseViewResult.error"/>
+                </s:else>
+            </ec:column>
+            <ec:column property="actions" title="&nbsp;">
+               <s:url id="viewReleaseResultUrl" action="viewReleaseResult">
+                 <s:param name="releaseResultId" value="#attr.result.id"/>
+                 <s:param name="projectGroupId" value="projectGroupId"/>
+>>>>>>> refs/remotes/apache/trunk
                </s:url>
                <s:a href="%{viewReleaseResultUrl}"><s:text name="releaseResults.viewResult"/></s:a>
              </ec:column>
           </ec:row>
         </ec:table>
+<<<<<<< HEAD
         <c:if test="${not empty releaseResults}">
+=======
+        <s:if test="releaseResults.size() > 0">
+>>>>>>> refs/remotes/apache/trunk
           <div class="functnbar3">
             <table>
               <tbody>
                 <tr>
                   <td>
                     <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+<<<<<<< HEAD
+=======
+                      <s:hidden name="projectGroupId"/>
+>>>>>>> refs/remotes/apache/trunk
                       <input type="button" name="delete-release-results" value="<s:text name="delete"/>" onclick="document.forms.releaseResultsForm.submit();" />
                     </redback:ifAuthorized>
                   </td>
@@ -89,9 +117,18 @@
               </tbody>
             </table>
           </div>
+<<<<<<< HEAD
         </c:if>
       </form>
       </div>
     </body>
   </s:i18n>
 </html>
+=======
+        </s:if>
+      </s:form>
+      </div>
+    </body>
+  </s:i18n>
+</html>
+>>>>>>> refs/remotes/apache/trunk

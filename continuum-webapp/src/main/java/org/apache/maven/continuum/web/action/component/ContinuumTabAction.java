@@ -1,6 +1,10 @@
 package org.apache.maven.continuum.web.action.component;
 
 import org.apache.maven.continuum.web.action.PlexusActionSupport;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,10 +25,14 @@ import org.apache.maven.continuum.web.action.PlexusActionSupport;
  * under the License.
  */
 
+<<<<<<< HEAD
 /**
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="continuumTab"
  */
 
+=======
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "continuumTab", instantiationStrategy = "per-lookup" )
+>>>>>>> refs/remotes/apache/trunk
 public class ContinuumTabAction
     extends PlexusActionSupport
 {

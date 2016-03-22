@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.action;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,45 +18,43 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.action;
 
-import org.apache.maven.continuum.buildqueue.BuildProjectTask;
+import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.buildmanager.BuildsManager;
+import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 5 oct. 07
- * @version $Id$
  */
 public abstract class AbstractBuildAction
     extends ContinuumConfirmAction
 {
-    
     private int projectId;
-    
+
     private boolean canDelete = true;
-    
-    /**
-     * @plexus.requirement role-hint='build-project'
-     */
-    private TaskQueueExecutor taskQueueExecutor; 
-    
-    
-    
-    protected TaskQueueExecutor getTaskQueueExecutor()
+
+    protected boolean canRemoveBuildResult( BuildResult buildResult )
+        throws BuildManagerException
     {
-        return this.taskQueueExecutor;
-    }
-    
-    protected boolean canRemoveBuildResult(BuildResult buildResult)
-    {
-        BuildProjectTask buildProjectTask = (BuildProjectTask) getTaskQueueExecutor().getCurrentTask();
-        if ( buildProjectTask != null && buildResult != null )
+        BuildsManager buildsManager = getContinuum().getBuildsManager();
+
+        Map<String, BuildProjectTask> currentBuilds = buildsManager.getCurrentBuilds();
+        Set<String> keySet = currentBuilds.keySet();
+        for ( String key : keySet )
         {
-            return !( buildResult.getState() == ContinuumProjectState.BUILDING && ( buildProjectTask
-                .getBuildDefinitionId() == buildResult.getBuildDefinition().getId() && buildProjectTask.getProjectId() == this.getProjectId() ) );
+            BuildProjectTask buildProjectTask = currentBuilds.get( key );
+            if ( buildProjectTask != null && buildResult != null )
+            {
+                return !( buildResult.getState() == ContinuumProjectState.BUILDING &&
+                    ( buildProjectTask.getBuildDefinitionId() == buildResult.getBuildDefinition().getId() &&
+                        buildProjectTask.getProjectId() == this.getProjectId() ) );
+            }
         }
         return true;
     }

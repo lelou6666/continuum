@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -30,12 +33,16 @@
     </head>
     <body>
       <div id="axial" class="h3">
+<<<<<<< HEAD
         <s:if test="projectId > 0">
             <s:url id="actionUrl" action="jabberProjectNotifierSave" includeContext="false" includeParams="none" />
         </s:if>
         <s:else>
             <s:url id="actionUrl" action="jabberProjectGroupNotifierSave" includeContext="false" includeParams="none"/>
         </s:else>
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         <h3>
             <s:text name="notifier.section.title">
                 <s:param>Jabber</s:param>
@@ -43,7 +50,11 @@
         </h3>
 
         <div class="axial">
+<<<<<<< HEAD
           <s:form action="%{actionUrl}" method="post" validate="true">
+=======
+          <s:form action="%{projectId > 0? 'jabberProjectNotifierSave' : 'jabberProjectGroupNotifierSave' }" method="post" validate="true">
+>>>>>>> refs/remotes/apache/trunk
             <s:hidden name="notifierId"/>
             <s:hidden name="projectId"/>
             <s:hidden name="projectGroupId"/>
@@ -51,23 +62,37 @@
             <s:hidden name="fromGroupPage"/>
             <table>
               <tbody>
+<<<<<<< HEAD
                 <s:textfield label="%{getText('notifier.jabber.host.label')}" name="host" required="true"/>
                 <s:textfield label="%{getText('notifier.jabber.port.label')}" name="port"/>
                 <s:textfield label="%{getText('notifier.jabber.login.label')}" name="login" required="true"/>
                 <s:password label="%{getText('notifier.jabber.password.label')}" name="password" required="true"/>
                 <s:textfield label="%{getText('notifier.jabber.domainName.label')}" name="domainName"/>
                 <s:textfield label="%{getText('notifier.jabber.address.label')}" name="address" required="true"/>
+=======
+                <s:textfield label="%{getText('notifier.jabber.host.label')}" name="host" requiredLabel="true" size="100"/>
+                <s:textfield label="%{getText('notifier.jabber.port.label')}" name="port" size="100"/>
+                <s:textfield label="%{getText('notifier.jabber.login.label')}" name="login" requiredLabel="true" size="100"/>
+                <s:password label="%{getText('notifier.jabber.password.label')}" name="password" requiredLabel="true" size="100"/>
+                <s:textfield label="%{getText('notifier.jabber.domainName.label')}" name="domainName" size="100"/>
+                <s:textfield label="%{getText('notifier.jabber.address.label')}" name="address" requiredLabel="true" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
                 <s:checkbox label="%{getText('notifier.jabber.isSslConnection.label')}" name="sslConnection" value="sslConnection" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.jabber.isGroup.label')}" name="group" value="group" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnSuccess')}" name="sendOnSuccess" value="sendOnSuccess" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnFailure')}" name="sendOnFailure" value="sendOnFailure" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnError')}" name="sendOnError" value="sendOnError" fieldValue="true"/>
                 <s:checkbox label="%{getText('notifier.event.sendOnWarning')}" name="sendOnWarning" value="sendOnWarning" fieldValue="true"/>
+<<<<<<< HEAD
                 <ww:checkbox label="%{getText('notifier.event.sendOnScmFailure')}" name="sendOnScmFailure" value="sendOnScmFailure" fieldValue="true"/>
+=======
+                <s:checkbox label="%{getText('notifier.event.sendOnScmFailure')}" name="sendOnScmFailure" value="sendOnScmFailure" fieldValue="true"/>
+>>>>>>> refs/remotes/apache/trunk
               </tbody>
             </table>
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('save')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
           </s:form>
         </div>

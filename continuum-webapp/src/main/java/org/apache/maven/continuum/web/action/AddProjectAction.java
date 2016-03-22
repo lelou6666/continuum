@@ -19,8 +19,20 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import com.opensymphony.xwork2.Validateable;
 import org.apache.maven.continuum.Continuum;
+=======
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.config.ConfigurationManager;
+import com.opensymphony.xwork2.config.providers.XWorkConfigurationProvider;
+import com.opensymphony.xwork2.inject.Container;
+import com.opensymphony.xwork2.util.ValueStack;
+import com.opensymphony.xwork2.util.ValueStackFactory;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
@@ -30,23 +42,33 @@ import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.profile.ProfileException;
 import org.apache.maven.continuum.profile.ProfileService;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author Nick Gonzalez
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="addProject"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "addProject", instantiationStrategy = "per-lookup" )
 public class AddProjectAction
     extends ContinuumActionSupport
-    implements Validateable
 {
+    private static final Logger logger = LoggerFactory.getLogger( AddProjectAction.class );
+
     private String projectName;
+
+    private String projectDescription;
 
     private String projectVersion;
 
@@ -60,7 +82,7 @@ public class AddProjectAction
 
     private String projectType;
 
-    private Collection projectGroups;
+    private Collection<ProjectGroup> projectGroups;
 
     private int selectedProjectGroup;
 
@@ -72,9 +94,7 @@ public class AddProjectAction
 
     private List<Profile> profiles;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private ProfileService profileService;
 
     private int projectGroupId;
@@ -83,66 +103,13 @@ public class AddProjectAction
 
     private List<BuildDefinitionTemplate> buildDefinitionTemplates;
 
-    public void validate()
-    {
-        boolean projectNameAlreadyExist = false;
-
-        clearErrorsAndMessages();
-        
-        try
-        {
-            if ( ( projectName.trim().length() > 0 ) && ( projectVersion.trim().length() > 0 ) && ( projectScmUrl.trim().length() > 0 ) )
-            {
-            Iterator<Project> projects = getContinuum().getProjects().iterator();
-            while ( projects.hasNext() )
-            {
-                Project project = projects.next();
-                // CONTINUUM-1445
-                if ( StringUtils.equalsIgnoreCase( project.getName(), projectName.trim() ) &&
-                    StringUtils.equalsIgnoreCase( project.getVersion(), projectVersion.trim() ) &&
-                    StringUtils.equalsIgnoreCase( project.getScmUrl(), projectScmUrl.trim() ) )
-                {
-                    projectNameAlreadyExist = true;
-                    break;
-                }
-            }
-            if ( projectNameAlreadyExist )
-            {
-                addActionError( "projectName.already.exist.error" );
-                this.input();
-            }
-            }
-            else
-            {
-                if ( !( projectName.trim().length() > 0 ) )
-                {
-                    addActionError( getText( "addProject.name.required" ) );
-                }
-                if ( !( projectVersion.trim().length() > 0 ) )
-                {
-                    addActionError( getText( "addProject.version.required" ) );
-                }
-                if ( !( projectScmUrl.trim().length() > 0 ) )
-                {
-                    addActionError( getText( "addProject.scmUrl.required" ) );
-                }
-                this.input();
-            }
-        }
-        catch ( ContinuumException e )
-        {
-            getLogger().error( e.getMessage(), e );
-        }
-        catch ( BuildDefinitionServiceException e )
-        {
-            getLogger().error( e.getMessage(), e );
-        }
-    }
+    private boolean emptyProjectGroups;
 
     public String add()
-        throws ContinuumException
+        throws ContinuumException, ProfileException, BuildDefinitionServiceException
     {
         initializeProjectGroupName();
+        initializeActionContext();
 
         try
         {
@@ -161,13 +128,45 @@ public class AddProjectAction
             return REQUIRES_AUTHORIZATION;
         }
 
+        if ( isEmptyProjectGroups() )
+        {
+            addActionError( getText( "addProject.projectGroup.required" ) );
+        }
+
+        String projectNameTrim = projectName.trim();
+        String versionTrim = projectVersion.trim();
+        String scmTrim = projectScmUrl.trim();
+        //TODO: Instead of get all projects then test them, it would be better to check it directly in the DB
+        for ( Project project : getContinuum().getProjects() )
+        {
+            // CONTINUUM-1445
+            if ( StringUtils.equalsIgnoreCase( project.getName(), projectNameTrim ) &&
+                StringUtils.equalsIgnoreCase( project.getVersion(), versionTrim ) &&
+                StringUtils.equalsIgnoreCase( project.getScmUrl(), scmTrim ) )
+            {
+                addActionError( getText( "projectName.already.exist.error" ) );
+                break;
+            }
+        }
+
+        if ( hasActionErrors() )
+        {
+            return INPUT;
+        }
+
         Project project = new Project();
 
-        project.setName( projectName.trim() );
+        project.setName( projectNameTrim );
 
-        project.setVersion( projectVersion.trim() );
+        if ( projectDescription != null )
+        {
+            project.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml(
+                projectDescription.trim() ) ) );
+        }
 
-        project.setScmUrl( projectScmUrl.trim() );
+        project.setVersion( versionTrim );
+
+        project.setScmUrl( scmTrim );
 
         project.setScmUsername( projectScmUsername );
 
@@ -186,6 +185,11 @@ public class AddProjectAction
             this.setProjectGroupId( this.getSelectedProjectGroup() );
             return "projectGroupSummary";
         }
+
+        AuditLog event = new AuditLog( "Project id=" + project.getId(), AuditLogConstants.ADD_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
 
         return SUCCESS;
     }
@@ -210,33 +214,26 @@ public class AddProjectAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        projectGroups = new ArrayList();
+        projectGroups = new ArrayList<ProjectGroup>();
 
-        Collection allProjectGroups = getContinuum().getAllProjectGroups();
+        Collection<ProjectGroup> allProjectGroups = getContinuum().getAllProjectGroups();
 
-        for ( Iterator i = allProjectGroups.iterator(); i.hasNext(); )
+        for ( ProjectGroup pg : allProjectGroups )
         {
-            ProjectGroup pg = (ProjectGroup) i.next();
-
             if ( isAuthorizedToAddProjectToGroup( pg.getName() ) )
             {
                 projectGroups.add( pg );
             }
         }
 
-        if ( !disableGroupSelection )
-        {
-            selectedProjectGroup = getContinuum().getProjectGroupByGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID )
-                .getId();
-        }
         this.profiles = profileService.getAllProfiles();
         buildDefinitionTemplates = getContinuum().getBuildDefinitionService().getAllBuildDefinitionTemplate();
-        return SUCCESS;
+        return INPUT;
     }
 
     private void initializeProjectGroupName()
     {
-        if ( disableGroupSelection == true )
+        if ( disableGroupSelection )
         {
             try
             {
@@ -246,6 +243,24 @@ public class AddProjectAction
             {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void initializeActionContext()
+    {
+        // ctan: hack for WW-3161
+        if ( ActionContext.getContext() == null )
+        {
+            // This fix allow initialization of ActionContext.getContext() to avoid NPE
+
+            ConfigurationManager configurationManager = new ConfigurationManager();
+            configurationManager.addContainerProvider( new XWorkConfigurationProvider() );
+            com.opensymphony.xwork2.config.Configuration config = configurationManager.getConfiguration();
+            Container container = config.getContainer();
+
+            ValueStack stack = container.getInstance( ValueStackFactory.class ).createValueStack();
+            stack.getContext().put( ActionContext.CONTAINER, container );
+            ActionContext.setContext( new ActionContext( stack.getContext() ) );
         }
     }
 
@@ -319,12 +334,12 @@ public class AddProjectAction
         this.projectVersion = projectVersion;
     }
 
-    public Collection getProjectGroups()
+    public Collection<ProjectGroup> getProjectGroups()
     {
         return projectGroups;
     }
 
-    public void setProjectGroups( Collection projectGroups )
+    public void setProjectGroups( Collection<ProjectGroup> projectGroups )
     {
         this.projectGroups = projectGroups;
     }
@@ -420,5 +435,25 @@ public class AddProjectAction
         {
             return false;
         }
+    }
+
+    public String getProjectDescription()
+    {
+        return projectDescription;
+    }
+
+    public void setProjectDescription( String projectDescription )
+    {
+        this.projectDescription = projectDescription;
+    }
+
+    public boolean isEmptyProjectGroups()
+    {
+        return emptyProjectGroups;
+    }
+
+    public void setEmptyProjectGroups( boolean emptyProjectGroups )
+    {
+        this.emptyProjectGroups = emptyProjectGroups;
     }
 }

@@ -18,7 +18,10 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="continuum" prefix="c1" %>
+=======
+>>>>>>> refs/remotes/apache/trunk
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <html>
   <s:i18n name="localization.Continuum">
@@ -30,6 +33,10 @@
         <h3><s:text name="deleteRepository.section.title"/></h3>
         <div class="axial">
         <s:form action="removeRepository" method="post">
+<<<<<<< HEAD
+=======
+          <s:token/>
+>>>>>>> refs/remotes/apache/trunk
           <s:hidden name="repository.id"/>
           <s:hidden name="confirmed" value="true"/>
           <s:actionerror/>
@@ -45,7 +52,8 @@
           </div>
 
           <div class="functnbar3">
-            <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
+            <s:submit value="%{getText('delete')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
           </div>
         </s:form>
         </div>
