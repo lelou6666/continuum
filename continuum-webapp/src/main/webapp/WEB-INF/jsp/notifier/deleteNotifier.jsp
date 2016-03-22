@@ -17,45 +17,49 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="deleteNotifier.page.title"/></title>
+        <title><s:text name="deleteNotifier.page.title"/></title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <h3><ww:text name="deleteNotifier.section.title"/></h3>
+        <h3><s:text name="deleteNotifier.section.title"/></h3>
 
         <div class="warningmessage">
           <p>
             <strong>
-                <ww:text name="deleteNotifier.confirmation.message">
-                    <ww:param><ww:property value="notifierType"/></ww:param>
-                    <ww:param><ww:property value="recipient"/></ww:param>
-                </ww:text>
+                <s:text name="deleteNotifier.confirmation.message">
+                    <s:param><s:property value="notifierType"/></s:param>
+                    <s:param><s:property value="recipient"/></s:param>
+                </s:text>
             </strong>
           </p>
         </div>
         <div class="functnbar3">
-          <ww:if test="${projectId == -1}">
-            <ww:form action="deleteProjectGroupNotifier.action" method="post">
-              <ww:hidden name="notifierId"/>
-              <ww:hidden name="projectGroupId" />
-              <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
-            </ww:form>
-          </ww:if>
-          <ww:else>
-            <ww:form action="deleteProjectNotifier.action" method="post">
-              <ww:hidden name="notifierId"/>
-              <ww:hidden name="projectId"/>
-              <ww:hidden name="projectGroupId" />
-              <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
-            </ww:form>
-          </ww:else>
+          <s:if test="projectId == -1">
+            <s:form action="deleteProjectGroupNotifier" method="post">
+              <s:token/>
+              <s:hidden name="notifierId"/>
+              <s:hidden name="projectGroupId" />
+              <s:submit value="%{getText('delete')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+            </s:form>
+          </s:if>
+          <s:else>
+            <s:form action="deleteProjectNotifier" method="post">
+              <s:token/>            
+              <s:hidden name="notifierId"/>
+              <s:hidden name="projectId"/>
+              <s:hidden name="projectGroupId" />
+              <s:hidden name="fromGroupPage" />
+              <s:submit value="%{getText('delete')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+            </s:form>
+          </s:else>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

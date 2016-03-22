@@ -1,13 +1,44 @@
  ------
  Local Repository
  ------
+<<<<<<< HEAD
  
 Local Repository
 
+=======
+ ------
+ 2010-02-18
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Local Repository
+
+  Local repositories can be configured for a specific project group's use.
+  This is where the artifacts used for building the projects can be found
+  instead of the default (<<<$USER_HOME/.m2/repository>>>).
+
+>>>>>>> refs/remotes/apache/trunk
 	Click the <<Local Repositories>> link under the <<Administration>> section
 
 [../images/localrepositories.png] Local Repositories
 
+<<<<<<< HEAD
 	You will see all the local repositories that has been created. 
 	
 	To display:
@@ -17,12 +48,24 @@ Local Repository
 	In this screen you can add/edit/delete/purge a local repository. 
 	
 	You can purge a repository if it has a default {{{purgeConfiguration.html} Purge Configuration}}, otherwise the purge icon is disabled.
+=======
+	You will see all the local repositories that have been created.
+
+	To display:
+
+[../images/localrepositories-view.png]
+
+	In this screen you can add/edit/delete/purge a local repository.
+
+	You can purge a repository if it has a default {{{./purgeConfiguration.html} Purge Configuration}}, otherwise the purge icon is disabled.
+>>>>>>> refs/remotes/apache/trunk
 
 [../images/disabled_purgenow.gif] disabled purge icon
 
 
 * Adding / Editing a Local Repository
 
+<<<<<<< HEAD
 	All fields are mandatory. 
 	
 	* Name: must be a unique repository name.
@@ -34,3 +77,29 @@ Local Repository
 [../images/localrepository-add.png]
 	
 	Adding a local repository will automatically create a default {{{purgeConfiguration.html} Purge Configuration}} for that repository. 
+=======
+	All fields are mandatory.
+
+	* Name: must be a unique repository name.
+
+	* Location: must be the absolute path of a unique repository location.
+
+	* Layout: "default" or "legacy". Default layout is for maven2, while legacy layout is for maven1.
+
+[../images/localrepository-add.png]
+
+	Adding a local repository will automatically create a default {{{./purgeConfiguration.html} Purge Configuration}} for that repository.
+	
+	If you're using distributed builds, you must configure a <<<localRepository>>> with the same <<<name>>> in the build agent's configuration file where the
+	<<<location>>> is the local path to the local repository in the build agent machine. See {{{./distributed-builds.html}Distributed Builds}} for more details.
+
+* Default
+
+~~ TODO:  Needs to be updated if CONTINUUM-1966 is implemented to allowe editing the local repo.
+
+    The default local repository location comes from the settings of the user running Continuum.  The location cannot be
+    edited within Continuum, but can be changed by specifying it in <<<~/.m2/settings.xml>>>.
+    
+    On Windows 7, you can pass the argument <<<-Duser.home=C:\Users\\\<Username\>\\>>> to the JVM explicitly. Since running Continuum as an Administrator
+    will give you a different <<<user.home>>> value.
+>>>>>>> refs/remotes/apache/trunk

@@ -19,6 +19,7 @@ package org.apache.maven.continuum.buildcontroller;
  * under the License.
  */
 
+import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
@@ -51,14 +52,18 @@ public class BuildContext
 
     private ScmResult scmResult;
 
-    private int trigger;
+    private BuildTrigger buildTrigger;
 
     private BuildResult buildResult;
 
     private List<ProjectDependency> modifiedDependencies;
 
     private boolean cancelled;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setStartTime( long startTime )
     {
         this.startTime = startTime;
@@ -138,14 +143,14 @@ public class BuildContext
         return actionContext;
     }
 
-    public int getTrigger()
+    public BuildTrigger getBuildTrigger()
     {
-        return trigger;
+        return buildTrigger;
     }
 
-    public void setTrigger( int trigger )
+    public void setBuildTrigger( BuildTrigger buildTrigger )
     {
-        this.trigger = trigger;
+        this.buildTrigger = buildTrigger;
     }
 
     public List<ProjectDependency> getModifiedDependencies()
@@ -161,12 +166,20 @@ public class BuildContext
     {
         this.modifiedDependencies = modifiedDependencies;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public boolean isCancelled()
     {
         return cancelled;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setCancelled( boolean cancelled )
     {
         this.cancelled = cancelled;

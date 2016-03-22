@@ -22,32 +22,34 @@ package org.apache.maven.continuum.web.action.component;
  * under the License.
  */
 
+import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.NotifierSummary;
-import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Component Action that prepares and provides Project Group Notifier and
  * Project Notifier summaries.
  *
  * @author <a href='mailto:rahul.thakur.xdev@gmail.com'>Rahul Thakur</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="notifierSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "notifierSummary", instantiationStrategy = "per-lookup" )
 public class NotifierSummaryAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( NotifierSummaryAction.class );
+
     /**
      * Identifier for the {@link ProjectGroup} for which the Notifier summary
      * needs to be prepared for.
@@ -78,7 +80,7 @@ public class NotifierSummaryAction
      */
     public String summarizeForProject()
     {
-        getLogger().debug( "Obtaining summary for Project Id: " + projectId );
+        logger.debug( "Obtaining summary for Project Id: " + projectId );
 
         try
         {
@@ -88,7 +90,7 @@ public class NotifierSummaryAction
         }
         catch ( ContinuumException e )
         {
-            getLogger().error( "Unable to prepare Notifier summaries for Project Id: " + projectId, e );
+            logger.error( "Unable to prepare Notifier summaries for Project Id: " + projectId, e );
             return ERROR;
         }
         catch ( AuthorizationRequiredException authzE )
@@ -119,7 +121,7 @@ public class NotifierSummaryAction
      */
     public String summarizeForProjectGroup()
     {
-        getLogger().debug( "Obtaining summary for ProjectGroup Id:" + projectGroupId );
+        logger.debug( "Obtaining summary for ProjectGroup Id:" + projectGroupId );
 
         try
         {
@@ -138,7 +140,7 @@ public class NotifierSummaryAction
         }
         catch ( ContinuumException e )
         {
-            getLogger().error( "Unable to prepare Notifier summaries for ProjectGroup Id: " + projectGroupId, e );
+            logger.error( "Unable to prepare Notifier summaries for ProjectGroup Id: " + projectGroupId, e );
             return ERROR;
         }
         catch ( AuthorizationRequiredException authzE )
@@ -243,50 +245,7 @@ public class NotifierSummaryAction
             ns.setFromProject( false );
         }
 
-        // Source the recipient 
-        Map configuration = notifier.getConfiguration();
-
-        String recipient = "unknown";
-
-        if ( ( "mail".equals( notifier.getType() ) ) || ( "msn".equals( notifier.getType() ) ) ||
-            ( "jabber".equals( notifier.getType() ) ) )
-        {
-            if ( StringUtils.isNotEmpty( (String) configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD ) ) )
-            {
-                recipient = (String) configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
-            }
-            if ( StringUtils.isNotEmpty( (String) configuration.get( AbstractContinuumNotifier.COMMITTER_FIELD ) ) )
-            {
-                if ( Boolean.parseBoolean( (String) configuration.get( AbstractContinuumNotifier.COMMITTER_FIELD ) ) )
-                {
-                    if ( "unknown".equals( recipient ) )
-                    {
-                        recipient = "latest committers";
-                    }
-                    else
-                    {
-                        recipient += ", " + "latest committers";
-                    }
-                }
-            }
-        }
-
-        if ( "irc".equals( notifier.getType() ) )
-        {
-            recipient = (String) configuration.get( "host" );
-
-            if ( configuration.get( "port" ) != null )
-            {
-                recipient = recipient + ":" + (String) configuration.get( "port" );
-            }
-
-            recipient = recipient + ":" + (String) configuration.get( "channel" );
-        }
-
-        if ( "wagon".equals( notifier.getType() ) )
-        {
-            recipient = (String) configuration.get( "url" );
-        }
+        String recipient = GenerateRecipentNotifier.generate( notifier );
 
         ns.setRecipient( recipient );
 
@@ -334,7 +293,7 @@ public class NotifierSummaryAction
         return ns;
     }
 
-    // property accessors 
+    // property accessors
 
     /**
      * @return the projectGroupId

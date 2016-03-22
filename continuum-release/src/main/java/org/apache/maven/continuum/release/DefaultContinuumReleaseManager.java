@@ -19,30 +19,55 @@ package org.apache.maven.continuum.release;
  * under the License.
  */
 
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.continuum.model.release.ReleaseListenerSummary;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
+<<<<<<< HEAD
 import org.apache.maven.continuum.installation.InstallationService;
+=======
+import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
+import org.apache.maven.artifact.ArtifactUtils;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.release.tasks.PerformReleaseProjectTask;
 import org.apache.maven.continuum.release.tasks.PrepareReleaseProjectTask;
 import org.apache.maven.continuum.release.tasks.RollbackReleaseProjectTask;
-import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.apache.maven.scm.manager.ScmManager;
+import org.apache.maven.scm.provider.ScmProvider;
+import org.apache.maven.scm.repository.ScmRepository;
 import org.apache.maven.shared.release.ReleaseManagerListener;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.config.ReleaseDescriptorStore;
 import org.apache.maven.shared.release.config.ReleaseDescriptorStoreException;
+import org.codehaus.plexus.PlexusConstants;
+import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
+import org.codehaus.plexus.context.Context;
+import org.codehaus.plexus.context.ContextException;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.TaskQueue;
 import org.codehaus.plexus.taskqueue.TaskQueueException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
 import java.util.Collections;
+<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+=======
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+>>>>>>> refs/remotes/apache/trunk
 import java.util.Map;
 import java.util.Properties;
 
@@ -51,28 +76,28 @@ import java.util.Properties;
  * @author Edwin Punzalan
  */
 public class DefaultContinuumReleaseManager
-    implements ContinuumReleaseManager
+    implements ContinuumReleaseManager, Contextualizable
 {
-    /**
-     * @plexus.requirement
-     */
+
+    private static final String PLEXUS_KEY_PERFORM_RELEASE_TASKQUEUE_EXECUTOR = "perform-release";
+
+    private static final String PLEXUS_KEY_PREPARE_RELEASE_TASKQUEUE_EXECUTOR = "prepare-release";
+
+    private static final String PLEXUS_KEY_ROLLBACK_RELEASE_TASKQUEUE_EXECUTOR = "rollback-release";
+
+    @Requirement
     private ReleaseDescriptorStore releaseStore;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private TaskQueue prepareReleaseQueue;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private TaskQueue performReleaseQueue;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private TaskQueue rollbackReleaseQueue;
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
@@ -84,13 +109,21 @@ public class DefaultContinuumReleaseManager
     private InstallationService installationService;
     
     private Map listeners;
+=======
+    @Requirement
+    private ScmManager scmManager;
+
+    private PlexusContainer container;
+
+    private Map<String, ContinuumReleaseManagerListener> listeners;
+>>>>>>> refs/remotes/apache/trunk
 
     /**
      * contains previous release:prepare descriptors; one per project
      *
      * @todo remove static when singleton strategy is working
      */
-    private static Map preparedReleases;
+    private static Map<String, ReleaseDescriptor> preparedReleases;
 
     /**
      * contains results
@@ -99,8 +132,17 @@ public class DefaultContinuumReleaseManager
      */
     private static Map releaseResults;
 
-    public String prepare( Project project, Properties releaseProperties, Map relVersions, Map devVersions,
-                           ContinuumReleaseManagerListener listener )
+    public String prepare( Project project, Properties releaseProperties, Map<String, String> relVersions,
+                           Map<String, String> devVersions, ContinuumReleaseManagerListener listener,
+                           String workingDirectory )
+        throws ContinuumReleaseException
+    {
+        return prepare( project, releaseProperties, relVersions, devVersions, listener, workingDirectory, null, null );
+    }
+
+    public String prepare( Project project, Properties releaseProperties, Map<String, String> relVersions,
+                           Map<String, String> devVersions, ContinuumReleaseManagerListener listener,
+                           String workingDirectory, Map<String, String> environments, String executable )
         throws ContinuumReleaseException
     {
         return prepare( project, releaseProperties, relVersions, devVersions, listener, null );
@@ -112,15 +154,37 @@ public class DefaultContinuumReleaseManager
     {
         String releaseId = project.getGroupId() + ":" + project.getArtifactId();
 
+<<<<<<< HEAD
         ReleaseDescriptor descriptor = getReleaseDescriptor( project, releaseProperties, relVersions, devVersions, profile );
+=======
+        ReleaseDescriptor descriptor = getReleaseDescriptor( project, releaseProperties, relVersions, devVersions,
+                                                             environments, workingDirectory, executable );
+
+        if ( listener == null )
+        {
+            listener = new DefaultReleaseManagerListener();
+            listener.setUsername( releaseProperties.getProperty( "release-by" ) );
+        }
+
+        // check if releaseId exists
+        while ( getPreparedReleases().get( releaseId ) != null )
+        {
+            releaseId = releaseId + ":" + String.valueOf( System.currentTimeMillis() );
+        }
+>>>>>>> refs/remotes/apache/trunk
 
         getListeners().put( releaseId, listener );
 
         try
         {
+<<<<<<< HEAD
             prepareReleaseQueue.put(
                 new PrepareReleaseProjectTask( releaseId, descriptor, (ReleaseManagerListener) listener, profile ) );
 
+=======
+            prepareReleaseQueue.put( new PrepareReleaseProjectTask( releaseId, descriptor,
+                                                                    (ReleaseManagerListener) listener ) );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( TaskQueueException e )
         {
@@ -130,45 +194,59 @@ public class DefaultContinuumReleaseManager
         return releaseId;
     }
 
-    public void perform( String releaseId, File buildDirectory, String goals, boolean useReleaseProfile,
-                         ContinuumReleaseManagerListener listener )
+    public void perform( String releaseId, File buildDirectory, String goals, String arguments,
+                         boolean useReleaseProfile, ContinuumReleaseManagerListener listener )
         throws ContinuumReleaseException
     {
-        perform( releaseId, buildDirectory, goals, useReleaseProfile, listener, null );
+        perform( releaseId, buildDirectory, goals, arguments, useReleaseProfile, listener, null );
     }
-    
-    public void perform( String releaseId, File buildDirectory, String goals, boolean useReleaseProfile,
-                         ContinuumReleaseManagerListener listener, LocalRepository repository )
+
+    public void perform( String releaseId, File buildDirectory, String goals, String arguments,
+                         boolean useReleaseProfile, ContinuumReleaseManagerListener listener,
+                         LocalRepository repository )
         throws ContinuumReleaseException
     {
-        ReleaseDescriptor descriptor = (ReleaseDescriptor) getPreparedReleases().get( releaseId );
+        ReleaseDescriptor descriptor = getPreparedReleases().get( releaseId );
         if ( descriptor != null )
         {
-            perform( releaseId, descriptor, buildDirectory, goals, useReleaseProfile, listener, repository );
+            perform( releaseId, descriptor, buildDirectory, goals, arguments, useReleaseProfile, listener, repository );
         }
     }
 
-    public void perform( String releaseId, String workingDirectory, File buildDirectory, String goals,
+    public void perform( String releaseId, String workingDirectory, File buildDirectory, String goals, String arguments,
                          boolean useReleaseProfile, ContinuumReleaseManagerListener listener )
         throws ContinuumReleaseException
     {
         ReleaseDescriptor descriptor = readReleaseDescriptor( workingDirectory );
-
-        perform( releaseId, descriptor, buildDirectory, goals, useReleaseProfile, listener, null );
+        perform( releaseId, descriptor, buildDirectory, goals, arguments, useReleaseProfile, listener, null );
     }
 
     private void perform( String releaseId, ReleaseDescriptor descriptor, File buildDirectory, String goals,
-                          boolean useReleaseProfile, ContinuumReleaseManagerListener listener, LocalRepository repository )
+                          String arguments, boolean useReleaseProfile, ContinuumReleaseManagerListener listener,
+                          LocalRepository repository )
         throws ContinuumReleaseException
     {
+        if ( descriptor != null )
+        {
+            descriptor.setAdditionalArguments( arguments );
+        }
+
+        if ( listener == null )
+        {
+            listener = new DefaultReleaseManagerListener();
+            if ( descriptor instanceof ContinuumReleaseDescriptor )
+            {
+                listener.setUsername( ( (ContinuumReleaseDescriptor) descriptor ).getReleaseBy() );
+            }
+        }
+
         try
         {
             getListeners().put( releaseId, listener );
 
             performReleaseQueue.put( new PerformReleaseProjectTask( releaseId, descriptor, buildDirectory, goals,
                                                                     useReleaseProfile,
-                                                                    (ReleaseManagerListener) listener,
-                                                                    repository ) );
+                                                                    (ReleaseManagerListener) listener, repository ) );
         }
         catch ( TaskQueueException e )
         {
@@ -180,6 +258,15 @@ public class DefaultContinuumReleaseManager
         throws ContinuumReleaseException
     {
         ReleaseDescriptor descriptor = readReleaseDescriptor( workingDirectory );
+
+        if ( listener == null )
+        {
+            listener = new DefaultReleaseManagerListener();
+            if ( descriptor instanceof ContinuumReleaseDescriptor )
+            {
+                listener.setUsername( ( (ContinuumReleaseDescriptor) descriptor ).getReleaseBy() );
+            }
+        }
 
         rollback( releaseId, descriptor, listener );
     }
@@ -199,14 +286,34 @@ public class DefaultContinuumReleaseManager
         }
     }
 
-    public Map getPreparedReleases()
+    public Map<String, ReleaseDescriptor> getPreparedReleases()
     {
         if ( preparedReleases == null )
         {
-            preparedReleases = new Hashtable();
+            preparedReleases = Collections.synchronizedMap( new LinkedHashMap<String, ReleaseDescriptor>() );
         }
 
         return preparedReleases;
+    }
+
+    public Map<String, String> getPreparedReleasesForProject( String groupId, String artifactId )
+    {
+        String key = ArtifactUtils.versionlessKey( groupId, artifactId );
+
+        Map<String, String> projectPreparedReleases = new LinkedHashMap<String, String>();
+        Map<String, ReleaseDescriptor> preparedReleases = getPreparedReleases();
+        for ( String releaseId : preparedReleases.keySet() )
+        {
+            // get exact match, or one with a timestamp appended
+            if ( releaseId.equals( key ) || releaseId.startsWith( key + ":" ) )
+            {
+                ReleaseDescriptor descriptor = preparedReleases.get( releaseId );
+
+                // use key to lookup, not release ID - versions don't get any timestamp appended
+                projectPreparedReleases.put( releaseId, descriptor.getReleaseVersions().get( key ).toString() );
+            }
+        }
+        return projectPreparedReleases;
     }
 
     public Map getReleaseResults()
@@ -219,6 +326,7 @@ public class DefaultContinuumReleaseManager
         return releaseResults;
     }
 
+<<<<<<< HEAD
     public Map<String, String> getEnvironments( Profile profile )
     {
         if ( profile == null )
@@ -257,41 +365,89 @@ public class DefaultContinuumReleaseManager
     {
         ContinuumReleaseDescriptor descriptor = new ContinuumReleaseDescriptor();
         String workingDirectory = workingDirectoryService.getWorkingDirectory( project ).getPath(); 
+=======
+    private ReleaseDescriptor getReleaseDescriptor( Project project, Properties releaseProperties,
+                                                    Map<String, String> relVersions, Map<String, String> devVersions,
+                                                    Map<String, String> environments, String workingDirectory,
+                                                    String executable )
+    {
+        ContinuumReleaseDescriptor descriptor = new ContinuumReleaseDescriptor();
+>>>>>>> refs/remotes/apache/trunk
 
         //release properties from the project
         descriptor.setWorkingDirectory( workingDirectory );
         descriptor.setScmSourceUrl( project.getScmUrl() );
 
         //required properties
-        descriptor.setScmReleaseLabel( releaseProperties.getProperty( "tag" ) );
-        descriptor.setScmTagBase( releaseProperties.getProperty( "tagBase" ) );
+        descriptor.setScmReleaseLabel( releaseProperties.getProperty( "scm-tag" ) );
+        descriptor.setScmTagBase( releaseProperties.getProperty( "scm-tagbase" ) );
         descriptor.setReleaseVersions( relVersions );
         descriptor.setDevelopmentVersions( devVersions );
-        descriptor.setPreparationGoals( releaseProperties.getProperty( "prepareGoals" ) );
-        
+        descriptor.setPreparationGoals( releaseProperties.getProperty( "preparation-goals" ) );
+        descriptor.setAdditionalArguments( releaseProperties.getProperty( "arguments" ) );
+        descriptor.setAddSchema( Boolean.valueOf( releaseProperties.getProperty( "add-schema" ) ) );
+        descriptor.setAutoVersionSubmodules( Boolean.valueOf( releaseProperties.getProperty(
+            "auto-version-submodules" ) ) );
+
+        String useEditMode = releaseProperties.getProperty( "use-edit-mode" );
+        if ( BooleanUtils.toBoolean( useEditMode ) )
+        {
+            descriptor.setScmUseEditMode( Boolean.valueOf( useEditMode ) );
+        }
+
         LocalRepository repository = project.getProjectGroup().getLocalRepository();
-        
+
         if ( repository != null )
         {
-            descriptor.setAdditionalArguments( "\"-Dmaven.repo.local=" + repository.getLocation() + "\"" );
+            String args = descriptor.getAdditionalArguments();
+
+            if ( StringUtils.isNotEmpty( args ) )
+            {
+                descriptor.setAdditionalArguments( args +
+                                                       " \"-Dmaven.repo.local=" + repository.getLocation() + "\"" );
+            }
+            else
+            {
+                descriptor.setAdditionalArguments( "\"-Dmaven.repo.local=" + repository.getLocation() + "\"" );
+            }
         }
-        
+
         //other properties
-        if ( releaseProperties.containsKey( "username" ) )
+        if ( releaseProperties.containsKey( "scm-username" ) )
         {
-            descriptor.setScmUsername( releaseProperties.getProperty( "username" ) );
+            descriptor.setScmUsername( releaseProperties.getProperty( "scm-username" ) );
         }
-        if ( releaseProperties.containsKey( "password" ) )
+        if ( releaseProperties.containsKey( "scm-password" ) )
         {
-            descriptor.setScmPassword( releaseProperties.getProperty( "password" ) );
+            descriptor.setScmPassword( releaseProperties.getProperty( "scm-password" ) );
+        }
+        if ( releaseProperties.containsKey( "scm-comment-prefix" ) )
+        {
+            descriptor.setScmCommentPrefix( releaseProperties.getProperty( "scm-comment-prefix" ) );
+        }
+        if ( releaseProperties.containsKey( "use-release-profile" ) )
+        {
+            descriptor.setUseReleaseProfile( Boolean.valueOf( releaseProperties.getProperty(
+                "use-release-profile" ) ) );
         }
 
         //forced properties
         descriptor.setInteractive( false );
+<<<<<<< HEAD
         
         //set environments
         descriptor.setEnvironments( getEnvironments( profile ) );
         
+=======
+
+        //set environments
+        descriptor.setEnvironments( environments );
+        descriptor.setExecutable( executable );
+
+        //release by
+        descriptor.setReleaseBy( releaseProperties.getProperty( "release-by" ) );
+
+>>>>>>> refs/remotes/apache/trunk
         return descriptor;
     }
 
@@ -313,16 +469,17 @@ public class DefaultContinuumReleaseManager
         return descriptor;
     }
 
-    public Map getListeners()
+    public Map<String, ContinuumReleaseManagerListener> getListeners()
     {
         if ( listeners == null )
         {
-            listeners = new Hashtable();
+            listeners = new Hashtable<String, ContinuumReleaseManagerListener>();
         }
 
         return listeners;
     }
 
+<<<<<<< HEAD
     private String getJavaHomeValue( Profile profile )
     {
         Installation jdk = profile.getJdk();
@@ -331,5 +488,93 @@ public class DefaultContinuumReleaseManager
             return null;
         }
         return jdk.getVarValue();
+=======
+    public String sanitizeTagName( String scmUrl, String tagName )
+        throws Exception
+    {
+        ScmRepository scmRepo = scmManager.makeScmRepository( scmUrl );
+        ScmProvider scmProvider = scmManager.getProviderByRepository( scmRepo );
+        return scmProvider.sanitizeTagName( tagName );
+    }
+
+    public ReleaseListenerSummary getListener( String releaseId )
+    {
+        ContinuumReleaseManagerListener listener = (ContinuumReleaseManagerListener) getListeners().get( releaseId );
+
+        if ( listener != null )
+        {
+            ReleaseListenerSummary listenerSummary = new ReleaseListenerSummary();
+            listenerSummary.setGoalName( listener.getGoalName() );
+            listenerSummary.setError( listener.getError() );
+            listenerSummary.setInProgress( listener.getInProgress() );
+            listenerSummary.setState( listener.getState() );
+            listenerSummary.setPhases( listener.getPhases() );
+            listenerSummary.setCompletedPhases( listener.getCompletedPhases() );
+            listenerSummary.setUsername( listener.getUsername() );
+
+            return listenerSummary;
+        }
+
+        return null;
+    }
+
+    public boolean isExecutingRelease()
+        throws Exception
+    {
+        return prepareReleaseQueue.getQueueSnapshot().size() > 0 ||
+            performReleaseQueue.getQueueSnapshot().size() > 0 ||
+            rollbackReleaseQueue.getQueueSnapshot().size() > 0 ||
+            getPerformReleaseTaskQueueExecutor().getCurrentTask() != null ||
+            getPrepareReleaseTaskQueueExecutor().getCurrentTask() != null ||
+            getRollbackReleaseTaskQueueExecutor().getCurrentTask() != null;
+    }
+
+    public TaskQueueExecutor getPerformReleaseTaskQueueExecutor()
+        throws TaskQueueManagerException
+    {
+        try
+        {
+            return (TaskQueueExecutor) container.lookup( TaskQueueExecutor.class,
+                                                         PLEXUS_KEY_PERFORM_RELEASE_TASKQUEUE_EXECUTOR );
+        }
+        catch ( ComponentLookupException e )
+        {
+            throw new TaskQueueManagerException( e.getMessage(), e );
+        }
+    }
+
+    public TaskQueueExecutor getPrepareReleaseTaskQueueExecutor()
+        throws TaskQueueManagerException
+    {
+        try
+        {
+            return (TaskQueueExecutor) container.lookup( TaskQueueExecutor.class,
+                                                         PLEXUS_KEY_PREPARE_RELEASE_TASKQUEUE_EXECUTOR );
+        }
+        catch ( ComponentLookupException e )
+        {
+            throw new TaskQueueManagerException( e.getMessage(), e );
+        }
+    }
+
+    public TaskQueueExecutor getRollbackReleaseTaskQueueExecutor()
+        throws TaskQueueManagerException
+    {
+        try
+        {
+            return (TaskQueueExecutor) container.lookup( TaskQueueExecutor.class,
+                                                         PLEXUS_KEY_ROLLBACK_RELEASE_TASKQUEUE_EXECUTOR );
+        }
+        catch ( ComponentLookupException e )
+        {
+            throw new TaskQueueManagerException( e.getMessage(), e );
+        }
+    }
+
+    public void contextualize( Context context )
+        throws ContextException
+    {
+        container = (PlexusContainer) context.get( PlexusConstants.PLEXUS_KEY );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

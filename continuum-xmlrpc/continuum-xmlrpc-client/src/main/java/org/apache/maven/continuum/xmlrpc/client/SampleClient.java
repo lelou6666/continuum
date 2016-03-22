@@ -22,10 +22,15 @@ package org.apache.maven.continuum.xmlrpc.client;
 import org.apache.continuum.xmlrpc.repository.DirectoryPurgeConfiguration;
 import org.apache.continuum.xmlrpc.repository.LocalRepository;
 import org.apache.continuum.xmlrpc.repository.RepositoryPurgeConfiguration;
+<<<<<<< HEAD
+=======
+import org.apache.continuum.xmlrpc.utils.BuildTrigger;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.xmlrpc.project.AddingResult;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinition;
 import org.apache.maven.continuum.xmlrpc.project.BuildResult;
 import org.apache.maven.continuum.xmlrpc.project.BuildResultSummary;
+import org.apache.maven.continuum.xmlrpc.project.ContinuumProjectState;
 import org.apache.maven.continuum.xmlrpc.project.ProjectDependency;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroupSummary;
 import org.apache.maven.continuum.xmlrpc.project.ProjectSummary;
@@ -33,12 +38,12 @@ import org.apache.maven.continuum.xmlrpc.scm.ChangeSet;
 import org.apache.maven.continuum.xmlrpc.scm.ScmResult;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class SampleClient
 {
@@ -49,8 +54,45 @@ public class SampleClient
     {
         client = new ContinuumXmlRpcClient( new URL( args[0] ), args[1], args[2] );
 
+        // Test for [CONTINUUM-2641]: (test with distributed builds with multiple build agents or parallel builds with > 1 build queue)
+        // make sure to set the projectIds to the actual projectIds of your projects added in Continuum
+        int projectIds[] = new int[] { 2, 3, 4, 5, 6 };
+
+        List<Thread> threads = new ArrayList<Thread>();
+
+        for ( int i = 0; i < projectIds.length; i++ )
+        {
+            final int order = i;
+            final int projectId = projectIds[i];
+            Runnable task = new Runnable()
+            {
+                public void run()
+                {
+                    BuildTrigger buildTrigger = new BuildTrigger();
+                    buildTrigger.setTrigger( ContinuumProjectState.TRIGGER_FORCED );
+                    buildTrigger.setTriggeredBy( "admin" );
+                    System.out.println( "Building project #" + order + " '" + projectId + "'.." );
+                    try
+                    {
+                        client.buildProject( projectId, buildTrigger );
+                    }
+                    catch ( Exception e )
+                    {
+                        throw new RuntimeException( e );
+                    }
+                }
+            };
+            threads.add( new Thread( task ) );
+        }
+
+        for ( Thread thread : threads )
+        {
+            thread.start();
+        }
+
         System.out.println( "Adding project..." );
-        AddingResult result = client.addMavenTwoProject( "http://svn.apache.org/repos/asf/continuum/sandbox/simple-example/pom.xml" );
+        AddingResult result = client.addMavenTwoProject(
+            "http://svn.apache.org/repos/asf/continuum/sandbox/simple-example/pom.xml" );
         if ( result.hasErrors() )
         {
             System.out.println( result.getErrorsAsString() );
@@ -86,14 +128,23 @@ public class SampleClient
         {
             ps = client.refreshProjectSummary( ps );
             System.out.println( "State of " + ps.getName() + "(" + ps.getId() + "): " +
-                client.getProjectStatusAsString( ps.getState() ) );
+                                    client.getProjectStatusAsString( ps.getState() ) );
             Thread.sleep( 1000 );
         }
 
         System.out.println();
 
+        BuildDefinition buildDef = new BuildDefinition();
+        buildDef.setArguments( "A-Za-z0-9_./=,\": \\-" );
+        buildDef.setSchedule( client.getSchedule( 1 ) );
+        client.addBuildDefinitionToProjectGroup( 1, buildDef );
+
+        ps = client.getProjectSummary( 1 );
         System.out.println( "Add the project to the build queue." );
-        client.buildProject( ps.getId() );
+        BuildTrigger trigger = new BuildTrigger();
+        trigger.setTrigger( 1 );
+        trigger.setTriggeredBy( "<script>alert('hahaha' )</script>" );
+        client.buildProject( ps.getId(), trigger );
         while ( !"Building".equals( client.getProjectStatusAsString( ps.getState() ) ) )
         {
             ps = client.refreshProjectSummary( ps );
@@ -102,8 +153,8 @@ public class SampleClient
 
         System.out.println( "Building..." );
         String state = "unknown";
-        while ( "Updating".equals( client.getProjectStatusAsString( ps.getState() ) ) ||
-                "Building".equals( client.getProjectStatusAsString( ps.getState() ) ) )
+        while ( "Updating".equals( client.getProjectStatusAsString( ps.getState() ) ) || "Building".equals(
+            client.getProjectStatusAsString( ps.getState() ) ) )
         {
             ps = client.refreshProjectSummary( ps );
             state = client.getProjectStatusAsString( ps.getState() );
@@ -126,16 +177,21 @@ public class SampleClient
 
         System.out.println( "Removing build results." );
         System.out.println( "============================" );
-        BuildResultSummary brs;
-        List results = client.getBuildResultsForProject( ps.getId() );
-        for ( Iterator i = results.iterator(); i.hasNext(); )
+
+        int batchSize = 100;
+        List<BuildResultSummary> results;
+        do
         {
-            brs = (BuildResultSummary) i.next();
-            System.out.print( "Removing build result (" + brs.getId() + ") - " );
-            BuildResult br = client.getBuildResult( ps.getId(), brs.getId() );
-            System.out.println( (client.removeBuildResult( br ) == 0 ? "OK" : "Error" ) );
+            results = client.getBuildResultsForProject( ps.getId(), 0, batchSize );
+            for ( BuildResultSummary brs : results )
+            {
+                System.out.print( "Removing build result (" + brs.getId() + ") - " );
+                BuildResult br = client.getBuildResult( ps.getId(), brs.getId() );
+                System.out.println( ( client.removeBuildResult( br ) == 0 ? "OK" : "Error" ) );
+            }
         }
-        System.out.println( "Done.");
+        while ( results != null && results.size() > 0 );
+        System.out.println( "Done." );
 
         System.out.println();
 
@@ -194,7 +250,11 @@ public class SampleClient
         System.out.println( "Adding Directory Purge Configuration..." );
         dirPurgeConfig = client.addDirectoryPurgeConfiguration( dirPurgeConfig );
         System.out.println();
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         RepositoryPurgeConfiguration purgeConfig = new RepositoryPurgeConfiguration();
         purgeConfig.setDeleteAll( true );
         purgeConfig.setRepository( repository );
@@ -214,8 +274,13 @@ public class SampleClient
 
         System.out.println( "Remove local repository" );
         System.out.println( "=====================" );
+<<<<<<< HEAD
         System.out.println( "Removing Local Repository '" + repository.getName() + "' (" + 
                             repository.getId() + ")..." );
+=======
+        System.out.println( "Removing Local Repository '" + repository.getName() + "' (" +
+                                repository.getId() + ")..." );
+>>>>>>> refs/remotes/apache/trunk
         client.removeLocalRepository( repository.getId() );
         System.out.println( "Done." );
     }
@@ -328,7 +393,11 @@ public class SampleClient
 
     public static void printLocalRepository( LocalRepository repo )
     {
+<<<<<<< HEAD
         System.out.println( "Id: " +repo.getId() );
+=======
+        System.out.println( "Id: " + repo.getId() );
+>>>>>>> refs/remotes/apache/trunk
         System.out.println( "Layout: " + repo.getLayout() );
         System.out.println( "Location: " + repo.getLocation() );
         System.out.println( "Name: " + repo.getName() );

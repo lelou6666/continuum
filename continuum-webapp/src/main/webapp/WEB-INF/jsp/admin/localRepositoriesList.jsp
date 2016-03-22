@@ -17,27 +17,30 @@
   ~ under the License.
   --%>
   
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="repositories.page.title"/></title>
+        <title><s:text name="repositories.page.title"/></title>
     </head>
     <body>
       <div id="h3">
-        <h3><ww:text name="repositories.section.title"/></h3>
-        <c:if test="${!empty actionErrors}">
+        <h3><s:text name="repositories.section.title"/></h3>
+        <s:if test="hasActionErrors()">
           <div class="errormessage">
-            <c:forEach items="${actionErrors}" var="actionError">
-              <p><ww:text name="${actionError}"/></p>
-            </c:forEach>
+            <s:actionerror/>
           </div>
-        </c:if>
-        <ww:set name="repositories" value="repositories" scope="request"/>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+        <s:set name="repositories" value="repositories" scope="request"/>
         <ec:table items="repositories"
                   var="repository"
+                  autoIncludeParameters="false"
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -48,53 +51,51 @@
             <ec:column property="location" title="repositories.table.location"/>
             <ec:column property="layout" title="repositories.table.layout"/>
             <ec:column property="editActions" title="&nbsp;" width="1%">
-                <ww:url id="editRepositoryUrl" action="editRepository">
-                  <ww:param name="repository.id" value="${pageScope.repository.id}"/>
-                </ww:url>
-                <c:choose>
-                  <c:when test="${repository.name == 'DEFAULT'}">
-                    <img src="<ww:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<ww:text name='edit'/>" title="<ww:text name='edit'/>" border="0" />
-                  </c:when>
-                  <c:otherwise>
-                    <ww:a href="%{editRepositoryUrl}"><img src="<ww:url value='/images/edit.gif' includeParams="none"/>" alt="<ww:text name='edit'/>" title="<ww:text name='edit'/>" border="0" /></ww:a>
-                  </c:otherwise>
-                </c:choose>
+                <s:url id="editRepositoryUrl" action="editRepository">
+                  <s:param name="repository.id" value="#attr['repository'].id"/>
+                </s:url>
+                <s:if test="#attr['repository'].name == 'DEFAULT'">
+                    <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" />
+                </s:if>
+                <s:else>
+                    <s:a href="%{editRepositoryUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" /></s:a>
+                </s:else>
             </ec:column>
             <ec:column property="purgeActions" title="&nbsp;" width="1%">
-              <c:set var="repositoryName" value="${pageScope.repository.name}" scope="request"/>
-              <c:choose>
-                <c:when test="${defaultPurgeMap[repositoryName]}">
-                  <ww:url id="purgeRepositoryUrl" action="purgeRepository">
-                    <ww:param name="repository.id" value="${pageScope.repository.id}"/>
-                  </ww:url>
-                  <ww:a href="%{purgeRepositoryUrl}"><img src="<ww:url value='/images/purgenow.gif' includeParams="none"/>" alt="<ww:text name='purge'/>" title="<ww:text name='purge'/>" border="0" /></ww:a>
-                </c:when>
-                <c:otherwise>
-                  <ww:a href="%{purgeRepositoryUrl}"><img src="<ww:url value='/images/disabled_purgenow.gif' includeParams="none"/>" alt="<ww:text name='purge'/>" title="<ww:text name='purge'/>" border="0" /></ww:a>
-                </c:otherwise>
-              </c:choose>
+              <s:set var="repositoryName" value="#attr['repository'].name" scope="request"/>
+              <s:if test="defaultPurgeMap[#attr['repositoryName']]">
+                  <s:url id="purgeRepositoryUrl" action="purgeRepository">
+                    <s:param name="repository.id" value="#attr['repository'].id"/>
+                  </s:url>
+                  <s:a href="%{purgeRepositoryUrl}"><img src="<s:url value='/images/purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+              </s:if>
+              <s:else>
+                  <s:a href="%{purgeRepositoryUrl}"><img src="<s:url value='/images/disabled_purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+              </s:else>
             </ec:column>
             <ec:column property="deleteActions" title="&nbsp;" width="1%">
-                <ww:url id="removeRepositoryUrl" action="removeRepository">
-                  <ww:param name="repository.id" value="${pageScope.repository.id}"/>                 
-                </ww:url>
-                <c:choose>
-                  <c:when test="${repository.name == 'DEFAULT'}">
-                    <img src="<ww:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0">
-                  </c:when>
-                  <c:otherwise>
-                    <ww:a href="%{removeRepositoryUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
-                  </c:otherwise>
-                </c:choose>
+                <s:set var="tname" value="'remRepoToken' + #attr['repository'].id" scope="page"/>
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removeRepositoryUrl" action="removeRepository">
+                  <s:param name="repository.id" value="#attr['repository'].id"/>
+                  <s:param name="struts.token.name" value="#attr['tname']"/>
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+                </s:url>
+                <s:if test="#attr['repository'].name == 'DEFAULT'">
+                    <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0">
+                </s:if>
+                <s:else>
+                    <s:a href="%{removeRepositoryUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+                </s:else>
             </ec:column>
           </ec:row>
         </ec:table>
       </div>
       <div class="functnbar3">
-        <ww:form action="editRepository" method="post">
-          <ww:submit value="%{getText('add')}"/>
-        </ww:form>
+        <s:form action="editRepository" method="post">
+          <s:submit value="%{getText('add')}"/>
+        </s:form>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

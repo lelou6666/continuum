@@ -17,14 +17,15 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="releaseProject.page.title"/></title>
-        <meta http-equiv="refresh" content="10;url=<ww:url includeParams="all" />"/>
+        <title><s:text name="releaseProject.page.title"/></title>
+        <meta http-equiv="refresh" content="10;url=<s:url includeParams="all" />"/>
     </head>
     <body>
+<<<<<<< HEAD
       <h2><ww:text name="releaseInProgress.section.title"/></h2>
       <h3><ww:property value="name"/></h3>
       <p>
@@ -39,6 +40,18 @@
         <ww:hidden name="releaseGoal"/>
         <ww:submit value="Refresh"/>
       </ww:form>
+=======
+      <h2><s:text name="releaseInProgress.section.title"/></h2>
+      <h3><s:property value="name"/></h3>
+      <p><s:text name="releaseInProgress.currently.initializing"/></p>
+      <p><s:text name="releaseInProgress.please.wait"/></p>
+      <s:form action="releaseInProgress" method="get">
+        <s:hidden name="projectId"/>
+        <s:hidden name="releaseId"/>
+        <s:hidden name="releaseGoal"/>
+        <s:submit value="%{getText('refresh')}"/>
+      </s:form>
+>>>>>>> refs/remotes/apache/trunk
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

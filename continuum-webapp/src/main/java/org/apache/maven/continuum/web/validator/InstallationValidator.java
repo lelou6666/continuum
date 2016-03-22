@@ -19,39 +19,35 @@ package org.apache.maven.continuum.web.validator;
  * under the License.
  */
 
-import com.opensymphony.xwork.validator.ValidationException;
-import com.opensymphony.xwork.validator.validators.ValidatorSupport;
+import com.opensymphony.xwork2.validator.ValidationException;
+import com.opensymphony.xwork2.validator.validators.ValidatorSupport;
 import org.apache.maven.continuum.execution.ExecutorConfigurator;
 import org.apache.maven.continuum.installation.InstallationException;
 import org.apache.maven.continuum.installation.InstallationService;
-import org.codehaus.plexus.logging.LogEnabled;
-import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
-
-import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.validator.Validator" role-hint="org.apache.maven.continuum.web.validator.InstallationValidator"
  * @since 19 juin 07
  */
+@Component( role = com.opensymphony.xwork2.validator.Validator.class,
+    hint = "org.apache.maven.continuum.web.validator.InstallationValidator", instantiationStrategy = "per-lookup" )
 public class InstallationValidator
     extends ValidatorSupport
-    implements LogEnabled
 {
     private String fieldName;
 
-    private Logger logger;
+    private static final Logger logger = LoggerFactory.getLogger( InstallationValidator.class );
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private InstallationService installationService;
 
     /**
-     * @see com.opensymphony.xwork.validator.Validator#validate(java.lang.Object)
+     * @see com.opensymphony.xwork2.validator.Validator#validate(java.lang.Object)
      */
     public void validate( Object object )
         throws ValidationException
@@ -63,7 +59,7 @@ public class InstallationValidator
         }
 
         String varValue = (String) this.getFieldValue( "installation.varValue", object );
-        if (StringUtils.isEmpty( varValue ))
+        if ( StringUtils.isEmpty( varValue ) )
         {
             return;
         }
@@ -79,8 +75,7 @@ public class InstallationValidator
                 if ( executorConfigurator.getVersionArgument() != null )
                 {
                     // just try to get version infos to validate path is valid
-                    List<String> versionInfos = installationService
-                        .getExecutorConfiguratorVersion( varValue, executorConfigurator, null );
+                    installationService.getExecutorVersionInfo( varValue, executorConfigurator, null );
                 }
             }
         }
@@ -92,7 +87,6 @@ public class InstallationValidator
         }
     }
 
-
     public String getFieldName()
     {
         return fieldName;
@@ -101,13 +95,5 @@ public class InstallationValidator
     public void setFieldName( String fieldName )
     {
         this.fieldName = fieldName;
-    }
-
-    /**
-     * @see org.codehaus.plexus.logging.LogEnabled#enableLogging(org.codehaus.plexus.logging.Logger)
-     */
-    public void enableLogging( Logger logger )
-    {
-        this.logger = logger;
     }
 }

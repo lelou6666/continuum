@@ -44,7 +44,7 @@
           <field-name>rollbackReleaseQueue</field-name>
         </requirement>
         <requirement>
-          <role>org.apache.maven.continuum.utils.WorkingDirectoryService</role>
+          <role>org.apache.maven.scm.manager.ScmManager</role>
         </requirement>
         <requirement>
           <role>org.apache.maven.continuum.installation.InstallationService</role>
@@ -94,7 +94,7 @@
     <component>
       <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
       <role-hint>prepare-release</role-hint>
-      <implementation>org.codehaus.plexus.taskqueue.execution.ThreadedTaskQueueExecutor</implementation>
+      <implementation>org.apache.continuum.taskqueue.ThreadedTaskQueueExecutor</implementation>
       <requirements>
         <requirement>
           <role>org.codehaus.plexus.taskqueue.execution.TaskExecutor</role>
@@ -155,7 +155,7 @@
     <component>
       <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
       <role-hint>perform-release</role-hint>
-      <implementation>org.codehaus.plexus.taskqueue.execution.ThreadedTaskQueueExecutor</implementation>
+      <implementation>org.apache.continuum.taskqueue.ThreadedTaskQueueExecutor</implementation>
       <requirements>
         <requirement>
           <role>org.codehaus.plexus.taskqueue.execution.TaskExecutor</role>
@@ -213,7 +213,7 @@
     <component>
       <role>org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor</role>
       <role-hint>rollback-release</role-hint>
-      <implementation>org.codehaus.plexus.taskqueue.execution.ThreadedTaskQueueExecutor</implementation>
+      <implementation>org.apache.continuum.taskqueue.ThreadedTaskQueueExecutor</implementation>
       <requirements>
         <requirement>
           <role>org.codehaus.plexus.taskqueue.execution.TaskExecutor</role>
@@ -282,6 +282,21 @@
           <phase>scm-commit-rollback</phase>
           <phase>remove-scm-tag</phase>
         </rollbackPhases>
+        <!-- Set <branchPhases> even though it is not used in Continuum. Having this empty causes an NPE when cleaning up the release
+             in maven-release 2.0! -->
+        <branchPhases>
+          <phase>create-backup-poms</phase>
+          <phase>check-poms</phase>
+          <phase>scm-check-modifications</phase>
+          <phase>map-branch-versions</phase>
+          <phase>map-development-versions</phase>
+          <phase>rewrite-poms-for-branch</phase>
+          <phase>scm-commit-branch</phase>
+          <phase>scm-branch</phase>
+          <phase>rewrite-poms-for-development</phase>
+          <phase>scm-commit-release</phase>
+          <phase>end-release</phase>
+        </branchPhases>
       </configuration>
     </component>
     <component>
@@ -327,7 +342,11 @@
         </requirement>
       </requirements>
     </component>
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     <!-- This needs to be removed once we can upgrade maven-project to 2.1-SNAPSHOT or later. -->
     <component>
       <role>org.apache.maven.artifact.metadata.ArtifactMetadataSource</role>

@@ -17,25 +17,24 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-      <title><ww:text name="buildDefinition.templates.page.title"/></title>
+      <title><s:text name="buildDefinition.templates.page.title"/></title>
     </head>
     
     <body>
     <div>
       
       <h3>
-        <ww:text name="buildDefinition.templates.section.title"/>
+        <s:text name="buildDefinition.templates.section.title"/>
       </h3>
       <ec:table items="templates"
                 var="template"
+                autoIncludeParameters="false"
                 showExports="false"
                 showPagination="false"
                 showStatusBar="false"
@@ -44,35 +43,41 @@
         <ec:row>
           <ec:column property="name" title="buildDefinition.template.name"/>
           <ec:column property="editAction" title="&nbsp;" width="1%">
-            <ww:url id="editUrl" action="editBuildDefinitionTemplate" method="edit" namespace="/">
-              <ww:param name="buildDefinitionTemplate.id">${pageScope.template.id}</ww:param>
-            </ww:url>
-            <ww:a href="%{editUrl}"><img src="<ww:url value='/images/edit.gif' includeParams="none"/>" alt="<ww:text name='edit'/>" title="<ww:text name='edit'/>" border="0"></ww:a>          
+            <s:url id="editUrl" action="editBuildDefinitionTemplate" namespace="/">
+              <s:param name="buildDefinitionTemplate.id" value="#attr['template'].id"/>
+            </s:url>
+            <s:a href="%{editUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0"></s:a>
           </ec:column>  
           <!-- TODO list attached buildDefs -->
           <ec:column property="deleteAction" title="&nbsp;" width="1%">
-            <ww:if test="${template.continuumDefault == true}">
-              <img src="<ww:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<ww:text name='disabled'/>" title="<ww:text name='disabled'/>" border="0" />
-            </ww:if>
-            <ww:else>
-              <ww:url id="deleteUrl" action="deleteDefinitionTemplate" method="delete" namespace="/">
-                <ww:param name="buildDefinitionTemplate.id">${pageScope.template.id}</ww:param>
-              </ww:url>
-              <ww:a href="%{deleteUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
-            </ww:else>          
+            <s:if test="#attr['template'].continuumDefault">
+              <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name='disabled'/>" title="<s:text name='disabled'/>" border="0" />
+            </s:if>
+            <s:else>
+              <s:set var="tname" value="'delTemplateToken' + #attr['template'].id" scope="page"/>
+              <s:token name="%{#attr['tname']}"/>
+              <s:url id="deleteUrl" action="deleteDefinitionTemplate" namespace="/">
+                <s:param name="buildDefinitionTemplate.id" value="#attr['template'].id"/>
+                <s:param name="buildDefinitionTemplate.name" value="#attr['template'].name"/>
+                <s:param name="struts.token.name" value="#attr['tname']" />
+                <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+              </s:url>
+              <s:a href="%{deleteUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+            </s:else>
           </ec:column>                     
         </ec:row>  
       </ec:table> 
       <div class="functnbar3">
-        <ww:form action="buildDefinitionTemplate!input.action" method="post">
-          <ww:submit value="%{getText('add')}"/>
-        </ww:form>
+        <s:form action="buildDefinitionTemplate" method="post">
+          <s:submit value="%{getText('add')}" theme="simple"/>
+        </s:form>
       </div>      
       <h3>
-        <ww:text name="buildDefinition.templates.buildDefinitions.section.title"/>
+        <s:text name="buildDefinition.templates.buildDefinitions.section.title"/>
       </h3>
       <ec:table items="buildDefinitionSummaries"
                 var="buildDefinitionSummary"
+                autoIncludeParameters="false"
                 showExports="false"
                 showPagination="false"
                 showStatusBar="false"
@@ -90,32 +95,37 @@
           <ec:column property="description" title="buildDefinition.template.buildDefinition.description"/>
           <ec:column property="type" title="buildDefinition.template.buildDefinition.type"/>
           <ec:column property="editAction" title="&nbsp;" width="1%">
-            <ww:url id="editUrl" action="editBuildDefinitionAsTemplate" method="editBuildDefinition" namespace="/">
-              <ww:param name="buildDefinition.id">${pageScope.buildDefinitionSummary.id}</ww:param>
-            </ww:url>
-            <ww:a href="%{editUrl}"><img src="<ww:url value='/images/edit.gif' includeParams="none"/>" alt="<ww:text name='edit'/>" title="<ww:text name='edit'/>" border="0"></ww:a>          
+            <s:url id="editUrl" action="editBuildDefinitionAsTemplate" namespace="/">
+              <s:param name="buildDefinition.id" value="#attr['buildDefinitionSummary'].id"/>
+            </s:url>
+            <s:a href="%{editUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0"></s:a>
           </ec:column>          
           <ec:column property="deleteAction" title="&nbsp;" width="1%">
-            <ww:if test="${buildDefinitionSummary.isDefault == true}">
-              <img src="<ww:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<ww:text name='disabled'/>" title="<ww:text name='disabled'/>" border="0" />
-            </ww:if>
-            <ww:else>
-              <ww:url id="deleteUrl" action="deleteBuildDefinitionAsTemplate" method="deleteBuildDefinition" namespace="/">
-                <ww:param name="buildDefinition.id">${pageScope.buildDefinitionSummary.id}</ww:param>
-              </ww:url>
-              <ww:a href="%{deleteUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
-            </ww:else>          
+            <s:if test="#attr['buildDefinitionSummary'].isDefault">
+              <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name='disabled'/>" title="<s:text name='disabled'/>" border="0" />
+            </s:if>
+            <s:else>
+              <s:set var="tname" value="'delBuildDefToken' + #attr['buildDefinitionSummary'].id" scope="page"/>
+              <s:token name="%{#attr['tname']}" />
+              <s:url id="deleteUrl" action="deleteBuildDefinitionAsTemplate" namespace="/">
+                <s:param name="buildDefinition.id" value="#attr['buildDefinitionSummary'].id"/>
+                <s:param name="buildDefinition.description" value="#attr['buildDefinitionSummary'].description"/>
+                <s:param name="struts.token.name" value="#attr['tname']" />
+                <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+              </s:url>
+              <s:a href="%{deleteUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+            </s:else>
           </ec:column>
         </ec:row>  
       </ec:table>      
       
       <div class="functnbar3">
-        <ww:form action="buildDefinitionAsTemplate!inputBuildDefinition.action" method="post">
-          <ww:submit value="%{getText('add')}"/>
-        </ww:form>
+        <s:form action="buildDefinitionAsTemplate_input" method="post">
+          <s:submit value="%{getText('add')}" theme="simple"/>
+        </s:form>
       </div>           
       
     </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html> 

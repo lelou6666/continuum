@@ -23,9 +23,8 @@ import org.apache.maven.continuum.notification.Notifier;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface NotifierManager
 {
-    Notifier getNotifier(String notifierId);
+    Notifier getNotifier( String notifierId );
 }

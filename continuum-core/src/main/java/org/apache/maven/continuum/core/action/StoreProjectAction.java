@@ -24,21 +24,21 @@ import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="store-project"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "store-project" )
 public class StoreProjectAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    private static final String KEY_SCM_USE_CREDENTIALS_CACHE = "useCredentialsCache";
+
+    @Requirement
     private ProjectGroupDao projectGroupDao;
 
     public void execute( Map context )
@@ -52,20 +52,20 @@ public class StoreProjectAction
         //
         // ----------------------------------------------------------------------
 
-        boolean useCredentialsCache = getBoolean( context, KEY_SCM_USE_CREDENTIALS_CACHE, false );
+        boolean useCredentialsCache = isUseScmCredentialsCache( context, false );
         // CONTINUUM-1605 don't store username/password
-        if ( !useCredentialsCache )
+        if ( useCredentialsCache )
         {
             project.setScmUsername( null );
             project.setScmPassword( null );
-            project.setScmUseCache( false );
+            project.setScmUseCache( true );
         }
 
         projectGroup.addProject( project );
 
         projectGroupDao.updateProjectGroup( projectGroup );
 
-        context.put( KEY_PROJECT_ID, new Integer( project.getId() ) );
+        setProjectId( context, project.getId() );
 
         // ----------------------------------------------------------------------
         // Set the working directory
@@ -84,6 +84,16 @@ public class StoreProjectAction
 
         project.setWorkingDirectory( projectWorkingDirectory.getAbsolutePath() );
 */
-//        store.updateProject( project );
+        //        store.updateProject( project );
+    }
+
+    public static boolean isUseScmCredentialsCache( Map<String, Object> context, boolean defaultValue )
+    {
+        return getBoolean( context, KEY_SCM_USE_CREDENTIALS_CACHE, defaultValue );
+    }
+
+    public static void setUseScmCredentialsCache( Map<String, Object> context, boolean useScmCredentialsCache )
+    {
+        context.put( KEY_SCM_USE_CREDENTIALS_CACHE, useScmCredentialsCache );
     }
 }

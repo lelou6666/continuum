@@ -19,13 +19,22 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.Collection;
 import java.util.List;
+=======
+import org.apache.continuum.model.release.ContinuumReleaseResult;
+import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+>>>>>>> refs/remotes/apache/trunk
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
+<<<<<<< HEAD
 
 import org.apache.continuum.model.release.ContinuumReleaseResult;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
@@ -35,6 +44,16 @@ import org.apache.maven.continuum.store.ContinuumStoreException;
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
  * @plexus.component role="org.apache.continuum.dao.ContinuumReleaseResultDao"
  */
+=======
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
+ */
+@Repository( "continuumReleaseResultDao" )
+@Component( role = org.apache.continuum.dao.ContinuumReleaseResultDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class ContinuumReleaseResultDaoImpl
     extends AbstractDao
     implements ContinuumReleaseResultDao
@@ -42,7 +61,11 @@ public class ContinuumReleaseResultDaoImpl
     public ContinuumReleaseResult addContinuumReleaseResult( ContinuumReleaseResult releaseResult )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (ContinuumReleaseResult) addObject( releaseResult );
+=======
+        return addObject( releaseResult );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public List<ContinuumReleaseResult> getAllContinuumReleaseResults()
@@ -53,10 +76,18 @@ public class ContinuumReleaseResultDaoImpl
     public ContinuumReleaseResult getContinuumReleaseResult( int releaseResultId )
         throws ContinuumObjectNotFoundException, ContinuumStoreException
     {
+<<<<<<< HEAD
         return (ContinuumReleaseResult) getObjectById( ContinuumReleaseResult.class, releaseResultId );
     }
 
     public ContinuumReleaseResult getContinuumReleaseResult( int projectId, String releaseGoal, long startTime, long endTime )
+=======
+        return getObjectById( ContinuumReleaseResult.class, releaseResultId );
+    }
+
+    public ContinuumReleaseResult getContinuumReleaseResult( int projectId, String releaseGoal, long startTime,
+                                                             long endTime )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumStoreException
     {
         PersistenceManager pm = getPersistenceManager();
@@ -66,17 +97,30 @@ public class ContinuumReleaseResultDaoImpl
         try
         {
             tx.begin();
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> refs/remotes/apache/trunk
             Extent extent = pm.getExtent( ContinuumReleaseResult.class, true );
 
             Query query = pm.newQuery( extent );
 
             query.declareImports( "import java.lang.String" );
+<<<<<<< HEAD
             
             query.declareParameters( "int projectId, String releaseGoal, long startTime, long endTime" );
             
             query.setFilter( "this.project.id == projectId && this.releaseGoal == releaseGoal && this.startTime == startTime && this.endTime == endTime" );
             
+=======
+
+            query.declareParameters( "int projectId, String releaseGoal, long startTime, long endTime" );
+
+            query.setFilter(
+                "this.project.id == projectId && this.releaseGoal == releaseGoal && this.startTime == startTime && this.endTime == endTime" );
+
+>>>>>>> refs/remotes/apache/trunk
             Object[] params = new Object[4];
             params[0] = projectId;
             params[1] = releaseGoal;
@@ -95,7 +139,11 @@ public class ContinuumReleaseResultDaoImpl
             Object object = pm.detachCopy( result.iterator().next() );
 
             tx.commit();
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> refs/remotes/apache/trunk
             return (ContinuumReleaseResult) object;
         }
         finally
@@ -104,7 +152,11 @@ public class ContinuumReleaseResultDaoImpl
         }
 
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public List<ContinuumReleaseResult> getContinuumReleaseResultsByProjectGroup( int projectGroupId )
     {
         PersistenceManager pm = getPersistenceManager();

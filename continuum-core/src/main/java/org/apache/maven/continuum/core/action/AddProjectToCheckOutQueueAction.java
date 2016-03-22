@@ -19,28 +19,35 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.buildmanager.BuildsManager;
 import org.apache.continuum.dao.ProjectDao;
+<<<<<<< HEAD
 import org.apache.continuum.taskqueue.manager.TaskQueueManager;
+=======
+import org.apache.maven.continuum.model.project.BuildDefinition;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.scm.queue.CheckOutTask;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="add-project-to-checkout-queue"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-project-to-checkout-queue" )
 public class AddProjectToCheckOutQueueAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
@@ -52,19 +59,47 @@ public class AddProjectToCheckOutQueueAction
     private TaskQueueManager taskQueueManager;
     
     @SuppressWarnings("unchecked")
+=======
+    @Requirement
+    private ProjectDao projectDao;
+
+    @Requirement( hint = "parallel" )
+    private BuildsManager parallelBuildsManager;
+
+    @SuppressWarnings( "unchecked" )
+>>>>>>> refs/remotes/apache/trunk
     public void execute( Map context )
         throws Exception
     {
-
-        Project project = (Project) getObject( context, KEY_PROJECT, null );
+        Project project = getProject( context, null );
         if ( project == null )
         {
             project = projectDao.getProject( getProjectId( context ) );
         }
 
-        CheckOutTask checkOutTask = new CheckOutTask( project.getId(), workingDirectoryService
-            .getWorkingDirectory( project ), project.getName(), project.getScmUsername(), project.getScmPassword() );
+        String scmUsername = project.getScmUsername();
+        String scmPassword = project.getScmPassword();
 
+        if ( scmUsername == null || StringUtils.isEmpty( scmUsername ) )
+        {
+            scmUsername = CheckoutProjectContinuumAction.getScmUsername( context, null );
+        }
+
+        if ( scmPassword == null || StringUtils.isEmpty( scmPassword ) )
+        {
+            scmPassword = CheckoutProjectContinuumAction.getScmPassword( context, null );
+        }
+
+        String scmRootUrl = getProjectScmRootUrl( context, null );
+
+<<<<<<< HEAD
         taskQueueManager.getCheckoutQueue().put( checkOutTask );
+=======
+        BuildDefinition defaultBuildDefinition = getBuildDefinition( context );
+        parallelBuildsManager.checkoutProject( project.getId(), project.getName(),
+                                               workingDirectoryService.getWorkingDirectory( project ), scmRootUrl,
+                                               scmUsername, scmPassword, defaultBuildDefinition,
+                                               getListOfProjectsInGroupWithCommonScmRoot( context ) );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

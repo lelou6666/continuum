@@ -472,6 +472,12 @@
             <type>BuildDefinition</type>
           </association>
         </field>
+        <field jpox.null-value="default">
+          <name>buildUrl</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+          <defaultValue></defaultValue>
+        </field>
       </fields>
     </class>
 
@@ -527,8 +533,8 @@
       </fields>
       <codeSegments>
         <codeSegment>
-           <version>1.1.0+</version>
-           <code><![CDATA[
+          <version>1.1.0+</version>
+          <code><![CDATA[
             private java.util.List errors = new java.util.ArrayList();
 
             /**
@@ -820,8 +826,8 @@
           <name>type</name>
           <version>1.1.0+</version>
           <type>String</type>
-          <description>type of the buid defintion</description>          
-        </field>                
+          <description>type of the buid defintion</description>
+        </field>
         <field>
           <name>schedule</name>
           <version>1.1.0+</version>
@@ -853,7 +859,7 @@
           <description>
             true if this buildDefinition is a template
           </description>
-        </field>         
+        </field>
       </fields>
     </class>
     <class>
@@ -886,8 +892,8 @@
           <name>type</name>
           <version>1.1.0+</version>
           <type>String</type>
-          <description>type of the buid BuildDefinitionTemplate use for default</description>          
-        </field>                                
+          <description>type of the buid BuildDefinitionTemplate use for default</description>
+        </field>
         <field xml.reference="true" stash.part="true">
           <name>buildDefinitions</name>
           <version>1.1.0+</version>
@@ -1010,7 +1016,12 @@
             <type>Installation</type>
             <multiplicity>*</multiplicity>
           </association>
-        </field>          
+        </field>
+        <field>
+          <name>buildAgentGroup</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
       </fields>
     </class>
 
@@ -1033,7 +1044,7 @@
           <name>varName</name>
           <version>1.1.0+</version>
           <type>String</type>
-        </field>          
+        </field>
         <field>
           <name>name</name>
           <version>1.1.0+</version>
@@ -1115,8 +1126,8 @@
       </fields>
       <codeSegments>
         <codeSegment>
-           <version>1.1.0+</version>
-           <code><![CDATA[
+          <version>1.1.0+</version>
+          <code><![CDATA[
     public final static int NEW = 1;
     public final static int OK = 2;
     public final static int FAILED = 3;
@@ -1207,7 +1218,11 @@
           <type>String</type>
         </field>
       </fields>
+<<<<<<< HEAD
     </class>    
+=======
+    </class>
+>>>>>>> refs/remotes/apache/trunk
 
     <class>
       <name>LocalRepository</name>
@@ -1232,7 +1247,11 @@
           <type>String</type>
           <required>true</required>
           <description>
+<<<<<<< HEAD
           The file system location for this repository
+=======
+            The file system location for this repository
+>>>>>>> refs/remotes/apache/trunk
           </description>
         </field>
         <field>
@@ -1241,12 +1260,20 @@
           <type>String</type>
           <defaultValue>default</defaultValue>
           <description>
+<<<<<<< HEAD
           The layout of the repository. Valid values are "default" and "legacy"
+=======
+            The layout of the repository. Valid values are "default" and "legacy"
+>>>>>>> refs/remotes/apache/trunk
           </description>
         </field>
       </fields>
     </class>
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     <class>
       <name>AbstractPurgeConfiguration</name>
       <version>1.1.1+</version>
@@ -1276,7 +1303,11 @@
           <type>int</type>
           <defaultValue>2</defaultValue>
           <description>
+<<<<<<< HEAD
           The total count of the artifact for each snapshot or the release/build output folder to be retained.
+=======
+            The total count of the artifact for each snapshot or the release/build output folder to be retained.
+>>>>>>> refs/remotes/apache/trunk
           </description>
         </field>
         <field>
@@ -1285,7 +1316,11 @@
           <type>int</type>
           <defaultValue>100</defaultValue>
           <description>
+<<<<<<< HEAD
           The number of days old which will be the basis for removing a snapshot or a folder.
+=======
+            The number of days old which will be the basis for removing a snapshot or a folder.
+>>>>>>> refs/remotes/apache/trunk
           </description>
         </field>
         <field>
@@ -1359,7 +1394,11 @@
         </field>
       </fields>
     </class>
+<<<<<<< HEAD
        
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     <class>
       <name>ContinuumReleaseResult</name>
       <version>1.1.1+</version>
@@ -1388,16 +1427,28 @@
         </field>
         <field>
           <name>projectGroup</name>
+<<<<<<< HEAD
           <version>1.1.1+</version>
           <association xml.reference="true" stash.part="true" jpox.dependent="false">
             <type>ProjectGroup</type>
+=======
+          <version>1.4.1+</version>
+          <association xml.reference="true">
+            <type>ProjectGroupSummary</type>
+>>>>>>> refs/remotes/apache/trunk
           </association>
         </field>
         <field>
           <name>project</name>
+<<<<<<< HEAD
           <version>1.1.1+</version>
           <association xml.reference="true" stash.part="true" jpox.dependent="false">
             <type>Project</type>
+=======
+          <version>1.4.1+</version>
+          <association xml.reference="true">
+            <type>ProjectSummary</type>
+>>>>>>> refs/remotes/apache/trunk
           </association>
         </field>
         <field>
@@ -1405,7 +1456,165 @@
           <version>1.1.1+</version>
           <type>String</type>
         </field>
+<<<<<<< HEAD
       </fields>
     </class> 
+=======
+        <field>
+          <name>username</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+      </fields>
+    </class>
+    <class>
+      <name>BuildTrigger</name>
+      <version>1.4.1+</version>
+      <packageName>org.apache.continuum.xmlrpc.utils</packageName>
+      <fields>
+        <field>
+          <name>trigger</name>
+          <version>1.4.1+</version>
+          <type>int</type>
+        </field>
+        <field>
+          <name>triggeredBy</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+      </fields>
+    </class>
+    <class>
+      <name>ReleaseListenerSummary</name>
+      <version>1.4.1+</version>
+      <fields>
+        <field>
+          <name>phases</name>
+          <version>1.4.1+</version>
+          <association>
+            <type>String</type>
+            <multiplicity>*</multiplicity>
+          </association>
+        </field>
+        <field>
+          <name>completedPhases</name>
+          <version>1.4.1+</version>
+          <association>
+            <type>String</type>
+            <multiplicity>*</multiplicity>
+          </association>
+        </field>
+        <field>
+          <name>inProgress</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>state</name>
+          <version>1.4.1+</version>
+          <type>int</type>
+        </field>
+        <field>
+          <name>error</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>username</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+      </fields>
+    </class>
+    <class>
+      <name>BuildAgentConfiguration</name>
+      <version>1.4.1+</version>
+      <packageName>org.apache.maven.continuum.xmlrpc.project</packageName>
+      <fields>
+        <field>
+          <name>url</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>description</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>enabled</name>
+          <version>1.4.1+</version>
+          <type>boolean</type>
+        </field>
+        <field>
+          <name>platform</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>installations</name>
+          <version>1.4.1+</version>
+          <association>
+            <type>Installation</type>
+            <multiplicity>*</multiplicity>
+          </association>
+        </field>
+      </fields>
+    </class>
+    <class>
+      <name>BuildAgentGroupConfiguration</name>
+      <version>1.4.1+</version>
+      <packageName>org.apache.maven.continuum.xmlrpc.project</packageName>
+      <fields>
+        <field>
+          <name>name</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+        <field>
+          <name>buildAgents</name>
+          <version>1.4.1+</version>
+          <association>
+            <type>BuildAgentConfiguration</type>
+            <multiplicity>*</multiplicity>
+          </association>
+        </field>
+      </fields>
+    </class>
+    <class>
+      <name>ProjectScmRoot</name>
+      <version>1.4.1+</version>
+      <packageName>org.apache.maven.continuum.xmlrpc.project</packageName>
+      <fields>
+        <field>
+          <name>id</name>
+          <version>1.4.1+</version>
+          <identifier>true</identifier>
+          <type>int</type>
+        </field>
+        <field>
+          <name>scmRootAddress</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+          <required>true</required>
+        </field>
+        <field>
+          <name>oldState</name>
+          <version>1.4.1+</version>
+          <type>int</type>
+        </field>
+        <field jpox.column="scmRootState">
+          <name>state</name>
+          <version>1.4.1+</version>
+          <type>int</type>
+        </field>
+        <field stash.maxSize="8192">
+          <name>error</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
+      </fields>
+    </class>
+>>>>>>> refs/remotes/apache/trunk
   </classes>
 </model>

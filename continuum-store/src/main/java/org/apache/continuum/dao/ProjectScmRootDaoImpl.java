@@ -1,13 +1,44 @@
 package org.apache.continuum.dao;
 
+<<<<<<< HEAD
 import java.util.Collection;
 import java.util.List;
 
+=======
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
+>>>>>>> refs/remotes/apache/trunk
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
+<<<<<<< HEAD
 import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
@@ -16,22 +47,40 @@ import org.apache.maven.continuum.store.ContinuumStoreException;
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
  * @plexus.component role="org.apache.continuum.dao.ProjectScmRootDao"
  */
+=======
+/**
+ * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
+ */
+@Repository( "projectScmRootDao" )
+@Component( role = org.apache.continuum.dao.ProjectScmRootDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class ProjectScmRootDaoImpl
     extends AbstractDao
     implements ProjectScmRootDao
 {
+<<<<<<< HEAD
 
     public ProjectScmRoot addProjectScmRoot( ProjectScmRoot projectScmRoot )
         throws ContinuumStoreException
     {
         return (ProjectScmRoot) addObject( projectScmRoot );
+=======
+    public ProjectScmRoot addProjectScmRoot( ProjectScmRoot projectScmRoot )
+        throws ContinuumStoreException
+    {
+        return addObject( projectScmRoot );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public List<ProjectScmRoot> getAllProjectScmRoots()
     {
         return getAllObjectsDetached( ProjectScmRoot.class );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public List<ProjectScmRoot> getProjectScmRootByProjectGroup( int projectGroupId )
     {
         PersistenceManager pm = getPersistenceManager();
@@ -96,7 +145,11 @@ public class ProjectScmRootDaoImpl
             Object[] params = new Object[2];
             params[0] = projectGroupId;
             params[1] = scmRootAddress;
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> refs/remotes/apache/trunk
             Collection result = (Collection) query.executeWithArray( params );
 
             if ( result.size() == 0 )
@@ -117,10 +170,18 @@ public class ProjectScmRootDaoImpl
             rollback( tx );
         }
     }
+<<<<<<< HEAD
     
     public ProjectScmRoot getProjectScmRoot( int projectScmRootId )
         throws ContinuumObjectNotFoundException, ContinuumStoreException
     {
         return (ProjectScmRoot) getObjectById( ProjectScmRoot.class, projectScmRootId );
+=======
+
+    public ProjectScmRoot getProjectScmRoot( int projectScmRootId )
+        throws ContinuumObjectNotFoundException, ContinuumStoreException
+    {
+        return getObjectById( ProjectScmRoot.class, projectScmRootId );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

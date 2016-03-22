@@ -21,7 +21,6 @@ package org.apache.continuum.purge.executor;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public class ContinuumPurgeExecutorException
@@ -31,12 +30,12 @@ public class ContinuumPurgeExecutorException
     {
         super( message );
     }
-    
+
     public ContinuumPurgeExecutorException( Throwable cause )
     {
         super( cause );
     }
-    
+
     public ContinuumPurgeExecutorException( String message, Throwable cause )
     {
         super( message, cause );

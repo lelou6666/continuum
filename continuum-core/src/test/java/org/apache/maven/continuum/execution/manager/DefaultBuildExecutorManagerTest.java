@@ -25,29 +25,32 @@ import org.apache.maven.continuum.execution.ant.AntBuildExecutor;
 import org.apache.maven.continuum.execution.maven.m1.MavenOneBuildExecutor;
 import org.apache.maven.continuum.execution.maven.m2.MavenTwoBuildExecutor;
 import org.apache.maven.continuum.execution.shell.ShellBuildExecutor;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class DefaultBuildExecutorManagerTest
     extends AbstractContinuumTest
 {
     private BuildExecutorManager builderManager;
 
-    @Override
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-        builderManager = (BuildExecutorManager) lookup( BuildExecutorManager.ROLE );
+        builderManager = lookup( BuildExecutorManager.class );
     }
 
+    @Test
     public void testMavenTwoBuildExecutorDependencyInjection()
         throws Exception
     {
-        MavenTwoBuildExecutor executor =
-            (MavenTwoBuildExecutor) builderManager.getBuildExecutor( MavenTwoBuildExecutor.ID );
+        MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) builderManager.getBuildExecutor(
+            MavenTwoBuildExecutor.ID );
 
         assertCommonFields( executor );
         assertNotNull( executor.getBuilderHelper() );
@@ -55,16 +58,18 @@ public class DefaultBuildExecutorManagerTest
         assertNotNull( executor.getConfigurationService() );
     }
 
+    @Test
     public void testMavenOneBuildExecutorDependencyInjection()
         throws Exception
     {
-        MavenOneBuildExecutor executor =
-            (MavenOneBuildExecutor) builderManager.getBuildExecutor( MavenOneBuildExecutor.ID );
+        MavenOneBuildExecutor executor = (MavenOneBuildExecutor) builderManager.getBuildExecutor(
+            MavenOneBuildExecutor.ID );
 
         assertCommonFields( executor );
         assertNotNull( executor.getMetadataHelper() );
     }
 
+    @Test
     public void testAntBuildExecutorDependencyInjection()
         throws Exception
     {
@@ -73,6 +78,7 @@ public class DefaultBuildExecutorManagerTest
         assertCommonFields( executor );
     }
 
+    @Test
     public void testShellBuildExecutorDependencyInjection()
         throws Exception
     {

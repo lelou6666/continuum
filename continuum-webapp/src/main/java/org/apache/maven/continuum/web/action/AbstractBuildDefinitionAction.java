@@ -27,11 +27,14 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 16 sept. 07
  */
 public abstract class AbstractBuildDefinitionAction
-    extends ContinuumActionSupport
+    extends ContinuumConfirmAction
 {
 
     protected BuildDefinitionSummary generateBuildDefinitionSummary( BuildDefinition buildDefinition )

@@ -3,53 +3,69 @@
  ------
  Emmanuel Venisse
  ------
- Oct 3 2007
+ 2010-02-18
+ ------
 
-Documentation
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
 
-* Installation/Upgrade Guides
+Welcome to Apache Continuum
 
-** {{{installation/index.html}Installation}}
+  Apache Continuum is an enterprise-ready continuous integration server with features such as automated builds,
+  release management, role-based security and integration with popular build tools and source control management
+  systems. Whether you have a centralized build team or want to put control of releases in the hands of developers,
+  Continuum can help you improve quality and maintain a consistent build environment.
 
-*** Standalone version
+* Documentation
 
-    {{{installation/standalone.html}Standard (Linux, Mac OSX, Solaris, Windows, others) as a service or not}}
+  * {{{./release-notes.html} Release Notes}}
 
-*** Webapp
+  * {{{./getting-started.html} Getting Started}}
 
-    {{{installation/tomcat.html}Tomcat}},
-    {{{installation/jetty.html}Jetty}},
-    {{{installation/jboss.html}JBoss}},
-    {{{installation/geronimo.html}Geronimo}},
-    {{{installation/glassfish.html}GlassFish}},
-    ...
+  * {{{./installation/index.html}Installation and Upgrade Guide}}
 
-** Release Notes
+      * {{{./installation/standalone.html}Installing as a standalone service (Linux, Mac OSX, Solaris, Windows, others)}}
 
-    {{{release-notes.html} Release Notes}}
+      * {{{./installation/tomcat.html}Installing the Web Application under a Tomcat server}}
 
-** Upgrade
+      * {{{./installation/upgrade.html} How to upgrade from a previous version}}
 
-    {{{installation/upgrade.html} How to upgrade from a previous versions?}}
+      []
 
-* User's Guide
+  * {{{./user_guides/index.html} User's Guide}}
 
-    {{{user_guides/index.html} User's Guide}}
+  * {{{./administrator_guides/index.html} Administrator's Guide}}
 
-* Administrator's Guide
+  * {{{./developer_guides/building.html} Developer's Guide to building Continuum}}
 
-    {{{administrator_guides/index.html} Administrator's Guide}}
-
-* Developer's Guide
-
-    {{{developer_guides/building.html}Guide to build Continuum}}
+   This documentation is also available in {{{./apache-continuum.pdf}PDF}} format.
 
 * Knowledge Base
 
-    {{{http://continuum.apache.org/faqs.html}Frequently Asked Questions}}
+  * {{{http://continuum.apache.org/faqs.html}Frequently Asked Questions}}
 
+  * {{{http://cwiki.apache.org/confluence/display/CONTINUUM}Wiki}}
+
+
+<<<<<<< HEAD
     {{{http://docs.codehaus.org/display/CONTINUUMUSER/Home}Wiki}}
     
     {{{http://cwiki.apache.org/confluence/display/CONTINUUM}New Wiki}}
     
     {{{http://apache-continuum.blogspot.com/}Blog}}
+=======
+>>>>>>> refs/remotes/apache/trunk

@@ -29,71 +29,61 @@ import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.notification.MessageContext;
 import org.apache.maven.continuum.notification.NotificationException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Configuration;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.jabber.JabberClient;
 import org.codehaus.plexus.jabber.JabberClientException;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
+@Service( "notifier#jabber" )
 public class JabberContinuumNotifier
     extends AbstractContinuumNotifier
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( JabberContinuumNotifier.class );
 
     // ----------------------------------------------------------------------
     // Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private JabberClient jabberClient;
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private ConfigurationService configurationService;
 
     // ----------------------------------------------------------------------
     // Configuration
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromAddress;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromPassword;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String host;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private int port;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String imDomainName;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private boolean sslConnection;
 
     // ----------------------------------------------------------------------
@@ -115,14 +105,23 @@ public class JabberContinuumNotifier
         BuildResult build = context.getBuildResult();
         ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
 
+<<<<<<< HEAD
         boolean isPrepareBuildComplete = 
             messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+=======
+        boolean isPrepareBuildComplete = messageId.equals(
+            ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+>>>>>>> refs/remotes/apache/trunk
 
         if ( projectScmRoot == null && isPrepareBuildComplete )
         {
             return;
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         // ----------------------------------------------------------------------
         // If there wasn't any building done, don't notify
         // ----------------------------------------------------------------------
@@ -193,7 +192,11 @@ public class JabberContinuumNotifier
 
         sendMessage( notifier.getConfiguration(), generateMessage( project, build, configurationService ) );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     private void prepareBuildComplete( ProjectScmRoot projectScmRoot, ProjectNotifier notifier )
         throws NotificationException
     {
@@ -210,6 +213,7 @@ public class JabberContinuumNotifier
     {
         jabberClient.setHost( getHost( configuration ) );
 
+<<<<<<< HEAD
         jabberClient.setPort( getPort( configuration ) );
 
         jabberClient.setUser( getUsername( configuration ) );
@@ -218,6 +222,24 @@ public class JabberContinuumNotifier
 
         jabberClient.setImDomainName( getImDomainName( configuration ) );
 
+=======
+        sendMessage( notifier.getConfiguration(), generateMessage( projectScmRoot, configurationService ) );
+    }
+
+    private void sendMessage( Map<String, String> configuration, String message )
+        throws NotificationException
+    {
+        jabberClient.setHost( getHost( configuration ) );
+
+        jabberClient.setPort( getPort( configuration ) );
+
+        jabberClient.setUser( getUsername( configuration ) );
+
+        jabberClient.setPassword( getPassword( configuration ) );
+
+        jabberClient.setImDomainName( getImDomainName( configuration ) );
+
+>>>>>>> refs/remotes/apache/trunk
         jabberClient.setSslConnection( isSslConnection( configuration ) );
 
         try
@@ -226,9 +248,15 @@ public class JabberContinuumNotifier
 
             jabberClient.logon();
 
+<<<<<<< HEAD
             if ( configuration != null && StringUtils.isNotEmpty( (String) configuration.get( ADDRESS_FIELD ) ) )
             {
                 String address = (String) configuration.get( ADDRESS_FIELD );
+=======
+            if ( configuration != null && StringUtils.isNotEmpty( configuration.get( ADDRESS_FIELD ) ) )
+            {
+                String address = configuration.get( ADDRESS_FIELD );
+>>>>>>> refs/remotes/apache/trunk
                 String[] recipients = StringUtils.split( address, "," );
                 for ( String recipient : recipients )
                 {
@@ -260,17 +288,17 @@ public class JabberContinuumNotifier
         }
     }
 
-    private String getHost( Map configuration )
+    private String getHost( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "host" ) )
         {
-            return (String) configuration.get( "host" );
+            return configuration.get( "host" );
         }
         else
         {
             if ( configuration.containsKey( "address" ) )
             {
-                String username = (String) configuration.get( "address" );
+                String username = configuration.get( "address" );
 
                 if ( username.indexOf( "@" ) > 0 )
                 {
@@ -282,13 +310,13 @@ public class JabberContinuumNotifier
         return host;
     }
 
-    private int getPort( Map configuration )
+    private int getPort( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "port" ) )
         {
             try
             {
-                return Integer.parseInt( (String) configuration.get( "port" ) );
+                return Integer.parseInt( configuration.get( "port" ) );
             }
             catch ( NumberFormatException e )
             {
@@ -310,11 +338,11 @@ public class JabberContinuumNotifier
         }
     }
 
-    private String getUsername( Map configuration )
+    private String getUsername( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "login" ) )
         {
-            String username = (String) configuration.get( "login" );
+            String username = configuration.get( "login" );
 
             if ( username.indexOf( "@" ) > 0 )
             {
@@ -327,39 +355,39 @@ public class JabberContinuumNotifier
         return fromAddress;
     }
 
-    private String getPassword( Map configuration )
+    private String getPassword( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "password" ) )
         {
-            return (String) configuration.get( "password" );
+            return configuration.get( "password" );
         }
 
         return fromPassword;
     }
 
-    private boolean isSslConnection( Map configuration )
+    private boolean isSslConnection( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "sslConnection" ) )
         {
-            return convertBoolean( (String) configuration.get( "sslConnection" ) );
+            return convertBoolean( configuration.get( "sslConnection" ) );
         }
 
         return sslConnection;
     }
 
-    private String getImDomainName( Map configuration )
+    private String getImDomainName( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "domainName" ) )
         {
-            return (String) configuration.get( "domainName" );
+            return configuration.get( "domainName" );
         }
 
         return imDomainName;
     }
 
-    private boolean isGroup( Map configuration )
+    private boolean isGroup( Map<String, String> configuration )
     {
-        return configuration.containsKey( "isGroup" ) && convertBoolean( (String) configuration.get( "isGroup" ) );
+        return configuration.containsKey( "isGroup" ) && convertBoolean( configuration.get( "isGroup" ) );
     }
 
     private boolean convertBoolean( String value )

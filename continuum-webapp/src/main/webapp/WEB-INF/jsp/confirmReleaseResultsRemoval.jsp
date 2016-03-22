@@ -17,6 +17,7 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri="/webwork" prefix="ww" %>
 <%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -28,18 +29,37 @@
     <body>
       <div id="axial" class="h3">
         <h3><ww:text name="deleteReleseResults.section.title"/></h3>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<html>
+  <s:i18n name="localization.Continuum">
+    <head>
+        <title><s:text name="deleteReleaseResults.page.title"/></title>
+    </head>
+    <body>
+      <div id="axial" class="h3">
+        <h3><s:text name="deleteReleseResults.section.title"/></h3>
+>>>>>>> refs/remotes/apache/trunk
 
         <div class="warningmessage">
           <p>
             <strong>
+<<<<<<< HEAD
                 <ww:text name="deleteReleaseResults.confirmation.message">
                     <ww:param><ww:property value="%{selectedReleaseResults.size}"/></ww:param>
                 </ww:text>
+=======
+                <s:text name="deleteReleaseResults.confirmation.message">
+                    <s:param><s:property value="%{selectedReleaseResults.size}"/></s:param>
+                </s:text>
+>>>>>>> refs/remotes/apache/trunk
             </strong>
           </p>
         </div>
         
         <div class="functnbar3">
+<<<<<<< HEAD
           <ww:form action="removeReleaseResults" method="post">
             <ww:iterator value="selectedReleaseResults">
               <input type="hidden" value="<ww:property/>" name="selectedReleaseResults"/>
@@ -52,4 +72,20 @@
       </div>
     </body>
   </ww:i18n>
+=======
+          <s:form action="removeReleaseResults" method="post">
+            <s:token/>
+            <s:iterator value="selectedReleaseResults">
+              <input type="hidden" value="<s:property/>" name="selectedReleaseResults"/>
+            </s:iterator>
+            <input type="hidden" name="projectGroupId" value="${projectGroupId}" />
+            <s:hidden name="confirmed" value="true"/>
+            <s:submit value="%{getText('delete')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+          </s:form>
+        </div>
+      </div>
+    </body>
+  </s:i18n>
+>>>>>>> refs/remotes/apache/trunk
 </html>

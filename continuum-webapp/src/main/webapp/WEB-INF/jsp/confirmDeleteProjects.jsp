@@ -17,37 +17,37 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="deleteProjects.page.title"/></title>
+        <title><s:text name="deleteProjects.page.title"/></title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <h3><ww:text name="deleteProjects.section.title"/></h3>
+        <h3><s:text name="deleteProjects.section.title"/></h3>
 
         <div class="warningmessage">
           <p>
             <strong>
-                <ww:text name="deleteProjects.confirmation.message">
-                    <ww:param><ww:property value="selectedProjectsNames"/></ww:param>
-                </ww:text>
+                <s:text name="deleteProjects.confirmation.message">
+                    <s:param value="selectedProjectsNames"/>
+                </s:text>
             </strong>
           </p>
         </div>
         <div class="functnbar3">
-          <ww:form action="ProjectsList.action" method="post">
-            <ww:iterator value="selectedProjects">
-              <input type="hidden" value="<ww:property/>" name="selectedProjects"/>
-            </ww:iterator>
-            <input type="hidden" name="projectGroupId" value="${projectGroupId}" />
-            <input type="hidden" name="methodToCall" value="remove" />
-            <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
-          </ww:form>
+          <s:form action="projectsList" theme="simple">
+            <s:iterator value="selectedProjects" var="selectedProject">
+              <s:hidden name="selectedProjects" value="%{top}"/>
+            </s:iterator>
+            <s:hidden name="projectGroupId" value="%{projectGroupId}" />
+            <s:hidden name="methodToCall" value="remove"/>
+            <s:submit value="%{getText('delete')}"/>
+            <s:submit type="button" name="Cancel" value="%{getText('cancel')}" onclick="history.back();"/>
+          </s:form>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

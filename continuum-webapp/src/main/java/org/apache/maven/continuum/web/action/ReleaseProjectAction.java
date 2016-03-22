@@ -19,21 +19,22 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
-import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author Edwin Punzalan
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="releaseProject"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releaseProject", instantiationStrategy = "per-lookup" )
 public class ReleaseProjectAction
     extends ContinuumActionSupport
 {
@@ -41,7 +42,7 @@ public class ReleaseProjectAction
 
     private String projectName;
 
-    private String preparedReleaseName;
+    private Map<String, String> preparedReleases;
 
     private String preparedReleaseId;
 
@@ -74,21 +75,36 @@ public class ReleaseProjectAction
         {
             return REQUIRES_CONFIGURATION;
         }
+<<<<<<< HEAD
         
         project = getContinuum().getProjectWithAllDetails( projectId );
+=======
+>>>>>>> refs/remotes/apache/trunk
 
-        String releaseId = ArtifactUtils.versionlessKey( project.getGroupId(), project.getArtifactId() );
+        project = getContinuum().getProjectWithAllDetails( projectId );
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
-
-        Map preparedReleases = releaseManager.getPreparedReleases();
-        if ( preparedReleases.containsKey( releaseId ) )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            ReleaseDescriptor descriptor = (ReleaseDescriptor) preparedReleases.get( releaseId );
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
 
-            preparedReleaseName = descriptor.getReleaseVersions().get( releaseId ).toString();
+            preparedReleases = releaseManager.getPreparedReleases( project.getGroupId(), project.getArtifactId() );
+        }
+        else
+        {
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
 
-            preparedReleaseId = releaseId;
+            this.preparedReleases = releaseManager.getPreparedReleasesForProject( project.getGroupId(),
+                                                                                  project.getArtifactId() );
+        }
+
+        if ( !preparedReleases.isEmpty() )
+        {
+            // use last release as default choice
+            preparedReleaseId = new ArrayList<String>( preparedReleases.keySet() ).get( preparedReleases.size() - 1 );
+        }
+        else
+        {
+            preparedReleaseId = null;
         }
 
         projectName = project.getName();
@@ -137,16 +153,6 @@ public class ReleaseProjectAction
     public void setProjectId( int projectId )
     {
         this.projectId = projectId;
-    }
-
-    public String getPreparedReleaseName()
-    {
-        return preparedReleaseName;
-    }
-
-    public void setPreparedReleaseName( String preparedReleaseName )
-    {
-        this.preparedReleaseName = preparedReleaseName;
     }
 
     public String getGoal()
@@ -218,5 +224,15 @@ public class ReleaseProjectAction
         }
 
         return projectGroupName;
+    }
+
+    public Map<String, String> getPreparedReleases()
+    {
+        return preparedReleases;
+    }
+
+    public void setPreparedReleases( Map<String, String> preparedReleases )
+    {
+        this.preparedReleases = preparedReleases;
     }
 }

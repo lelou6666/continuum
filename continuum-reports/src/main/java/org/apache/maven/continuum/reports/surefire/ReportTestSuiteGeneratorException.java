@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.reports.surefire;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,19 +18,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.reports.surefire;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 12 nov. 07
- * @version $Id$
  */
 public class ReportTestSuiteGeneratorException
     extends Exception
 {
 
     /**
-     * 
+     *
      */
     public ReportTestSuiteGeneratorException()
     {

@@ -19,42 +19,41 @@ package org.apache.continuum.scm.manager;
  * under the License.
  */
 
-import java.util.Properties;
-
-import junit.framework.TestCase;
-
 import org.apache.maven.scm.manager.NoSuchScmProviderException;
 import org.apache.maven.scm.provider.ScmProvider;
 import org.apache.maven.scm.provider.cvslib.cvsexe.CvsExeScmProvider;
 import org.apache.maven.scm.provider.cvslib.cvsjava.CvsJavaScmProvider;
 import org.codehaus.plexus.spring.PlexusClassPathXmlApplicationContext;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 /**
  * @todo replace with a spring integration test
- * 
- * @version $Id$
  */
 public class ScmManagerTest
-    extends TestCase
 {
-    private ApplicationContext context;
+    private static final Logger log = LoggerFactory.getLogger( ScmManagerTest.class );
 
     private ScmManager manager;
-    
-    private Logger log = LoggerFactory.getLogger( getClass() );
 
+    @Before
     public void setUp()
     {
-        context =
-            new PlexusClassPathXmlApplicationContext( new String[] { "classpath*:META-INF/spring-context.xml",
-                "classpath*:META-INF/plexus/components.xml",
+        ApplicationContext context = new PlexusClassPathXmlApplicationContext(
+            new String[] { "classpath*:META-INF/spring-context.xml", "classpath*:META-INF/plexus/components.xml",
                 "classpath*:" + getClass().getName().replace( '.', '/' ) + ".xml" } );
         manager = (ScmManager) context.getBean( "scmManager" );
     }
 
+    @Test
     public void testScmProviders()
         throws NoSuchScmProviderException
     {
@@ -93,6 +92,6 @@ public class ScmManagerTest
             System.setProperties( backupSysProps );
             System.setProperty( "maven.scm.provider.cvs.implementation", "cvs" );
         }
-        
+
     }
 }

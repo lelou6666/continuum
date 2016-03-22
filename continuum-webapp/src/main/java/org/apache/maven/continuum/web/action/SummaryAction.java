@@ -19,21 +19,30 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import org.apache.continuum.taskqueue.manager.TaskQueueManager;
 import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
+=======
+import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.buildmanager.BuildsManager;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.GroupSummary;
 import org.apache.maven.continuum.web.model.ProjectSummary;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,26 +50,34 @@ import java.util.Map;
  * Used to render the list of projects in the project group page.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="summary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "summary", instantiationStrategy = "per-lookup"  )
 public class SummaryAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( SummaryAction.class );
+
     private int projectGroupId;
 
     private String projectGroupName;
 
-    private List summary;
+    private List<ProjectSummary> summary;
 
     private GroupSummary groupSummary = new GroupSummary();
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
     private TaskQueueManager taskQueueManager;
     
     public String execute()
+=======
+    @Requirement( hint = "parallel" )
+    private BuildsManager parallelBuildsManager;
+
+    public String browse()
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException
     {
         try
@@ -73,14 +90,14 @@ public class SummaryAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        Collection projectsInGroup;
+        Collection<Project> projectsInGroup;
 
         //TODO: Create a summary jpox request so code will be more simple and performance will be better
         projectsInGroup = getContinuum().getProjectsInGroup( projectGroupId );
 
-        Map buildResults = getContinuum().getLatestBuildResults( projectGroupId );
+        Map<Integer, BuildResult> buildResults = getContinuum().getLatestBuildResults( projectGroupId );
 
-        Map buildResultsInSuccess = getContinuum().getBuildResultsInSuccess( projectGroupId );
+        Map<Integer, BuildResult> buildResultsInSuccess = getContinuum().getBuildResultsInSuccess( projectGroupId );
 
         summary = new ArrayList<ProjectSummary>();
 
@@ -89,10 +106,8 @@ public class SummaryAction
         groupSummary.setNumSuccesses( 0 );
         groupSummary.setNumProjects( 0 );
 
-        for ( Iterator i = projectsInGroup.iterator(); i.hasNext(); )
+        for ( Project project : projectsInGroup )
         {
-            Project project = (Project) i.next();
-
             groupSummary.setNumProjects( groupSummary.getNumProjects() + 1 );
 
             ProjectSummary model = new ProjectSummary();
@@ -111,11 +126,20 @@ public class SummaryAction
 
             try
             {
+<<<<<<< HEAD
                 if ( taskQueueManager.isInBuildingQueue( project.getId() ) )
                 {
                     model.setInBuildingQueue( true );
                 }
                 else if ( taskQueueManager.isInCheckoutQueue( project.getId() ) )
+=======
+                if ( parallelBuildsManager.isInAnyBuildQueue( project.getId() ) ||
+                    parallelBuildsManager.isInPrepareBuildQueue( project.getId() ) )
+                {
+                    model.setInBuildingQueue( true );
+                }
+                else if ( parallelBuildsManager.isInAnyCheckoutQueue( project.getId() ) )
+>>>>>>> refs/remotes/apache/trunk
                 {
                     model.setInCheckoutQueue( true );
                 }
@@ -125,7 +149,11 @@ public class SummaryAction
                     model.setInCheckoutQueue( false );
                 }
             }
+<<<<<<< HEAD
             catch ( TaskQueueManagerException e )
+=======
+            catch ( BuildManagerException e )
+>>>>>>> refs/remotes/apache/trunk
             {
                 throw new ContinuumException( e.getMessage(), e );
             }
@@ -136,7 +164,7 @@ public class SummaryAction
 
             if ( buildResultsInSuccess != null )
             {
-                BuildResult buildInSuccess = (BuildResult) buildResultsInSuccess.get( new Integer( project.getId() ) );
+                BuildResult buildInSuccess = buildResultsInSuccess.get( project.getId() );
 
                 if ( buildInSuccess != null )
                 {
@@ -146,7 +174,7 @@ public class SummaryAction
 
             if ( buildResults != null )
             {
-                BuildResult latestBuild = (BuildResult) buildResults.get( new Integer( project.getId() ) );
+                BuildResult latestBuild = buildResults.get( project.getId() );
 
                 if ( latestBuild != null )
                 {
@@ -189,13 +217,13 @@ public class SummaryAction
             default:
                 if ( latestBuild.getState() == 5 || latestBuild.getState() > 10 )
                 {
-                    getLogger().warn(
+                    logger.warn(
                         "unknown buildState value " + latestBuild.getState() + " with build " + latestBuild.getId() );
                 }
         }
     }
 
-    public List getProjects()
+    public List<ProjectSummary> getProjects()
     {
         return summary;
     }
@@ -209,7 +237,6 @@ public class SummaryAction
     {
         this.projectGroupId = projectGroupId;
     }
-
 
     public String getProjectGroupName()
     {
@@ -229,5 +256,11 @@ public class SummaryAction
     public void setGroupSummary( GroupSummary groupSummary )
     {
         this.groupSummary = groupSummary;
+    }
+
+    // test
+    public void setParallelBuildsManager( BuildsManager parallelBuildsManager )
+    {
+        this.parallelBuildsManager = parallelBuildsManager;
     }
 }

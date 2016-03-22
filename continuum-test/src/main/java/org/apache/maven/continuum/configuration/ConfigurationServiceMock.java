@@ -19,10 +19,15 @@ package org.apache.maven.continuum.configuration;
  * under the License.
  */
 
+import org.apache.continuum.buildqueue.BuildQueueServiceException;
+import org.apache.continuum.configuration.BuildAgentConfiguration;
+import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
+import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,7 +38,7 @@ import java.util.Map;
 public class ConfigurationServiceMock
     implements ConfigurationService
 {
-    private String basedir;
+    private final String basedir;
 
     public ConfigurationServiceMock()
     {
@@ -173,6 +178,15 @@ public class ConfigurationServiceMock
         return null;
     }
 
+    public String getSharedSecretPassword()
+    {
+        return null;
+    }
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+    }
+
     public boolean isLoaded()
     {
         return false;
@@ -186,6 +200,12 @@ public class ConfigurationServiceMock
     public void store()
         throws ConfigurationStoringException
     {
+    }
+
+    public BuildQueue getDefaultBuildQueue()
+        throws BuildQueueServiceException
+    {
+        return null;
     }
 
     public Schedule getDefaultSchedule()
@@ -227,7 +247,11 @@ public class ConfigurationServiceMock
             throw new ConfigurationException(
                 "Could not make the release output directory: " + "'" + dir.getAbsolutePath() + "'." );
         }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         return new File( dir, releaseName + ".log.txt" );
     }
 
@@ -240,4 +264,88 @@ public class ConfigurationServiceMock
         return null;
     }
 
+<<<<<<< HEAD
+=======
+    public int getNumberOfBuildsInParallel()
+    {
+        return 1;
+    }
+
+    public void setNumberOfBuildsInParallel( int num )
+    {
+
+    }
+
+    public void addBuildAgent( BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+    }
+
+    public List<BuildAgentConfiguration> getBuildAgents()
+    {
+        return null;
+    }
+
+    public boolean isDistributedBuildEnabled()
+    {
+        return false;
+    }
+
+    public void removeBuildAgent( BuildAgentConfiguration buildAgent )
+    {
+    }
+
+    public void setDistributedBuildEnabled( boolean distributedBuildEnabled )
+    {
+    }
+
+    public void updateBuildAgent( BuildAgentConfiguration buildAgent )
+    {
+    }
+
+    public void addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+    }
+
+    public void removeBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+    }
+
+    public void updateBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+    }
+
+    public List<BuildAgentGroupConfiguration> getBuildAgentGroups()
+    {
+        return null;
+    }
+
+    public void addBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+    }
+
+    public void removeBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+    }
+
+    public BuildAgentGroupConfiguration getBuildAgentGroup( String name )
+    {
+        return null;
+    }
+
+    public BuildAgentConfiguration getBuildAgent( String url )
+    {
+        return null;
+    }
+
+    public boolean containsBuildAgentUrl( String buildAgentUrl, BuildAgentGroupConfiguration buildAgentGroup )
+    {
+        return false;
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

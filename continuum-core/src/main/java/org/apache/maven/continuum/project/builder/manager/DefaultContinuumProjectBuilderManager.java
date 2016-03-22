@@ -20,23 +20,20 @@ package org.apache.maven.continuum.project.builder.manager;
  */
 
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.project.builder.manager.ContinuumProjectBuilderManager"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.project.builder.manager.ContinuumProjectBuilderManager.class, hint = "default" )
 public class DefaultContinuumProjectBuilderManager
-    extends AbstractLogEnabled
     implements ContinuumProjectBuilderManager
 {
-    /**
-     * @plexus.requirement role="org.apache.maven.continuum.project.builder.ContinuumProjectBuilder"
-     */
+
+    @Requirement( role = org.apache.maven.continuum.project.builder.ContinuumProjectBuilder.class )
     private Map<String, ContinuumProjectBuilder> projectBuilders;
 
     // ----------------------------------------------------------------------
@@ -46,7 +43,7 @@ public class DefaultContinuumProjectBuilderManager
     public ContinuumProjectBuilder getProjectBuilder( String id )
         throws ContinuumProjectBuilderManagerException
     {
-        ContinuumProjectBuilder projectBuilder = (ContinuumProjectBuilder) projectBuilders.get( id );
+        ContinuumProjectBuilder projectBuilder = projectBuilders.get( id );
 
         if ( projectBuilder == null )
         {

@@ -17,34 +17,35 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="deleteProject.page.title"/></title>
+        <title><s:text name="deleteProject.page.title"/></title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <h3><ww:text name="deleteProject.section.title"/></h3>
+        <h3><s:text name="deleteProject.section.title"/></h3>
 
         <div class="warningmessage">
           <p>
             <strong>
-                <ww:text name="deleteProject.confirmation.message">
-                    <ww:param><ww:property value="projectName"/></ww:param>
-                </ww:text>
+                <s:text name="deleteProject.confirmation.message">
+                    <s:param><s:property value="projectName"/></s:param>
+                </s:text>
             </strong>
           </p>
         </div>
         <div class="functnbar3">
-          <ww:form action="deleteProject.action" method="post">
-            <ww:hidden name="projectId"/>
-            <ww:hidden name="projectGroupId"/>
-            <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
-          </ww:form>
+          <s:form action="deleteProject" method="post">
+            <s:token/>
+            <s:hidden name="projectId"/>
+            <s:hidden name="projectGroupId"/>
+            <s:submit value="%{getText('delete')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+          </s:form>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

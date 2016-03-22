@@ -19,24 +19,38 @@ package org.apache.continuum.notification.mail;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.mail.internet.MimeMessage;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+<<<<<<< HEAD
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 26 sept. 2008
  * @version $Id$
+=======
+import java.util.ArrayList;
+import java.util.List;
+import javax.mail.internet.MimeMessage;
+
+/**
+ * @author <a href="mailto:olamy@apache.org">olamy</a>
+ * @since 26 sept. 2008
+>>>>>>> refs/remotes/apache/trunk
  */
 public class MockJavaMailSender
     extends JavaMailSenderImpl
     implements JavaMailSender
 {
+<<<<<<< HEAD
 
     List<MimeMessage> receivedEmails = new ArrayList<MimeMessage>();
     
@@ -46,6 +60,16 @@ public class MockJavaMailSender
     public MockJavaMailSender()
     {
        
+=======
+    private final List<MimeMessage> receivedEmails = new ArrayList<MimeMessage>();
+
+    /**
+     *
+     */
+    public MockJavaMailSender()
+    {
+
+>>>>>>> refs/remotes/apache/trunk
     }
 
     @Override
@@ -54,7 +78,11 @@ public class MockJavaMailSender
     {
         receivedEmails.add( mimeMessage );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public List<MimeMessage> getReceivedEmails()
     {
         return receivedEmails;

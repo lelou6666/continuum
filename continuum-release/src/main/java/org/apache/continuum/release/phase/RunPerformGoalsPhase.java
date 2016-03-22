@@ -19,20 +19,37 @@ package org.apache.continuum.release.phase;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.settings.Settings;
 import org.apache.maven.shared.release.ReleaseExecutionException;
 import org.apache.maven.shared.release.ReleaseFailureException;
 import org.apache.maven.shared.release.ReleaseResult;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
+<<<<<<< HEAD
 import org.codehaus.plexus.util.StringUtils;
 
 /**
  * Run Release Perform Goals
  * @plexus.component role="org.apache.maven.shared.release.phase.ReleasePhase" role-hint="run-release-perform-goals"
  */
+=======
+import org.apache.maven.shared.release.env.ReleaseEnvironment;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+
+import java.io.File;
+import java.util.List;
+
+/**
+ * Run Release Perform Goals
+ */
+@Component( role = org.apache.maven.shared.release.phase.ReleasePhase.class, hint = "run-release-perform-goals" )
+>>>>>>> refs/remotes/apache/trunk
 public class RunPerformGoalsPhase
     extends AbstractContinuumRunGoalsPhase
 {
@@ -42,9 +59,17 @@ public class RunPerformGoalsPhase
         return releaseDescriptor.getPerformGoals();
     }
 
+<<<<<<< HEAD
     public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, Settings settings, List reactorProjects )
         throws ReleaseExecutionException, ReleaseFailureException
     {
+=======
+    public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                  List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
+
+>>>>>>> refs/remotes/apache/trunk
         String additionalArguments = releaseDescriptor.getAdditionalArguments();
 
         if ( releaseDescriptor.isUseReleaseProfile() )

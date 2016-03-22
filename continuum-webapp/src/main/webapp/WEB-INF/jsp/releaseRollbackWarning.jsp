@@ -17,38 +17,45 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="releaseProject.page.title"/></title>
+        <title><s:text name="releaseProject.page.title"/></title>
     </head>
     <body>
       <h3>
-        <ww:text name="releaseProject.section.title">
-          <ww:param><ww:property value="projectName"/></ww:param>
-        </ww:text>
+        <s:text name="releaseProject.rollbackWarning.section.title"/>
       </h3>
-      <p>This will revert all changes made by the previous release?</p>
+      <p><s:text name="releaseProject.rollbackWarning"/></p>
       <table>
         <tr>
           <td>
-            <ww:form action="releaseRollback" method="post">
-              <ww:hidden name="projectId"/>
-              <ww:hidden name="releaseId"/>
-              <ww:submit value="Rollback Changes"/>
-            </ww:form>
+            <s:form action="releaseRollback" method="post">
+              <s:hidden name="projectId"/>
+              <s:hidden name="releaseId"/>
+              <s:submit value="%{getText('rollback')}" theme="simple"/>
+            </s:form>
           </td>
           <td>
+<<<<<<< HEAD
             <ww:form action="releaseInProgress" method="post">
               <ww:hidden name="projectId"/>
               <ww:hidden name="releaseId"/>
               <ww:hidden name="releaseGoal"/>
               <ww:submit value="Cancel"/>
             </ww:form>
+=======
+            <s:form action="releaseInProgress" method="post">
+              <s:hidden name="projectId"/>
+              <s:hidden name="releaseId"/>
+              <s:hidden name="releaseGoal"/>
+              <s:submit value="%{getText('cancel')}" theme="simple"/>
+            </s:form>
+>>>>>>> refs/remotes/apache/trunk
           </td>
         </tr>
       </table>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

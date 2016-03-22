@@ -1,36 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:util="http://www.springframework.org/schema/util"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
-		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
   <bean name="continuumBuildExecutor#maven2"
-         class="org.apache.maven.continuum.execution.maven.m2.MavenTwoBuildExecutor" autowire="byName">
+        class="org.apache.maven.continuum.execution.maven.m2.MavenTwoBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="mvn"/>
     <property name="builderHelper" ref="mavenBuilderHelper"/>
     <property name="projectHelper" ref="mavenProjectHelper"/>
+    <property name="testReportArchiver">
+        <bean class="org.apache.maven.continuum.execution.shared.JUnitReportArchiver">
+            <property name="fileSystemManager" ref="fileSystemManager"/>
+            <property name="includeFiles" value="**/target/surefire-reports/TEST-*.xml,**/target/surefire-it-reports/TEST-*.xml"/>
+        </bean>
+    </property>
   </bean>
   <bean name="continuumBuildExecutor#maven-1"
-         class="org.apache.maven.continuum.execution.maven.m1.MavenOneBuildExecutor" autowire="byName">
+        class="org.apache.maven.continuum.execution.maven.m1.MavenOneBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="maven"/>
     <property name="metadataHelper" ref="mavenOneMetadataHelper"/>
   </bean>
   <bean name="continuumBuildExecutor#ant"
-         class="org.apache.maven.continuum.execution.ant.AntBuildExecutor" autowire="byName">
+        class="org.apache.maven.continuum.execution.ant.AntBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="ant"/>
+    <property name="testReportArchiver">
+      <bean class="org.apache.maven.continuum.execution.shared.JUnitReportArchiver">
+        <property name="fileSystemManager" ref="fileSystemManager"/>
+        <property name="includeFiles" value="**/TEST-*.xml"/>
+      </bean>
+    </property>
   </bean>
   <bean name="continuumBuildExecutor#shell"
-         class="org.apache.maven.continuum.execution.shell.ShellBuildExecutor" autowire="byName">
+        class="org.apache.maven.continuum.execution.shell.ShellBuildExecutor" autowire="byName">
   </bean>
 
   <bean id="notifierManager"
-    class="org.apache.maven.continuum.notification.manager.DefaultNotifierManager">
+        class="org.apache.maven.continuum.notification.manager.DefaultNotifierManager">
     <property name="notifiers">
       <bean class="org.apache.maven.continuum.notification.manager.spring.NotifierFactoryBean"/>
     </property>
   </bean>
+<<<<<<< HEAD
   
+=======
+
+  <bean name="buildsManager#parallel"
+        class="org.apache.continuum.buildmanager.ParallelBuildsManager" autowire="byName"/>
+
+  <bean name="overallBuildQueue"
+        class="org.apache.continuum.taskqueue.DefaultOverallBuildQueue" scope="prototype" autowire="byName">
+    <property name="buildTaskQueueExecutor" ref="taskQueueExecutor#build-project"/>
+    <property name="checkoutTaskQueueExecutor" ref="taskQueueExecutor#check-out-project"/>
+    <property name="prepareBuildTaskQueueExecutor" ref="taskQueueExecutor#prepare-build-project"/>
+  </bean>
+
+  <bean name="distributedBuildStatusUpdateJob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+    <property name="targetObject" ref="buildStatusUpdater#distributed"/>
+    <property name="targetMethod" value="performScan"/>
+    <property name="concurrent" value="false"/>
+  </bean>
+
+  <bean name="orphanedBuildJob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+    <property name="targetObject" ref="buildStatusUpdater#orphans"/>
+    <property name="targetMethod" value="performScan"/>
+    <property name="concurrent" value="false"/>
+  </bean>
+
+>>>>>>> refs/remotes/apache/trunk
 </beans>

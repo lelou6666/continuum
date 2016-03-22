@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 15 juin 07
  */
 public interface ProfileService
@@ -69,10 +68,10 @@ public interface ProfileService
 
     public void addEnvVarInProfile( Profile profile, Installation envVar )
         throws ProfileException;
-    
+
     public void addInstallationInProfile( Profile profile, Installation installation )
         throws ProfileException;
-    
+
     /**
      * @param profile
      * @param installation
@@ -81,7 +80,10 @@ public interface ProfileService
      */
     public void removeInstallationFromProfile( Profile profile, Installation installation )
         throws ProfileException;
-    
+
     public Profile getProfileWithName( String profileName )
+        throws ProfileException;
+
+    public boolean alreadyExistsProfileName( Profile profile )
         throws ProfileException;
 }

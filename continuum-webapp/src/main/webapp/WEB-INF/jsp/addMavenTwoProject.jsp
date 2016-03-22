@@ -17,83 +17,106 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
-<ww:i18n name="localization.Continuum">
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<s:i18n name="localization.Continuum">
 <html>
     <head>
-        <title><ww:text name="add.m2.project.page.title"/></title>
+        <title><s:text name="add.m2.project.page.title"/></title>
+        <style>
+            table.addProject td:nth-child(1) {
+                width: 162px;
+                text-align: right;
+            }
+        </style>
+        <script>
+            function enablePomMethod(method) {
+                var $urlRow = jQuery('form tr:has(#pomUrlInput)');
+                var $fileRow = jQuery('form tr:has(#pomFileInput)');
+                if (method == 'FILE') {
+                    $urlRow.hide();
+                    $fileRow.show();
+                } else {
+                    $fileRow.hide();
+                    $urlRow.show();
+                }
+            }
+            jQuery(document).ready(function($) {
+                var selectedMethod = $('input[name=pomMethod]:checked').val();
+                enablePomMethod(selectedMethod);
+                $('input[name=pomMethod]').click(function() {
+                    enablePomMethod($(this).val());
+                });
+            });
+        </script>
     </head>
     <body>
         <div class="app">
             <div id="axial" class="h3">
-                <h3><ww:text name="add.m2.project.section.title"/></h3>
+                <h3><s:text name="add.m2.project.section.title"/></h3>
                 <div class="axial">
-                    <ww:form method="post" action="addMavenTwoProject.action" name="addMavenTwoProject" enctype="multipart/form-data">
-                        <c:if test="${!empty actionErrors || !empty errorMessages}">
+                    <s:form method="post" action="addMavenTwoProject" name="addMavenTwoProject" enctype="multipart/form-data">
+                        <s:if test="hasActionErrors() || errorMessages.size() > 0">
                           <div class="errormessage">
-                            <c:forEach items="${actionErrors}" var="actionError">
-                              <p>
-                                <ww:text name="${actionError}">${actionError}</ww:text>
-                              </p>
-                            </c:forEach>
-                            <c:forEach items="${errorMessages}" var="errorMessage">
-                              <p>${errorMessage}</p>
-                            </c:forEach>
+                            <s:iterator value="actionErrors">
+                              <p><s:property/></p>
+                            </s:iterator>
+                            <s:iterator value="errorMessages">
+                              <p><s:property/></p>
+                            </s:iterator>
                           </div>
-                        </c:if>
-                        <table>
+                        </s:if>
+                        <table class="addProject">
                           <tbody>
-                            <ww:textfield label="%{getText('add.m2.project.m2PomUrl.label')}" name="m2PomUrl">
-                                <ww:param name="desc">
-                                <table cellspacing="0" cellpadding="0">
-                                  <tbody>
-                                    <tr>
-                                      <td><ww:text name="add.m2.project.m2PomUrl.username.label"/>: </td>
-                                      <td><input type="text" name="scmUsername" size="20" id="addMavenTwoProject_scmUsername"/><td>
-                                    </tr>  
-                                    <tr>
-                                      <td><ww:text name="add.m2.project.m2PomUrl.password.label"/>: </td>
-                                      <td><input type="password" name="scmPassword" size="20" id="addMavenTwoProject_scmPassword"/><td>
-                                    </tr>  
-                                  </tbody>
-                                    <tr>
-                                      <td></td>
-                                      <td><ww:checkbox label="%{getText('projectEdit.project.scmUseCache.label')}" name="scmUseCache"/><td>
-                                    </tr>
-                                </table>  
-                                  <p><ww:text name="add.m2.project.m2PomUrl.message"/></p>
-                                </ww:param>
-                            </ww:textfield>
-                            <ww:label>
-                              <ww:param name="after"><strong><ww:text name="or"/></strong></ww:param>
-                            </ww:label>
-                            <ww:file label="%{getText('add.m2.project.m2PomFile.label')}" name="m2PomFile">
-                                <ww:param name="desc"><p><ww:text name="add.m2.project.m2PomFile.message"/></p></ww:param>
-                            </ww:file>
-                            <ww:if test="disableGroupSelection == true">
-                              <ww:hidden name="selectedProjectGroup"/>
-                              <ww:hidden name="disableGroupSelection"/>
-                              <ww:textfield label="%{getText('add.m2.project.projectGroup')}" name="projectGroupName" disabled="true"/>
-                            </ww:if>
-                            <ww:else>
-                              <ww:select label="%{getText('add.m2.project.projectGroup')}" name="selectedProjectGroup" 
+                            <s:radio name="pomMethod" list="pomMethodOptions"  label="%{getText('add.maven.project.pomMethod')}" />
+                            <s:textfield id="pomUrlInput" label="%{getText('add.m2.project.m2PomUrl.label')}" requiredLabel="true" name="m2PomUrl" size="100">
+	                            <s:param name="after">
+		                            <table cellspacing="0" cellpadding="0">
+		                              <tbody>
+		                                <tr>
+		                                  <td><s:text name="add.m2.project.m2PomUrl.username.label"/>: </td>
+		                                  <td><s:textfield name="scmUsername" size="20" id="addMavenTwoProject_scmUsername" theme="simple"/></td>
+		                                </tr>  
+		                                <tr>
+		                                  <td><s:text name="add.m2.project.m2PomUrl.password.label"/>: </td>
+		                                  <td><s:password name="scmPassword" size="20" id="addMavenTwoProject_scmPassword" theme="simple"/></td>
+		                                </tr>  
+		                              </tbody>
+		                                <tr>
+		                                  <td></td>
+		                                  <td><s:checkbox label="%{getText('projectEdit.project.scmUseCache.label')}" name="scmUseCache"/></td>
+		                                </tr>
+		                            </table>  
+	                            <p><s:text name="add.m2.project.m2PomUrl.message"/></p>
+	                            </s:param>
+                            </s:textfield>
+                            <s:file id="pomFileInput" label="%{getText('add.m2.project.m2PomFile.label')}" requiredLabel="true" name="m2PomFile" size="100" accept="application/xml,text/xml">
+                                <s:param name="after"><p><s:text name="add.m2.project.m2PomFile.message"/></p></s:param>
+                            </s:file>
+                            <s:if test="disableGroupSelection">
+                              <s:hidden name="selectedProjectGroup"/>
+                              <s:hidden name="disableGroupSelection"/>
+                              <s:textfield label="%{getText('add.m2.project.projectGroup')}" name="projectGroupName" disabled="true" size="100"/>
+                            </s:if>
+                            <s:else>
+                              <s:select label="%{getText('add.m2.project.projectGroup')}" name="selectedProjectGroup"
                                          list="projectGroups" listKey="id" listValue="name"/>
-                            </ww:else>
-                            <ww:checkbox label="%{getText('add.m2.project.nonRecursiveProject')}" name="nonRecursiveProject" />
-                            <ww:select label="%{getText('add.m2.project.buildDefinitionTemplate')}" name="buildDefinitionTemplateId"
+                            </s:else>
+
+                            <s:radio label="%{getText('add.m2.project.importType')}" name="importType" list="importOptions" />
+
+                            <s:select label="%{getText('add.m2.project.buildDefinitionTemplate')}" name="buildDefinitionTemplateId"
                                        list="buildDefinitionTemplates" listKey="id" listValue="name" headerKey="-1" 
                                        headerValue="%{getText('add.m2.project.defaultBuildDefinition')}"/> 
                           </tbody>
                         </table>
                         <div class="functnbar3">
-                          <c1:submitcancel value="%{getText('add')}" cancel="%{getText('cancel')}"/>
+                          <s:submit value="%{getText('add')}" theme="simple"/>
+                          <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
                         </div>
-                    </ww:form>
+                    </s:form>
                 </div>
             </div>
         </div>
     </body>
 </html>
-</ww:i18n>
+</s:i18n>

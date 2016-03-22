@@ -19,6 +19,7 @@ package org.apache.continuum.release.phase;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.Map;
 
@@ -30,29 +31,65 @@ import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.phase.AbstractRunGoalsPhase;
 import org.codehaus.plexus.util.StringUtils;
 
+=======
+import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
+import org.apache.continuum.utils.shell.ShellCommandHelper;
+import org.apache.maven.continuum.installation.InstallationService;
+import org.apache.maven.shared.release.ReleaseExecutionException;
+import org.apache.maven.shared.release.ReleaseFailureException;
+import org.apache.maven.shared.release.ReleaseResult;
+import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.apache.maven.shared.release.env.ReleaseEnvironment;
+import org.apache.maven.shared.release.phase.AbstractRunGoalsPhase;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+>>>>>>> refs/remotes/apache/trunk
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
  */
 public abstract class AbstractContinuumRunGoalsPhase
     extends AbstractRunGoalsPhase
 {
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
     private ShellCommandHelper shellCommandHelper;
 
+=======
+
+    @Requirement
+    private ShellCommandHelper shellCommandHelper;
+
+    @Requirement
+    private InstallationService installationService;
+
+    /**
+     * TODO olamy use maven-invoker with an installation (jdk, mvn path, env var)
+     */
+>>>>>>> refs/remotes/apache/trunk
     public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, File workingDirectory,
                                   String additionalArguments )
         throws ReleaseExecutionException
     {
         ReleaseResult result = new ReleaseResult();
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         try
         {
             String goals = getGoals( releaseDescriptor );
             if ( !StringUtils.isEmpty( goals ) )
             {
                 Map<String, String> environments = null;
+<<<<<<< HEAD
                 
                 if ( releaseDescriptor instanceof ContinuumReleaseDescriptor )
                 {
@@ -63,15 +100,61 @@ public abstract class AbstractContinuumRunGoalsPhase
                                                                             releaseDescriptor.getScmRelativePathProjectDirectory() ),
                                                  goals, releaseDescriptor.isInteractive(), additionalArguments, result, 
                                                  environments );
+=======
+
+                String executable = null;
+
+                if ( releaseDescriptor instanceof ContinuumReleaseDescriptor )
+                {
+                    environments = ( (ContinuumReleaseDescriptor) releaseDescriptor ).getEnvironments();
+
+                    executable = ( (ContinuumReleaseDescriptor) releaseDescriptor ).getExecutable();
+                }
+                shellCommandHelper.executeGoals( determineWorkingDirectory( workingDirectory,
+                                                                            releaseDescriptor.getScmRelativePathProjectDirectory() ),
+                                                 executable, goals, releaseDescriptor.isInteractive(),
+                                                 additionalArguments, result, environments );
+>>>>>>> refs/remotes/apache/trunk
             }
         }
         catch ( Exception e )
         {
+<<<<<<< HEAD
             throw new ReleaseExecutionException( e.getMessage(), e );
+=======
+            throw new ReleaseExecutionException( result.getOutput(), e );
+>>>>>>> refs/remotes/apache/trunk
         }
 
         result.setResultCode( ReleaseResult.SUCCESS );
 
         return result;
     }
+<<<<<<< HEAD
+=======
+
+    @Override
+    public ReleaseResult execute( ReleaseDescriptor arg0, ReleaseEnvironment arg1, File arg2, String arg3 )
+        throws ReleaseExecutionException
+    {
+        return super.execute( arg0, arg1, arg2, arg3 );
+    }
+
+    public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                  List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
+
+        return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ),
+                        releaseDescriptor.getAdditionalArguments() );
+    }
+
+    public ReleaseResult simulate( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                   List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
+        return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ),
+                        releaseDescriptor.getAdditionalArguments() );
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

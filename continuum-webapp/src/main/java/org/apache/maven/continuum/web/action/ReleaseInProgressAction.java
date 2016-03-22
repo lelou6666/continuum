@@ -19,12 +19,19 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
 import org.apache.continuum.model.release.ContinuumReleaseResult;
+=======
+import org.apache.continuum.configuration.BuildAgentConfigurationException;
+import org.apache.continuum.model.release.ReleaseListenerSummary;
+import org.apache.continuum.release.distributed.DistributedReleaseUtil;
+import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.configuration.ConfigurationException;
 import org.apache.maven.continuum.model.project.Project;
@@ -33,11 +40,16 @@ import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.shared.release.ReleaseResult;
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Edwin Punzalan
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="releaseInProgress"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releaseInProgress", instantiationStrategy = "per-lookup" )
 public class ReleaseInProgressAction
     extends ContinuumActionSupport
 {
@@ -53,6 +65,10 @@ public class ReleaseInProgressAction
 
     private String projectGroupName = "";
 
+    private ReleaseListenerSummary listenerSummary;
+
+    private String username = "";
+
     public String execute()
         throws Exception
     {
@@ -67,28 +83,93 @@ public class ReleaseInProgressAction
 
         String status = "";
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+        listenerSummary = new ReleaseListenerSummary();
 
-        listener = (ContinuumReleaseManagerListener) releaseManager.getListeners().get( releaseId );
-
-        if ( listener != null )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            if ( listener.getState() == ContinuumReleaseManagerListener.LISTENING )
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
+
+            Map map;
+
+            try
             {
-                status = "inProgress";
+                map = releaseManager.getListener( releaseId );
             }
-            else if ( listener.getState() == ContinuumReleaseManagerListener.FINISHED )
+            catch ( BuildAgentConfigurationException e )
             {
-                status = SUCCESS;
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "distributedBuild.releaseInProgress.error", args ) );
+                return RELEASE_ERROR;
+            }
+
+            if ( map != null && !map.isEmpty() )
+            {
+                int state = DistributedReleaseUtil.getReleaseState( map );
+
+                username = DistributedReleaseUtil.getUsername( map );
+
+                if ( state == ContinuumReleaseManagerListener.LISTENING )
+                {
+                    status = "inProgress";
+                }
+                else if ( state == ContinuumReleaseManagerListener.FINISHED )
+                {
+                    status = SUCCESS;
+                }
+                else
+                {
+                    status = "initialized";
+                }
+
+                if ( status.equals( SUCCESS ) )
+                {
+                    getContinuum().addContinuumReleaseResult( projectId, releaseId, releaseGoal );
+                }
+
+                listenerSummary.setPhases( DistributedReleaseUtil.getReleasePhases( map ) );
+                listenerSummary.setCompletedPhases( DistributedReleaseUtil.getCompletedReleasePhases( map ) );
+                listenerSummary.setInProgress( DistributedReleaseUtil.getReleaseInProgress( map ) );
+                listenerSummary.setError( DistributedReleaseUtil.getReleaseError( map ) );
             }
             else
             {
-                status = "initialized";
+                throw new Exception( "There is no on-going or finished release operation with id " + releaseId );
             }
         }
         else
         {
-            throw new Exception( "There is no on-going or finished release operation with id " + releaseId );
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            listenerSummary = releaseManager.getListener( releaseId );
+
+            if ( listenerSummary != null )
+            {
+                username = listenerSummary.getUsername();
+
+                if ( listenerSummary.getState() == ContinuumReleaseManagerListener.LISTENING )
+                {
+                    status = "inProgress";
+                }
+                else if ( listenerSummary.getState() == ContinuumReleaseManagerListener.FINISHED )
+                {
+                    status = SUCCESS;
+                }
+                else
+                {
+                    status = "initialized";
+                }
+            }
+            else
+            {
+                throw new Exception( "There is no on-going or finished release operation with id " + releaseId );
+            }
+
+            if ( status.equals( SUCCESS ) )
+            {
+                getContinuum().addContinuumReleaseResult( projectId, releaseId, releaseGoal );
+            }
         }
 
         if ( status.equals( SUCCESS ) )
@@ -117,26 +198,77 @@ public class ReleaseInProgressAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+        listenerSummary = new ReleaseListenerSummary();
 
-        listener = (ContinuumReleaseManagerListener) releaseManager.getListeners().get( releaseId );
-
-        if ( listener != null )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            if ( listener.getState() == ContinuumReleaseManagerListener.FINISHED )
-            {
-                result = (ReleaseResult) releaseManager.getReleaseResults().get( releaseId );
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
 
-                return SUCCESS;
-            }
-            else
+            try
             {
-                throw new Exception( "The release operation with id " + releaseId + "has not finished yet." );
+                Map map = releaseManager.getListener( releaseId );
+
+                if ( map != null && !map.isEmpty() )
+                {
+                    int state = DistributedReleaseUtil.getReleaseState( map );
+
+                    listenerSummary.setPhases( DistributedReleaseUtil.getReleasePhases( map ) );
+                    listenerSummary.setCompletedPhases( DistributedReleaseUtil.getCompletedReleasePhases( map ) );
+                    listenerSummary.setInProgress( DistributedReleaseUtil.getReleaseInProgress( map ) );
+                    listenerSummary.setError( DistributedReleaseUtil.getReleaseError( map ) );
+
+                    username = DistributedReleaseUtil.getUsername( map );
+
+                    if ( state == ContinuumReleaseManagerListener.FINISHED )
+                    {
+                        result = releaseManager.getReleaseResult( releaseId );
+
+                        return SUCCESS;
+                    }
+                    else
+                    {
+                        throw new Exception( "The release operation with id " + releaseId + "has not finished yet." );
+                    }
+                }
+                else
+                {
+                    throw new Exception( "There is no finished release operation with id " + releaseId );
+                }
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "releaseViewResult.error", args ) );
+                return RELEASE_ERROR;
             }
         }
         else
         {
-            throw new Exception( "There is no finished release operation with id " + releaseId );
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
+
+            listenerSummary = releaseManager.getListener( releaseId );
+
+            if ( listenerSummary != null )
+            {
+                username = listenerSummary.getUsername();
+
+                if ( listenerSummary.getState() == ContinuumReleaseManagerListener.FINISHED )
+                {
+                    result = (ReleaseResult) releaseManager.getReleaseResults().get( releaseId );
+
+                    return SUCCESS;
+                }
+                else
+                {
+                    throw new Exception( "The release operation with id " + releaseId + "has not finished yet." );
+                }
+            }
+            else
+            {
+                throw new Exception( "There is no finished release operation with id " + releaseId );
+            }
         }
     }
 
@@ -201,6 +333,7 @@ public class ReleaseInProgressAction
         return projectGroupName;
     }
 
+<<<<<<< HEAD
     private ContinuumReleaseResult createContinuumReleaseResult( ReleaseResult result )
         throws ContinuumException
     {
@@ -235,6 +368,27 @@ public class ReleaseInProgressAction
         }
 
         return releaseResult;
+=======
+    public ReleaseListenerSummary getListenerSummary()
+    {
+        return listenerSummary;
+    }
+
+    public void setListenerSummary( ReleaseListenerSummary listenerSummary )
+    {
+        this.listenerSummary = listenerSummary;
+    }
+
+    public String getProjectName()
+        throws ContinuumException
+    {
+        return getProjectGroupName();
+    }
+
+    public String getUsername()
+    {
+        return this.username;
+>>>>>>> refs/remotes/apache/trunk
     }
 
 }

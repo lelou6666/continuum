@@ -1,0 +1,40 @@
+ ------
+ Cancelling Builds
+ ------
+ Maria Catherine Tan
+ ------
+ Jan 16 2009
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Cancelling Project Build
+
+    This will cancel the build of the selected project.
+
+    To cancel the build for project, click the <<Cancel>> button of the project on the <<Project Group Summary>> page or on the <<Queues>> page.
+
+[../../images/cancelbuild.gif] Cancel Button
+
+Cancelling Project Group Build
+
+    This will cancel all builds of the project group and will also remove the projects from the build queue.
+
+    In the Project Group Summary page, click the
+
+[../../images/cancel-group-build.png] Cancel Group Build Button

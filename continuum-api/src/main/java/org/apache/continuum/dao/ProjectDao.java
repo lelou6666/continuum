@@ -19,16 +19,17 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+import org.apache.continuum.model.project.ProjectGroupSummary;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface ProjectDao
 {
@@ -66,8 +67,6 @@ public interface ProjectDao
     List<Project> getProjectsInGroupWithDependencies( int projectGroupId )
         throws ContinuumStoreException;
 
-    List<Project> getAllProjectsWithAllDetails();
-
     Project getProjectWithAllDetails( int projectId )
         throws ContinuumStoreException;
 
@@ -79,4 +78,9 @@ public interface ProjectDao
 
     ProjectGroup getProjectGroupByProjectId( int projectId )
         throws ContinuumObjectNotFoundException;
+
+    Project getProjectWithDependencies( int projectId )
+        throws ContinuumStoreException;
+
+    Map<Integer, ProjectGroupSummary> getProjectsSummary();
 }

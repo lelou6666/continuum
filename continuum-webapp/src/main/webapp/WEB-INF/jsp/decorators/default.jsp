@@ -18,33 +18,36 @@
   --%>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
 <%@ taglib uri="http://www.opensymphony.com/sitemesh/decorator" prefix="decorator" %>
-<%@ taglib uri="/webwork" prefix="ww" %>
-
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
 <head>
   <title>
     <decorator:title/>
   </title>
-  <link rel="stylesheet" type="text/css" href="<ww:url value="/css/tigris.css" includeParams="none"/>" media="screen"/>
-  <link rel="stylesheet" type="text/css" href="<ww:url value="/css/print.css" includeParams="none"/>" media="print"/>
-  <link rel="stylesheet" type="text/css" href="<ww:url value="/css/extremecomponents.css" includeParams="none"/>" media="screen"/>
-  <link rel="shortcut icon" href="<ww:url value="/favicon.ico" includeParams="none"/>" type="image/x-icon"/>
-  <script type="text/javascript" src="<ww:url value="/js/prototype.js" includeParams="none"/>"></script>
-
+  <link rel="stylesheet" type="text/css" href="<s:url value="/css/tigris.css" includeParams="none"/>" media="screen"/>
+  <link rel="stylesheet" type="text/css" href="<s:url value="/css/continuum.css" includeParams="none"/>" media="screen"/>
+  <link rel="stylesheet" type="text/css" href="<s:url value="/css/print.css" includeParams="none"/>" media="print"/>
+  <link rel="stylesheet" type="text/css" href="<s:url value="/css/extremecomponents.css" includeParams="none"/>" media="screen"/>
+  <link rel="icon" href="<s:url value="/favicon.ico" includeParams="none"/>" sizes="16x16 32x32 48x48 64x64" type="image/vnd.microsoft.icon">
+  <script type="text/javascript" src="<s:url value='/js/jquery-1.3.2.min.js'/>"></script>
+  <script language="javascript" type="text/javascript">
+    $.noConflict();
+  </script>
+  <script type="text/javascript" src="<s:url value="/js/prototype.js" includeParams="none"/>"></script>
+  <s:head/>
   <decorator:head/>
 </head>
 
 <body onload="<decorator:getProperty property="body.onload" />" marginwidth="0" marginheight="0" class="composite">
-<%@ include file="/WEB-INF/jsp/navigations/DefaultTop.jsp" %>
+<s:include value="/WEB-INF/jsp/navigations/DefaultTop.jsp"/>
 
 <table id="main" border="0" cellpadding="4" cellspacing="0" width="100%">
   <tbody>
     <tr valign="top">
       <td id="leftcol" width="180">
         <br/> <br/>
-        <%@ include file="/WEB-INF/jsp/navigations/Menu.jsp" %>
+        <s:include value="/WEB-INF/jsp/navigations/Menu.jsp"/>
       </td>
       <td width="86%">
         <br/>
@@ -59,7 +62,7 @@
   </tbody>
 </table>
 
-<ww:action name="bottom" executeResult="true"/>
+<s:action name="bottom" executeResult="true"/>
 
 <script language="javascript">
     <!--

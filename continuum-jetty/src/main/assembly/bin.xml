@@ -24,7 +24,7 @@
     <format>zip</format>
   </formats>
   <fileSets>
-    <fileSet>      
+    <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/apps</directory>
       <outputDirectory>apps</outputDirectory>
     </fileSet>
@@ -40,7 +40,8 @@
         <exclude>maven-metadata-appassembler.xml</exclude>
       </excludes>
       <fileMode>0755</fileMode>
-    </fileSet> 
+      <directoryMode>0755</directoryMode>
+    </fileSet>
     <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/logs</directory>
       <outputDirectory>logs</outputDirectory>
@@ -48,8 +49,8 @@
     <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/bin</directory>
       <outputDirectory>bin</outputDirectory>
-      <includes>   
-         <include>continuum</include>           
+      <includes>
+        <include>continuum</include>
       </includes>
       <fileMode>0755</fileMode>
       <lineEnding>unix</lineEnding>
@@ -57,6 +58,7 @@
     <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/bin</directory>
       <outputDirectory>bin</outputDirectory>
+<<<<<<< HEAD
       <includes>   
          <include>wrapper-linux-x86-32</include>
          <include>wrapper-linux-x86-64</include>
@@ -64,13 +66,22 @@
          <include>wrapper-solaris-x86-32</include>
          <include>wrapper-solaris-sparc-32</include>
          <include>wrapper-solaris-sparc-64</include>
+=======
+      <includes>
+        <include>wrapper-linux-x86-32</include>
+        <include>wrapper-linux-x86-64</include>
+        <include>wrapper-macosx-universal-32</include>
+        <include>wrapper-solaris-x86-32</include>
+        <include>wrapper-solaris-sparc-32</include>
+        <include>wrapper-solaris-sparc-64</include>
+>>>>>>> refs/remotes/apache/trunk
       </includes>
       <fileMode>0755</fileMode>
     </fileSet>
     <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/bin</directory>
       <outputDirectory>bin</outputDirectory>
-      <includes>        
+      <includes>
         <include>continuum.bat</include>
       </includes>
       <fileMode>0755</fileMode>
@@ -79,7 +90,7 @@
     <fileSet>
       <directory>target/generated-resources/appassembler/jsw/continuum/bin</directory>
       <outputDirectory>bin</outputDirectory>
-      <includes>   
+      <includes>
         <include>wrapper-windows-x86-32.exe</include>
       </includes>
       <fileMode>0755</fileMode>
@@ -102,6 +113,13 @@
       <directory>src/main/tmp/</directory>
       <outputDirectory>/tmp</outputDirectory>
     </fileSet>
+<<<<<<< HEAD
+=======
+    <fileSet>
+      <directory>src/main/contexts/</directory>
+      <outputDirectory>/contexts</outputDirectory>
+    </fileSet>
+>>>>>>> refs/remotes/apache/trunk
   </fileSets>
   <dependencySets>
     <dependencySet>
