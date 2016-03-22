@@ -19,29 +19,25 @@ package org.apache.maven.continuum.web.interceptor;
  * under the License.
  */
 
-import com.opensymphony.xwork.ActionInvocation;
-import com.opensymphony.xwork.interceptor.Interceptor;
+import com.opensymphony.xwork2.ActionInvocation;
+import com.opensymphony.xwork2.interceptor.Interceptor;
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.configuration.ConfigurationService;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 /**
  * ForceContinuumConfigurationInterceptor:
  *
  * @author: Jesse McConnell <jmcconnell@apache.org>
- * @version: $ID:$
- * @plexus.component role="com.opensymphony.xwork.interceptor.Interceptor"
- * role-hint="forceContinuumConfigurationInterceptor"
  */
+@Component( role = com.opensymphony.xwork2.interceptor.Interceptor.class, hint = "forceContinuumConfigurationInterceptor" )
 public class ForceContinuumConfigurationInterceptor
-    extends AbstractLogEnabled
     implements Interceptor
 {
     private static boolean checked = false;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private Continuum continuum;
 
     public void destroy()
@@ -80,7 +76,7 @@ public class ForceContinuumConfigurationInterceptor
             return invocation.invoke();
         }
 
-        configuration.load();
+        configuration.reload();
 
         if ( configuration.isInitialized() )
         {

@@ -19,8 +19,10 @@ package org.apache.maven.continuum.buildcontroller;
  * under the License.
  */
 
+import org.apache.continuum.taskqueue.BuildProjectTask;
+import org.apache.continuum.utils.build.BuildTrigger;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.continuum.AbstractContinuumTest;
-import org.apache.maven.continuum.buildqueue.BuildProjectTask;
 import org.apache.maven.continuum.core.action.AbstractContinuumAction;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
@@ -29,17 +31,19 @@ import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilderException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
 import org.apache.maven.continuum.project.builder.maven.MavenTwoContinuumProjectBuilder;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.codehaus.plexus.action.ActionManager;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.TaskQueue;
 import org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor;
-import org.codehaus.plexus.util.FileUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:kenney@apache.org">Kenney Westerhof</a>
@@ -53,35 +57,19 @@ public class BuildProjectTaskExecutorTest
 
     private TaskQueueExecutor taskQueueExecutor;
 
-    private ContinuumStore continuumStore;
-
     private ActionManager actionManager;
 
+    @Before
     public void setUp()
         throws Exception
     {
-        try
-        {
-            super.setUp();
-
-            projectBuilder =
-                (ContinuumProjectBuilder) lookup( ContinuumProjectBuilder.ROLE, MavenTwoContinuumProjectBuilder.ID );
-
-            buildQueue = (TaskQueue) lookup( TaskQueue.ROLE, "build-project" );
-
-            taskQueueExecutor = (TaskQueueExecutor) lookup( TaskQueueExecutor.ROLE, "build-project" );
-
-            continuumStore = (ContinuumStore) lookup( ContinuumStore.ROLE, "jdo" );
-
-            actionManager = (ActionManager) lookup( ActionManager.ROLE );
-        }
-        catch ( Exception e )
-        {
-            e.printStackTrace();
-            throw e;
-        }
+        projectBuilder = lookup( ContinuumProjectBuilder.class, MavenTwoContinuumProjectBuilder.ID );
+        buildQueue = lookup( TaskQueue.class, "build-project" );
+        taskQueueExecutor = lookup( TaskQueueExecutor.class, "build-project" );
+        actionManager = lookup( ActionManager.class );
     }
 
+    @Test
     public void testAutomaticCancellation()
         throws Exception
     {
@@ -104,6 +92,7 @@ public class BuildProjectTaskExecutorTest
         assertFalse( "Build completed", getTestFile( "src/test-projects/timeout/target/TEST-COMPLETED" ).exists() );
     }
 
+    @Test
     public void testManualCancellation()
         throws Exception
     {
@@ -125,6 +114,7 @@ public class BuildProjectTaskExecutorTest
         assertFalse( "Build completed", getTestFile( "src/test-projects/timeout/target/TEST-COMPLETED" ).exists() );
     }
 
+    @Test
     public void testNoCancellation()
         throws Exception
     {
@@ -183,8 +173,9 @@ public class BuildProjectTaskExecutorTest
     {
         BuildProjectTask task = createTask( maxRunTime );
 
-        FileUtils.forceDelete( getTestFile( "src/test-projects/timeout/target/TEST-STARTED" ) );
-        FileUtils.forceDelete( getTestFile( "src/test-projects/timeout/target/TEST-COMPLETED" ) );
+        FileSystemManager fsManager = getFileSystemManager();
+        fsManager.delete( getTestFile( "src/test-projects/timeout/target/TEST-STARTED" ) );
+        fsManager.delete( getTestFile( "src/test-projects/timeout/target/TEST-COMPLETED" ) );
 
         System.err.println( "Queueing build" );
 
@@ -192,7 +183,7 @@ public class BuildProjectTaskExecutorTest
 
         System.err.println( "Waiting for task to start" );
 
-        Task curTask = null;
+        Task curTask;
 
         // Sleep at most 10 seconds for the task to start
         for ( int i = 0; i < 1000; i++ )
@@ -222,7 +213,7 @@ public class BuildProjectTaskExecutorTest
         throws Exception
     {
         ProjectGroup projectGroup = getProjectGroup( "src/test-projects/timeout/pom.xml" );
-        Project project = (Project) projectGroup.getProjects().get( 0 );
+        Project project = projectGroup.getProjects().get( 0 );
 
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setId( 0 );
@@ -230,11 +221,11 @@ public class BuildProjectTaskExecutorTest
 
         projectGroup.addBuildDefinition( buildDefinition );
 
-        Map pgContext = new HashMap();
+        Map<String, Object> pgContext = new HashMap<String, Object>();
 
-        pgContext.put( AbstractContinuumAction.KEY_WORKING_DIRECTORY, project.getWorkingDirectory() );
+        AbstractContinuumAction.setWorkingDirectory( pgContext, project.getWorkingDirectory() );
 
-        pgContext.put( AbstractContinuumAction.KEY_UNVALIDATED_PROJECT_GROUP, projectGroup );
+        AbstractContinuumAction.setUnvalidatedProjectGroup( pgContext, projectGroup );
 
         actionManager.lookup( "validate-project-group" ).execute( pgContext );
 
@@ -242,16 +233,16 @@ public class BuildProjectTaskExecutorTest
 
         int projectGroupId = AbstractContinuumAction.getProjectGroupId( pgContext );
 
-        projectGroup = continuumStore.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+        projectGroup = getProjectGroupDao().getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
 
-        project = (Project) projectGroup.getProjects().get( 0 );
+        project = projectGroup.getProjects().get( 0 );
 
-        buildDefinition = (BuildDefinition) projectGroup.getBuildDefinitions().get( 0 );
+        buildDefinition = projectGroup.getBuildDefinitions().get( 0 );
 
-        // projectGroup = continuumStore.addProjectGroup( projectGroup );
-
-        BuildProjectTask task = new BuildProjectTask( project.getId(), buildDefinition.getId(), 0, project.getName(),
-                                                      buildDefinition.getDescription() );
+        BuildProjectTask task = new BuildProjectTask( project.getId(), buildDefinition.getId(),
+                                                      new BuildTrigger( 0, "" ),
+                                                      project.getName(), buildDefinition.getDescription(), null,
+                                                      projectGroupId );
 
         task.setMaxExecutionTime( maxRunTime );
 
@@ -274,7 +265,7 @@ public class BuildProjectTaskExecutorTest
 
         assertEquals( "#Projectgroups", 1, result.getProjectGroups().size() );
 
-        ProjectGroup pg = (ProjectGroup) result.getProjectGroups().get( 0 );
+        ProjectGroup pg = result.getProjectGroups().get( 0 );
 
         // If the next part fails, remove this code! Then result.getProjects
         // might be empty, and result.projectgroups[0].getProjects contains
@@ -282,7 +273,7 @@ public class BuildProjectTaskExecutorTest
 
         assertEquals( "#Projects in result", 1, result.getProjects().size() );
 
-        Project p = (Project) result.getProjects().get( 0 );
+        Project p = result.getProjects().get( 0 );
 
         pg.addProject( p );
 

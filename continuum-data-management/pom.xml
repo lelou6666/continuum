@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +18,6 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <prerequisites>
@@ -27,30 +26,31 @@
   <parent>
     <artifactId>continuum</artifactId>
     <groupId>org.apache.continuum</groupId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
   </parent>
   <packaging>pom</packaging>
   <artifactId>continuum-data-management</artifactId>
   <name>Continuum :: Data Management :: Parent</name>
   <modules>
-    <module>data-management-cli</module>
     <module>data-management-api</module>
     <module>continuum-legacy</module>
     <module>data-management-jdo</module>
     <!-- TODO: move to redback data management -->
     <module>redback-legacy</module>
     <module>data-management-redback-jdo</module>
+    <!-- Must come after the above since we are not using dependencies to control build order -->
+    <module>data-management-cli</module>
   </modules>
   <build>
     <plugins>
       <!-- TODO: move up to continuum parent and use in all modules -->
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-maven-plugin</artifactId>
+        <artifactId>plexus-component-metadata</artifactId>
         <executions>
           <execution>
             <goals>
-              <goal>descriptor</goal>
+              <goal>generate-metadata</goal>
             </goals>
           </execution>
         </executions>

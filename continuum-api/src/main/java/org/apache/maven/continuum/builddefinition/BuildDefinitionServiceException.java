@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.builddefinition;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,19 +18,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.builddefinition;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 15 sept. 07
- * @version $Id$
  */
 public class BuildDefinitionServiceException
     extends Exception
 {
+    private static final long serialVersionUID = -399833410192238226L;
 
     /**
-     * 
+     *
      */
     public BuildDefinitionServiceException()
     {

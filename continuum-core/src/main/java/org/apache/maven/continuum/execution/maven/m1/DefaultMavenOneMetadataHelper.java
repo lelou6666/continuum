@@ -23,47 +23,49 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.project.ProjectDeveloper;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.notification.ContinuumRecipientSource;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper.class, hint = "default" )
 public class DefaultMavenOneMetadataHelper
-    extends AbstractLogEnabled
     implements MavenOneMetadataHelper
 {
+    private static final Logger log = LoggerFactory.getLogger( DefaultMavenOneMetadataHelper.class );
+
     // ----------------------------------------------------------------------
     // MavenOneMetadataHelper Implementation
     // ----------------------------------------------------------------------
 
     /**
-     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult,File,Project)} instead
+     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult, File, Project)} instead
      */
+    @Deprecated
     public void mapMetadata( File metadata, Project project )
         throws MavenOneMetadataHelperException
     {
-        mapMetadata( new ContinuumProjectBuildingResult(), metadata, project );
+        mapMetadata( new ContinuumProjectBuildingResult(), metadata, project, true );
     }
 
-    public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project )
+    public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project,
+                             boolean updateDefinition )
         throws MavenOneMetadataHelperException
     {
         Xpp3Dom mavenProject;
@@ -76,7 +78,7 @@ public class DefaultMavenOneMetadataHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_XML_PARSE );
 
-            getLogger().info( "Error while reading maven POM (" + e.getMessage() + ").", e );
+            log.info( "Error while reading maven POM (" + e.getMessage() + ").", e );
 
             return;
         }
@@ -84,7 +86,7 @@ public class DefaultMavenOneMetadataHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_POM_NOT_FOUND );
 
-            getLogger().info( "Error while reading maven POM (" + e.getMessage() + ").", e );
+            log.info( "Error while reading maven POM (" + e.getMessage() + ").", e );
 
             return;
         }
@@ -92,7 +94,7 @@ public class DefaultMavenOneMetadataHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_UNKNOWN );
 
-            getLogger().info( "Error while reading maven POM (" + e.getMessage() + ").", e );
+            log.info( "Error while reading maven POM (" + e.getMessage() + ").", e );
 
             return;
         }
@@ -109,7 +111,7 @@ public class DefaultMavenOneMetadataHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_EXTEND );
 
-            getLogger().info( "Cannot use a POM with an 'extend' element." );
+            log.info( "Cannot use a POM with an 'extend' element." );
 
             return;
         }
@@ -138,7 +140,7 @@ public class DefaultMavenOneMetadataHelper
             {
                 result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_GROUPID );
 
-                getLogger().info( "Missing 'groupId' element in the POM." );
+                log.info( "Missing 'groupId' element in the POM." );
 
                 // Do not throw an exception or return here, gather up as many results as possible first.
             }
@@ -149,7 +151,7 @@ public class DefaultMavenOneMetadataHelper
             {
                 result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_ARTIFACTID );
 
-                getLogger().info( "Missing 'artifactId' element in the POM." );
+                log.info( "Missing 'artifactId' element in the POM." );
 
                 // Do not throw an exception or return here, gather up as many results as possible first.
             }
@@ -218,7 +220,7 @@ public class DefaultMavenOneMetadataHelper
 
             if ( StringUtils.isEmpty( scmConnection ) )
             {
-                result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM );
+                result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM, name );
 
                 // Do not throw an exception or return here, gather up as many results as possible first.
             }
@@ -234,12 +236,10 @@ public class DefaultMavenOneMetadataHelper
         {
             Xpp3Dom[] developersList = developers.getChildren();
 
-            List cds = new ArrayList();
+            List<ProjectDeveloper> cds = new ArrayList<ProjectDeveloper>();
 
-            for ( int i = 0; i < developersList.length; i++ )
+            for ( Xpp3Dom developer : developersList )
             {
-                Xpp3Dom developer = developersList[i];
-
                 ProjectDeveloper cd = new ProjectDeveloper();
 
                 cd.setScmId( getValue( developer, "id", null ) );
@@ -264,12 +264,10 @@ public class DefaultMavenOneMetadataHelper
         {
             Xpp3Dom[] dependenciesList = dependencies.getChildren();
 
-            List deps = new ArrayList();
+            List<ProjectDependency> deps = new ArrayList<ProjectDependency>();
 
-            for ( int i = 0; i < dependenciesList.length; i++ )
+            for ( Xpp3Dom dependency : dependenciesList )
             {
-                Xpp3Dom dependency = dependenciesList[i];
-
                 ProjectDependency cd = new ProjectDependency();
 
                 if ( getValue( dependency, "groupId", null ) != null )
@@ -299,7 +297,7 @@ public class DefaultMavenOneMetadataHelper
 
         Xpp3Dom build = mavenProject.getChild( "build" );
 
-        List notifiers = new ArrayList();
+        List<ProjectNotifier> notifiers = new ArrayList<ProjectNotifier>();
 
         // Add project Notifier
         if ( build != null )
@@ -310,7 +308,7 @@ public class DefaultMavenOneMetadataHelper
             {
                 Properties props = new Properties();
 
-                props.put( ContinuumRecipientSource.ADDRESS_FIELD, nagEmailAddress );
+                props.put( AbstractContinuumNotifier.ADDRESS_FIELD, nagEmailAddress );
 
                 ProjectNotifier notifier = new ProjectNotifier();
 
@@ -325,10 +323,8 @@ public class DefaultMavenOneMetadataHelper
         // Add all user notifiers
         if ( project.getNotifiers() != null && !project.getNotifiers().isEmpty() )
         {
-            for ( Iterator i = project.getNotifiers().iterator(); i.hasNext(); )
+            for ( ProjectNotifier notif : (List<ProjectNotifier>) project.getNotifiers() )
             {
-                ProjectNotifier notif = (ProjectNotifier) i.next();
-
                 if ( notif.isFromUser() )
                 {
                     notifiers.add( notif );
@@ -354,9 +350,12 @@ public class DefaultMavenOneMetadataHelper
 
         project.setArtifactId( artifactId );
 
-        project.setVersion( version );
+        if ( updateDefinition )
+        {
+            project.setVersion( version );
 
-        project.setName( name );
+            project.setName( name );
+        }
 
         if ( StringUtils.isEmpty( shortDescription ) )
         {

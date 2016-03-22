@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+package org.apache.maven.continuum.utils;
+
+>>>>>>> refs/remotes/apache/trunk
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,6 +21,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+<<<<<<< HEAD
 package org.apache.maven.continuum.utils;
 
 import java.util.Arrays;
@@ -29,10 +35,26 @@ import org.codehaus.plexus.formica.validation.AbstractValidator;
 import org.codehaus.plexus.formica.validation.util.Flags;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Configurable;
 import org.codehaus.plexus.util.StringUtils;
+=======
+
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.configuration.PlexusConfigurationException;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Configurable;
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 27 mars 2008
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component
  *   role-hint="continuumUrl"
@@ -135,6 +157,15 @@ public class ContinuumUrlValidator
     private Flags options = null;
 
     /**
+=======
+ */
+@Service( "continuumUrlValidator#continuumUrl" )
+@Component( role = org.apache.maven.continuum.utils.ContinuumUrlValidator.class, hint = "continuumUrl" )
+public class ContinuumUrlValidator
+    implements Configurable
+{
+    /**
+>>>>>>> refs/remotes/apache/trunk
      * The set of schemes that are allowed to be in a URL.
      */
     private Set<String> allowedSchemes = new HashSet<String>();
@@ -154,6 +185,7 @@ public class ContinuumUrlValidator
 
     /**
      * Behavior of validation is modified by passing in several strings options:
+<<<<<<< HEAD
      * @param schemes Pass in one or more url schemes to consider valid, passing in
      *        a null will default to "http,https,ftp" being valid.
      *        If a non-null schemes is specified then all valid schemes must
@@ -192,6 +224,16 @@ public class ContinuumUrlValidator
             return;
         }
 
+=======
+     *
+     * @param schemes Pass in one or more url schemes to consider valid, passing in
+     *                a null will default to "http,https,ftp" being valid.
+     *                If a non-null schemes is specified then all valid schemes must
+     *                be specified.
+     */
+    public ContinuumUrlValidator( String[] schemes )
+    {
+>>>>>>> refs/remotes/apache/trunk
         if ( schemes == null && this.allowedSchemes.isEmpty() )
         {
             schemes = this.defaultSchemes;
@@ -204,7 +246,11 @@ public class ContinuumUrlValidator
      * <p>Checks if a field has a valid url address.</p>
      *
      * @param value The value validation is being performed on.  A <code>null</code>
+<<<<<<< HEAD
      * value is considered invalid.
+=======
+     *              value is considered invalid.
+>>>>>>> refs/remotes/apache/trunk
      * @return true if the url is valid.
      */
     public boolean validate( String value )
@@ -216,7 +262,11 @@ public class ContinuumUrlValidator
      * <p>Checks if a field has a valid url address.</p>
      *
      * @param value The value validation is being performed on.  A <code>null</code>
+<<<<<<< HEAD
      * value is considered valid.
+=======
+     *              value is considered valid.
+>>>>>>> refs/remotes/apache/trunk
      * @return true if the url is valid.
      */
     public boolean isValid( String value )
@@ -226,6 +276,7 @@ public class ContinuumUrlValidator
             return true;
         }
 
+<<<<<<< HEAD
         value = replace( value, " ", "%20" );
 
         Perl5Util matchUrlPat = new Perl5Util();
@@ -545,6 +596,46 @@ public class ContinuumUrlValidator
 
         buf.append( text.substring( start ) );
         return buf.toString();
+=======
+        try
+        {
+            URI uri = new URI( value );
+            return this.allowedSchemes.contains( uri.getScheme() );
+        }
+        catch ( URISyntaxException e )
+        {
+            return false;
+        }
+    }
+
+    /**
+     * @param url
+     * @return URLUserInfo cannot be null
+     * @throws URISyntaxException
+     */
+    public URLUserInfo extractURLUserInfo( String url )
+        throws URISyntaxException
+    {
+        URI uri = new URI( url );
+        // can contains user:password
+        String userInfoRaw = uri.getUserInfo();
+        URLUserInfo urlUserInfo = new URLUserInfo();
+
+        if ( !StringUtils.isEmpty( userInfoRaw ) )
+        {
+            int index = userInfoRaw.indexOf( ':' );
+            if ( index >= 0 )
+            {
+                urlUserInfo.setUsername( userInfoRaw.substring( 0, index ) );
+                urlUserInfo.setPassword( userInfoRaw.substring( index + 1, userInfoRaw.length() ) );
+            }
+            else
+            {
+                urlUserInfo.setUsername( userInfoRaw );
+            }
+        }
+        return urlUserInfo;
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void configure( PlexusConfiguration plexusConfiguration )

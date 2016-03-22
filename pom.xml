@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -22,56 +23,92 @@
   <parent>
     <groupId>org.apache.continuum</groupId>
     <artifactId>continuum-parent</artifactId>
-    <version>1-SNAPSHOT</version>
+    <version>6-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+
   <groupId>org.apache.continuum</groupId>
   <artifactId>continuum</artifactId>
   <packaging>pom</packaging>
-  <name>Continuum Project</name>
-  <version>1.2-SNAPSHOT</version>
+  <name>Continuum :: Project</name>
+  <url>http://continuum.apache.org/ref/latest</url>
+  <version>1.5-SNAPSHOT</version>
 
   <prerequisites>
-    <maven>2.0.7</maven>
+    <maven>2.0.9</maven>
   </prerequisites>
 
+  <properties>
+    <jetty.version>8.1.7.v20120910</jetty.version>
+    <continuumWebappVersion>${project.version}</continuumWebappVersion>
+    <!-- Note, when later moving beyond 2.2.1, the continuum-artifact-manager module should be removed -->
+    <maven.version>2.2.1</maven.version>
+    <spring.version>3.2.13.RELEASE</spring.version>
+    <struts.version>2.3.20</struts.version>
+    <wagon.version>1.0-beta-6</wagon.version>
+    <maven-scm.version>1.4</maven-scm.version>
+    <redback.version>1.3-M3</redback.version>
+    <archiva.version>1.2.1</archiva.version>
+    <slf4jVersion>1.5.8</slf4jVersion>
+    <xmlrpc.version>3.1.2</xmlrpc.version>
+    <atlassian.xmlrpc.binder.version>0.11</atlassian.xmlrpc.binder.version>
+    <surefire.version>2.12</surefire.version>
+    <svnUrl>https://svn.apache.org/repos/asf/continuum/site-publish/ref/latest</svnUrl>
+    <checkoutDirectory>site-publish</checkoutDirectory>
+  </properties>
+
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/continuum/trunk/</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/continuum/trunk/</developerConnection>
-    <url>http://svn.apache.org/viewcvs.cgi/continuum/trunk/</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/continuum/trunk</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/continuum/trunk</developerConnection>
+    <url>http://svn.apache.org/viewvc/continuum/trunk/</url>
   </scm>
-  <distributionManagement>
-    <site>
-      <id>apache.website</id>
-      <url>scp://people.apache.org/www/maven.apache.org/continuum/ref/${project.version}</url>
-    </site>
-  </distributionManagement>
   <reporting>
+    <excludeDefaults>true</excludeDefaults>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>1.1.1</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.7</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>index</report>
+              <report>summary</report>
+              <report>license</report>
+              <report>dependencies</report>
+              <report>dependency-management</report>
+              <report>plugins</report>
+              <report>plugin-management</report>
+              <report>modules</report>
+              <report>dependency-convergence</report>
+            </reports>
+          </reportSet>
+        </reportSets>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>changelog-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>taglist-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <configuration>
-          <aggregate>true</aggregate>
-        </configuration>
+        <version>2.3</version>
+        <inherited>false</inherited>
+        <reportSets>
+          <reportSet>
+            <id>aggregate</id>
+            <reports>
+              <report>aggregate</report>
+              <report>test-aggregate</report>
+            </reports>
+          </reportSet>
+        </reportSets>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9</version>
+        <inherited>false</inherited>
         <configuration>
           <source>1.5</source>
-          <aggregate>true</aggregate>
+          <notimestamp>true</notimestamp>
+<!-- Disabled - currently generating empty PDFs in my environment (brett, 2013-01-02)
           <doclet>gr.spinellis.umlgraph.doclet.UmlGraphDoc</doclet>
           <docletArtifact>
             <groupId>gr.spinellis</groupId>
@@ -84,70 +121,269 @@
             -postfixpackage -nodefontsize 9
             -nodefontpackagesize 7
           </additionalparam>
+-->
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <!-- TODO: choose appropriate rulesets -->
-        <configuration>
-          <targetJdk>1.5</targetJdk>
-        </configuration>
+        <reportSets>
+          <reportSet>
+            <id>aggregate</id>
+            <reports>
+              <report>aggregate</report>
+            </reports>
+          </reportSet>
+        </reportSets>
       </plugin>
     </plugins>
   </reporting>
   <build>
+    <finalName>apache-continuum-${project.version}</finalName>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.10</version>
+          <configuration>
+            <excludes>
+              <exclude>continuum-webapp-test/src/test/example-projects/**</exclude>
+              <exclude>continuum-webapp-test/src/test/example-svn/**</exclude>
+              <exclude>continuum-webapp-test/src/test/selenium-ide/**</exclude>
+              <exclude>**/*.iml</exclude>
+              <exclude>**/*.fbp</exclude>
+              <exclude>Continuum.sonarj</exclude>
+              <!-- modules that are not in the default build, need to be checked manually -->
+              <exclude>continuum-webapp-test/target/**</exclude>
+              <exclude>continuum-docs/target/**</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
           <configuration>
             <tagBase>https://svn.apache.org/repos/asf/continuum/tags</tagBase>
             <preparationGoals>clean install</preparationGoals>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
           </configuration>
         </plugin>
         <plugin>
           <groupId>org.codehaus.plexus</groupId>
-          <artifactId>plexus-maven-plugin</artifactId>
-          <version>1.3.4</version>
-          <extensions>true</extensions>
+          <artifactId>plexus-component-metadata</artifactId>
+          <version>1.5.5</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.modello</groupId>
           <artifactId>modello-maven-plugin</artifactId>
-          <version>1.0-alpha-15</version>
+          <version>1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.1</version>
+          <configuration>
+            <useAgent>true</useAgent>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>2.0.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>appassembler-maven-plugin</artifactId>
+          <version>1.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>2.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>tomcat-maven-plugin</artifactId>
+          <version>1.0-beta-1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>jpox-maven-plugin</artifactId>
+          <version>1.1.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>jspc-maven-plugin</artifactId>
+          <version>1.4.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-maven-plugin</artifactId>
+          <version>${jetty.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${surefire.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${surefire.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-publish-plugin</artifactId>
+          <configuration>
+            <!-- Note: we use this instead of distributionManagement as that currently impacts the URLs that are
+                 inherited in continuum-docs -->
+            <pubScmUrl>scm:svn:${svnUrl}</pubScmUrl>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>com.google.code.maven-replacer-plugin</groupId>
+          <artifactId>replacer</artifactId>
+          <version>1.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.2.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.3.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>2.0.9</version>
+                </requireMavenVersion>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>velocity:velocity-dep</exclude>
+                    <exclude>classworlds:classworlds</exclude>
+                    <exclude>javax.transaction:jta</exclude>
+                    <exclude>javax.sql:jdbc-stdext</exclude>
+                    <exclude>ant:ant-optional</exclude>
+                    <exclude>xom:xom</exclude>
+                    <exclude>org.codehaus.plexus:plexus-log4j-logging</exclude>
+                    <exclude>commons-logging:commons-logging</exclude>
+                    <exclude>org.slf4j:jcl104-over-slf4j</exclude>
+                    <exclude>org.slf4j:slf4j-nop</exclude>
+                    <exclude>org.codehaus.plexus:plexus-spring</exclude>
+                    <exclude>xml-apis:xml-apis</exclude>
+                    <exclude>jtidy:jtidy</exclude>
+                    <exclude>jdom:jdom</exclude>
+                    <exclude>org.apache.maven:maven-artifact-manager</exclude>
+                  </excludes>
+                  <includes>
+                    <include>org.apache.maven:maven-artifact-manager:*:jar:provided</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <SVN-Revision>${buildNumber}</SVN-Revision>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <argLine>-Xmx512m</argLine>
+          <systemProperties>
+            <property>
+              <name>JAVA_HOME</name>
+              <value>${java.home}</value>
+            </property>
+            <property>
+              <name>M2_HOME</name>
+              <value>${maven.home}</value>
+            </property>
+            <property>
+              <name>plexus.home</name>
+              <!-- ${project.build.directory} is not evaluated see surefire documentation -->
+              <!--value>${project.build.directory}</value-->
+              <value>./target</value>
+            </property>
+            <property>
+              <name>appserver.base</name>
+              <value>${basedir}/target/test-classes/</value>
+            </property>
+            <property>
+              <name>user.home</name>
+              <value>${basedir}/target/test-classes/</value>
+            </property>
+            <property>
+              <!-- java.io.tmpdir is a shared directory on solaris and cause permission issues -->
+              <name>java.io.tmpdir</name>
+              <value>${project.build.directory}</value>
+            </property>
+          </systemProperties>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   <modules>
     <module>continuum-api</module>
+    <module>continuum-base</module>
     <module>continuum-commons</module>
     <module>continuum-security</module>
-    <!-- module>continuum-core-it</module -->    <!-- TODO RE-ADD it when continuum-plexus-application will be back -->
-    <module>continuum-store</module>    
-    <module>continuum-reports</module>    
+    <module>continuum-store</module>
+    <module>continuum-reports</module>
     <module>continuum-core</module>
     <module>continuum-model</module>
     <module>continuum-notifiers</module>
-    <module>continuum-plexus-application</module>
-    <module>continuum-plexus-runtime</module>
     <module>continuum-test</module>
     <module>continuum-webapp</module>
     <module>continuum-xmlrpc</module>
     <module>continuum-release</module>
     <module>continuum-data-management</module>
-    <module>continuum-configuration</module>
-    <module>maven-continuum-plugin</module>
+    <module>continuum-jetty</module>
+    <module>continuum-purge</module>
+    <module>continuum-buildagent</module>
+    <module>continuum-distributed</module>
+    <module>continuum-builder</module>
+    <module>continuum-artifact-manager</module>
   </modules>
   <repositories>
+    <!-- atlassian xmlrpc 0.11 -->
     <repository>
-      <id>codehaus.org</id>
-      <name>Codehaus Snapshot Development Repository</name>
-      <url>http://snapshots.repository.codehaus.org/</url>
+      <id>atlassian.releases</id>
+      <url>https://maven.atlassian.com/content/groups/public</url>
       <releases>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </releases>
       <snapshots>
+<<<<<<< HEAD
         <enabled>true</enabled>
       </snapshots>
     </repository>
@@ -173,63 +409,48 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>      
+=======
+        <enabled>false</enabled>
+      </snapshots>
+>>>>>>> refs/remotes/apache/trunk
     </repository>
   </repositories>
-  <!--
-  uncomment if snapshot plugins are needed
-  <pluginRepositories>
-    <pluginRepository>
-      <id>codehaus.org</id>
-      <name>Codehaus Snapshot Development Repository</name>
-      <url>http://snapshots.repository.codehaus.org/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </pluginRepository>
-    <pluginRepository>
-      <id>people.apache.org</id>
-      <name>Apache Snapshot Development Repository</name>
-      <url>http://people.apache.org/repo/m2-snapshot-repository</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </pluginRepository>
-  </pluginRepositories>
-  -->
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-component-api</artifactId>
-      <version>1.0-alpha-20</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-container-default</artifactId>
-      <version>1.0-alpha-20</version>
     </dependency>
   </dependencies>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>1.9.5</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-core</artifactId>
         <version>${maven.version}</version>
         <exclusions>
           <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>classworlds</groupId>
             <artifactId>classworlds</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -237,26 +458,77 @@
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-model</artifactId>
         <version>${maven.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-artifact</artifactId>
         <version>${maven.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-artifact-manager</artifactId>
         <version>${maven.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-repository-metadata</artifactId>
+        <version>${maven.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-artifact-manager</artifactId>
+        <version>${project.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact-manager</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-project</artifactId>
         <version>${maven.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact-manager</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-settings</artifactId>
         <version>${maven.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
@@ -265,17 +537,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-manager-plexus</artifactId>
-        <version>${maven-scm.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-provider-bazaar</artifactId>
-        <version>${maven-scm.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-provider-clearcase</artifactId>
+        <artifactId>maven-scm-provider-svnexe</artifactId>
         <version>${maven-scm.version}</version>
       </dependency>
       <dependency>
@@ -290,12 +552,43 @@
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-provider-hg</artifactId>
+        <artifactId>maven-scm-manager-plexus</artifactId>
         <version>${maven-scm.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-providers-standard</artifactId>
+        <version>${maven-scm.version}</version>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-provider-local</artifactId>
+        <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-cvs-commons</artifactId>
+        <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-svn-commons</artifactId>
+        <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-bazaar</artifactId>
+        <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-clearcase</artifactId>
+        <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-hg</artifactId>
         <version>${maven-scm.version}</version>
       </dependency>
       <dependency>
@@ -310,18 +603,36 @@
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-provider-svnexe</artifactId>
-        <version>${maven-scm.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.scm</groupId>
         <artifactId>maven-scm-provider-synergy</artifactId>
         <version>${maven-scm.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.scm</groupId>
-        <artifactId>maven-scm-provider-vss</artifactId>
+        <artifactId>maven-scm-provider-git-commons</artifactId>
         <version>${maven-scm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.release</groupId>
+        <artifactId>maven-release-manager</artifactId>
+        <version>2.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jdom</groupId>
+            <artifactId>jdom</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact-manager</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.wagon</groupId>
@@ -337,6 +648,16 @@
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-http-lightweight</artifactId>
         <version>${wagon.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jtidy</groupId>
+            <artifactId>jtidy</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.wagon</groupId>
@@ -350,54 +671,73 @@
       </dependency>
       <dependency>
         <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-webdav</artifactId>
+        <artifactId>wagon-webdav-jackrabbit</artifactId>
         <version>${wagon.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jdom</groupId>
+            <artifactId>jdom</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-model</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-api</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-commons</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-configuration</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-scm</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-store</artifactId>
         <classifier>tests</classifier>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-store</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-reports</artifactId>
-        <version>${pom.version}</version>
-      </dependency>      
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-core</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-test</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
@@ -412,88 +752,213 @@
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-xmlrpc-server</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
-        <artifactId>continuum-plexus-application</artifactId>
-        <version>${pom.version}</version>
+        <artifactId>continuum-buildagent-webdav</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.xmlrpc</groupId>
+        <artifactId>xmlrpc-client</artifactId>
+        <version>${xmlrpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.xmlrpc</groupId>
+        <artifactId>xmlrpc-server</artifactId>
+        <version>${xmlrpc.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.xmlrpc</groupId>
+        <artifactId>xmlrpc-common</artifactId>
+        <version>${xmlrpc.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.atlassian.xmlrpc</groupId>
+        <artifactId>atlassian-xmlrpc-binder-annotations</artifactId>
+        <version>${atlassian.xmlrpc.binder.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.atlassian.xmlrpc</groupId>
+        <artifactId>atlassian-xmlrpc-binder-support</artifactId>
+        <version>${atlassian.xmlrpc.binder.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.atlassian.xmlrpc</groupId>
+        <artifactId>atlassian-xmlrpc-binder</artifactId>
+        <version>${atlassian.xmlrpc.binder.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.atlassian.xmlrpc</groupId>
+        <artifactId>atlassian-xmlrpc-binder-server-spring</artifactId>
+        <version>${atlassian.xmlrpc.binder.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-notifier-api</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-notifier-irc</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-notifier-jabber</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-notifier-msn</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-notifier-wagon</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-release</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-security</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-webapp</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
         <type>war</type>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>continuum-legacy</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>data-management-api</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>data-management-cli</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>data-management-jdo</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>data-management-redback-jdo</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.continuum</groupId>
         <artifactId>redback-legacy</artifactId>
-        <version>${pom.version}</version>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-builder</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-buildagent-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-buildagent-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-buildagent-webapp</artifactId>
+        <version>${project.version}</version>
+        <type>war</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-commons</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-slave-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-slave-server</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-slave-client</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-master-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-master-server</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-distributed-master-client</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>net.sf.ehcache</groupId>
         <artifactId>ehcache</artifactId>
-        <version>1.3.0</version>
+        <version>1.5.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -509,17 +974,37 @@
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>file-management</artifactId>
         <version>1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact-manager</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus.registry</groupId>
         <artifactId>plexus-registry-api</artifactId>
         <version>1.0-alpha-3</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus.registry</groupId>
         <artifactId>plexus-registry-commons</artifactId>
         <version>1.0-alpha-3</version>
         <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>ant</groupId>
             <artifactId>ant-optional</artifactId>
@@ -532,20 +1017,40 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging-api</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>xmlunit</groupId>
+        <artifactId>xmlunit</artifactId>
+        <version>1.0</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>jdom</groupId>
+        <artifactId>jdom</artifactId>
+        <version>1.0</version>
       </dependency>
       <dependency>
         <groupId>jpox</groupId>
         <artifactId>jpox</artifactId>
-        <version>1.1.7</version>
+        <version>1.1.9-1</version>
         <exclusions>
+          <exclusion>
+            <groupId>javax.transaction</groupId>
+            <artifactId>transaction-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.resource</groupId>
+            <artifactId>connector-api</artifactId>
+          </exclusion>
+          <!-- targeting JDK 1.4 we don't need this -->
           <exclusion>
             <groupId>javax.sql</groupId>
             <artifactId>jdbc-stdext</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.transaction</groupId>
-            <artifactId>jta</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -575,60 +1080,57 @@
         <version>5.2</version>
       </dependency>
       <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>1.2.12</version>
-      </dependency>
-      <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>1.4.6</version>
+        <version>3.0.15</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-jdo2</artifactId>
         <version>1.0-alpha-8</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-formica</artifactId>
-        <version>1.0-beta-13</version>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-velocity</artifactId>
-        <version>1.1.4</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-mail-sender-api</artifactId>
-        <version>${mail-sender.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-mail-sender-simple</artifactId>
-        <version>${mail-sender.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-mail-sender-test</artifactId>
-        <version>${mail-sender.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-mail-sender-javamail</artifactId>
-        <version>${mail-sender.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-log4j-logging</artifactId>
-        <version>1.1-alpha-2</version>
+        <version>1.1.7</version>
+        <exclusions>
+          <exclusion>
+            <groupId>velocity</groupId>
+            <artifactId>velocity-dep</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-slf4j-logging</artifactId>
         <version>1.1-alpha-1</version>
         <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
@@ -638,22 +1140,38 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.5.0</version>
-      </dependency>      
+        <version>${slf4jVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4jVersion}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.5.0</version>
+        <version>${slf4jVersion}</version>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-notification</artifactId>
-        <version>1.0-alpha-5</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4jVersion}</version>
       </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
+        <version>${slf4jVersion}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-taskqueue</artifactId>
+<<<<<<< HEAD
         <version>1.0-alpha-8-SNAPSHOT</version>
+=======
+        <version>1.0-alpha-8</version>
+>>>>>>> refs/remotes/apache/trunk
       </dependency>
       <dependency>
         <groupId>org.apache.derby</groupId>
@@ -661,23 +1179,87 @@
         <version>10.1.3.1</version>
       </dependency>
       <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+        <version>1.4</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
         <groupId>hsqldb</groupId>
         <artifactId>hsqldb</artifactId>
-        <version>1.7.3.3</version>
+        <version>1.8.0.7</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-quartz</artifactId>
-        <version>1.0-alpha-3</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-xwork-integration</artifactId>
-        <version>1.0-alpha-7</version>
+        <version>1.0-alpha-4</version>
         <exclusions>
           <exclusion>
-            <groupId>velocity</groupId>
-            <artifactId>velocity-dep</artifactId>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>1.5</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>2.4</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-collections</groupId>
+        <artifactId>commons-collections</artifactId>
+        <version>3.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>1.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.struts</groupId>
+        <artifactId>struts2-core</artifactId>
+        <version>${struts.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.struts</groupId>
+        <artifactId>struts2-spring-plugin</artifactId>
+        <version>${struts.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.struts</groupId>
+        <artifactId>struts2-json-plugin</artifactId>
+        <version>${struts.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -685,56 +1267,109 @@
         Plexus Redback Dependencies
         -->
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-rbac-memory</artifactId>
         <version>${redback.version}</version>
         <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-authentication-api</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-policy</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-authorization-api</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-users-api</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-keys-api</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-users-memory</artifactId>
         <version>${redback.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-keys-memory</artifactId>
         <version>${redback.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-rbac-model</artifactId>
         <version>${redback.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-authorization-rbac</artifactId>
         <version>${redback.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-rbac-role-manager</artifactId>
         <version>${redback.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-users-configurable</artifactId>
         <version>${redback.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-system</artifactId>
         <version>${redback.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
-        <artifactId>redback-taglib</artifactId>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-common-integrations</artifactId>
         <version>${redback.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
-        <artifactId>redback-xwork-content</artifactId>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-struts2-content</artifactId>
         <version>${redback.version}</version>
         <type>war</type>
         <exclusions>
@@ -742,15 +1377,33 @@
             <groupId>classworlds</groupId>
             <artifactId>classworlds</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
-        <artifactId>redback-xwork-integration</artifactId>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-struts2-integration</artifactId>
         <version>${redback.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>classworlds</groupId>
+            <artifactId>classworlds</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>velocity</groupId>
+            <artifactId>velocity-dep</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
-        <groupId>org.codehaus.plexus.redback</groupId>
+        <groupId>org.codehaus.redback</groupId>
         <artifactId>redback-data-management</artifactId>
         <version>${redback.version}</version>
       </dependency>
@@ -758,6 +1411,416 @@
         <groupId>commons-httpclient</groupId>
         <artifactId>commons-httpclient</artifactId>
         <version>3.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>plexus-spring</artifactId>
+        <version>${redback.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-xmlrpc-services</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.redback</groupId>
+        <artifactId>redback-xmlrpc-security</artifactId>
+        <version>${redback.version}</version>
+      </dependency>
+
+      <!-- due to http://jira.codehaus.org/browse/MECLIPSE-472 -->
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-component-api</artifactId>
+        <version>1.0-alpha-22</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-container-default</artifactId>
+        <version>1.0-alpha-22</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context-support</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-tx</artifactId>
+        <version>${spring.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>jsr250-api</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.continuum</groupId>
+        <artifactId>continuum-purge</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.archiva</groupId>
+        <artifactId>archiva-model</artifactId>
+        <version>${archiva.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl104-over-slf4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.archiva</groupId>
+        <artifactId>archiva-common</artifactId>
+        <version>${archiva.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.archiva</groupId>
+        <artifactId>archiva-repository-layer</artifactId>
+        <version>${archiva.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl104-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jdom</groupId>
+            <artifactId>jdom</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.archiva</groupId>
+        <artifactId>archiva-core-consumers</artifactId>
+        <version>${archiva.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.archiva</groupId>
+            <artifactId>archiva-database</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.archiva</groupId>
+            <artifactId>archiva-configuration</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.archiva</groupId>
+            <artifactId>archiva-indexer</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.archiva</groupId>
+            <artifactId>archiva-consumer-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.archiva</groupId>
+            <artifactId>archiva-repository-layer</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-command-line</artifactId>
+        <version>1.0-alpha-2</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-action</artifactId>
+        <version>1.0-alpha-6</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-container-default</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-component-annotations</artifactId>
+        <version>1.5.5</version>
+      </dependency>
+      <dependency>
+        <groupId>stax</groupId>
+        <artifactId>stax</artifactId>
+        <version>1.1.1-dev</version>
+        <scope>runtime</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>xmlbeans</groupId>
+            <artifactId>xmlbeans-jsr173-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.stax-utils</groupId>
+        <artifactId>stax-utils</artifactId>
+        <version>20060502</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.bea.xml</groupId>
+            <artifactId>jsr173-ri</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>stax</groupId>
+        <artifactId>stax-api</artifactId>
+        <version>1.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-deploy</artifactId>
+        <version>${jetty.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-start</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-jndi</artifactId>
+        <version>${jetty.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-jsp</artifactId>
+        <version>${jetty.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-plus</artifactId>
+        <version>${jetty.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-annotations</artifactId>
+        <version>${jetty.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>commons-dbcp</groupId>
+        <artifactId>commons-dbcp</artifactId>
+        <version>1.4</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.cli-parser</groupId>
+        <artifactId>cli</artifactId>
+        <version>7</version>
+      </dependency>
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.14</version>
+      </dependency>
+      <dependency>
+        <groupId>backport-util-concurrent</groupId>
+        <artifactId>backport-util-concurrent</artifactId>
+        <version>3.0</version>
+      </dependency>
+      <dependency>
+        <groupId>quartz</groupId>
+        <artifactId>quartz</artifactId>
+        <version>1.5.2</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>velocity</groupId>
+        <artifactId>velocity</artifactId>
+        <version>1.4</version>
+        <exclusions>
+          <exclusion>
+            <groupId>velocity</groupId>
+            <artifactId>velocity-dep</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-classworlds</artifactId>
+        <version>1.2-alpha-7</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.jdo</groupId>
+        <artifactId>jdo2-api</artifactId>
+        <version>2.0</version>
+      </dependency>
+      <dependency>
+        <groupId>xml-apis</groupId>
+        <artifactId>xml-apis</artifactId>
+        <version>1.0.b2</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging-api</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>2.4</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>1.5.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.jackrabbit</groupId>
+        <artifactId>jackrabbit-webdav</artifactId>
+        <version>1.5.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>httpunit</groupId>
+        <artifactId>httpunit</artifactId>
+        <version>1.6.2</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>jtidy</groupId>
+            <artifactId>jtidy</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.5.2</version>
+      </dependency>
+      <dependency>
+        <groupId>jpox</groupId>
+        <artifactId>jpox-ehcache</artifactId>
+        <version>1.1.9</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>nekohtml</groupId>
+        <artifactId>nekohtml</artifactId>
+        <version>1.9.6.2</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
@@ -769,27 +1832,17 @@
 
   <profiles>
     <profile>
-      <id>release</id>
+      <id>apache-release</id>
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.1</version>
-            <inherited>false</inherited>
-            <configuration>
-              <descriptors>
-                <descriptor>src/main/assembly/src.xml</descriptor>
-              </descriptors>
-              <tarLongFileMode>gnu</tarLongFileMode>
-              <appendAssemblyId>false</appendAssemblyId>
-              <finalName>apache-continuum-${version}-src</finalName>
-            </configuration>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
             <executions>
               <execution>
-                <id>make-assembly</id>
-                <phase>package</phase>
+                <phase>verify</phase>
                 <goals>
-                  <goal>single</goal>
+                  <goal>check</goal>
                 </goals>
               </execution>
             </executions>
@@ -803,14 +1856,41 @@
         <module>continuum-webapp-test</module>
       </modules>
     </profile>
+    <profile>
+      <id>buildnumber</id>
+      <activation>
+        <file>
+          <exists>.svn</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <version>1.0-beta-1</version>
+            <executions>
+              <execution>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>create</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <doCheck>false</doCheck>
+              <doUpdate>false</doUpdate>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
-
-  <properties>
-    <continuumWebappVersion>${pom.version}</continuumWebappVersion>
-    <maven.version>2.0.6</maven.version>
-    <wagon.version>1.0-beta-2</wagon.version>
-    <maven-scm.version>1.1-SNAPSHOT</maven-scm.version>
-    <redback.version>1.0-alpha-4</redback.version>
-    <mail-sender.version>1.0-alpha-7</mail-sender.version>
-  </properties>
+  <distributionManagement>
+    <!-- Site base required here for site:stage to calculate correct URLs -->
+    <site>
+      <id>apache</id>
+      <url>scm:svn:${rootSitePublishUrl}</url>
+    </site>
+  </distributionManagement>
 </project>

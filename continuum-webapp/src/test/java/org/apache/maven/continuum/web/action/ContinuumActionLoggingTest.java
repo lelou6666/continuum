@@ -19,7 +19,10 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import org.codehaus.plexus.PlexusTestCase;
+import org.apache.maven.continuum.PlexusSpringTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -28,40 +31,38 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * TestContinuumActionLogging:
  *
  * @author jesse
- * @version $Id$
  */
 public class ContinuumActionLoggingTest
-    extends PlexusTestCase
+    extends PlexusSpringTestCase
 {
-
     StringBuffer testOutput = new StringBuffer();
 
-
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
-
         PrintStream systemPrintStream = new PrintStream( new FilteredStream( System.out ), true );
         System.setOut( systemPrintStream );
     }
 
-
+    @After
     public void tearDown()
     {
-        System.setOut( new PrintStream(
-            new BufferedOutputStream( new FileOutputStream( java.io.FileDescriptor.out ), 128 ), true ) );
+        System.setOut( new PrintStream( new BufferedOutputStream( new FileOutputStream( java.io.FileDescriptor.out ),
+                                                                  128 ), true ) );
     }
 
-
+    @Test
     public void testActionLogging()
         throws Exception
     {
-        TestAction testAction = (TestAction) lookup( "com.opensymphony.xwork.Action", "testAction" );
+        TestAction testAction = (TestAction) lookup( "com.opensymphony.xwork2.Action", "testAction" );
         String testString = "action test string";
         testAction.setTestString( testString );
 
@@ -69,7 +70,6 @@ public class ContinuumActionLoggingTest
 
         assertTrue( testOutput.toString().indexOf( testString ) != -1 );
     }
-
 
     class FilteredStream
         extends FilterOutputStream

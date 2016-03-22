@@ -32,7 +32,6 @@ import java.util.Map;
  * the extending clases.
  *
  * @author <a href='mailto:rahul.thakur.xdev@gmail.com'>Rahul Thakur</a>
- * @version $Id$
  * @since 1.1
  */
 public abstract class AbstractNotifierEditActionSupport
@@ -73,6 +72,13 @@ public abstract class AbstractNotifierEditActionSupport
      * for the build.
      */
     private boolean sendOnWarning;
+
+    /**
+     * Detemines if the notifier should fire when prepare build resulted in any error(s).<p>
+     * <code>true</code> implies notifier executes when any error(s) is/are detected
+     * for the build.
+     */
+    private boolean sendOnScmFailure;
 
     /**
      * Detemines if the save operation returns to the project group notifier page or not.<p>
@@ -137,6 +143,8 @@ public abstract class AbstractNotifierEditActionSupport
 
         notifier.setSendOnWarning( isSendOnWarning() );
 
+        notifier.setSendOnScmFailure( isSendOnScmFailure() );
+
         setNotifierConfiguration( notifier );
 
         saveNotifier( notifier );
@@ -185,6 +193,8 @@ public abstract class AbstractNotifierEditActionSupport
         setSendOnError( notifier.isSendOnError() );
 
         setSendOnWarning( notifier.isSendOnWarning() );
+
+        setSendOnScmFailure( notifier.isSendOnScmFailure() );
 
         initConfiguration( notifier.getConfiguration() );
 
@@ -276,6 +286,16 @@ public abstract class AbstractNotifierEditActionSupport
         this.sendOnWarning = sendOnWarning;
     }
 
+    public boolean isSendOnScmFailure()
+    {
+        return sendOnScmFailure;
+    }
+
+    public void setSendOnScmFailure( boolean sendOnScmFailure )
+    {
+        this.sendOnScmFailure = sendOnScmFailure;
+    }
+
     /**
      * @param notifierId the notifierId to set
      */
@@ -306,13 +326,13 @@ public abstract class AbstractNotifierEditActionSupport
      *
      * @param configuration map of configuration key-value pairs.
      */
-    protected abstract void initConfiguration( Map configuration );
+    protected abstract void initConfiguration( Map<String, String> configuration );
 
     /**
      * Sets the configuration for the specified {@link ProjectNotifier}
      * instance.
      *
-     * @param notifier
+     * @param notifier The project notifier.
      * @see #initConfiguration(Map)
      */
     protected abstract void setNotifierConfiguration( ProjectNotifier notifier );

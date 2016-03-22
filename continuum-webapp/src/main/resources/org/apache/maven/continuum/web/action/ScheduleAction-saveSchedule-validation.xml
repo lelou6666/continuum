@@ -17,19 +17,24 @@
   ~ under the License.
   -->
 
-<!DOCTYPE validators PUBLIC
-    "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
-    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+<!DOCTYPE validators PUBLIC 
+  "-//Apache Struts//XWork Validator 1.0.2//EN"
+  "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
 
 <validators>
   <field name="name">
     <field-validator type="requiredstring">
       <message key="schedule.name.required"/>
     </field-validator>
+    <field-validator type="regex">
+      <param name="trim">true</param>
+      <param name="regex"><![CDATA[[a-zA-Z0-9_.\s-]*]]></param>
+      <message key="schedule.name.invalid"/>
+    </field-validator>
   </field>
   <field name="description">
     <field-validator type="requiredstring">
-      <message key="schedule.version.required"/>
+      <message key="schedule.description.required"/>
     </field-validator>
   </field>
   <field name="maxJobExecutionTime">
@@ -37,14 +42,14 @@
       <message key="schedule.maxJobExecutionTime.required"/>
     </field-validator>
     <field-validator type="regex">
-      <param name="expression"><![CDATA[([0-9])]]></param>
+      <param name="regex"><![CDATA[([0-9])]]></param>
       <message key="schedule.maxJobExecutionTime.invalid"/>
     </field-validator>
   </field>
   <field name="delay">
     <field-validator type="regex">
-      <param name="expression"><![CDATA[([0-9])]]></param>
-      <message key="schedule.delay.invalid"/>  
+      <param name="regex"><![CDATA[([0-9])]]></param>
+      <message key="schedule.delay.invalid"/>
     </field-validator>
   </field>
   <validator type="cronexpression">

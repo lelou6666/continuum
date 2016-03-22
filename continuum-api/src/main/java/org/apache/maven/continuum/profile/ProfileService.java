@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 15 juin 07
  */
 public interface ProfileService
@@ -39,8 +38,13 @@ public interface ProfileService
     public void deleteProfile( int profileId )
         throws ProfileException;
 
+    /**
+     * @param profile
+     * @throws ProfileException
+     * @throws AlreadyExistsProfileException if a profile with the same name already exists
+     */
     public void updateProfile( Profile profile )
-        throws ProfileException;
+        throws ProfileException, AlreadyExistsProfileException;
 
     /**
      * <b>Add an empty profile without builder, jdk and envVars</b>
@@ -48,9 +52,10 @@ public interface ProfileService
      * @param profile
      * @return
      * @throws ProfileException
+     * @throws AlreadyExistsProfileException if a profile with the same name already exists
      */
     public Profile addProfile( Profile profile )
-        throws ProfileException;
+        throws ProfileException, AlreadyExistsProfileException;
 
     public List<Profile> getAllProfiles()
         throws ProfileException;
@@ -63,10 +68,10 @@ public interface ProfileService
 
     public void addEnvVarInProfile( Profile profile, Installation envVar )
         throws ProfileException;
-    
+
     public void addInstallationInProfile( Profile profile, Installation installation )
         throws ProfileException;
-    
+
     /**
      * @param profile
      * @param installation
@@ -74,5 +79,11 @@ public interface ProfileService
      * @since 1.1-beta-4
      */
     public void removeInstallationFromProfile( Profile profile, Installation installation )
+        throws ProfileException;
+
+    public Profile getProfileWithName( String profileName )
+        throws ProfileException;
+
+    public boolean alreadyExistsProfileName( Profile profile )
         throws ProfileException;
 }

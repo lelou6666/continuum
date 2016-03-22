@@ -21,11 +21,12 @@ package org.apache.maven.continuum.configuration;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class ConfigurationLoadingException
     extends Exception
 {
+    private static final long serialVersionUID = -8836376517389252165L;
+
     public ConfigurationLoadingException( String message )
     {
         super( message );

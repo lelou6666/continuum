@@ -17,29 +17,28 @@
   ~ under the License.
   --%>
 
-<%@ taglib prefix="ww" uri="/webwork" %>
+<%@ taglib prefix="s" uri="/struts-tags" %>
 <html>
+<s:i18n name="localization.Continuum">
 <head>
-  <title>Configure Appearance</title>
-  <ww:head/>
+  <title><s:text name="appearance.page.title"/></title>
 </head>
 
 <body>
-  <h1>Appearance</h1>
+  <div class="h3">
+    <h3><s:text name="appearance.companyDetails"/></h3>
 
-  <h2>Company Details</h2>
+    <p>
+      <s:text name="appearance.enterCompanyPom"/>
+    </p>
 
-  <p>
-    Enter the details of the company super POM below. If it exists, the organization name, URL and logo will be read
-    from it.
-  </p>
-
-  <ww:actionmessage/>
-  <ww:form method="post" action="saveAppearance" namespace="/admin" validate="true" theme="xhtml">
-    <ww:textfield name="companyPom.groupId" label="Group ID"/>
-    <ww:textfield name="companyPom.artifactId" label="Artifact ID"/>
-    <ww:submit value="Save"/>
-  </ww:form>
+    <s:actionmessage/>
+    <s:form method="post" action="saveAppearance" namespace="/admin" validate="true">
+      <s:textfield name="companyPom.groupId" label="%{getText('appearance.companyPom.groupId')}" size="100"/>
+      <s:textfield name="companyPom.artifactId" label="%{getText('appearance.companyPom.artifactId')}" size="100"/>
+      <s:submit value="%{getText('save')}"/>
+    </s:form>
+  </div>
 </body>
-
+</s:i18n>
 </html>

@@ -19,29 +19,15 @@
 
 <plexus>
   <components>
+
     <component>
-      <role>org.codehaus.plexus.notification.RecipientSource</role>
-      <implementation>org.apache.maven.continuum.notification.ContinuumRecipientSource</implementation>
-      <configuration>
-        <toOverride>nobody@localhost</toOverride>
-      </configuration>
+      <role>org.springframework.mail.javamail.JavaMailSender</role>
+      <implementation>org.apache.continuum.notification.mail.MockJavaMailSender</implementation>
+      <role-hint>continuum</role-hint>
     </component>
 
     <component>
-      <role>org.codehaus.plexus.mailsender.MailSender</role>
-      <implementation>org.codehaus.plexus.mailsender.test.MockMailSender</implementation>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.notification.RecipientSource</role>
-      <implementation>org.apache.maven.continuum.notification.ContinuumRecipientSource</implementation>
-      <configuration>
-        <toOverride>nobody@localhost</toOverride>
-      </configuration>
-    </component>
-
-    <component>
-      <role>org.codehaus.plexus.notification.notifier.Notifier</role>
+      <role>org.apache.maven.continuum.notification.Notifier</role>
       <role-hint>mail</role-hint>
       <implementation>org.apache.maven.continuum.notification.mail.MailContinuumNotifier</implementation>
       <requirements>
@@ -49,11 +35,15 @@
           <role>org.codehaus.plexus.velocity.VelocityComponent</role>
         </requirement>
         <requirement>
-          <role>org.apache.maven.continuum.store.ContinuumStore</role>
-          <role-hint>jdo</role-hint>
+          <role>org.apache.continuum.dao.ProjectDao</role>
         </requirement>
         <requirement>
-          <role>org.codehaus.plexus.mailsender.MailSender</role>
+          <role>org.apache.continuum.dao.BuildResultDao</role>
+        </requirement>
+        <requirement>
+          <field-name>javaMailSender</field-name>
+          <role>javaMailSender</role>
+          <role-hint>continuum</role-hint>
         </requirement>
         <requirement>
           <role>org.apache.maven.continuum.configuration.ConfigurationService</role>
@@ -61,14 +51,23 @@
         <requirement>
           <role>org.apache.maven.continuum.Continuum</role>
         </requirement>
+        <requirement>
+          <role>org.apache.maven.continuum.reports.surefire.ReportTestSuiteGenerator</role>
+        </requirement>
       </requirements>
       <configuration>
         <fromMailbox>continuum@localhost</fromMailbox>
         <fromName>Continuum</fromName>
         <timestampFormat>EEE, d MMM yyyy HH:mm:ss Z</timestampFormat>
-        <includeBuildResult>true</includeBuildResult>
+        <includeBuildOutput>true</includeBuildOutput>
+        <toOverride>nobody@localhost</toOverride>
       </configuration>
     </component>
 
+    <component>
+      <role>org.apache.maven.continuum.utils.ContinuumUrlValidator</role>
+      <role-hint>continuumUrl</role-hint>
+      <implementation>org.apache.maven.continuum.utils.ContinuumUrlValidator</implementation>
+    </component>
   </components>
 </plexus>

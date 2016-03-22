@@ -19,40 +19,37 @@ package org.apache.maven.continuum.initialization;
  * under the License.
  */
 
+import org.apache.continuum.dao.DaoUtils;
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.Schedule;
-import org.apache.maven.continuum.store.ContinuumStore;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 4 juin 07
  */
 public class DefaultContinuumInitializerTest
     extends AbstractContinuumTest
 {
-
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-        getContinuumStore().eraseDatabase();
-        ContinuumInitializer continuumInitializer =
-            (ContinuumInitializer) lookup( ContinuumInitializer.ROLE, "default" );
+        DaoUtils daoUtils = lookup( DaoUtils.class );
+        daoUtils.eraseDatabase();
+        ContinuumInitializer continuumInitializer = lookup( ContinuumInitializer.class, "default" );
         continuumInitializer.initialize();
     }
 
-    public ContinuumStore getContinuumStore()
-        throws Exception
-    {
-        return (ContinuumStore) lookup( ContinuumStore.ROLE, "jdo" );
-    }
-
+    @Test
     public void testDefaultSchedule()
         throws Exception
     {
-        Schedule schedule = getContinuumStore().getScheduleByName( ConfigurationService.DEFAULT_SCHEDULE_NAME );
+        Schedule schedule = getScheduleDao().getScheduleByName( ConfigurationService.DEFAULT_SCHEDULE_NAME );
         assertNotNull( schedule );
     }
 

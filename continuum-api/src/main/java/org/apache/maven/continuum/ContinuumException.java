@@ -21,11 +21,12 @@ package org.apache.maven.continuum;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumException
     extends Exception
 {
+    private static final long serialVersionUID = -5566747100823603618L;
+
     public ContinuumException( String message )
     {
         super( message );

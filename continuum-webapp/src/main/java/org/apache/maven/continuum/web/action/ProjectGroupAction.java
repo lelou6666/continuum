@@ -19,7 +19,20 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.commons.collections.ComparatorUtils;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.buildagent.NoBuildAgentException;
+import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
+import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.buildmanager.BuildsManager;
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.utils.build.BuildTrigger;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
@@ -28,19 +41,23 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.bean.ProjectGroupUserBean;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.RBACManager;
 import org.codehaus.plexus.redback.rbac.RbacManagerException;
 import org.codehaus.plexus.redback.rbac.RbacObjectNotFoundException;
 import org.codehaus.plexus.redback.rbac.Role;
+import org.codehaus.plexus.redback.rbac.UserAssignment;
 import org.codehaus.plexus.redback.role.RoleManager;
 import org.codehaus.plexus.redback.role.RoleManagerException;
 import org.codehaus.plexus.redback.users.User;
-import org.codehaus.plexus.redback.users.UserManager;
-import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -51,13 +68,14 @@ import java.util.Map;
  * ProjectGroupAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="projectGroup"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectGroup", instantiationStrategy = "per-lookup" )
 public class ProjectGroupAction
     extends ContinuumConfirmAction
 {
-    private final static Map FILTER_CRITERIA = new HashMap();
+    private static final Logger logger = LoggerFactory.getLogger( ProjectGroupAction.class );
+
+    private static final Map<String, String> FILTER_CRITERIA = new HashMap<String, String>();
 
     static
     {
@@ -66,20 +84,14 @@ public class ProjectGroupAction
         FILTER_CRITERIA.put( "email", "Email contains" );
     }
 
-    /**
-     * @plexus.requirement role-hint="configurable"
-     */
-    private UserManager manager;
-
-    /**
-     * @plexus.requirement role-hint="cached"
-     */
+    @Requirement( hint = "cached" )
     private RBACManager rbac;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private RoleManager roleManager;
+
+    @Requirement( hint = "parallel" )
+    private BuildsManager parallelBuildsManager;
 
     private int projectGroupId;
 
@@ -91,19 +103,20 @@ public class ProjectGroupAction
 
     private Map projects = new HashMap();
 
-    private Map projectGroups = new HashMap();
-
-    private boolean confirmed;
+    private Map<Integer, String> projectGroups = new HashMap<Integer, String>();
 
     private boolean projectInCOQueue = false;
 
-    private Collection projectList;
+    private Collection<Project> projectList;
 
-    private List projectGroupUsers;
+    private List<ProjectGroupUserBean> projectGroupUsers;
 
     private String filterProperty;
 
     private String filterKey;
+
+    //Default order is by username
+    private String sorterProperty = "username";
 
     private boolean ascending = true;
 
@@ -115,9 +128,28 @@ public class ProjectGroupAction
 
     private int buildDefinitionId;
 
+    private boolean fromSummaryPage = false;
+
     private String preferredExecutor = "maven2";
 
-    public String summary()
+    private String url;
+
+    private int repositoryId;
+
+    private List<LocalRepository> repositories;
+
+    private boolean disabledRepositories = true;
+
+    private List<ProjectScmRoot> projectScmRoots;
+
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+        repositories = getContinuum().getRepositoryService().getAllLocalRepositories();
+    }
+
+    public String browse()
         throws ContinuumException
     {
         try
@@ -129,11 +161,17 @@ public class ProjectGroupAction
             addActionError( authzE.getMessage() );
             return REQUIRES_AUTHORIZATION;
         }
+        catch ( ContinuumException e )
+        {
+            addActionError( getText( "projectGroup.invalid.id", "Invalid Project Group Id: " + projectGroupId,
+                                     Integer.toString( projectGroupId ) ) );
+            return "to_summary_page";
+        }
 
         projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
 
-        List<BuildDefinition> projectGroupBuildDefs =
-            getContinuum().getBuildDefinitionsForProjectGroup( projectGroupId );
+        List<BuildDefinition> projectGroupBuildDefs = getContinuum().getBuildDefinitionsForProjectGroup(
+            projectGroupId );
 
         if ( projectGroupBuildDefs != null )
         {
@@ -143,10 +181,10 @@ public class ProjectGroupAction
 
                 if ( !buildDefinition.isDefaultForProject() )
                 {
-                    String key = StringUtils.isEmpty( buildDefinition.getDescription() ) ? buildDefinition.getGoals()
-                        : buildDefinition
-                            .getDescription();
-                    buildDefinitions.put( key, Integer.valueOf( buildDefinition.getId() ) );
+                    String key = StringUtils.isEmpty( buildDefinition.getDescription() )
+                        ? buildDefinition.getGoals()
+                        : buildDefinition.getDescription();
+                    buildDefinitions.put( key, buildDefinition.getId() );
                 }
             }
         }
@@ -163,9 +201,16 @@ public class ProjectGroupAction
                 int nbMaven1Projects = 0;
                 int nbAntProjects = 0;
                 int nbShellProjects = 0;
-                for ( Object o : projectGroup.getProjects() )
+
+                Project rootProject = ( getContinuum().getProjectsInBuildOrder(
+                    getContinuum().getProjectsInGroupWithDependencies( projectGroupId ) ) ).get( 0 );
+                if ( "maven2".equals( rootProject.getExecutorId() ) || "maven-1".equals( rootProject.getExecutorId() ) )
                 {
-                    Project p = (Project) o;
+                    url = rootProject.getUrl();
+                }
+
+                for ( Project p : projectGroup.getProjects() )
+                {
                     if ( "maven2".equals( p.getExecutorId() ) )
                     {
                         nbMaven2Projects += 1;
@@ -200,6 +245,8 @@ public class ProjectGroupAction
                     preferredExecutor = "shell";
                 }
             }
+
+            projectScmRoots = getContinuum().getProjectScmRootByProjectGroup( projectGroup.getId() );
         }
 
         return SUCCESS;
@@ -236,13 +283,13 @@ public class ProjectGroupAction
     public String buildDefinitions()
         throws ContinuumException
     {
-        return summary();
+        return browse();
     }
 
     public String notifiers()
         throws ContinuumException
     {
-        return summary();
+        return browse();
     }
 
     public String remove()
@@ -258,17 +305,86 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        if ( confirmed )
+        try
         {
             getContinuum().removeProjectGroup( projectGroupId );
         }
-        else
+        catch ( ContinuumException e )
         {
-            name = getProjectGroupName();
-            return CONFIRM;
+            logger.error( "Error while removing project group with id " + projectGroupId, e );
+            addActionError( getText( "projectGroup.delete.error",
+                                     new String[] { Integer.toString( projectGroupId ), e.getMessage() } ) );
         }
 
+        AuditLog event = new AuditLog( "Project Group id=" + projectGroupId, AuditLogConstants.REMOVE_PROJECT_GROUP );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
+
         return SUCCESS;
+    }
+
+    public String confirmRemove()
+        throws ContinuumException
+    {
+        try
+        {
+            checkRemoveProjectGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        name = getProjectGroupName();
+        return CONFIRM;
+    }
+
+    private void initialize()
+        throws ContinuumException
+    {
+        try
+        {
+            checkManageLocalRepositoriesAuthorization();
+            disabledRepositories = false;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            // do nothing
+        }
+
+        projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
+
+        projectList = projectGroup.getProjects();
+
+        if ( projectList != null )
+        {
+            for ( Project p : projectList )
+            {
+                try
+                {
+                    if ( parallelBuildsManager.isInAnyCheckoutQueue( p.getId() ) )
+                    {
+                        projectInCOQueue = true;
+                    }
+                }
+                catch ( BuildManagerException e )
+                {
+                    throw new ContinuumException( e.getMessage(), e );
+                }
+                projects.put( p, p.getProjectGroup().getId() );
+            }
+        }
+
+        for ( ProjectGroup pg : getContinuum().getAllProjectGroups() )
+        {
+            if ( isAuthorized( projectGroup.getName() ) )
+            {
+                projectGroups.put( pg.getId(), pg.getName() );
+            }
+        }
+        repositories = getContinuum().getRepositoryService().getAllLocalRepositories();
     }
 
     public String edit()
@@ -284,7 +400,7 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
+        initialize();
 
         name = projectGroup.getName();
 
@@ -292,33 +408,30 @@ public class ProjectGroupAction
 
         projectList = projectGroup.getProjects();
 
-        if ( projectList != null )
+        if ( projectGroup.getLocalRepository() != null )
         {
-            Iterator proj = projectList.iterator();
+            repositoryId = projectGroup.getLocalRepository().getId();
+        }
+        else
+        {
+            repositoryId = -1;
+        }
 
-            while ( proj.hasNext() )
+        Collection<Project> projList = getContinuum().getProjectsInGroupWithDependencies( projectGroup.getId() );
+        if ( projList != null && projList.size() > 0 )
+        {
+            Project rootProject = ( getContinuum().getProjectsInBuildOrder( projList ) ).get( 0 );
+
+            if ( rootProject != null )
             {
-                Project p = (Project) proj.next();
-                if ( getContinuum().isInCheckoutQueue( p.getId() ) )
-                {
-                    projectInCOQueue = true;
-                }
-                projects.put( p, new Integer( p.getProjectGroup().getId() ) );
+                setUrl( rootProject.getUrl() );
             }
         }
-
-        Iterator proj_group = getContinuum().getAllProjectGroupsWithProjects().iterator();
-        while ( proj_group.hasNext() )
-        {
-            ProjectGroup pg = (ProjectGroup) proj_group.next();
-            projectGroups.put( new Integer( pg.getId() ), pg.getName() );
-        }
-
         return SUCCESS;
     }
 
     public String save()
-        throws ContinuumException
+        throws Exception
     {
         try
         {
@@ -330,14 +443,17 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        if ( name != null && name.equals( "" ) )
+        for ( ProjectGroup projectGroup : getContinuum().getAllProjectGroups() )
         {
-            addActionError( "projectGroup.error.name.required" );
-            return INPUT;
+            if ( name.equals( projectGroup.getName() ) && projectGroup.getId() != projectGroupId )
+            {
+                addActionError( getText( "projectGroup.error.name.already.exists" ) );
+            }
         }
-        else if ( name != null && name.trim().equals( "" ) )
+
+        if ( hasActionErrors() )
         {
-            addActionError( "projectGroup.error.name.cannot.be.spaces" );
+            initialize();
             return INPUT;
         }
 
@@ -347,7 +463,7 @@ public class ProjectGroupAction
         // todo convert everything like to work off of string keys
         if ( !name.equals( projectGroup.getName() ) )
         {
-            //CONTINUUM-1502
+            // CONTINUUM-1502
             name = name.trim();
             try
             {
@@ -364,9 +480,26 @@ public class ProjectGroupAction
 
         }
 
-        projectGroup.setDescription( description );
+        projectGroup.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
+
+        // [CONTINUUM-2228]. In select field can't select empty values.
+        if ( repositoryId > 0 )
+        {
+            LocalRepository repository = getContinuum().getRepositoryService().getLocalRepository( repositoryId );
+            projectGroup.setLocalRepository( repository );
+        }
 
         getContinuum().updateProjectGroup( projectGroup );
+
+        Collection<Project> projectList = getContinuum().getProjectsInGroupWithDependencies( projectGroupId );
+        if ( projectList != null && projectList.size() > 0 )
+        {
+            Project rootProject = ( getContinuum().getProjectsInBuildOrder( projectList ) ).get( 0 );
+
+            rootProject.setUrl( url );
+
+            getContinuum().updateProject( rootProject );
+        }
 
         Iterator keys = projects.keySet().iterator();
         while ( keys.hasNext() )
@@ -388,25 +521,34 @@ public class ProjectGroupAction
                 }
             }
 
-            ProjectGroup newProjectGroup =
-                getContinuum().getProjectGroupWithProjects( new Integer( id[0] ).intValue() );
+            ProjectGroup newProjectGroup = getContinuum().getProjectGroupWithProjects( new Integer( id[0] ) );
 
-            if ( newProjectGroup.getId() != projectGroup.getId() )
+            if ( newProjectGroup.getId() != projectGroup.getId() && isAuthorized( newProjectGroup.getName() ) )
             {
-                getLogger().info(
-                    "Moving project " + project.getName() + " to project group " + newProjectGroup.getName() );
+                logger.info( "Moving project " + project.getName() + " to project group " + newProjectGroup.getName() );
                 project.setProjectGroup( newProjectGroup );
 
-                //CONTINUUM-1512
-                Collection<BuildResult> results = getContinuum().getBuildResultsForProject( project.getId() );
-                for ( BuildResult br : results )
+                // CONTINUUM-1512
+                int batchSize = 100;
+                Collection<BuildResult> results;
+                do
                 {
-                    getContinuum().removeBuildResult( br.getId() );
+                    results = getContinuum().getBuildResultsForProject( project.getId(), 0, batchSize );
+                    for ( BuildResult br : results )
+                    {
+                        getContinuum().removeBuildResult( br.getId() );
+                    }
                 }
+                while ( results != null && results.size() > 0 );
 
                 getContinuum().updateProject( project );
             }
         }
+
+        AuditLog event = new AuditLog( "Project Group id=" + projectGroupId, AuditLogConstants.MODIFY_PROJECT_GROUP );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
 
         return SUCCESS;
     }
@@ -424,15 +566,46 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        if ( this.getBuildDefinitionId() == -1 )
+        BuildTrigger buildTrigger = new BuildTrigger( ContinuumProjectState.TRIGGER_FORCED, getPrincipal() );
+
+        try
         {
-            getContinuum().buildProjectGroup( projectGroupId );
+            if ( this.getBuildDefinitionId() == -1 )
+            {
+                getContinuum().buildProjectGroup( projectGroupId, buildTrigger );
+            }
+            else
+            {
+                getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId, buildTrigger );
+            }
+            addActionMessage( getText( "build.projects.success" ) );
+        }
+        catch ( BuildException be )
+        {
+            addActionError( be.getLocalizedMessage() );
+        }
+        catch ( NoBuildAgentException e )
+        {
+            addActionError( getText( "projectGroup.build.error.noBuildAgent" ) );
+        }
+        catch ( NoBuildAgentInGroupException e )
+        {
+            addActionError( getText( "projectGroup.build.error.noBuildAgentInGroup" ) );
+        }
+
+        AuditLog event = new AuditLog( "Project Group id=" + projectGroupId, AuditLogConstants.FORCE_BUILD );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
+
+        if ( this.isFromSummaryPage() )
+        {
+            return "to_summary_page";
         }
         else
         {
-            getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId );
+            return SUCCESS;
         }
-        return SUCCESS;
     }
 
     public String release()
@@ -448,25 +621,26 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        //get the parent of the group by finding the parent project
-        //i.e., the project that doesn't have a parent, or it's parent is not in the group.
+        // get the parent of the group by finding the parent project
+        // i.e., the project that doesn't have a parent, or it's parent is not in the group.
 
         Project parent = null;
 
         boolean allBuildsOk = true;
 
+        boolean allMavenTwo = true;
+
         projectList = getContinuum().getProjectsInGroupWithDependencies( projectGroupId );
 
         if ( projectList != null )
         {
-            Iterator proj = projectList.iterator();
-
-            while ( proj.hasNext() )
+            for ( Project p : projectList )
             {
-                Project p = (Project) proj.next();
-
                 if ( p.getState() != ContinuumProjectState.OK )
                 {
+                    logger.info(
+                        "Attempt to release group '" + projectGroup.getName() + "' failed as project '" + p.getName() +
+                            "' is in state " + p.getState() );
                     allBuildsOk = false;
                 }
 
@@ -478,45 +652,52 @@ public class ProjectGroupAction
                     }
                     else
                     {
-                        //currently, we have no provisions for releasing 2 or more parents
-                        //at the same time, this will be implemented in the future
-                        addActionError( "projectGroup.release.error.severalParentProjects" );
+                        logger.info( "Attempt to release group '" + projectGroup.getName() + "' failed as project '" +
+                                         p.getName() + "' and project '" + parent.getName() + "' are both parents" );
+
+                        // currently, we have no provisions for releasing 2 or more parents
+                        // at the same time, this will be implemented in the future
+                        addActionError( getText( "projectGroup.release.error.severalParentProjects" ) );
                         return INPUT;
                     }
+                }
+
+                if ( !"maven2".equals( p.getExecutorId() ) )
+                {
+                    logger.info(
+                        "Attempt to release group '" + projectGroup.getName() + "' failed as project '" + p.getName() +
+                            "' is not a Maven project (executor '" + p.getExecutorId() + "')" );
+                    allMavenTwo = false;
                 }
             }
         }
 
         if ( parent == null )
         {
-            addActionError( "projectGroup.release.error.emptyGroup" );
+            addActionError( getText( "projectGroup.release.error.emptyGroup" ) );
             return INPUT;
         }
 
         releaseProjectId = parent.getId();
 
-        if ( allBuildsOk )
+        if ( allBuildsOk && allMavenTwo )
         {
             return SUCCESS;
         }
         else
         {
-            addActionError( "projectGroup.release.error.projectNotInSuccess" );
+            addActionError( getText( "projectGroup.release.error.projectNotInSuccess" ) );
             return INPUT;
         }
     }
 
-    private boolean isParentInProjectGroup( ProjectDependency parent, Collection projectsInGroup )
+    private boolean isParentInProjectGroup( ProjectDependency parent, Collection<Project> projectsInGroup )
         throws ContinuumException
     {
         boolean result = false;
 
-        Iterator projectsIterator = projectsInGroup.iterator();
-
-        while ( projectsIterator.hasNext() )
+        for ( Project project : projectsInGroup )
         {
-            Project project = (Project) projectsIterator.next();
-
             if ( parent != null )
             {
                 if ( ( project.getArtifactId().equals( parent.getArtifactId() ) ) &&
@@ -533,25 +714,55 @@ public class ProjectGroupAction
 
     private void populateProjectGroupUsers( ProjectGroup group )
     {
-        List users;
+        List<User> users = new ArrayList<User>();
 
-        if ( StringUtils.isEmpty( filterKey ) )
+        try
         {
-            // REVIEW: for caching in the user manager
-            users = manager.getUsers( ascending );
+            List<Role> roles = rbac.getAllRoles();
+            List<String> roleNames = new ArrayList<String>();
+            for ( Role r : roles )
+            {
+                String projectGroupName = StringUtils.substringAfter( r.getName(), "-" ).trim();
+
+                if ( projectGroupName.equals( group.getName() ) )
+                {
+                    roleNames.add( r.getName() );
+                }
+            }
+            List<UserAssignment> userAssignments = rbac.getUserAssignmentsForRoles( roleNames );
+            for ( UserAssignment ua : userAssignments )
+            {
+                User u = getUser( ua.getPrincipal() );
+                if ( u != null )
+                {
+                    users.add( u );
+                }
+            }
         }
-        else
+        catch ( Exception e )
         {
-            users = findUsers( filterProperty, filterKey, ascending );
+            logger.error( "Can't get the users list", e );
         }
 
-        projectGroupUsers = new ArrayList();
+        if ( StringUtils.isNotBlank( filterKey ) )
+        {
+            users = findUsers( users, filterProperty, filterKey );
+        }
+        if ( StringUtils.isNotBlank( sorterProperty ) )
+        {
+            sortUsers( users, sorterProperty, ascending );
+        }
 
-        for ( Iterator i = users.iterator(); i.hasNext(); )
+        projectGroupUsers = new ArrayList<ProjectGroupUserBean>();
+
+        if ( users == null )
+        {
+            return;
+        }
+
+        for ( User user : users )
         {
             ProjectGroupUserBean pgUser = new ProjectGroupUserBean();
-
-            User user = (User) i.next();
 
             pgUser.setUser( user );
 
@@ -559,18 +770,23 @@ public class ProjectGroupAction
 
             try
             {
-                Collection effectiveRoles = rbac.getEffectivelyAssignedRoles( user.getUsername() );
+                Collection<Role> effectiveRoles = rbac.getEffectivelyAssignedRoles( user.getUsername() );
+                boolean isGroupUser = false;
 
-                for ( Iterator j = effectiveRoles.iterator(); j.hasNext(); )
+                for ( Role role : effectiveRoles )
                 {
-                    Role role = (Role) j.next();
+                    String projectGroupName = StringUtils.substringAfter( role.getName(), "-" ).trim();
 
-                    if ( role.getName().indexOf( projectGroup.getName() ) > -1 )
+                    if ( projectGroupName.equals( projectGroup.getName() ) )
                     {
-                        pgUser.setRoles( effectiveRoles );
-                        projectGroupUsers.add( pgUser );
-                        break;
+                        pgUser.addRole( role );
+                        isGroupUser = true;
                     }
+                }
+
+                if ( isGroupUser )
+                {
+                    projectGroupUsers.add( pgUser );
                 }
             }
             catch ( RbacObjectNotFoundException e )
@@ -584,28 +800,78 @@ public class ProjectGroupAction
         }
     }
 
-    private List findUsers( String searchProperty, String searchKey, boolean orderAscending )
+    private List<User> findUsers( List<User> users, String searchProperty, String searchKey )
     {
-        List users = null;
+        List<User> userList = new ArrayList<User>();
+        for ( User user : users )
+        {
+            if ( "username".equals( searchProperty ) )
+            {
+                String username = user.getUsername();
+                if ( username != null )
+                {
+                    if ( username.toLowerCase().indexOf( searchKey.toLowerCase() ) >= 0 )
+                    {
+                        userList.add( user );
+                    }
+                }
+            }
+            else if ( "fullName".equals( searchProperty ) )
+            {
+                String fullname = user.getFullName();
+                if ( fullname != null )
+                {
+                    if ( fullname.toLowerCase().indexOf( searchKey.toLowerCase() ) >= 0 )
+                    {
+                        userList.add( user );
+                    }
+                }
+            }
+            else if ( "email".equals( searchProperty ) )
+            {
+                String email = user.getEmail();
+                if ( email != null )
+                {
+                    if ( email.toLowerCase().indexOf( searchKey.toLowerCase() ) >= 0 )
+                    {
+                        userList.add( user );
+                    }
+                }
+            }
+        }
 
-        if ( "username".equals( searchProperty ) )
-        {
-            users = manager.findUsersByUsernameKey( searchKey, orderAscending );
-        }
-        else if ( "fullName".equals( getFilterProperty() ) )
-        {
-            users = manager.findUsersByFullNameKey( searchKey, orderAscending );
-        }
-        else if ( "email".equals( getFilterProperty() ) )
-        {
-            users = manager.findUsersByEmailKey( searchKey, orderAscending );
-        }
-        else
-        {
-            users = Collections.EMPTY_LIST;
-        }
+        return userList;
+    }
 
-        return users;
+    private void sortUsers( List<User> userList, final String sorterProperty, final boolean orderAscending )
+    {
+        Collections.sort( userList, new Comparator<User>()
+        {
+            public int compare( User o1, User o2 )
+            {
+                String value1, value2;
+                if ( "fullName".equals( sorterProperty ) )
+                {
+                    value1 = o1.getFullName();
+                    value2 = o2.getFullName();
+                }
+                else if ( "email".equals( sorterProperty ) )
+                {
+                    value1 = o1.getEmail();
+                    value2 = o2.getEmail();
+                }
+                else
+                {
+                    value1 = o1.getUsername();
+                    value2 = o2.getUsername();
+                }
+                if ( orderAscending )
+                {
+                    return ComparatorUtils.nullLowComparator( null ).compare( value1, value2 );
+                }
+                return ComparatorUtils.nullLowComparator( null ).compare( value2, value1 );
+            }
+        } );
     }
 
     public int getProjectGroupId()
@@ -626,16 +892,6 @@ public class ProjectGroupAction
     public void setProjectGroup( ProjectGroup projectGroup )
     {
         this.projectGroup = projectGroup;
-    }
-
-    public boolean isConfirmed()
-    {
-        return confirmed;
-    }
-
-    public void setConfirmed( boolean confirmed )
-    {
-        this.confirmed = confirmed;
     }
 
     public String getDescription()
@@ -668,12 +924,12 @@ public class ProjectGroupAction
         this.projects = projects;
     }
 
-    public Map getProjectGroups()
+    public Map<Integer, String> getProjectGroups()
     {
         return projectGroups;
     }
 
-    public void setProjectGroups( Map projectGroups )
+    public void setProjectGroups( Map<Integer, String> projectGroups )
     {
         this.projectGroups = projectGroups;
     }
@@ -688,12 +944,12 @@ public class ProjectGroupAction
         this.projectInCOQueue = projectInQueue;
     }
 
-    public Collection getProjectList()
+    public Collection<Project> getProjectList()
     {
         return projectList;
     }
 
-    public List getProjectGroupUsers()
+    public List<ProjectGroupUserBean> getProjectGroupUsers()
     {
         return projectGroupUsers;
     }
@@ -728,7 +984,7 @@ public class ProjectGroupAction
         this.filterProperty = filterProperty;
     }
 
-    public Map getCriteria()
+    public Map<String, String> getCriteria()
     {
         return FILTER_CRITERIA;
     }
@@ -764,7 +1020,6 @@ public class ProjectGroupAction
     public String getProjectGroupName()
         throws ContinuumException
     {
-
         return getProjectGroup( projectGroupId ).getName();
     }
 
@@ -788,8 +1043,97 @@ public class ProjectGroupAction
         this.buildDefinitionId = buildDefinitionId;
     }
 
+    public boolean isFromSummaryPage()
+    {
+        return fromSummaryPage;
+    }
+
+    public void setFromSummaryPage( boolean fromSummaryPage )
+    {
+        this.fromSummaryPage = fromSummaryPage;
+    }
+
     public String getPreferredExecutor()
     {
         return preferredExecutor;
+    }
+
+    public String getUrl()
+    {
+        return url;
+    }
+
+    public void setUrl( String url )
+    {
+        this.url = url;
+    }
+
+    public int getRepositoryId()
+    {
+        return repositoryId;
+    }
+
+    public void setRepositoryId( int repositoryId )
+    {
+        this.repositoryId = repositoryId;
+    }
+
+    public List<LocalRepository> getRepositories()
+    {
+        return repositories;
+    }
+
+    public void setRepositories( List<LocalRepository> repositories )
+    {
+        this.repositories = repositories;
+    }
+
+    public boolean isDisabledRepositories()
+    {
+        return disabledRepositories;
+    }
+
+    public void setDisabledRepositories( boolean disabledRepositories )
+    {
+        this.disabledRepositories = disabledRepositories;
+    }
+
+    public List<ProjectScmRoot> getProjectScmRoots()
+    {
+        return projectScmRoots;
+    }
+
+    public void setProjectScmRoots( List<ProjectScmRoot> projectScmRoots )
+    {
+        this.projectScmRoots = projectScmRoots;
+    }
+
+    private boolean isAuthorized( String projectGroupName )
+    {
+        try
+        {
+            checkAddProjectToGroupAuthorization( projectGroupName );
+            return true;
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            return false;
+        }
+    }
+
+    public String getSorterProperty()
+    {
+        return sorterProperty;
+    }
+
+    public void setSorterProperty( String sorterProperty )
+    {
+        this.sorterProperty = sorterProperty;
+    }
+
+    // for testing
+    public void setRbacManager( RBACManager rbac )
+    {
+        this.rbac = rbac;
     }
 }

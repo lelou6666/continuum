@@ -19,31 +19,38 @@ package org.apache.maven.continuum.store;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.jdo.JDODetachedFieldAccessException;
-
+import org.apache.continuum.dao.BuildDefinitionDao;
+import org.apache.continuum.dao.BuildDefinitionTemplateDao;
+import org.apache.continuum.dao.BuildResultDao;
+import org.apache.continuum.model.project.ProjectGroupSummary;
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.continuum.model.release.ContinuumReleaseResult;
+import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.installation.InstallationService;
-import org.apache.maven.continuum.model.project.BuildDefinition;
-import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
-import org.apache.maven.continuum.model.project.BuildResult;
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectDependency;
-import org.apache.maven.continuum.model.project.ProjectDeveloper;
-import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.model.project.Schedule;
+import org.apache.maven.continuum.model.project.*;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.jdo.JDODetachedFieldAccessException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+import static java.util.Arrays.asList;
 
 /**
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
- * @version $Id$
  * @todo I think this should have all the JDO stuff from the abstract test, and the abstract test
  * should use a mock continuum store with the exception of the integration tests which should be
  * running against a fully deployed plexus application instead
@@ -52,65 +59,72 @@ import org.apache.maven.continuum.model.system.Profile;
 public class ContinuumStoreTest
     extends AbstractContinuumStoreTestCase
 {
-
     private static final int INVALID_ID = 15000;
 
-    // ----------------------------------------------------------------------
-    //
-    // ----------------------------------------------------------------------
+    private BuildDefinitionTemplateDao buildDefinitionTemplateDao;
+
+    protected BuildDefinitionDao buildDefinitionDao;
+
+    protected BuildResultDao buildResultDao;
 
     // ----------------------------------------------------------------------
     //  TEST METHODS
     // ----------------------------------------------------------------------
 
+    @Test
     public void testAddProjectGroup()
         throws ContinuumStoreException
     {
         String name = "testAddProjectGroup";
         String description = "testAddProjectGroup description";
         String groupId = "org.apache.maven.continuum.test";
-        ProjectGroup group = createTestProjectGroup( name, description, groupId );
+        LocalRepository repository = localRepositoryDao.getLocalRepository( testLocalRepository3.getId() );
+        ProjectGroup group = createTestProjectGroup( name, description, groupId, repository );
 
         ProjectGroup copy = createTestProjectGroup( group );
-        store.addProjectGroup( group );
+        projectGroupDao.addProjectGroup( group );
         copy.setId( group.getId() );
 
-        ProjectGroup retrievedGroup = store.getProjectGroup( group.getId() );
+        ProjectGroup retrievedGroup = projectGroupDao.getProjectGroup( group.getId() );
         assertProjectGroupEquals( copy, retrievedGroup );
+        assertLocalRepositoryEquals( testLocalRepository3, retrievedGroup.getLocalRepository() );
     }
 
+    @Test
     public void testGetProjectGroup()
         throws ContinuumStoreException
     {
-        ProjectGroup retrievedGroup = store.getProjectGroupWithProjects( defaultProjectGroup.getId() );
+        ProjectGroup retrievedGroup = projectGroupDao.getProjectGroupWithProjects( defaultProjectGroup.getId() );
         assertProjectGroupEquals( defaultProjectGroup, retrievedGroup );
+        assertLocalRepositoryEquals( testLocalRepository1, retrievedGroup.getLocalRepository() );
 
-        List projects = retrievedGroup.getProjects();
+        List<Project> projects = retrievedGroup.getProjects();
         assertEquals( "Check number of projects", 2, projects.size() );
         assertTrue( "Check existence of project 1", projects.contains( testProject1 ) );
         assertTrue( "Check existence of project 2", projects.contains( testProject2 ) );
 
         checkProjectGroupDefaultFetchGroup( retrievedGroup );
 
-        Project project = (Project) projects.get( 0 );
+        Project project = projects.get( 0 );
         checkProjectDefaultFetchGroup( project );
-        //assertSame( "Check project group reference matches", project.getProjectGroup(), retrievedGroup );
+
         assertEquals( project.getProjectGroup().getId(), retrievedGroup.getId() );
         assertProjectEquals( testProject1, project );
 
-        project = (Project) projects.get( 1 );
+        project = projects.get( 1 );
         checkProjectDefaultFetchGroup( project );
-        //assertSame( "Check project group reference matches", project.getProjectGroup(), retrievedGroup );
+
         assertEquals( project.getProjectGroup().getId(), retrievedGroup.getId() );
         assertProjectEquals( testProject2, project );
     }
 
+    @Test
     public void testGetInvalidProjectGroup()
         throws ContinuumStoreException
     {
         try
         {
-            store.getProjectGroup( INVALID_ID );
+            projectGroupDao.getProjectGroup( INVALID_ID );
             fail( "Should not find group with invalid ID" );
         }
         catch ( ContinuumObjectNotFoundException expected )
@@ -119,10 +133,11 @@ public class ContinuumStoreTest
         }
     }
 
+    @Test
     public void testEditProjectGroup()
         throws ContinuumStoreException
     {
-        ProjectGroup newGroup = store.getProjectGroup( testProjectGroup2.getId() );
+        ProjectGroup newGroup = projectGroupDao.getProjectGroup( testProjectGroup2.getId() );
 
         newGroup.setName( "testEditProjectGroup2" );
         newGroup.setDescription( "testEditProjectGroup updated description" );
@@ -130,13 +145,14 @@ public class ContinuumStoreTest
 
         ProjectGroup copy = createTestProjectGroup( newGroup );
         copy.setId( newGroup.getId() );
-        store.updateProjectGroup( newGroup );
+        projectGroupDao.updateProjectGroup( newGroup );
 
-        ProjectGroup retrievedGroup = store.getProjectGroup( testProjectGroup2.getId() );
+        ProjectGroup retrievedGroup = projectGroupDao.getProjectGroup( testProjectGroup2.getId() );
         assertProjectGroupEquals( copy, retrievedGroup );
-
+        assertLocalRepositoryEquals( testLocalRepository2, retrievedGroup.getLocalRepository() );
     }
 
+    @Test
     public void testUpdateUndetachedGroup()
     {
         ProjectGroup newGroup = new ProjectGroup();
@@ -147,7 +163,7 @@ public class ContinuumStoreTest
 
         try
         {
-            store.updateProjectGroup( newGroup );
+            projectGroupDao.updateProjectGroup( newGroup );
             fail( "Should not have succeeded" );
         }
         catch ( ContinuumStoreException expected )
@@ -157,51 +173,55 @@ public class ContinuumStoreTest
         }
     }
 
+    @Test
     public void testGetAllProjectGroups()
     {
-        Collection groups = store.getAllProjectGroupsWithProjects();
+        Collection<ProjectGroup> groups = projectGroupDao.getAllProjectGroupsWithProjects();
 
         assertEquals( "check size", 2, groups.size() );
         assertTrue( groups.contains( defaultProjectGroup ) );
         assertTrue( groups.contains( testProjectGroup2 ) );
 
-        for ( Iterator i = groups.iterator(); i.hasNext(); )
+        for ( ProjectGroup group : groups )
         {
-            ProjectGroup group = (ProjectGroup) i.next();
-            List projects = group.getProjects();
+            List<Project> projects = group.getProjects();
             if ( group.getId() == testProjectGroup2.getId() )
             {
                 assertProjectGroupEquals( testProjectGroup2, group );
+                assertLocalRepositoryEquals( testLocalRepository2, group.getLocalRepository() );
                 assertTrue( "check no projects", projects.isEmpty() );
             }
             else if ( group.getId() == defaultProjectGroup.getId() )
             {
                 assertProjectGroupEquals( defaultProjectGroup, group );
+                assertLocalRepositoryEquals( testLocalRepository1, group.getLocalRepository() );
                 assertEquals( "Check number of projects", 2, projects.size() );
                 assertTrue( "Check existence of project 1", projects.contains( testProject1 ) );
                 assertTrue( "Check existence of project 2", projects.contains( testProject2 ) );
 
                 checkProjectGroupDefaultFetchGroup( group );
 
-                Project p = (Project) projects.get( 0 );
+                Project p = projects.get( 0 );
                 checkProjectDefaultFetchGroup( p );
                 assertSame( "Check project group reference matches", p.getProjectGroup(), group );
             }
         }
     }
 
+    @Test
     public void testGetProject()
         throws ContinuumStoreException
     {
-        Project retrievedProject = store.getProject( testProject1.getId() );
+        Project retrievedProject = projectDao.getProject( testProject1.getId() );
         assertProjectEquals( testProject1, retrievedProject );
         checkProjectDefaultFetchGroup( retrievedProject );
     }
 
+    @Test
     public void testGetProjectWithDetails()
         throws ContinuumStoreException
     {
-        Project retrievedProject = store.getProjectWithAllDetails( testProject1.getId() );
+        Project retrievedProject = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertProjectEquals( testProject1, retrievedProject );
         checkProjectFetchGroup( retrievedProject, false, false, true, true );
 
@@ -211,21 +231,23 @@ public class ContinuumStoreTest
         assertDependenciesEqual( testProject1.getDependencies(), retrievedProject.getDependencies() );
     }
 
+    @Test
     public void testGetProjectWithCheckoutResult()
         throws ContinuumStoreException
     {
-        Project retrievedProject = store.getProjectWithCheckoutResult( testProject1.getId() );
+        Project retrievedProject = projectDao.getProjectWithCheckoutResult( testProject1.getId() );
         assertProjectEquals( testProject1, retrievedProject );
         assertScmResultEquals( testCheckoutResult1, retrievedProject.getCheckoutResult() );
         checkProjectFetchGroup( retrievedProject, true, false, false, false );
     }
 
+    @Test
     public void testGetInvalidProject()
         throws ContinuumStoreException
     {
         try
         {
-            store.getProject( INVALID_ID );
+            projectDao.getProject( INVALID_ID );
             fail( "Should not find project with invalid ID" );
         }
         catch ( ContinuumObjectNotFoundException expected )
@@ -234,10 +256,11 @@ public class ContinuumStoreTest
         }
     }
 
+    @Test
     public void testEditProject()
         throws ContinuumStoreException
     {
-        Project newProject = store.getProject( testProject2.getId() );
+        Project newProject = projectDao.getProject( testProject2.getId() );
 
         newProject.setName( "testEditProject2" );
         newProject.setDescription( "testEditProject updated description" );
@@ -245,13 +268,14 @@ public class ContinuumStoreTest
 
         Project copy = createTestProject( newProject );
         copy.setId( newProject.getId() );
-        store.updateProject( newProject );
+        projectDao.updateProject( newProject );
 
-        Project retrievedProject = store.getProject( testProject2.getId() );
+        Project retrievedProject = projectDao.getProject( testProject2.getId() );
         assertProjectEquals( copy, retrievedProject );
 
     }
 
+    @Test
     public void testUpdateUndetachedProject()
     {
         Project newProject = new Project();
@@ -262,7 +286,7 @@ public class ContinuumStoreTest
 
         try
         {
-            store.updateProject( newProject );
+            projectDao.updateProject( newProject );
             fail( "Should not have succeeded" );
         }
         catch ( ContinuumStoreException expected )
@@ -272,197 +296,239 @@ public class ContinuumStoreTest
         }
     }
 
+    @Test
     public void testGetAllProjects()
     {
-        List projects = store.getAllProjectsByName();
-        assertEquals( "check items", Arrays.asList( new Project[] { testProject1, testProject2 } ), projects );
+        List<Project> projects = projectDao.getAllProjectsByName();
+        assertEquals( "check items", asList( testProject1, testProject2 ), projects );
 
-        Project project = (Project) projects.get( 1 );
+        Project project = projects.get( 1 );
         assertProjectEquals( testProject2, project );
         checkProjectDefaultFetchGroup( project );
         assertNotNull( "Check project group reference matches", project.getProjectGroup() );
     }
 
+    @Test
     public void testAddSchedule()
+        throws ContinuumStoreException
     {
+        BuildQueue buildQueue = buildQueueDao.getAllBuildQueues().get( 0 );
+
         Schedule newSchedule = createTestSchedule( "testAddSchedule", "testAddSchedule desc", 10, "cron test", false );
+        newSchedule.addBuildQueue( buildQueue );
+
         Schedule copy = createTestSchedule( newSchedule );
-        store.addSchedule( newSchedule );
+        scheduleDao.addSchedule( newSchedule );
         copy.setId( newSchedule.getId() );
 
-        List schedules = store.getAllSchedulesByName();
-        Schedule retrievedSchedule = (Schedule) schedules.get( schedules.size() - 1 );
+        List<Schedule> schedules = scheduleDao.getAllSchedulesByName();
+        Schedule retrievedSchedule = schedules.get( schedules.size() - 1 );
         assertScheduleEquals( copy, retrievedSchedule );
+        assertEquals( "check size of build queues", 1, retrievedSchedule.getBuildQueues().size() );
+        assertBuildQueueEquals( buildQueue, retrievedSchedule.getBuildQueues().get( 0 ) );
     }
 
+    @Test
     public void testEditSchedule()
         throws ContinuumStoreException
     {
-        Schedule newSchedule = (Schedule) store.getAllSchedulesByName().get( 0 );
+        Schedule newSchedule = scheduleDao.getAllSchedulesByName().get( 0 );
         newSchedule.setName( "name1.1" );
         newSchedule.setDescription( "testEditSchedule updated description" );
 
+        assertEquals( "check size of build queues", 2, newSchedule.getBuildQueues().size() );
+        BuildQueue buildQueue1 = newSchedule.getBuildQueues().get( 0 );
+        BuildQueue buildQueue2 = newSchedule.getBuildQueues().get( 1 );
+
         Schedule copy = createTestSchedule( newSchedule );
         copy.setId( newSchedule.getId() );
-        store.updateSchedule( newSchedule );
+        scheduleDao.updateSchedule( newSchedule );
 
-        Schedule retrievedSchedule = (Schedule) store.getAllSchedulesByName().get( 0 );
+        Schedule retrievedSchedule = scheduleDao.getAllSchedulesByName().get( 0 );
         assertScheduleEquals( copy, retrievedSchedule );
+        assertBuildQueueEquals( buildQueue1, retrievedSchedule.getBuildQueues().get( 0 ) );
+        assertBuildQueueEquals( buildQueue2, retrievedSchedule.getBuildQueues().get( 1 ) );
     }
 
+    @Test
     public void testRemoveSchedule()
     {
-        Schedule schedule = (Schedule) store.getAllSchedulesByName().get( 2 );
+        Schedule schedule = scheduleDao.getAllSchedulesByName().get( 2 );
 
         // TODO: test if it has any attachments
+        assertEquals( "check size of build queues", 0, schedule.getBuildQueues().size() );
+        scheduleDao.removeSchedule( schedule );
 
-        store.removeSchedule( schedule );
-
-        List schedules = store.getAllSchedulesByName();
+        List<Schedule> schedules = scheduleDao.getAllSchedulesByName();
         assertEquals( "check size", 2, schedules.size() );
         assertFalse( "check not there", schedules.contains( schedule ) );
     }
 
+    @Test
     public void testGetAllSchedules()
+        throws ContinuumStoreException
     {
-        List schedules = store.getAllSchedulesByName();
+        List<Schedule> schedules = scheduleDao.getAllSchedulesByName();
+        List<BuildQueue> buildQueues = buildQueueDao.getAllBuildQueues();
 
         assertEquals( "check item count", 3, schedules.size() );
+        assertEquals( "check build queues count", 3, buildQueues.size() );
+
+        BuildQueue buildQueue1 = buildQueues.get( 0 );
+        BuildQueue buildQueue2 = buildQueues.get( 1 );
+        BuildQueue buildQueue3 = buildQueues.get( 2 );
 
         // check equality and order
-        Schedule schedule = (Schedule) schedules.get( 0 );
+        Schedule schedule = schedules.get( 0 );
         assertScheduleEquals( testSchedule1, schedule );
-        schedule = (Schedule) schedules.get( 1 );
+        assertEquals( "check size of buildQueues", 2, schedule.getBuildQueues().size() );
+        assertBuildQueueEquals( buildQueue1, schedule.getBuildQueues().get( 0 ) );
+        assertBuildQueueEquals( buildQueue2, schedule.getBuildQueues().get( 1 ) );
+
+        schedule = schedules.get( 1 );
         assertScheduleEquals( testSchedule2, schedule );
-        schedule = (Schedule) schedules.get( 2 );
+        assertEquals( "check size of buildQueues", 2, schedule.getBuildQueues().size() );
+        assertBuildQueueEquals( buildQueue2, schedule.getBuildQueues().get( 0 ) );
+        assertBuildQueueEquals( buildQueue3, schedule.getBuildQueues().get( 1 ) );
+
+        schedule = schedules.get( 2 );
         assertScheduleEquals( testSchedule3, schedule );
+        assertEquals( "check size of buildQueues", 0, schedule.getBuildQueues().size() );
     }
 
+    @Test
     public void testAddProfile()
         throws Exception
     {
-        List installations = store.getAllInstallations();
+        List<Installation> installations = installationDao.getAllInstallations();
         Profile newProfile = createTestProfile( "testAddProfile", "testAddProfile desc", 5, false, false,
-                                                (Installation) installations.get( 1 ), (Installation) installations
-                                                    .get( 2 ) );
+                                                installations.get( 1 ), installations.get( 2 ) );
         Profile copy = createTestProfile( newProfile );
-        store.addProfile( newProfile );
+        profileDao.addProfile( newProfile );
         copy.setId( newProfile.getId() );
 
-        List profiles = store.getAllProfilesByName();
-        Profile retrievedProfile = (Profile) profiles.get( profiles.size() - 1 );
+        List<Profile> profiles = profileDao.getAllProfilesByName();
+        Profile retrievedProfile = profiles.get( profiles.size() - 1 );
         assertProfileEquals( copy, retrievedProfile );
         assertInstallationEquals( testInstallationMaven20a3, retrievedProfile.getBuilder() );
         assertInstallationEquals( testInstallationJava14, retrievedProfile.getJdk() );
     }
 
+    @Test
     public void testEditProfile()
         throws ContinuumStoreException
     {
-        Profile newProfile = (Profile) store.getAllProfilesByName().get( 0 );
+        Profile newProfile = profileDao.getAllProfilesByName().get( 0 );
         newProfile.setName( "name1.1" );
         newProfile.setDescription( "testEditProfile updated description" );
 
         Profile copy = createTestProfile( newProfile );
         copy.setId( newProfile.getId() );
-        store.updateProfile( newProfile );
+        profileDao.updateProfile( newProfile );
 
-        Profile retrievedProfile = (Profile) store.getAllProfilesByName().get( 0 );
+        Profile retrievedProfile = profileDao.getAllProfilesByName().get( 0 );
         assertProfileEquals( copy, retrievedProfile );
         assertInstallationEquals( copy.getBuilder(), retrievedProfile.getBuilder() );
         assertInstallationEquals( copy.getJdk(), retrievedProfile.getJdk() );
 
     }
 
+    @Test
     public void testRemoveProfile()
     {
-        Profile profile = (Profile) store.getAllProfilesByName().get( 2 );
+        Profile profile = profileDao.getAllProfilesByName().get( 2 );
 
         // TODO: test if it has any attachments
 
-        store.removeProfile( profile );
+        profileDao.removeProfile( profile );
 
-        List profiles = store.getAllProfilesByName();
-        assertEquals( "check size", 2, profiles.size() );
+        List<Profile> profiles = profileDao.getAllProfilesByName();
+        assertEquals( "check size", 3, profiles.size() );
         assertFalse( "check not there", profiles.contains( profile ) );
     }
 
+    @Test
     public void testGetAllProfiles()
     {
-        List profiles = store.getAllProfilesByName();
+        List<Profile> profiles = profileDao.getAllProfilesByName();
 
-        assertEquals( "check item count", 3, profiles.size() );
+        assertEquals( "check item count", 4, profiles.size() );
 
         // check equality and order
-        Profile profile = (Profile) profiles.get( 0 );
+        Profile profile = profiles.get( 0 );
         assertProfileEquals( testProfile1, profile );
         assertInstallationEquals( testProfile1.getBuilder(), profile.getBuilder() );
         assertInstallationEquals( testProfile1.getJdk(), profile.getJdk() );
-        profile = (Profile) profiles.get( 1 );
+        profile = profiles.get( 1 );
         assertProfileEquals( testProfile2, profile );
         assertInstallationEquals( testProfile2.getBuilder(), profile.getBuilder() );
         assertInstallationEquals( testProfile2.getJdk(), profile.getJdk() );
-        profile = (Profile) profiles.get( 2 );
+        profile = profiles.get( 2 );
         assertProfileEquals( testProfile3, profile );
         assertInstallationEquals( testProfile3.getBuilder(), profile.getBuilder() );
         assertInstallationEquals( testProfile3.getJdk(), profile.getJdk() );
+        profile = profiles.get( 3 );
+        assertProfileEquals( testProfile4, profile );
+        assertInstallationEquals( testProfile4.getBuilder(), profile.getBuilder() );
+        assertInstallationEquals( testProfile4.getJdk(), profile.getJdk() );
+        assertEquals( "check env var count", 1, profile.getEnvironmentVariables().size() );
+        assertInstallationEquals( testProfile4.getEnvironmentVariables().get( 0 ),
+                                  profile.getEnvironmentVariables().get( 0 ) );
     }
 
-/*
-    public void testGetgetProfileByName()
-        throws ContinuumStoreException
-    {
-        Profile profile = store.getProfileByName( "name1" );
-        assertNotNull( profile );
-    }
-*/
+    @Test
     public void testGetAllInstallations()
         throws Exception
     {
-        List installations = store.getAllInstallations();
+        List<Installation> installations = installationDao.getAllInstallations();
 
-        assertEquals( "check item count", 3, installations.size() );
+        assertEquals( "check item count", 4, installations.size() );
 
         // check equality and order
-        Installation installation = (Installation) installations.get( 0 );
+        Installation installation = installations.get( 0 );
         assertInstallationEquals( testInstallationJava13, installation );
-        installation = (Installation) installations.get( 1 );
+        installation = installations.get( 1 );
         assertInstallationEquals( testInstallationJava14, installation );
-        installation = (Installation) installations.get( 2 );
+        installation = installations.get( 2 );
         assertInstallationEquals( testInstallationMaven20a3, installation );
+        installation = installations.get( 3 );
+        assertInstallationEquals( testInstallationEnvVar, installation );
     }
 
+    @Test
     public void testUpdateInstallation()
         throws Exception
     {
         String name = "installationTest";
         Installation testOne = createTestInstallation( name, InstallationService.JDK_TYPE, "varName", "varValue" );
-        testOne = store.addInstallation( testOne );
+        testOne = installationDao.addInstallation( testOne );
 
-        Installation fromStore = store.getInstallation( testOne.getInstallationId() );
+        Installation fromStore = installationDao.getInstallation( testOne.getInstallationId() );
         assertInstallationEquals( testOne, fromStore );
 
         fromStore.setVarName( "JAVA_HOME" );
         fromStore.setVarValue( "/usr/local/jdk1.5.0_08" );
-        store.updateInstallation( fromStore );
+        installationDao.updateInstallation( fromStore );
 
-        Installation updatedFromStore = store.getInstallation( testOne.getInstallationId() );
+        Installation updatedFromStore = installationDao.getInstallation( testOne.getInstallationId() );
 
         assertInstallationEquals( fromStore, updatedFromStore );
     }
 
+    @Test
     public void testRemoveInstallation()
         throws Exception
     {
         String name = "installationTestRemove";
         Installation testOne = createTestInstallation( name, InstallationService.JDK_TYPE, "varName", "varValue" );
-        testOne = store.addInstallation( testOne );
+        testOne = installationDao.addInstallation( testOne );
 
-        store.removeInstallation( testOne );
-        Installation fromStore = store.getInstallation( testOne.getInstallationId() );
+        installationDao.removeInstallation( testOne );
+        Installation fromStore = installationDao.getInstallation( testOne.getInstallationId() );
         assertNull( fromStore );
     }
 
+    @Test
     public void testRemoveLinkedInstallations()
         throws Exception
     {
@@ -483,13 +549,13 @@ public class ContinuumStoreTest
         Installation secondEnvVar = createTestInstallation( nameSecondEnvVar, InstallationService.MAVEN2_TYPE,
                                                             "varName", "varValue" );
 
-        testOne = store.addInstallation( testOne );
-        testTwo = store.addInstallation( testTwo );
+        testOne = installationDao.addInstallation( testOne );
+        testTwo = installationDao.addInstallation( testTwo );
 
-        firstEnvVar = store.addInstallation( firstEnvVar );
-        secondEnvVar = store.addInstallation( secondEnvVar );
+        firstEnvVar = installationDao.addInstallation( firstEnvVar );
+        secondEnvVar = installationDao.addInstallation( secondEnvVar );
 
-        List envVars = new ArrayList<Installation>( 2 );
+        List<Installation> envVars = new ArrayList<Installation>( 2 );
         envVars.add( firstEnvVar );
         envVars.add( secondEnvVar );
 
@@ -497,11 +563,11 @@ public class ContinuumStoreTest
 
         Profile secondProfile = createTestProfile( "first", "", 1, true, true, testOne, testTwo, envVars );
 
-        firstProfile = store.addProfile( firstProfile );
-        secondProfile = store.addProfile( secondProfile );
+        firstProfile = profileDao.addProfile( firstProfile );
+        secondProfile = profileDao.addProfile( secondProfile );
 
-        Profile firstGetted = store.getProfile( firstProfile.getId() );
-        Profile secondGetted = store.getProfile( secondProfile.getId() );
+        Profile firstGetted = profileDao.getProfile( firstProfile.getId() );
+        Profile secondGetted = profileDao.getProfile( secondProfile.getId() );
 
         assertNotNull( firstGetted );
         assertNotNull( firstGetted.getJdk() );
@@ -519,13 +585,13 @@ public class ContinuumStoreTest
         assertEquals( nameSecondInst, secondGetted.getBuilder().getName() );
         assertEquals( 2, secondGetted.getEnvironmentVariables().size() );
 
-        store.removeInstallation( testOne );
+        installationDao.removeInstallation( testOne );
 
-        Installation fromStore = store.getInstallation( testOne.getInstallationId() );
+        Installation fromStore = installationDao.getInstallation( testOne.getInstallationId() );
         assertNull( fromStore );
 
-        firstGetted = store.getProfile( firstProfile.getId() );
-        secondGetted = store.getProfile( secondProfile.getId() );
+        firstGetted = profileDao.getProfile( firstProfile.getId() );
+        secondGetted = profileDao.getProfile( secondProfile.getId() );
         assertNotNull( firstGetted );
         assertNull( firstGetted.getJdk() );
         assertNotNull( firstGetted.getBuilder() );
@@ -535,10 +601,10 @@ public class ContinuumStoreTest
         assertNotNull( secondGetted.getBuilder() );
         assertEquals( 2, secondGetted.getEnvironmentVariables().size() );
         // removing builder
-        store.removeInstallation( testTwo );
+        installationDao.removeInstallation( testTwo );
 
-        firstGetted = store.getProfile( firstProfile.getId() );
-        secondGetted = store.getProfile( secondProfile.getId() );
+        firstGetted = profileDao.getProfile( firstProfile.getId() );
+        secondGetted = profileDao.getProfile( secondProfile.getId() );
 
         assertNotNull( firstGetted );
         assertNull( firstGetted.getJdk() );
@@ -551,61 +617,62 @@ public class ContinuumStoreTest
         assertEquals( 2, secondGetted.getEnvironmentVariables().size() );
 
         // removing firstEnvVar
-        store.removeInstallation( firstEnvVar );
-        firstGetted = store.getProfile( firstProfile.getId() );
-        secondGetted = store.getProfile( secondProfile.getId() );
+        installationDao.removeInstallation( firstEnvVar );
+        firstGetted = profileDao.getProfile( firstProfile.getId() );
+        secondGetted = profileDao.getProfile( secondProfile.getId() );
         assertNotNull( firstGetted );
         assertNull( firstGetted.getJdk() );
         assertNull( firstGetted.getBuilder() );
         assertEquals( 1, firstGetted.getEnvironmentVariables().size() );
-        Installation env = (Installation) firstGetted.getEnvironmentVariables().get( 0 );
+        Installation env = firstGetted.getEnvironmentVariables().get( 0 );
         assertEquals( nameSecondEnvVar, env.getName() );
-        
+
         assertNotNull( secondGetted );
         assertNull( secondGetted.getJdk() );
         assertNull( secondGetted.getBuilder() );
         assertEquals( 1, secondGetted.getEnvironmentVariables().size() );
-        env = (Installation) secondGetted.getEnvironmentVariables().get( 0 );
+        env = secondGetted.getEnvironmentVariables().get( 0 );
         assertEquals( nameSecondEnvVar, env.getName() );
-        
+
         // removing secondEnvVar
-        store.removeInstallation( secondEnvVar );
-        firstGetted = store.getProfile( firstProfile.getId() );
-        secondGetted = store.getProfile( secondProfile.getId() );
+        installationDao.removeInstallation( secondEnvVar );
+        firstGetted = profileDao.getProfile( firstProfile.getId() );
+        secondGetted = profileDao.getProfile( secondProfile.getId() );
         assertNotNull( firstGetted );
         assertNull( firstGetted.getJdk() );
         assertNull( firstGetted.getBuilder() );
         assertEquals( 0, firstGetted.getEnvironmentVariables().size() );
 
-        
         assertNotNull( secondGetted );
         assertNull( secondGetted.getJdk() );
         assertNull( secondGetted.getBuilder() );
         assertEquals( 0, secondGetted.getEnvironmentVariables().size() );
     }
 
+    @Test
     public void testDeleteProject()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithBuilds( testProject1.getId() );
+        Project project = projectDao.getProjectWithBuilds( testProject1.getId() );
 
-        store.removeProject( project );
+        projectDao.removeProject( project );
 
-        ProjectGroup projectGroup = store.getProjectGroupWithProjects( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithProjects( defaultProjectGroup.getId() );
         assertEquals( "check size is now 1", 1, projectGroup.getProjects().size() );
-        assertProjectEquals( testProject2, (Project) projectGroup.getProjects().get( 0 ) );
+        assertProjectEquals( testProject2, projectGroup.getProjects().get( 0 ) );
 
         confirmProjectDeletion( testProject1 );
     }
 
+    @Test
     public void testDeleteProjectGroup()
         throws ContinuumStoreException
     {
-        store.removeProjectGroup( store.getProjectGroup( defaultProjectGroup.getId() ) );
+        projectGroupDao.removeProjectGroup( projectGroupDao.getProjectGroup( defaultProjectGroup.getId() ) );
 
         try
         {
-            store.getProjectGroup( defaultProjectGroup.getId() );
+            projectGroupDao.getProjectGroup( defaultProjectGroup.getId() );
             fail( "Project group was not deleted" );
         }
         catch ( ContinuumObjectNotFoundException expected )
@@ -619,28 +686,29 @@ public class ContinuumStoreTest
         // TODO: test the project group's build definitions are physically deleted
     }
 
+    @Test
     public void testDeleteBuildResult()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithBuilds( testProject1.getId() );
+        Project project = projectDao.getProjectWithBuilds( testProject1.getId() );
 
-        for ( Iterator i = project.getBuildResults().iterator(); i.hasNext(); )
+        for ( Iterator<BuildResult> i = project.getBuildResults().iterator(); i.hasNext(); )
         {
-            BuildResult result = (BuildResult) i.next();
+            BuildResult result = i.next();
             if ( result.getId() == testBuildResult1.getId() )
             {
                 i.remove();
             }
         }
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithBuilds( testProject1.getId() );
+        project = projectDao.getProjectWithBuilds( testProject1.getId() );
         assertEquals( "check size is now 1", 1, project.getBuildResults().size() );
-        assertBuildResultEquals( testBuildResult2, (BuildResult) project.getBuildResults().get( 0 ) );
+        assertBuildResultEquals( testBuildResult2, project.getBuildResults().get( 0 ) );
 
-        List results = store.getAllBuildsForAProjectByDate( testProject1.getId() );
+        List<BuildResult> results = buildResultDao.getAllBuildsForAProjectByDate( testProject1.getId() );
         assertEquals( "check item count", 1, results.size() );
-        assertBuildResultEquals( testBuildResult2, (BuildResult) results.get( 0 ) );
+        assertBuildResultEquals( testBuildResult2, results.get( 0 ) );
 
         // !! These actually aren't happening !!
         // TODO: test the build result was physically deleted
@@ -648,12 +716,13 @@ public class ContinuumStoreTest
         // TODO: test the build result's SCM result's change sets and change files were physically deleted
     }
 
+    @Test
     public void testGetInvalidBuildResult()
         throws ContinuumStoreException
     {
         try
         {
-            store.getBuildResult( INVALID_ID );
+            buildResultDao.getBuildResult( INVALID_ID );
             fail( "Should not find build result with invalid ID" );
         }
         catch ( ContinuumObjectNotFoundException expected )
@@ -662,46 +731,49 @@ public class ContinuumStoreTest
         }
     }
 
+    @Test
     public void testGetAllBuildsForAProject()
     {
-        List results = store.getAllBuildsForAProjectByDate( testProject1.getId() );
+        List<BuildResult> results = buildResultDao.getAllBuildsForAProjectByDate( testProject1.getId() );
 
         assertEquals( "check item count", 2, results.size() );
 
         // check equality and order
-        BuildResult buildResult = (BuildResult) results.get( 0 );
+        BuildResult buildResult = results.get( 0 );
         assertBuildResultEquals( testBuildResult2, buildResult );
         assertProjectEquals( testProject1, buildResult.getProject() );
-        checkBuildResultDefaultFetchGroup( buildResult );
-        buildResult = (BuildResult) results.get( 1 );
+        //checkBuildResultDefaultFetchGroup( buildResult );
+        buildResult = results.get( 1 );
         assertBuildResultEquals( testBuildResult1, buildResult );
         assertProjectEquals( testProject1, buildResult.getProject() );
-        checkBuildResultDefaultFetchGroup( buildResult );
+        //checkBuildResultDefaultFetchGroup( buildResult );
     }
 
+    @Test
     public void testGetBuildResult()
         throws ContinuumStoreException
     {
-        BuildResult buildResult = store.getBuildResult( testBuildResult3.getId() );
+        BuildResult buildResult = buildResultDao.getBuildResult( testBuildResult3.getId() );
         assertBuildResultEquals( testBuildResult3, buildResult );
-        assertScmResultEquals( testBuildResult3.getScmResult(), buildResult.getScmResult() );
+        //assertScmResultEquals( testBuildResult3.getScmResult(), buildResult.getScmResult() );
         assertProjectEquals( testProject2, buildResult.getProject() );
         // TODO: reports, artifacts, data
     }
 
+    @Test
     public void testGetProjectGroupWithDetails()
         throws ContinuumStoreException
     {
-        ProjectGroup retrievedGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup
-            .getId() );
+        ProjectGroup retrievedGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
         assertProjectGroupEquals( defaultProjectGroup, retrievedGroup );
         assertNotifiersEqual( defaultProjectGroup.getNotifiers(), retrievedGroup.getNotifiers() );
         assertBuildDefinitionsEqual( retrievedGroup.getBuildDefinitions(), defaultProjectGroup.getBuildDefinitions() );
 
-        List projects = retrievedGroup.getProjects();
+        List<Project> projects = retrievedGroup.getProjects();
         assertEquals( "Check number of projects", 2, projects.size() );
 
-        Project project = (Project) projects.get( 0 );
+        Project project = projects.get( 0 );
         checkProjectFetchGroup( project, false, false, true, false );
         //assertSame( "Check project group reference matches", project.getProjectGroup(), retrievedGroup );
         assertEquals( project.getProjectGroup().getId(), retrievedGroup.getId() );
@@ -709,7 +781,7 @@ public class ContinuumStoreTest
         assertNotifiersEqual( testProject1.getNotifiers(), project.getNotifiers() );
         assertBuildDefinitionsEqual( project.getBuildDefinitions(), testProject1.getBuildDefinitions() );
 
-        project = (Project) projects.get( 1 );
+        project = projects.get( 1 );
         checkProjectFetchGroup( project, false, false, true, false );
         //assertSame( "Check project group reference matches", project.getProjectGroup(), retrievedGroup );
         assertEquals( project.getProjectGroup().getId(), retrievedGroup.getId() );
@@ -718,29 +790,30 @@ public class ContinuumStoreTest
         assertBuildDefinitionsEqual( project.getBuildDefinitions(), testProject2.getBuildDefinitions() );
     }
 
+    @Test
     public void testGetAllProjectsGroupWithDetails()
     {
-        List projectGroups = store.getAllProjectGroupsWithBuildDetails();
-        ProjectGroup group1 = (ProjectGroup) projectGroups.get( 0 );
+        List<ProjectGroup> projectGroups = projectGroupDao.getAllProjectGroupsWithBuildDetails();
+        ProjectGroup group1 = projectGroups.get( 0 );
         assertProjectGroupEquals( defaultProjectGroup, group1 );
         assertNotifiersEqual( defaultProjectGroup.getNotifiers(), group1.getNotifiers() );
         assertBuildDefinitionsEqual( group1.getBuildDefinitions(), defaultProjectGroup.getBuildDefinitions() );
-        ProjectGroup group2 = (ProjectGroup) projectGroups.get( 1 );
+        ProjectGroup group2 = projectGroups.get( 1 );
         assertProjectGroupEquals( testProjectGroup2, group2 );
         assertNotifiersEqual( testProjectGroup2.getNotifiers(), group2.getNotifiers() );
         assertBuildDefinitionsEqual( group2.getBuildDefinitions(), testProjectGroup2.getBuildDefinitions() );
 
-        List projects = group1.getProjects();
+        List<Project> projects = group1.getProjects();
         assertEquals( "Check number of projects", 2, projects.size() );
 
-        Project project = (Project) projects.get( 0 );
+        Project project = projects.get( 0 );
         checkProjectFetchGroup( project, false, false, true, false );
         assertSame( "Check project group reference matches", project.getProjectGroup(), group1 );
         assertProjectEquals( testProject1, project );
         assertNotifiersEqual( testProject1.getNotifiers(), project.getNotifiers() );
         assertBuildDefinitionsEqual( project.getBuildDefinitions(), testProject1.getBuildDefinitions() );
 
-        project = (Project) projects.get( 1 );
+        project = projects.get( 1 );
         checkProjectFetchGroup( project, false, false, true, false );
         assertSame( "Check project group reference matches", project.getProjectGroup(), group1 );
         assertProjectEquals( testProject2, project );
@@ -751,201 +824,213 @@ public class ContinuumStoreTest
         assertEquals( "Check number of projects", 0, projects.size() );
     }
 
+    @Test
     public void testAddDeveloperToProject()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
         ProjectDeveloper developer = createTestDeveloper( 11, "email TADTP", "name TADTP", "scmId TADTP" );
         ProjectDeveloper copy = createTestDeveloper( developer );
         project.addDeveloper( developer );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # devs", 2, project.getDevelopers().size() );
-        assertDeveloperEquals( copy, (ProjectDeveloper) project.getDevelopers().get( 1 ) );
+        assertDeveloperEquals( copy, project.getDevelopers().get( 1 ) );
     }
 
+    @Test
     public void testEditDeveloper()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
-        ProjectDeveloper newDeveloper = (ProjectDeveloper) project.getDevelopers().get( 0 );
+        ProjectDeveloper newDeveloper = project.getDevelopers().get( 0 );
         newDeveloper.setName( "name1.1" );
         newDeveloper.setEmail( "email1.1" );
 
         ProjectDeveloper copy = createTestDeveloper( newDeveloper );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # devs", 1, project.getDevelopers().size() );
-        assertDeveloperEquals( copy, (ProjectDeveloper) project.getDevelopers().get( 0 ) );
+        assertDeveloperEquals( copy, project.getDevelopers().get( 0 ) );
     }
 
+    @Test
     public void testDeleteDeveloper()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         project.getDevelopers().remove( 0 );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check size is now 0", 0, project.getDevelopers().size() );
 
         // !! These actually aren't happening !!
         // TODO: test the developer was physically deleted
     }
 
+    @Test
     public void testAddDependencyToProject()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
         ProjectDependency dependency = createTestDependency( "TADTP groupId", "TADTP artifactId", "TADTP version" );
         ProjectDependency copy = createTestDependency( dependency );
         project.addDependency( dependency );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # deps", 3, project.getDependencies().size() );
-        assertDependencyEquals( copy, (ProjectDependency) project.getDependencies().get( 2 ) );
+        assertDependencyEquals( copy, project.getDependencies().get( 2 ) );
     }
 
+    @Test
     public void testEditDependency()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
-        ProjectDependency newDependency = (ProjectDependency) project.getDependencies().get( 0 );
+        ProjectDependency newDependency = project.getDependencies().get( 0 );
         newDependency.setGroupId( "groupId1.1" );
         newDependency.setArtifactId( "artifactId1.1" );
 
         ProjectDependency copy = createTestDependency( newDependency );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # deps", 2, project.getDependencies().size() );
-        assertDependencyEquals( copy, (ProjectDependency) project.getDependencies().get( 0 ) );
+        assertDependencyEquals( copy, project.getDependencies().get( 0 ) );
     }
 
+    @Test
     public void testDeleteDependency()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
-        ProjectDependency dependency = (ProjectDependency) project.getDependencies().get( 1 );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
+        ProjectDependency dependency = project.getDependencies().get( 1 );
         project.getDependencies().remove( 0 );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check size is now 1", 1, project.getDependencies().size() );
-        assertDependencyEquals( dependency, (ProjectDependency) project.getDependencies().get( 0 ) );
+        assertDependencyEquals( dependency, project.getDependencies().get( 0 ) );
 
         // !! These actually aren't happening !!
         // TODO: test the dependency was physically deleted
     }
 
+    @Test
     public void testAddNotifierToProject()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
         ProjectNotifier notifier = createTestNotifier( 13, true, false, true, "TADNTP type" );
         ProjectNotifier copy = createTestNotifier( notifier );
         project.addNotifier( notifier );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # notifiers", 2, project.getNotifiers().size() );
-        assertNotifierEquals( copy, (ProjectNotifier) project.getNotifiers().get( 1 ) );
+        assertNotifierEquals( copy, project.getNotifiers().get( 1 ) );
     }
 
+    @Test
     public void testEditNotifier()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
-        ProjectNotifier newNotifier = (ProjectNotifier) project.getNotifiers().get( 0 );
+        ProjectNotifier newNotifier = project.getNotifiers().get( 0 );
         // If we use "type1.1", jpox-rc2 store "type11", weird
         String type = "type11";
         newNotifier.setType( type );
 
         ProjectNotifier copy = createTestNotifier( newNotifier );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # notifiers", 1, project.getNotifiers().size() );
-        assertNotifierEquals( copy, (ProjectNotifier) project.getNotifiers().get( 0 ) );
+        assertNotifierEquals( copy, project.getNotifiers().get( 0 ) );
     }
 
+    @Test
     public void testDeleteNotifier()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         project.getNotifiers().remove( 0 );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check size is now 0", 0, project.getNotifiers().size() );
 
         // !! These actually aren't happening !!
         // TODO: test the notifier was physically deleted
     }
 
+    @Test
     public void testAddBuildDefinitionToProject()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
-        Profile profile = store.getProfile( testProfile1.getId() );
-        Schedule schedule = store.getSchedule( testSchedule1.getId() );
+        Profile profile = profileDao.getProfile( testProfile1.getId() );
+        Schedule schedule = scheduleDao.getSchedule( testSchedule1.getId() );
         BuildDefinition buildDefinition = createTestBuildDefinition( "TABDTP arguments", "TABDTP buildFile",
                                                                      "TABDTP goals", profile, schedule, false, false );
         BuildDefinition copy = createTestBuildDefinition( buildDefinition );
         project.addBuildDefinition( buildDefinition );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # build defs", 3, project.getBuildDefinitions().size() );
-        BuildDefinition retrievedBuildDefinition = (BuildDefinition) project.getBuildDefinitions().get( 2 );
+        BuildDefinition retrievedBuildDefinition = project.getBuildDefinitions().get( 2 );
         assertBuildDefinitionEquals( copy, retrievedBuildDefinition );
         assertScheduleEquals( testSchedule1, retrievedBuildDefinition.getSchedule() );
         assertProfileEquals( testProfile1, retrievedBuildDefinition.getProfile() );
     }
 
+    @Test
     public void testEditBuildDefinition()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
 
-        BuildDefinition newBuildDefinition = (BuildDefinition) project.getBuildDefinitions().get( 0 );
+        BuildDefinition newBuildDefinition = project.getBuildDefinitions().get( 0 );
         newBuildDefinition.setBuildFresh( true );
         new BuildDefinition().setDefaultForProject( true );
         String arguments = "arguments1.1";
         newBuildDefinition.setArguments( arguments );
-
         BuildDefinition copy = createTestBuildDefinition( newBuildDefinition );
-        store.storeBuildDefinition( newBuildDefinition );
+        buildDefinitionDao.storeBuildDefinition( newBuildDefinition );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check # build defs", 2, project.getBuildDefinitions().size() );
-        BuildDefinition retrievedBuildDefinition = (BuildDefinition) project.getBuildDefinitions().get( 0 );
+        BuildDefinition retrievedBuildDefinition = project.getBuildDefinitions().get( 0 );
+
         assertBuildDefinitionEquals( copy, retrievedBuildDefinition );
         assertScheduleEquals( testSchedule1, retrievedBuildDefinition.getSchedule() );
         assertProfileEquals( testProfile2, retrievedBuildDefinition.getProfile() );
     }
 
+    @Test
     public void testDeleteBuildDefinition()
         throws ContinuumStoreException
     {
-        Project project = store.getProjectWithAllDetails( testProject1.getId() );
-        BuildDefinition buildDefinition = (BuildDefinition) project.getBuildDefinitions().get( 1 );
+        Project project = projectDao.getProjectWithAllDetails( testProject1.getId() );
+        BuildDefinition buildDefinition = project.getBuildDefinitions().get( 1 );
         project.getBuildDefinitions().remove( 0 );
-        store.updateProject( project );
+        projectDao.updateProject( project );
 
-        project = store.getProjectWithAllDetails( testProject1.getId() );
+        project = projectDao.getProjectWithAllDetails( testProject1.getId() );
         assertEquals( "check size is now 1", 1, project.getBuildDefinitions().size() );
-        BuildDefinition retrievedBuildDefinition = (BuildDefinition) project.getBuildDefinitions().get( 0 );
+        BuildDefinition retrievedBuildDefinition = project.getBuildDefinitions().get( 0 );
         assertBuildDefinitionEquals( buildDefinition, retrievedBuildDefinition );
         assertScheduleEquals( testSchedule2, retrievedBuildDefinition.getSchedule() );
         assertProfileEquals( testProfile2, retrievedBuildDefinition.getProfile() );
@@ -955,117 +1040,131 @@ public class ContinuumStoreTest
         // TODO: test the schedule/profile was NOT physically deleted
     }
 
+    @Test
     public void testAddNotifierToProjectGroup()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
 
         ProjectNotifier notifier = createTestNotifier( 14, true, false, true, "TADNTPG type" );
         ProjectNotifier copy = createTestNotifier( notifier );
         projectGroup.addNotifier( notifier );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check # notifiers", 3, projectGroup.getNotifiers().size() );
-        assertNotifierEquals( copy, (ProjectNotifier) projectGroup.getNotifiers().get( 2 ) );
+        assertNotifierEquals( copy, projectGroup.getNotifiers().get( 2 ) );
     }
 
+    @Test
     public void testEditGroupNotifier()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
 
-        ProjectNotifier newNotifier = (ProjectNotifier) projectGroup.getNotifiers().get( 0 );
+        ProjectNotifier newNotifier = projectGroup.getNotifiers().get( 0 );
         // If we use "type1.1", jpox-rc2 store "type1", weird
         String type = "type1";
         newNotifier.setType( type );
 
         ProjectNotifier copy = createTestNotifier( newNotifier );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check # notifiers", 2, projectGroup.getNotifiers().size() );
-        assertNotifierEquals( copy, (ProjectNotifier) projectGroup.getNotifiers().get( 0 ) );
+        assertNotifierEquals( copy, projectGroup.getNotifiers().get( 0 ) );
     }
 
+    @Test
     public void testDeleteGroupNotifier()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
-        ProjectNotifier notifier = (ProjectNotifier) projectGroup.getNotifiers().get( 1 );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
+        ProjectNotifier notifier = projectGroup.getNotifiers().get( 1 );
         projectGroup.getNotifiers().remove( 0 );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check size is now 1", 1, projectGroup.getNotifiers().size() );
-        assertNotifierEquals( notifier, (ProjectNotifier) projectGroup.getNotifiers().get( 0 ) );
+        assertNotifierEquals( notifier, projectGroup.getNotifiers().get( 0 ) );
 
         // !! These actually aren't happening !!
         // TODO: test the notifier was physically deleted
     }
 
+    @Test
     public void testAddBuildDefinitionToProjectGroup()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
 
-        Profile profile = store.getProfile( testProfile1.getId() );
-        Schedule schedule = store.getSchedule( testSchedule1.getId() );
+        Profile profile = profileDao.getProfile( testProfile1.getId() );
+        Schedule schedule = scheduleDao.getSchedule( testSchedule1.getId() );
         BuildDefinition buildDefinition = createTestBuildDefinition( "TABDTPG arguments", "TABDTPG buildFile",
                                                                      "TABDTPG goals", profile, schedule, false, false );
         BuildDefinition copy = createTestBuildDefinition( buildDefinition );
         projectGroup.addBuildDefinition( buildDefinition );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check # build defs", 2, projectGroup.getBuildDefinitions().size() );
-        BuildDefinition retrievedBuildDefinition = (BuildDefinition) projectGroup.getBuildDefinitions().get( 1 );
+        BuildDefinition retrievedBuildDefinition = projectGroup.getBuildDefinitions().get( 1 );
         assertBuildDefinitionEquals( copy, retrievedBuildDefinition );
         assertScheduleEquals( testSchedule1, retrievedBuildDefinition.getSchedule() );
         assertProfileEquals( testProfile1, retrievedBuildDefinition.getProfile() );
     }
 
+    @Test
     public void testEditGroupBuildDefinition()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
 
-        BuildDefinition newBuildDefinition = (BuildDefinition) projectGroup.getBuildDefinitions().get( 0 );
+        BuildDefinition newBuildDefinition = projectGroup.getBuildDefinitions().get( 0 );
+
         // If we use "arguments1.1", jpox-rc2 store "arguments11", weird
         String arguments = "arguments1";
         newBuildDefinition.setArguments( arguments );
 
         BuildDefinition copy = createTestBuildDefinition( newBuildDefinition );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check # build defs", 1, projectGroup.getBuildDefinitions().size() );
-        BuildDefinition retrievedBuildDefinition = (BuildDefinition) projectGroup.getBuildDefinitions().get( 0 );
+        BuildDefinition retrievedBuildDefinition = projectGroup.getBuildDefinitions().get( 0 );
         assertBuildDefinitionEquals( copy, retrievedBuildDefinition );
         assertScheduleEquals( testSchedule2, retrievedBuildDefinition.getSchedule() );
         assertProfileEquals( testProfile1, retrievedBuildDefinition.getProfile() );
     }
 
+    @Test
     public void testDeleteGroupBuildDefinition()
         throws ContinuumStoreException
     {
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+            defaultProjectGroup.getId() );
         projectGroup.getBuildDefinitions().remove( 0 );
-        store.updateProjectGroup( projectGroup );
+        projectGroupDao.updateProjectGroup( projectGroup );
 
-        projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
+        projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( defaultProjectGroup.getId() );
         assertEquals( "check size is now 0", 0, projectGroup.getBuildDefinitions().size() );
 
         // !! These actually aren't happening !!
         // TODO: test the def was physically deleted
         // TODO: test the schedule/profile was NOT physically deleted
     }
-    
-    public void testgetTemplatesBuildDefinitions()
+
+    @Test
+    public void testGetTemplatesBuildDefinitions()
         throws Exception
     {
 
-        int all = store.getAllBuildDefinitions().size();
+        int all = buildDefinitionDao.getAllBuildDefinitions().size();
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setBuildFile( "pom.xml" );
         buildDefinition.setGoals( "clean" );
@@ -1074,28 +1173,327 @@ public class ContinuumStoreTest
         template.setName( "test" );
         template.setContinuumDefault( true );
         template.setType( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
-        template = store.addBuildDefinitionTemplate( template );
-        buildDefinition = store.addBuildDefinition( buildDefinition );
+        template = buildDefinitionTemplateDao.addBuildDefinitionTemplate( template );
+        buildDefinition = buildDefinitionDao.addBuildDefinition( buildDefinition );
 
         template.addBuildDefinition( buildDefinition );
-        
-        template = store.updateBuildDefinitionTemplate( template );
+
+        template = buildDefinitionTemplateDao.updateBuildDefinitionTemplate( template );
 
         assertEquals( "test", template.getName() );
         assertTrue( template.isContinuumDefault() );
         assertEquals( 1, template.getBuildDefinitions().size() );
-        assertEquals( all + 1, store.getAllBuildDefinitions().size() );
-        assertEquals( 1, store.getAllBuildDefinitionTemplate().size() );
+        assertEquals( all + 1, buildDefinitionDao.getAllBuildDefinitions().size() );
+        assertEquals( 2, buildDefinitionTemplateDao.getAllBuildDefinitionTemplate().size() );
 
-        template = store
-            .getContinuumBuildDefinitionTemplateWithType( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
+        template = buildDefinitionTemplateDao.getContinuumBuildDefinitionTemplateWithType(
+            ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
 
         assertNotNull( template );
         assertEquals( 1, template.getBuildDefinitions().size() );
-        
-        assertEquals( 1, store.getAllBuildDefinitionTemplate().size() );
+
+        assertEquals( 2, buildDefinitionTemplateDao.getAllBuildDefinitionTemplate().size() );
     }
-    
+
+    @Test
+    public void testAddLocalRepository()
+        throws Exception
+    {
+        String name = "testAddLocalRepository";
+        String directory = "testAddLocalRepositoryDirectory";
+        String layout = "default";
+
+        LocalRepository repository = createTestLocalRepository( name, directory, layout );
+
+        LocalRepository copy = createTestLocalRepository( repository );
+        localRepositoryDao.addLocalRepository( repository );
+        copy.setId( repository.getId() );
+
+        LocalRepository retrievedRepository = localRepositoryDao.getLocalRepository( repository.getId() );
+        assertLocalRepositoryEquals( copy, retrievedRepository );
+    }
+
+    @Test
+    public void testRemoveLocalRepository()
+        throws Exception
+    {
+        LocalRepository repository = localRepositoryDao.getLocalRepositoryByName( testLocalRepository2.getName() );
+
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupByGroupId( testProjectGroup2.getGroupId() );
+        assertLocalRepositoryEquals( testLocalRepository2, projectGroup.getLocalRepository() );
+        projectGroup.setLocalRepository( null );
+
+        projectGroupDao.updateProjectGroup( projectGroup );
+
+        projectGroup = projectGroupDao.getProjectGroup( testProjectGroup2.getId() );
+        assertNull( "check local repository", projectGroup.getLocalRepository() );
+
+        List<RepositoryPurgeConfiguration> repoPurgeList =
+            repositoryPurgeConfigurationDao.getRepositoryPurgeConfigurationsByLocalRepository( repository.getId() );
+
+        assertEquals( "check # repo purge config", 1, repoPurgeList.size() );
+        repositoryPurgeConfigurationDao.removeRepositoryPurgeConfiguration( repoPurgeList.get( 0 ) );
+        localRepositoryDao.removeLocalRepository( repository );
+
+        List<LocalRepository> localRepositories = localRepositoryDao.getAllLocalRepositories();
+        assertEquals( "check # local repositories", 2, localRepositories.size() );
+        assertFalse( "check not there", localRepositories.contains( repository ) );
+    }
+
+    @Test
+    public void testGetAllLocalRepositories()
+        throws Exception
+    {
+        List<LocalRepository> localRepositories = localRepositoryDao.getAllLocalRepositories();
+
+        assertEquals( "check # local repositories", 3, localRepositories.size() );
+        assertLocalRepositoryEquals( testLocalRepository1, localRepositories.get( 0 ) );
+        assertLocalRepositoryEquals( testLocalRepository2, localRepositories.get( 1 ) );
+        assertLocalRepositoryEquals( testLocalRepository3, localRepositories.get( 2 ) );
+    }
+
+    @Test
+    public void testAddRepositoryPurgeConfiguration()
+        throws Exception
+    {
+        LocalRepository repository = localRepositoryDao.getLocalRepository( testLocalRepository3.getId() );
+        Schedule schedule = scheduleDao.getSchedule( testSchedule1.getId() );
+
+        RepositoryPurgeConfiguration repoPurge = createTestRepositoryPurgeConfiguration( true, 2, 100, false, schedule,
+                                                                                         true, repository );
+
+        RepositoryPurgeConfiguration copy = createTestRepositoryPurgeConfiguration( repoPurge );
+        repositoryPurgeConfigurationDao.addRepositoryPurgeConfiguration( repoPurge );
+        copy.setId( repoPurge.getId() );
+
+        RepositoryPurgeConfiguration retrieved = repositoryPurgeConfigurationDao.getRepositoryPurgeConfiguration(
+            repoPurge.getId() );
+        assertRepositoryPurgeConfigurationEquals( copy, retrieved );
+        assertLocalRepositoryEquals( testLocalRepository3, retrieved.getRepository() );
+        assertScheduleEquals( testSchedule1, retrieved.getSchedule() );
+    }
+
+    @Test
+    public void testRemoveRepositoryPurgeConfiguration()
+        throws Exception
+    {
+        RepositoryPurgeConfiguration repoPurge = repositoryPurgeConfigurationDao.getRepositoryPurgeConfiguration(
+            testRepoPurgeConfiguration2.getId() );
+        repositoryPurgeConfigurationDao.removeRepositoryPurgeConfiguration( repoPurge );
+
+        List<RepositoryPurgeConfiguration> repoPurgeList =
+            repositoryPurgeConfigurationDao.getAllRepositoryPurgeConfigurations();
+        assertEquals( "check # repo purge configurations", 2, repoPurgeList.size() );
+        assertFalse( "check not there", repoPurgeList.contains( repoPurge ) );
+    }
+
+    @Test
+    public void testAddDirectoryPurgeConfiguration()
+        throws Exception
+    {
+        String location = "release-directory";
+        String directoryType = "release";
+
+        Schedule schedule = scheduleDao.getSchedule( testSchedule1.getId() );
+        DirectoryPurgeConfiguration dirPurge = createTestDirectoryPurgeConfiguration( location, directoryType, false, 2,
+                                                                                      100, schedule, true );
+
+        DirectoryPurgeConfiguration copy = createTestDirectoryPurgeConfiguration( dirPurge );
+        directoryPurgeConfigurationDao.addDirectoryPurgeConfiguration( dirPurge );
+        copy.setId( dirPurge.getId() );
+
+        DirectoryPurgeConfiguration retrieved = directoryPurgeConfigurationDao.getDirectoryPurgeConfiguration(
+            dirPurge.getId() );
+        assertDirectoryPurgeConfigurationEquals( copy, retrieved );
+        assertScheduleEquals( testSchedule1, retrieved.getSchedule() );
+    }
+
+    @Test
+    public void testRemoveDirectoryPurgeConfiguration()
+        throws Exception
+    {
+        DirectoryPurgeConfiguration dirPurge = directoryPurgeConfigurationDao.getDirectoryPurgeConfiguration(
+            testDirectoryPurgeConfig.getId() );
+        directoryPurgeConfigurationDao.removeDirectoryPurgeConfiguration( dirPurge );
+
+        List<DirectoryPurgeConfiguration> dirPurgeList =
+            directoryPurgeConfigurationDao.getAllDirectoryPurgeConfigurations();
+        assertEquals( "check #  dir purge configurations", 0, dirPurgeList.size() );
+    }
+
+    @Test
+    public void testGetPurgeConfigurationsBySchedule()
+        throws Exception
+    {
+        List<RepositoryPurgeConfiguration> repoPurgeList =
+            repositoryPurgeConfigurationDao.getRepositoryPurgeConfigurationsBySchedule( testSchedule2.getId() );
+        List<DirectoryPurgeConfiguration> dirPurgeList =
+            directoryPurgeConfigurationDao.getDirectoryPurgeConfigurationsBySchedule( testSchedule2.getId() );
+
+        assertEquals( "check # repo purge configurations", 2, repoPurgeList.size() );
+        assertEquals( "check # dir purge configurations", 1, dirPurgeList.size() );
+
+        assertRepositoryPurgeConfigurationEquals( testRepoPurgeConfiguration1, repoPurgeList.get( 0 ) );
+        assertRepositoryPurgeConfigurationEquals( testRepoPurgeConfiguration3, repoPurgeList.get( 1 ) );
+        assertDirectoryPurgeConfigurationEquals( testDirectoryPurgeConfig, dirPurgeList.get( 0 ) );
+    }
+
+    @Test
+    public void testAddProjectScmRoot()
+        throws Exception
+    {
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroup( testProjectGroup2.getId() );
+        ProjectScmRoot projectScmRoot = createTestProjectScmRoot( "scmRootAddress", 1, 0, "", projectGroup );
+
+        projectScmRoot = projectScmRootDao.addProjectScmRoot( projectScmRoot );
+
+        List<ProjectScmRoot> projectScmRoots = projectScmRootDao.getProjectScmRootByProjectGroup(
+            projectGroup.getId() );
+
+        assertEquals( "check # of project scm root", 2, projectScmRoots.size() );
+
+        ProjectScmRoot retrievedProjectScmRoot = projectScmRootDao.getProjectScmRootByProjectGroupAndScmRootAddress(
+            projectGroup.getId(), "scmRootAddress" );
+
+        assertProjectScmRootEquals( projectScmRoot, retrievedProjectScmRoot );
+        assertProjectGroupEquals( projectScmRoot.getProjectGroup(), retrievedProjectScmRoot.getProjectGroup() );
+    }
+
+    @Test
+    public void testRemoveProjectScmRoot()
+        throws Exception
+    {
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroup( testProjectGroup2.getId() );
+
+        List<ProjectScmRoot> projectScmRoots = projectScmRootDao.getProjectScmRootByProjectGroup(
+            projectGroup.getId() );
+
+        assertEquals( "check # of project scm root", 1, projectScmRoots.size() );
+
+        ProjectScmRoot projectScmRoot = projectScmRoots.get( 0 );
+        projectScmRootDao.removeProjectScmRoot( projectScmRoot );
+
+        projectScmRoots = projectScmRootDao.getProjectScmRootByProjectGroup( projectGroup.getId() );
+
+        assertEquals( "check # of project scm root", 0, projectScmRoots.size() );
+    }
+
+    @Test
+    public void testRemoveProjectWithReleaseResult()
+        throws Exception
+    {
+        Project project = projectDao.getProject( testProject1.getId() );
+        ProjectGroup group = project.getProjectGroup();
+
+        ContinuumReleaseResult releaseResult = createTestContinuumReleaseResult( group, project, "releaseGoal", 0, 0,
+                                                                                 0 );
+        releaseResult = releaseResultDao.addContinuumReleaseResult( releaseResult );
+
+        List<ContinuumReleaseResult> releaseResults = releaseResultDao.getAllContinuumReleaseResults();
+        assertEquals( "check size of continuum release results", 2, releaseResults.size() );
+
+        ContinuumReleaseResult retrievedResult = releaseResults.get( 1 );
+        assertReleaseResultEquals( releaseResult, retrievedResult );
+        assertProjectGroupEquals( group, retrievedResult.getProjectGroup() );
+        assertProjectEquals( project, retrievedResult.getProject() );
+
+        releaseResultDao.removeContinuumReleaseResult( releaseResult );
+        projectDao.removeProject( project );
+        assertFalse( projectDao.getProjectsInGroup( group.getId() ).contains( project ) );
+
+        releaseResults = releaseResultDao.getAllContinuumReleaseResults();
+        assertEquals( "check size of continuum release results", 1, releaseResults.size() );
+    }
+
+    @Test
+    public void testGetProjectSummaryByProjectGroup()
+        throws Exception
+    {
+        List<Project> projects = projectDao.getProjectsInGroup( defaultProjectGroup.getId() );
+        assertEquals( 2, projects.size() );
+
+        Project project = projects.get( 0 );
+        project.setState( 2 );
+        projectDao.updateProject( project );
+
+        project = projects.get( 1 );
+        project.setState( 2 );
+        projectDao.updateProject( project );
+
+        ProjectGroup newGroup = projectGroupDao.getProjectGroupWithProjects( testProjectGroup2.getId() );
+        Project project1 = createTestProject( testProject1 );
+        project1.setState( 4 );
+        newGroup.addProject( project1 );
+
+        Project project2 = createTestProject( testProject2 );
+        project2.setState( 1 );
+        newGroup.addProject( project2 );
+        projectGroupDao.updateProjectGroup( newGroup );
+
+        Map<Integer, ProjectGroupSummary> summaries = projectDao.getProjectsSummary();
+
+        assertNotNull( summaries );
+        assertEquals( "check size of project summaries", 2, summaries.size() );
+
+        ProjectGroupSummary summary = summaries.get( testProjectGroup2.getId() );
+        assertEquals( "check id of project group", testProjectGroup2.getId(), summary.getProjectGroupId() );
+        assertEquals( "check number of errors", 1, summary.getNumberOfErrors() );
+        assertEquals( "check number of successes", 0, summary.getNumberOfSuccesses() );
+        assertEquals( "check number of failures", 0, summary.getNumberOfFailures() );
+        assertEquals( "check number of projects", 2, summary.getNumberOfProjects() );
+
+        summary = summaries.get( defaultProjectGroup.getId() );
+        assertEquals( "check id of project group", defaultProjectGroup.getId(), summary.getProjectGroupId() );
+        assertEquals( "check number of errors", 0, summary.getNumberOfErrors() );
+        assertEquals( "check number of successes", 2, summary.getNumberOfSuccesses() );
+        assertEquals( "check number of failures", 0, summary.getNumberOfFailures() );
+        assertEquals( "check number of projects", 2, summary.getNumberOfProjects() );
+
+    }
+
+    @Test
+    public void testGetBuildResultsInRange()
+        throws Exception
+    {
+        int maxFetch = 5;
+        List<BuildResult> results = buildResultDao.getBuildResultsInRange( null, null, 0, null, null, 0, maxFetch );
+        assertEquals( "check number of build results returned", 3, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 2, null, null, 0, maxFetch );
+        assertEquals( "check number of build results returned with state == OK", 2, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 0, "user", null, 0, maxFetch );
+        assertEquals( "check number of build results returned with triggeredBy == user", 1, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 0, "schedule", null, 0, maxFetch );
+        assertEquals( "check number of build results returned with triggeredBy == schedule", 2, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 2, "schedule", null, 0, maxFetch );
+        assertEquals( "check number of build results returned with state == Ok and triggeredBy == schedule", 1,
+                      results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 3, "user", null, 0, maxFetch );
+        assertEquals( "check number of build results returned with state == Failed and triggeredBy == user", 0,
+                      results.size() );
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( new Date( baseTime ) );
+        cal.add( Calendar.DAY_OF_MONTH, 1 );
+
+        results = buildResultDao.getBuildResultsInRange( new Date( baseTime ), cal.getTime(), 0, null, null, 0, maxFetch );
+        assertEquals( "check number of build results returned with startDate and endDate", 2, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( new Date( baseTime ), new Date( baseTime ), 0, null, null, 0,
+                                                         maxFetch );
+        assertEquals( "check number of build results returned with the same startDate and endDate", 1, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 0, null, asList(1), 0, maxFetch );
+        assertEquals( "check number of build results returned with an existing group id", 3, results.size() );
+
+        results = buildResultDao.getBuildResultsInRange( null, null, 0, null, asList(2), 0, maxFetch );
+        assertEquals( "check number of build results returned with non-existing group id", 0, results.size() );
+    }
+
     // ----------------------------------------------------------------------
     //  HELPER METHODS
     // ----------------------------------------------------------------------
@@ -1105,7 +1503,7 @@ public class ContinuumStoreTest
     {
         try
         {
-            store.getProject( project.getId() );
+            projectDao.getProject( project.getId() );
             fail( "Project should no longer exist" );
         }
         catch ( ContinuumObjectNotFoundException expected )
@@ -1151,12 +1549,14 @@ public class ContinuumStoreTest
         checkProjectFetchGroup( project, false, false, false, false );
     }
 
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        createBuildDatabase();
+        buildDefinitionDao = lookup( BuildDefinitionDao.class );
+        buildDefinitionTemplateDao = lookup( BuildDefinitionTemplateDao.class );
+        buildResultDao = lookup( BuildResultDao.class );
+        createBuildDatabase( false );
     }
 
     private static void checkProjectFetchGroup( Project project, boolean checkoutFetchGroup,
@@ -1241,22 +1641,4 @@ public class ContinuumStoreTest
             }
         }
     }
-
-    private static void checkBuildResultDefaultFetchGroup( BuildResult buildResult )
-    {
-        try
-        {
-            buildResult.getScmResult();
-
-            fail( "scmResult should not be in the default fetch group" );
-        }
-        catch ( JDODetachedFieldAccessException expected )
-        {
-            assertTrue( true );
-        }
-        // TODO: artifacts
-        // TODO: report
-        // TODO: long error data
-    }
-
 }

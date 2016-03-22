@@ -17,26 +17,31 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="releaseProject.page.title"/></title>
+        <title><s:text name="releaseProject.page.title"/></title>
     </head>
     <body>
-      <h2><ww:text name="releasePerform.section.title"/></h2>
-      <ww:form action="releasePerform" method="post" validate="true">
-        <h3><ww:text name="releasePerform.parameters"/></h3>
-        <ww:hidden name="projectId"/>
-        <ww:hidden name="releaseId"/>
+      <h2><s:text name="releasePerform.section.title"/></h2>
+      <s:form action="releasePerform" method="post" validate="true">
+        <tr><td>
+        <h3><s:text name="releasePerform.parameters"/></h3>
+        </td></tr>
+        <s:hidden name="projectId"/>
+        <s:hidden name="releaseId"/>
+        <tr><td>
         <div class="axial">
           <table border="1" cellspacing="2" cellpadding="3" width="100%">
-            <ww:textfield label="Maven Arguments" name="goals" value="clean deploy"/>
-            <ww:checkbox label="Use Release Profile" name="useReleaseProfile" value="true"/>
+            <s:textfield label="%{getText('releasePerformFromScm.goals.label')}" name="goals" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments" size="100"/>
+            <s:checkbox label="%{getText('releasePerformFromScm.useReleaseProfile.label')}" name="useReleaseProfile"/>
           </table>
         </div>
-        <ww:submit/>
-      </ww:form>
+        </td></tr>
+        <s:submit/>
+      </s:form>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

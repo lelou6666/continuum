@@ -19,26 +19,25 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="store-project-group"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "store-project-group" )
 public class StoreProjectGroupAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement role-hint="jdo"
-     */
-    private ContinuumStore store;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     public void execute( Map context )
         throws ContinuumException, ContinuumStoreException
@@ -49,8 +48,8 @@ public class StoreProjectGroupAction
         //
         // ----------------------------------------------------------------------
 
-        projectGroup = store.addProjectGroup( projectGroup );
+        projectGroup = projectGroupDao.addProjectGroup( projectGroup );
 
-        context.put( KEY_PROJECT_GROUP_ID, new Integer( projectGroup.getId() ) );
+        AbstractContinuumAction.setProjectGroupId( context, projectGroup.getId() );
     }
 }

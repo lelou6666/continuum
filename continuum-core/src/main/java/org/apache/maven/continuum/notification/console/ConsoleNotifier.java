@@ -19,64 +19,76 @@ package org.apache.maven.continuum.notification.console;
  * under the License.
  */
 
+import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
-import org.codehaus.plexus.notification.NotificationException;
-import org.codehaus.plexus.notification.notifier.AbstractNotifier;
+import org.apache.maven.continuum.notification.MessageContext;
+import org.apache.maven.continuum.notification.NotificationException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
-
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.notification.notifier.Notifier"
- * role-hint="console"
  */
+@Component( role = org.apache.maven.continuum.notification.Notifier.class, hint = "console" )
 public class ConsoleNotifier
-    extends AbstractNotifier
+    extends AbstractContinuumNotifier
 {
+    private static final Logger log = LoggerFactory.getLogger( ConsoleNotifier.class );
+
     // ----------------------------------------------------------------------
     // Notifier Implementation
     // ----------------------------------------------------------------------
 
-    public void sendNotification( String source, Set recipients, Map configuration, Map context )
+    public String getType()
+    {
+        return "console";
+    }
+
+    public void sendMessage( String messageId, MessageContext context )
         throws NotificationException
     {
-        Project project = (Project) context.get( ContinuumNotificationDispatcher.CONTEXT_PROJECT );
+        Project project = context.getProject();
 
-        BuildResult build = (BuildResult) context.get( ContinuumNotificationDispatcher.CONTEXT_BUILD );
+        BuildResult build = context.getBuildResult();
 
-        if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_STARTED ) )
+        ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
+
+        if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_STARTED ) )
         {
             buildStarted( project );
         }
-        else if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_CHECKOUT_STARTED ) )
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_CHECKOUT_STARTED ) )
         {
             checkoutStarted( project );
         }
-        else if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_CHECKOUT_COMPLETE ) )
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_CHECKOUT_COMPLETE ) )
         {
             checkoutComplete( project );
         }
-        else if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_RUNNING_GOALS ) )
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_RUNNING_GOALS ) )
         {
             runningGoals( project, build );
         }
-        else if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_GOALS_COMPLETED ) )
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_GOALS_COMPLETED ) )
         {
             goalsCompleted( project, build );
         }
-        else if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
         {
             buildComplete( project, build );
         }
+        else if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE ) )
+        {
+            prepareBuildComplete( projectScmRoot );
+        }
         else
         {
-            getLogger().warn( "Unknown source: '" + source + "'." );
+            log.warn( "Unknown messageId: '" + messageId + "'." );
         }
     }
 
@@ -128,6 +140,18 @@ public class ConsoleNotifier
         }
     }
 
+    private void prepareBuildComplete( ProjectScmRoot projectScmRoot )
+    {
+        if ( StringUtils.isEmpty( projectScmRoot.getError() ) )
+        {
+            out( projectScmRoot, "Prepare build complete. state: " + projectScmRoot.getState() );
+        }
+        else
+        {
+            out( projectScmRoot, "Prepare build complete." );
+        }
+    }
+
     private void out( Project project, BuildResult build, String msg )
     {
         System.out.println( "Build event for project '" + project.getName() + "':" + msg );
@@ -138,12 +162,16 @@ public class ConsoleNotifier
         }
     }
 
-    /**
-     * @see org.codehaus.plexus.notification.notifier.Notifier#sendNotification(java.lang.String,java.util.Set,java.util.Properties)
-     */
-    public void sendNotification( String arg0, Set arg1, Properties arg2 )
-        throws NotificationException
+    private void out( ProjectScmRoot projectScmRoot, String msg )
     {
-        throw new NotificationException( "Not implemented." );
+        if ( projectScmRoot != null )
+        {
+            System.out.println( "Prepare build event for '" + projectScmRoot.getScmRootAddress() + "':" + msg );
+
+            if ( !StringUtils.isEmpty( projectScmRoot.getError() ) )
+            {
+                System.out.println( projectScmRoot.getError() );
+            }
+        }
     }
 }

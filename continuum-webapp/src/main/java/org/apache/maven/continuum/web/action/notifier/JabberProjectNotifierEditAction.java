@@ -21,7 +21,8 @@ package org.apache.maven.continuum.web.action.notifier;
 
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.notification.ContinuumRecipientSource;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +32,8 @@ import java.util.Map;
  * specified {@link Project}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id: JabberNotifierEditAction.java 465060 2006-10-17 21:24:38Z jmcconnell $
- * @plexus.component role="com.opensymphony.xwork.Action"role-hint="jabberProjectNotifierEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "jabberProjectNotifierEdit", instantiationStrategy = "per-lookup" )
 public class JabberProjectNotifierEditAction
     extends AbstractProjectNotifierEditAction
 {
@@ -53,31 +53,31 @@ public class JabberProjectNotifierEditAction
 
     private boolean group;
 
-    protected void initConfiguration( Map configuration )
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        host = (String) configuration.get( "host" );
+        host = configuration.get( "host" );
 
         if ( configuration.get( "port" ) != null )
         {
-            port = Integer.parseInt( (String) configuration.get( "port" ) );
+            port = Integer.parseInt( configuration.get( "port" ) );
         }
 
-        login = (String) configuration.get( "login" );
+        login = configuration.get( "login" );
 
-        password = (String) configuration.get( "password" );
+        password = configuration.get( "password" );
 
-        domainName = (String) configuration.get( "domainName" );
+        domainName = configuration.get( "domainName" );
 
-        address = (String) configuration.get( ContinuumRecipientSource.ADDRESS_FIELD );
+        address = configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
 
-        sslConnection = Boolean.valueOf( (String) configuration.get( "sslConnection" ) ).booleanValue();
+        sslConnection = Boolean.valueOf( configuration.get( "sslConnection" ) );
 
-        group = Boolean.valueOf( (String) configuration.get( "isGroup" ) ).booleanValue();
+        group = Boolean.valueOf( configuration.get( "isGroup" ) );
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "host", host );
 
@@ -89,7 +89,7 @@ public class JabberProjectNotifierEditAction
 
         configuration.put( "domainName", domainName );
 
-        configuration.put( ContinuumRecipientSource.ADDRESS_FIELD, address );
+        configuration.put( AbstractContinuumNotifier.ADDRESS_FIELD, address );
 
         configuration.put( "sslConnection", String.valueOf( sslConnection ) );
 

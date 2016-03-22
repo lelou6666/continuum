@@ -19,17 +19,18 @@ package org.apache.maven.continuum.web.action.component;
  * under the License.
  */
 
-import com.opensymphony.xwork.ActionSupport;
-import org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper;
+import com.opensymphony.xwork2.ActionSupport;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
 import org.apache.maven.model.Model;
 import org.apache.maven.shared.app.company.CompanyPomHandler;
 import org.apache.maven.shared.app.configuration.MavenAppConfiguration;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 /**
  * Stores the company information for displaying on the page.
- *
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="companyInfo"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "companyInfo", instantiationStrategy = "per-lookup" )
 public class CompanyInfoAction
     extends ActionSupport
 {
@@ -39,20 +40,14 @@ public class CompanyInfoAction
 
     private String companyName;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private CompanyPomHandler handler;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenAppConfiguration appConfiguration;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenBuilderHelper helper;
+    @Requirement
+    private LocalRepositoryHelper helper;
 
     public String execute()
         throws Exception

@@ -19,27 +19,41 @@ package org.apache.maven.continuum.buildcontroller;
  * under the License.
  */
 
+import org.apache.continuum.dao.BuildDefinitionDao;
+import org.apache.continuum.dao.BuildResultDao;
+import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.dao.ProjectGroupDao;
+import org.apache.continuum.dao.ProjectScmRootDao;
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.continuum.utils.ContinuumUtils;
+import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.core.action.AbstractContinuumAction;
+import org.apache.maven.continuum.core.action.ExecuteBuilderContinuumAction;
+import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
+import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
+import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
+import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.scm.ChangeFile;
 import org.apache.maven.continuum.model.scm.ChangeSet;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.apache.maven.continuum.scm.ContinuumScmException;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.apache.maven.continuum.utils.ContinuumUtils;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.apache.maven.scm.ScmException;
+import org.apache.maven.scm.repository.ScmRepositoryException;
 import org.codehaus.plexus.action.ActionManager;
 import org.codehaus.plexus.action.ActionNotFoundException;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
-import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,32 +62,39 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.buildcontroller.BuildController" role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.buildcontroller.BuildController.class, hint = "default" )
 public class DefaultBuildController
-    extends AbstractLogEnabled
     implements BuildController
 {
-    /**
-     * @plexus.requirement role-hint="jdo"
-     */
-    private ContinuumStore store;
+    private static final Logger log = LoggerFactory.getLogger( DefaultBuildController.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
+    private BuildDefinitionDao buildDefinitionDao;
+
+    @Requirement
+    private BuildResultDao buildResultDao;
+
+    @Requirement
+    private ProjectDao projectDao;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement
+    private ProjectScmRootDao projectScmRootDao;
+
+    @Requirement
     private ContinuumNotificationDispatcher notifierDispatcher;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ActionManager actionManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
+
+    @Requirement
+    private BuildExecutorManager buildExecutorManager;
 
     // ----------------------------------------------------------------------
     // BuildController Implementation
@@ -82,49 +103,28 @@ public class DefaultBuildController
     /**
      * @param projectId
      * @param buildDefinitionId
-     * @param trigger
+     * @param buildTrigger
+     * @param scmResult
      * @throws TaskExecutionException
      */
-    public void build( int projectId, int buildDefinitionId, int trigger )
+    public void build( int projectId, int buildDefinitionId, BuildTrigger buildTrigger, ScmResult scmResult )
         throws TaskExecutionException
     {
-        getLogger().info( "Initializing build" );
-        BuildContext context = initializeBuildContext( projectId, buildDefinitionId, trigger );
+        log.info( "Initializing build" );
+        BuildContext context = initializeBuildContext( projectId, buildDefinitionId, buildTrigger, scmResult );
 
-        getLogger().info( "Starting build of " + context.getProject().getName() );
+        // ignore this if AlwaysBuild ?
+        if ( !checkScmResult( context ) )
+        {
+            log.info( "Error updating from SCM, not building" );
+            return;
+        }
+
+        log.info( "Starting build of " + context.getProject().getName() );
         startBuild( context );
 
         try
         {
-            // check if build definition requires smoking the existing checkout and rechecking out project
-            if ( context.getBuildDefinition().isBuildFresh() )
-            {
-                getLogger().info( "Purging exiting working copy" );
-                cleanWorkingDirectory( context );
-            }
-
-            // ----------------------------------------------------------------------
-            // TODO: Centralize the error handling from the SCM related actions.
-            // ContinuumScmResult should return a ContinuumScmResult from all
-            // methods, even in a case of failure.
-            // ----------------------------------------------------------------------
-            getLogger().info( "Updating working dir" );
-            updateWorkingDirectory( context );
-
-            getLogger().info( "Merging SCM results" );
-            //CONTINUUM-1393
-            if ( !context.getBuildDefinition().isBuildFresh() )
-            {
-                mergeScmResults( context );
-            }
-
-            // ignore this if AlwaysBuild ?
-            if ( !checkScmResult( context ) )
-            {
-                getLogger().info( "Error updating from SCM, not building" );
-                return;
-            }
-
             checkProjectDependencies( context );
 
             if ( !shouldBuild( context ) )
@@ -132,7 +132,7 @@ public class DefaultBuildController
                 return;
             }
 
-            Map actionContext = context.getActionContext();
+            Map<String, Object> actionContext = context.getActionContext();
 
             try
             {
@@ -140,21 +140,25 @@ public class DefaultBuildController
             }
             catch ( TaskExecutionException e )
             {
-                //just log the error but don't stop the build from progressing in order not to suppress any build result messages there 
-                getLogger().error( "Error executing action update-project-from-working-directory '", e );
+                updateBuildResult( context, ContinuumUtils.throwableToString( e ) );
+
+                //just log the error but don't stop the build from progressing in order not to suppress any build result messages there
+                log.error( "Error executing action update-project-from-working-directory '", e );
             }
 
             performAction( "execute-builder", context );
 
             performAction( "deploy-artifact", context );
 
-            String s = (String) actionContext.get( AbstractContinuumAction.KEY_BUILD_ID );
+            context.setCancelled( ExecuteBuilderContinuumAction.isCancelled( actionContext ) );
 
-            if ( s != null )
+            String s = AbstractContinuumAction.getBuildId( actionContext, null );
+
+            if ( s != null && !context.isCancelled() )
             {
                 try
                 {
-                    context.setBuildResult( store.getBuildResult( Integer.valueOf( s ).intValue() ) );
+                    context.setBuildResult( buildResultDao.getBuildResult( Integer.valueOf( s ) ) );
                 }
                 catch ( NumberFormatException e )
                 {
@@ -192,23 +196,18 @@ public class DefaultBuildController
             if ( project.getState() != ContinuumProjectState.NEW &&
                 project.getState() != ContinuumProjectState.CHECKEDOUT &&
                 project.getState() != ContinuumProjectState.OK && project.getState() != ContinuumProjectState.FAILED &&
-                project.getState() != ContinuumProjectState.ERROR )
+                project.getState() != ContinuumProjectState.ERROR && !context.isCancelled() )
             {
                 try
                 {
-                    String s = (String) context.getActionContext().get( AbstractContinuumAction.KEY_BUILD_ID );
+                    String s = AbstractContinuumAction.getBuildId( context.getActionContext(), null );
 
                     if ( s != null )
                     {
-                        BuildResult buildResult = store.getBuildResult( Integer.valueOf( s ).intValue() );
+                        BuildResult buildResult = buildResultDao.getBuildResult( Integer.valueOf( s ) );
                         project.setState( buildResult.getState() );
+                        projectDao.updateProject( project );
                     }
-                    else
-                    {
-                        project.setState( ContinuumProjectState.ERROR );
-                    }
-
-                    store.updateProject( project );
                 }
                 catch ( ContinuumStoreException e )
                 {
@@ -218,7 +217,10 @@ public class DefaultBuildController
         }
         finally
         {
-            notifierDispatcher.buildComplete( project, context.getBuildDefinition(), context.getBuildResult() );
+            if ( !context.isCancelled() )
+            {
+                notifierDispatcher.buildComplete( project, context.getBuildDefinition(), context.getBuildResult() );
+            }
         }
     }
 
@@ -239,9 +241,9 @@ public class DefaultBuildController
 
             try
             {
-                store.updateBuildResult( build );
+                buildResultDao.updateBuildResult( build );
 
-                build = store.getBuildResult( build.getId() );
+                build = buildResultDao.getBuildResult( build.getId() );
 
                 context.setBuildResult( build );
             }
@@ -255,7 +257,7 @@ public class DefaultBuildController
 
         try
         {
-            store.updateProject( context.getProject() );
+            projectDao.updateProject( context.getProject() );
         }
         catch ( ContinuumStoreException e )
         {
@@ -288,7 +290,7 @@ public class DefaultBuildController
 
         try
         {
-            store.updateProject( project );
+            projectDao.updateProject( project );
         }
         catch ( ContinuumStoreException e )
         {
@@ -304,107 +306,125 @@ public class DefaultBuildController
      *
      * @param projectId
      * @param buildDefinitionId
-     * @param trigger
+     * @param buildTrigger
+     * @param scmResult
      * @return
      * @throws TaskExecutionException
      */
-    protected BuildContext initializeBuildContext( int projectId, int buildDefinitionId, int trigger )
+    @SuppressWarnings( "unchecked" )
+    protected BuildContext initializeBuildContext( int projectId, int buildDefinitionId, BuildTrigger buildTrigger,
+                                                   ScmResult scmResult )
         throws TaskExecutionException
     {
         BuildContext context = new BuildContext();
 
         context.setStartTime( System.currentTimeMillis() );
 
-        context.setTrigger( trigger );
+        Map actionContext = context.getActionContext();
 
         try
         {
-            context.setProject( store.getProject( projectId ) );
+            Project project = projectDao.getProject( projectId );
 
-            BuildDefinition buildDefinition = store.getBuildDefinition( buildDefinitionId );
+            context.setProject( project );
+
+            BuildDefinition buildDefinition = buildDefinitionDao.getBuildDefinition( buildDefinitionId );
+
+            BuildTrigger newBuildTrigger = buildTrigger;
+
+            if ( newBuildTrigger.getTrigger() == ContinuumProjectState.TRIGGER_SCHEDULED )
+            {
+                newBuildTrigger.setTriggeredBy( buildDefinition.getSchedule().getName() );
+            }
+
+            context.setBuildTrigger( newBuildTrigger );
 
             context.setBuildDefinition( buildDefinition );
 
-            BuildResult oldBuildResult = store.getLatestBuildResultForBuildDefinition( projectId, buildDefinitionId );
+            BuildResult oldBuildResult = buildResultDao.getLatestBuildResultForBuildDefinition( projectId,
+                                                                                                buildDefinitionId );
 
             context.setOldBuildResult( oldBuildResult );
 
-            if ( oldBuildResult != null )
+            context.setScmResult( scmResult );
+
+            // CONTINUUM-2193
+            ProjectGroup projectGroup = project.getProjectGroup();
+            List<ProjectScmRoot> scmRoots = projectScmRootDao.getProjectScmRootByProjectGroup( projectGroup.getId() );
+            String projectScmUrl = project.getScmUrl();
+            String projectScmRootAddress = "";
+
+            for ( ProjectScmRoot projectScmRoot : scmRoots )
             {
-                context.setOldScmResult( getOldScmResult( projectId, oldBuildResult.getEndTime() ) );
+                projectScmRootAddress = projectScmRoot.getScmRootAddress();
+                if ( projectScmUrl.startsWith( projectScmRoot.getScmRootAddress() ) )
+                {
+                    AbstractContinuumAction.setProjectScmRootUrl( actionContext, projectScmRoot.getScmRootAddress() );
+                    break;
+                }
             }
+
+            if ( project.isCheckedOutInSingleDirectory() )
+            {
+                List<Project> projectsInGroup = projectGroupDao.getProjectGroupWithProjects(
+                    projectGroup.getId() ).getProjects();
+                List<Project> projectsWithCommonScmRoot = new ArrayList<Project>();
+                for ( Project projectInGroup : projectsInGroup )
+                {
+                    if ( projectInGroup.getScmUrl().startsWith( projectScmRootAddress ) )
+                    {
+                        projectsWithCommonScmRoot.add( projectInGroup );
+                    }
+                }
+                AbstractContinuumAction.setListOfProjectsInGroupWithCommonScmRoot( actionContext,
+                                                                                   projectsWithCommonScmRoot );
+            }
+
+            // CONTINUUM-1871 olamy if continuum is killed during building oldBuildResult will have a endTime 0
+            // this means all changes since the project has been loaded in continuum will be in memory
+            // now we will load all BuildResult with an Id bigger or equals than the oldBuildResult one
+            //if ( oldBuildResult != null )
+            //{
+            //    context.setOldScmResult(
+            //        getOldScmResults( projectId, oldBuildResult.getBuildNumber(), oldBuildResult.getEndTime() ) );
+            //}
         }
         catch ( ContinuumStoreException e )
         {
             throw new TaskExecutionException( "Error initializing the build context", e );
         }
 
-        Map actionContext = context.getActionContext();
+        // Map<String, Object> actionContext = context.getActionContext();
 
-        actionContext.put( AbstractContinuumAction.KEY_PROJECT_ID, new Integer( projectId ) );
+        AbstractContinuumAction.setProjectId( actionContext, projectId );
 
-        actionContext.put( AbstractContinuumAction.KEY_PROJECT, context.getProject() );
+        AbstractContinuumAction.setProject( actionContext, context.getProject() );
 
-        actionContext.put( AbstractContinuumAction.KEY_BUILD_DEFINITION_ID, new Integer( buildDefinitionId ) );
+        AbstractContinuumAction.setBuildDefinitionId( actionContext, buildDefinitionId );
 
-        actionContext.put( AbstractContinuumAction.KEY_BUILD_DEFINITION, context.getBuildDefinition() );
+        AbstractContinuumAction.setBuildDefinition( actionContext, context.getBuildDefinition() );
 
-        actionContext.put( AbstractContinuumAction.KEY_TRIGGER, new Integer( trigger ) );
+        AbstractContinuumAction.setBuildTrigger( actionContext, buildTrigger );
 
-        actionContext.put( AbstractContinuumAction.KEY_FIRST_RUN,
-                           Boolean.valueOf( context.getOldBuildResult() == null ) );
+        AbstractContinuumAction.setScmResult( actionContext, context.getScmResult() );
+
+        if ( context.getOldBuildResult() != null )
+        {
+            AbstractContinuumAction.setOldBuildId( actionContext, context.getOldBuildResult().getId() );
+        }
 
         return context;
-    }
-
-    private void cleanWorkingDirectory( BuildContext context )
-        throws TaskExecutionException
-    {
-        performAction( "clean-working-directory", context );
-    }
-
-    private void updateWorkingDirectory( BuildContext context )
-        throws TaskExecutionException
-    {
-        Map actionContext = context.getActionContext();
-
-        performAction( "check-working-directory", context );
-
-        boolean workingDirectoryExists =
-            AbstractContinuumAction.getBoolean( actionContext, AbstractContinuumAction.KEY_WORKING_DIRECTORY_EXISTS );
-
-        ScmResult scmResult;
-
-        if ( workingDirectoryExists )
-        {
-            performAction( "update-working-directory-from-scm", context );
-
-            scmResult = AbstractContinuumAction.getUpdateScmResult( actionContext, null );
-        }
-        else
-        {
-            Project project = (Project) actionContext.get( AbstractContinuumAction.KEY_PROJECT );
-
-            actionContext.put( AbstractContinuumAction.KEY_WORKING_DIRECTORY,
-                               workingDirectoryService.getWorkingDirectory( project ).getAbsolutePath() );
-
-            performAction( "checkout-project", context );
-
-            scmResult = AbstractContinuumAction.getCheckoutResult( actionContext, null );
-        }
-
-        context.setScmResult( scmResult );
     }
 
     private void performAction( String actionName, BuildContext context )
         throws TaskExecutionException
     {
-        String error = null;
-        TaskExecutionException exception = null;
+        String error;
+        TaskExecutionException exception;
 
         try
         {
-            getLogger().info( "Performing action " + actionName );
+            log.info( "Performing action " + actionName );
             actionManager.lookup( actionName ).execute( context.getActionContext() );
             return;
         }
@@ -413,19 +433,15 @@ public class DefaultBuildController
             error = ContinuumUtils.throwableToString( e );
             exception = new TaskExecutionException( "Error looking up action '" + actionName + "'", e );
         }
-        catch ( ContinuumScmException e )
+        catch ( ScmRepositoryException e )
         {
-            ScmResult result = e.getResult();
+            error = getValidationMessages( e ) + "\n" + ContinuumUtils.throwableToString( e );
 
-            if ( result != null )
-            {
-                error = convertScmResultToError( result );
-            }
-
-            if ( error == null )
-            {
-                error = ContinuumUtils.throwableToString( e );
-            }
+            exception = new TaskExecutionException( "SCM error while executing '" + actionName + "'", e );
+        }
+        catch ( ScmException e )
+        {
+            error = ContinuumUtils.throwableToString( e );
 
             exception = new TaskExecutionException( "SCM error while executing '" + actionName + "'", e );
         }
@@ -447,7 +463,7 @@ public class DefaultBuildController
         }
         catch ( TaskExecutionException e )
         {
-            getLogger().error( "Error updating build result after receiving the following exception: ", exception );
+            log.error( "Error updating build result after receiving the following exception: ", exception );
             throw e;
         }
 
@@ -460,16 +476,14 @@ public class DefaultBuildController
         BuildDefinition buildDefinition = context.getBuildDefinition();
         if ( buildDefinition.isAlwaysBuild() )
         {
-            getLogger().info( "AlwaysBuild configured, building" );
+            log.info( "AlwaysBuild configured, building" );
             return true;
         }
         if ( context.getOldBuildResult() == null )
         {
-            getLogger().info( "The project was never be built with the current build definition, building" );
+            log.info( "The project has never been built with the current build definition, building" );
             return true;
         }
-
-        boolean shouldBuild = true;
 
         Project project = context.getProject();
 
@@ -477,90 +491,122 @@ public class DefaultBuildController
         if ( project.getOldState() == ContinuumProjectState.ERROR ||
             context.getOldBuildResult().getState() == ContinuumProjectState.ERROR )
         {
-            getLogger().info( "Latest state was 'ERROR', building" );
+            log.info( "Latest state was 'ERROR', building" );
             return true;
         }
 
+        if ( context.getBuildTrigger().getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
+        {
+            log.info( "The project build is forced, building" );
+            return true;
+        }
+
+        boolean shouldBuild = false;
+
+        boolean allChangesUnknown = true;
+
         if ( project.getOldState() != ContinuumProjectState.NEW &&
             project.getOldState() != ContinuumProjectState.CHECKEDOUT &&
-            context.getTrigger() != ContinuumProjectState.TRIGGER_FORCED &&
+            context.getBuildTrigger().getTrigger() != ContinuumProjectState.TRIGGER_FORCED &&
             project.getState() != ContinuumProjectState.NEW && project.getState() != ContinuumProjectState.CHECKEDOUT )
         {
             // Check SCM changes
-            boolean allChangesUnknown = checkAllChangesUnknown( context.getScmResult().getChanges() );
+            if ( context.getScmResult() != null )
+            {
+                allChangesUnknown = checkAllChangesUnknown( context.getScmResult().getChanges() );
+            }
 
             if ( allChangesUnknown )
             {
-                if ( !context.getScmResult().getChanges().isEmpty() )
+                if ( context.getScmResult() != null && !context.getScmResult().getChanges().isEmpty() )
                 {
-                    getLogger().info(
+                    log.info(
                         "The project was not built because all changes are unknown (maybe local modifications or ignored files not defined in your SCM tool." );
                 }
                 else
                 {
-                    getLogger().info(
+                    log.info(
                         "The project was not built because no changes were detected in sources since the last build." );
                 }
+            }
 
-                project.setState( project.getOldState() );
+            // Check dependencies changes
+            if ( context.getModifiedDependencies() != null && !context.getModifiedDependencies().isEmpty() )
+            {
+                log.info( "Found dependencies changes, building" );
+                shouldBuild = true;
+            }
+        }
 
-                project.setOldState( 0 );
+        // Check changes
+        if ( !shouldBuild && ( ( !allChangesUnknown && context.getScmResult() != null &&
+            !context.getScmResult().getChanges().isEmpty() ) || project.getExecutorId().equals(
+            ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR ) ) )
+        {
+            try
+            {
+                ContinuumBuildExecutor executor = buildExecutorManager.getBuildExecutor( project.getExecutorId() );
 
-                try
+                Map<String, Object> actionContext = context.getActionContext();
+                List<Project> projectsWithCommonScmRoot =
+                    AbstractContinuumAction.getListOfProjectsInGroupWithCommonScmRoot( actionContext );
+                String projectScmRootUrl = AbstractContinuumAction.getProjectScmRootUrl( actionContext,
+                                                                                         project.getScmUrl() );
+
+                if ( executor == null )
                 {
-                    store.updateProject( project );
+                    log.warn( "No continuum build executor found for project " + project.getId() +
+                                  " with executor '" + project.getExecutorId() + "'" );
                 }
-                catch ( ContinuumStoreException e )
+                else if ( context.getScmResult() != null )
                 {
-                    throw new TaskExecutionException( "Error storing project", e );
-                }
-
-                shouldBuild = false;
-
-                // Check dependencies changes
-                if ( context.getModifiedDependencies() != null && !context.getModifiedDependencies().isEmpty() )
-                {
-                    getLogger().info( "Found dependencies changes, building" );
-                    shouldBuild = true;
+                    shouldBuild = executor.shouldBuild( context.getScmResult().getChanges(), project,
+                                                        workingDirectoryService.getWorkingDirectory( project,
+                                                                                                     projectScmRootUrl,
+                                                                                                     projectsWithCommonScmRoot ),
+                                                        context.getBuildDefinition() );
                 }
             }
-            else
+            catch ( Exception e )
             {
-                // Check dependencies changes
-                if ( context.getModifiedDependencies() != null && !context.getModifiedDependencies().isEmpty() )
-                {
-                    getLogger().info( "Found dependencies changes, building" );
-                    shouldBuild = true;
-                }
+                updateBuildResult( context, ContinuumUtils.throwableToString( e ) );
+                throw new TaskExecutionException( "Can't determine if the project should build or not", e );
             }
         }
 
         if ( shouldBuild )
         {
-            getLogger().info( "Changes found, building" );
+            log.info( "Changes found in the current project, building" );
         }
         else
         {
-            getLogger().info( "No changes, not building" );
+            project.setState( project.getOldState() );
+
+            project.setOldState( 0 );
+
+            try
+            {
+                projectDao.updateProject( project );
+            }
+            catch ( ContinuumStoreException e )
+            {
+                throw new TaskExecutionException( "Error storing project", e );
+            }
+            log.info( "No changes in the current project, not building" );
 
         }
+
         return shouldBuild;
     }
 
-    private boolean checkAllChangesUnknown( List changes )
+    private boolean checkAllChangesUnknown( List<ChangeSet> changes )
     {
-        for ( Iterator iterChanges = changes.iterator(); iterChanges.hasNext(); )
+        for ( ChangeSet changeSet : changes )
         {
-            ChangeSet changeSet = (ChangeSet) iterChanges.next();
+            List<ChangeFile> changeFiles = changeSet.getFiles();
 
-            List changeFiles = changeSet.getFiles();
-
-            Iterator iterFiles = changeFiles.iterator();
-
-            while ( iterFiles.hasNext() )
+            for ( ChangeFile changeFile : changeFiles )
             {
-                ChangeFile changeFile = (ChangeFile) iterFiles.next();
-
                 if ( !"unknown".equalsIgnoreCase( changeFile.getStatus() ) )
                 {
                     return false;
@@ -569,6 +615,27 @@ public class DefaultBuildController
         }
 
         return true;
+    }
+
+    private String getValidationMessages( ScmRepositoryException ex )
+    {
+        List<String> messages = ex.getValidationMessages();
+
+        StringBuffer message = new StringBuffer();
+
+        if ( messages != null && !messages.isEmpty() )
+        {
+            for ( Iterator<String> i = messages.iterator(); i.hasNext(); )
+            {
+                message.append( i.next() );
+
+                if ( i.hasNext() )
+                {
+                    message.append( System.getProperty( "line.separator" ) );
+                }
+            }
+        }
+        return message.toString();
     }
 
     protected void checkProjectDependencies( BuildContext context )
@@ -580,12 +647,12 @@ public class DefaultBuildController
 
         try
         {
-            Project project = store.getProjectWithAllDetails( context.getProject().getId() );
-            List dependencies = project.getDependencies();
+            Project project = projectDao.getProjectWithDependencies( context.getProject().getId() );
+            List<ProjectDependency> dependencies = project.getDependencies();
 
             if ( dependencies == null )
             {
-                dependencies = new ArrayList();
+                dependencies = new ArrayList<ProjectDependency>();
             }
 
             if ( project.getParent() != null )
@@ -598,85 +665,43 @@ public class DefaultBuildController
                 return;
             }
 
-            List modifiedDependencies = new ArrayList();
+            List<ProjectDependency> modifiedDependencies = new ArrayList<ProjectDependency>();
 
-            for ( Iterator i = dependencies.iterator(); i.hasNext(); )
+            for ( ProjectDependency dep : dependencies )
             {
-                ProjectDependency dep = (ProjectDependency) i.next();
-                Project dependencyProject = store.getProject( dep.getGroupId(), dep.getArtifactId(), dep.getVersion() );
+                Project dependencyProject = projectDao.getProject( dep.getGroupId(), dep.getArtifactId(),
+                                                                   dep.getVersion() );
 
                 if ( dependencyProject != null )
                 {
-                    List buildResults = store.getBuildResultsInSuccessForProject( dependencyProject.getId(),
-                                                                                  context.getOldBuildResult().getEndTime() );
-                    if ( buildResults != null && !buildResults.isEmpty() )
+                    long nbBuild = buildResultDao.getNbBuildResultsInSuccessForProject( dependencyProject.getId(),
+                                                                                        context.getOldBuildResult().getEndTime() );
+                    if ( nbBuild > 0 )
                     {
-                        getLogger().debug( "Dependency changed: " + dep.getGroupId() + ":" + dep.getArtifactId() + ":" +
-                            dep.getVersion() );
+                        log.debug( "Dependency changed: " + dep.getGroupId() + ":" + dep.getArtifactId() + ":" +
+                                       dep.getVersion() );
                         modifiedDependencies.add( dep );
                     }
                     else
                     {
-                        getLogger().debug( "Dependency not changed: " + dep.getGroupId() + ":" + dep.getArtifactId() +
-                            ":" + dep.getVersion() );
+                        log.debug( "Dependency not changed: " + dep.getGroupId() + ":" + dep.getArtifactId() + ":" +
+                                       dep.getVersion() );
                     }
                 }
                 else
                 {
-                    getLogger().debug( "Skip non Continuum project: " + dep.getGroupId() + ":" + dep.getArtifactId() +
-                        ":" + dep.getVersion() );
+                    log.debug( "Skip non Continuum project: " + dep.getGroupId() + ":" + dep.getArtifactId() + ":" +
+                                   dep.getVersion() );
                 }
             }
 
             context.setModifiedDependencies( modifiedDependencies );
-            context.getActionContext().put( AbstractContinuumAction.KEY_UPDATE_DEPENDENCIES, modifiedDependencies );
+            AbstractContinuumAction.setUpdatedDependencies( context.getActionContext(), modifiedDependencies );
         }
         catch ( ContinuumStoreException e )
         {
-            getLogger().warn( "Can't get the project dependencies", e );
+            log.warn( "Can't get the project dependencies", e );
         }
-    }
-
-    private String convertScmResultToError( ScmResult result )
-    {
-        String error = "";
-
-        if ( result == null )
-        {
-            error = "Scm result is null.";
-        }
-        else
-        {
-            if ( result.getCommandLine() != null )
-            {
-                error = "Command line: " + StringUtils.clean( result.getCommandLine() ) +
-                    System.getProperty( "line.separator" );
-            }
-
-            if ( result.getProviderMessage() != null )
-            {
-                error = "Provider message: " + StringUtils.clean( result.getProviderMessage() ) +
-                    System.getProperty( "line.separator" );
-            }
-
-            if ( result.getCommandOutput() != null )
-            {
-                error += "Command output: " + System.getProperty( "line.separator" );
-                error += "-------------------------------------------------------------------------------" +
-                    System.getProperty( "line.separator" );
-                error += StringUtils.clean( result.getCommandOutput() ) + System.getProperty( "line.separator" );
-                error += "-------------------------------------------------------------------------------" +
-                    System.getProperty( "line.separator" );
-            }
-
-            if ( result.getException() != null )
-            {
-                error += "Exception:" + System.getProperty( "line.separator" );
-                error += result.getException();
-            }
-        }
-
-        return error;
     }
 
     // ----------------------------------------------------------------------
@@ -693,7 +718,9 @@ public class DefaultBuildController
 
         build.setState( ContinuumProjectState.ERROR );
 
-        build.setTrigger( context.getTrigger() );
+        build.setTrigger( context.getBuildTrigger().getTrigger() );
+
+        build.setUsername( context.getBuildTrigger().getTriggeredBy() );
 
         build.setStartTime( context.getStartTime() );
 
@@ -712,9 +739,9 @@ public class DefaultBuildController
 
         try
         {
-            store.addBuildResult( context.getProject(), build );
+            buildResultDao.addBuildResult( context.getProject(), build );
 
-            build = store.getBuildResult( build.getId() );
+            build = buildResultDao.getBuildResult( build.getId() );
 
             context.setBuildResult( build );
 
@@ -726,119 +753,35 @@ public class DefaultBuildController
         }
     }
 
-    private ScmResult getOldScmResult( int projectId, long fromDate )
-    {
-        List results = store.getBuildResultsForProject( projectId, fromDate );
-
-        ScmResult res = new ScmResult();
-
-        if ( results != null )
-        {
-            for ( Iterator i = results.iterator(); i.hasNext(); )
-            {
-                BuildResult result = (BuildResult) i.next();
-
-                ScmResult scmResult = result.getScmResult();
-
-                if ( scmResult != null )
-                {
-                    List changes = scmResult.getChanges();
-
-                    if ( changes != null )
-                    {
-                        for ( Iterator j = changes.iterator(); j.hasNext(); )
-                        {
-                            ChangeSet changeSet = (ChangeSet) j.next();
-
-                            if ( changeSet.getDate() < fromDate )
-                            {
-                                continue;
-                            }
-
-                            if ( !res.getChanges().contains( changeSet ) )
-                            {
-                                res.addChange( changeSet );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return res;
-    }
-
-    /**
-     * Merges scm results so we'll have all changes since last execution of current build definition
-     */
-    private void mergeScmResults( BuildContext context )
-    {
-        ScmResult oldScmResult = context.getOldScmResult();
-        ScmResult newScmResult = context.getScmResult();
-
-        if ( oldScmResult != null )
-        {
-            if ( newScmResult == null )
-            {
-                context.setScmResult( oldScmResult );
-            }
-            else
-            {
-                List oldChanges = oldScmResult.getChanges();
-
-                List newChanges = newScmResult.getChanges();
-
-                for ( Iterator i = newChanges.iterator(); i.hasNext(); )
-                {
-                    ChangeSet change = (ChangeSet) i.next();
-
-                    if ( !oldChanges.contains( change ) )
-                    {
-                        oldChanges.add( change );
-                    }
-                }
-
-                newScmResult.setChanges( oldChanges );
-            }
-        }
-    }
-
     /**
      * Check to see if there was a error while checking out/updating the project
      *
+     * @param context The build context
+     * @return true if scm result is ok
      * @throws TaskExecutionException
      */
     private boolean checkScmResult( BuildContext context )
         throws TaskExecutionException
     {
-        ScmResult scmResult = context.getScmResult();
+        Project project = context.getProject();
 
-        if ( scmResult == null || !scmResult.isSuccess() )
+        int projectGroupId = project.getProjectGroup().getId();
+
+        List<ProjectScmRoot> scmRoots = projectScmRootDao.getProjectScmRootByProjectGroup( projectGroupId );
+
+        for ( ProjectScmRoot projectScmRoot : scmRoots )
         {
-            // scmResult must be converted before storing it because jpox modifies values of all fields to null
-            String error = convertScmResultToError( scmResult );
-
-            BuildResult build = makeAndStoreBuildResult( context, error );
-
-            try
+            if ( project.getScmUrl().startsWith( projectScmRoot.getScmRootAddress() ) )
             {
-                Project project = context.getProject();
+                if ( projectScmRoot.getState() == ContinuumProjectState.UPDATED )
+                {
+                    return true;
+                }
 
-                project.setState( build.getState() );
-
-                store.updateProject( project );
-
-                return false;
-            }
-            catch ( ContinuumStoreException e )
-            {
-                throw new TaskExecutionException( "Error storing project", e );
+                break;
             }
         }
 
-        context.getActionContext().put( AbstractContinuumAction.KEY_UPDATE_SCM_RESULT, scmResult );
-
-        return true;
+        return false;
     }
-
 }

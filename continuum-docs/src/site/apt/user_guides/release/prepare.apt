@@ -1,25 +1,67 @@
  ------
  Preparing for Release
  ------
+ ------
+ 2010-02-19
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
 
 Prepare for Release
 
- Navigate to the Project Group Summary and click the Release button or icon.
+ Navigate to the <<Project Group Summary>> and click the <<Release>> button or icon.
 
-[./../../images/release-project-group-summary.png] Release
+[../../images/release-project-group-summary.png] Release
 
- Choose "Prepare project for release" and click "Submit"
+ Choose <<Prepare project for release>> and click <<Submit>>.
 
-[./../../images/release-choose-prepare-goal.png] Release
+[../../images/release-choose-prepare-goal.png] Release
 
- Complete the form, providing the scm tag name, etc.
+ Complete the form, providing the SCM tag name, etc.
 
-[./../../images/release-prepare-parameters.png] Release Prepare parameters
+ Check the <<Use edit mode>> checkbox if you are using an SCM system that requires you to obtain a lock before editing.
 
- Wait for the process to complete, then click Done.
+ Click <<Submit>>.
+ 
+ When releasing in a {{{../../administrator_guides/distributed-builds.html} distributed builds}} setup, a <<Build environment>>
+ should be selected containing at least one enabled build agent. If none is selected, then Continuum will attempt to use
+ a default agent, starting with the one last used to build the project.
 
-[./../../images/release-prepare-executing.png]
+ Furthermore, the release will not happen in the following cases:
+ 
+   * no build agent found in the build agent group attached to the build environment
+   
+   * all build agents configured in the selected build environment are disabled
+ 
+ []
 
- You will be returned to this page to make another selection
+[../../images/release-prepare-parameters.png] Release Prepare parameters
 
-[./../../images/release-choose-perform-goal.png]
+ Wait for the process to complete, then click <<Done>>.
+
+ <<Note:>> Hitting the <<Rollback>> button does not roll back or delete the SCM tag created during the <<<scm-tag>>> phase.
+ So when re-doing the release prepare of the same version, make sure that the tag does not exist in SVN, if so,
+ the tag should be manually deleted.
+
+[../../images/release-prepare-executing.png]
+
+ You will be returned to this page to make another selection.
+
+[../../images/release-choose-perform-goal.png]
+
+ To view the release prepare results, refer to {{{./release_results.html}Release Results Management}}.

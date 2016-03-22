@@ -21,11 +21,12 @@ package org.apache.maven.continuum.configuration;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class ConfigurationStoringException
     extends Exception
 {
+    private static final long serialVersionUID = -421385426351064628L;
+
     public ConfigurationStoringException( String message )
     {
         super( message );

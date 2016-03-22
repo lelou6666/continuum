@@ -19,15 +19,15 @@ package org.apache.maven.continuum.installation;
  * under the License.
  */
 
-import java.util.List;
-
 import org.apache.maven.continuum.execution.ExecutorConfigurator;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
+import org.apache.maven.continuum.profile.AlreadyExistsProfileException;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 13 juin 07
  */
 public interface InstallationService
@@ -45,18 +45,21 @@ public interface InstallationService
     String ENVVAR_TYPE = "envvar";
 
     public Installation add( Installation installation, boolean automaticProfile )
-        throws InstallationException;
-    
+        throws InstallationException, AlreadyExistsProfileException, AlreadyExistsInstallationException;
+
     public Installation add( Installation installation )
-        throws InstallationException;
+        throws InstallationException, AlreadyExistsInstallationException;
 
     public void update( Installation installation )
-        throws InstallationException;
+        throws InstallationException, AlreadyExistsInstallationException;
 
     public void delete( Installation installation )
         throws InstallationException;
 
     public Installation getInstallation( int installationId )
+        throws InstallationException;
+
+    public Installation getInstallation( String installationName )
         throws InstallationException;
 
     public List<Installation> getAllInstallations()
@@ -76,14 +79,14 @@ public interface InstallationService
      * @return output of JAVA_HOME/bin/java -version (JAVA_HOME = installation.getVarValue()
      * @throws InstallationException
      */
-    public List<String> getJdkInformations( Installation installation )
+    public List<String> getJavaVersionInfo( Installation installation )
         throws InstallationException;
 
     /**
      * @return output of JAVA_HOME/bin/java -version
      * @throws InstallationException
      */
-    public List<String> getDefaultJdkInformations()
+    public List<String> getDefaultJavaVersionInfo()
         throws InstallationException;
 
     /**
@@ -92,7 +95,8 @@ public interface InstallationService
      * @return the cli output of $path/ec.relativePath.ec.executable ec.versionArgument
      * @throws InstallationException
      */
-    public List<String> getExecutorConfiguratorVersion( String path, ExecutorConfigurator executorConfigurator, Profile profile )
+    public List<String> getExecutorVersionInfo( String path, ExecutorConfigurator executorConfigurator,
+                                                Profile profile )
         throws InstallationException;
 
 }

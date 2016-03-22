@@ -19,21 +19,28 @@ package org.apache.maven.continuum.configuration;
  * under the License.
  */
 
-import java.io.File;
-
+import org.apache.continuum.buildqueue.BuildQueueServiceException;
+import org.apache.continuum.configuration.BuildAgentConfiguration;
+import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
+import org.apache.continuum.configuration.ContinuumConfigurationException;
+import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 
+import java.io.File;
+import java.util.List;
+
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public interface ConfigurationService
 {
     String ROLE = ConfigurationService.class.getName();
 
     public static final String DEFAULT_SCHEDULE_NAME = "DEFAULT_SCHEDULE";
-    
+
+    public static final String DEFAULT_BUILD_QUEUE_NAME = "DEFAULT_BUILD_QUEUE";
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
@@ -71,6 +78,65 @@ public interface ConfigurationService
     File getTestReportsDirectory( int buildId, int projectId )
         throws ConfigurationException;
 
+    File getReleaseOutputDirectory();
+
+    void setReleaseOutputDirectory( File releaseOutputDirectory );
+
+    File getReleaseOutputDirectory( int projectGroupId );
+
+    File getReleaseOutputFile( int projectGroupId, String releaseName )
+        throws ConfigurationException;
+
+    String getReleaseOutput( int projectGroupId, String releaseName )
+        throws ConfigurationException;
+
+    int getNumberOfBuildsInParallel();
+
+    void setNumberOfBuildsInParallel( int num );
+
+    BuildQueue getDefaultBuildQueue()
+        throws BuildQueueServiceException;
+
+    List<BuildAgentConfiguration> getBuildAgents();
+
+    void addBuildAgent( BuildAgentConfiguration buildAgent )
+        throws ConfigurationException;
+
+    void removeBuildAgent( BuildAgentConfiguration buildAgent );
+
+    void updateBuildAgent( BuildAgentConfiguration buildAgent );
+
+    boolean isDistributedBuildEnabled();
+
+    void setDistributedBuildEnabled( boolean distributedBuildEnabled );
+
+    void addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException;
+
+    void removeBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException;
+
+    void updateBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException;
+
+    void addBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException;
+
+    void removeBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException;
+
+    BuildAgentGroupConfiguration getBuildAgentGroup( String name );
+
+    BuildAgentConfiguration getBuildAgent( String url );
+
+    List<BuildAgentGroupConfiguration> getBuildAgentGroups();
+
+    boolean containsBuildAgentUrl( String buildAgentUrl, BuildAgentGroupConfiguration buildAgentGroup );
+
+    void setSharedSecretPassword( String sharedSecretPassword );
+
+    String getSharedSecretPassword();
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
@@ -83,12 +149,13 @@ public interface ConfigurationService
 
     boolean isLoaded();
 
-    void load()
-        throws ConfigurationLoadingException;
+    void reload()
+        throws ConfigurationLoadingException, ContinuumConfigurationException;
 
     void store()
-        throws ConfigurationStoringException;
-    
+        throws ConfigurationStoringException, ContinuumConfigurationException;
+
     Schedule getDefaultSchedule()
-        throws ContinuumStoreException, ConfigurationLoadingException;
+        throws ContinuumStoreException, ConfigurationLoadingException, ContinuumConfigurationException,
+        BuildQueueServiceException;
 }

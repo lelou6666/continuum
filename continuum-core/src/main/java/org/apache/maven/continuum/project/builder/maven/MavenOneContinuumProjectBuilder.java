@@ -19,6 +19,7 @@ package org.apache.maven.continuum.project.builder.maven;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
 import org.apache.maven.continuum.execution.maven.m1.MavenOneBuildExecutor;
@@ -32,33 +33,33 @@ import org.apache.maven.continuum.project.builder.AbstractContinuumProjectBuilde
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilderException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.project.builder.ContinuumProjectBuilder"
- * role-hint="maven-one-builder"
  */
+@Component( role = org.apache.maven.continuum.project.builder.ContinuumProjectBuilder.class, hint = "maven-one-builder" )
 public class MavenOneContinuumProjectBuilder
     extends AbstractContinuumProjectBuilder
     implements ContinuumProjectBuilder
 {
     public static final String ID = "maven-one-builder";
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionService buildDefinitionService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenOneMetadataHelper metadataHelper;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     // ----------------------------------------------------------------------
     // ProjectCreator Implementation
@@ -67,17 +68,19 @@ public class MavenOneContinuumProjectBuilder
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password )
         throws ContinuumProjectBuilderException
     {
-        return buildProjectsFromMetadata( url, username, password, true );
+        return buildProjectsFromMetadata( url, username, password, true, false );
     }
 
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
-                                                                     boolean recursiveProjects )
+                                                                     boolean recursiveProjects,
+                                                                     boolean checkoutInSingleDirectory )
         throws ContinuumProjectBuilderException
     {
         try
         {
-            return buildProjectsFromMetadata( url, username, password, recursiveProjects, buildDefinitionService
-                .getDefaultMavenOneBuildDefinitionTemplate() );
+            return buildProjectsFromMetadata( url, username, password, recursiveProjects,
+                                              buildDefinitionService.getDefaultMavenOneBuildDefinitionTemplate(),
+                                              false );
         }
         catch ( BuildDefinitionServiceException e )
         {
@@ -87,76 +90,128 @@ public class MavenOneContinuumProjectBuilder
 
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
                                                                      boolean recursiveProjects,
-                                                                     BuildDefinitionTemplate buildDefinitionTemplate )
+                                                                     BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                     boolean checkoutInSingleDirectory )
         throws ContinuumProjectBuilderException
     {
-        ContinuumProjectBuildingResult result = new ContinuumProjectBuildingResult();
+        return buildProjectsFromMetadata( url, username, password, buildDefinitionTemplate, null );
+    }
 
-        File pomFile;
-
-        pomFile = createMetadataFile( result, url, username, password );
-
-        if ( pomFile == null )
+    public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                                     boolean recursiveProjects,
+                                                                     BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                     boolean checkoutInSingleDirectory,
+                                                                     int projectGroupId )
+        throws ContinuumProjectBuilderException
+    {
+        ProjectGroup projectGroup = null;
+        if ( projectGroupId > 0 )
         {
-            return result;
+            try
+            {
+                projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+            }
+            catch ( ContinuumStoreException e )
+            {
+                throw new ContinuumProjectBuilderException( e.getMessage(), e );
+            }
+        }
+
+        return buildProjectsFromMetadata( url, username, password, buildDefinitionTemplate, projectGroup );
+    }
+
+    private ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                                      BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                      ProjectGroup projectGroup )
+        throws ContinuumProjectBuilderException
+    {
+        File importRoot = fsManager.createTempFile( "continuum-m1import-", "", fsManager.getTempDir() );
+        if ( !importRoot.mkdirs() )
+        {
+            throw new ContinuumProjectBuilderException( "failed to create directory for import: " + importRoot );
         }
 
         Project project = new Project();
+        ContinuumProjectBuildingResult result = new ContinuumProjectBuildingResult();
 
         try
         {
-            metadataHelper.mapMetadata( result, pomFile, project );
+            File pomFile = createMetadataFile( importRoot, result, url, username, password );
+
+            if ( pomFile == null )
+            {
+                return result;
+            }
+
+            metadataHelper.mapMetadata( result, pomFile, project, true );
 
             if ( result.hasErrors() )
             {
                 return result;
             }
-            for ( Iterator<BuildDefinition> iterator = buildDefinitionTemplate.getBuildDefinitions().iterator();
-                  iterator
-                      .hasNext(); )
+            for ( BuildDefinition bd : buildDefinitionTemplate.getBuildDefinitions() )
             {
-                project.addBuildDefinition( iterator.next() );
+                BuildDefinition cloneBuildDefinition = buildDefinitionService.cloneBuildDefinition( bd );
+                cloneBuildDefinition.setTemplate( false );
+                project.addBuildDefinition( cloneBuildDefinition );
             }
             result.addProject( project, MavenOneBuildExecutor.ID );
         }
         catch ( MavenOneMetadataHelperException e )
         {
-            getLogger().error( "Unknown error while processing metadata", e );
+            log.error( "Unknown error while processing metadata", e );
 
             result.addError( ContinuumProjectBuildingResult.ERROR_UNKNOWN );
         }
-
-        ProjectGroup projectGroup = new ProjectGroup();
-
-        // ----------------------------------------------------------------------
-        // Group id
-        // ----------------------------------------------------------------------
-
-        if ( StringUtils.isEmpty( project.getGroupId() ) )
+        finally
         {
-            result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_GROUPID );
+            if ( importRoot.exists() )
+            {
+                try
+                {
+                    fsManager.removeDir( importRoot );
+                }
+                catch ( IOException e )
+                {
+                    log.warn( "failed to remove {} after project import: {}", importRoot, e.getMessage() );
+                }
+            }
         }
 
-        projectGroup.setGroupId( project.getGroupId() );
-
-        // ----------------------------------------------------------------------
-        // Name
-        // ----------------------------------------------------------------------
-
-        String name = project.getName();
-
-        if ( StringUtils.isEmpty( name ) )
+        if ( projectGroup == null )
         {
-            name = project.getGroupId();
+            projectGroup = new ProjectGroup();
+
+            // ----------------------------------------------------------------------
+            // Group id
+            // ----------------------------------------------------------------------
+
+            if ( StringUtils.isEmpty( project.getGroupId() ) )
+            {
+                result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_GROUPID );
+            }
+
+            projectGroup.setGroupId( project.getGroupId() );
+
+            // ----------------------------------------------------------------------
+            // Name
+            // ----------------------------------------------------------------------
+
+            String name = project.getName();
+
+            if ( StringUtils.isEmpty( name ) )
+            {
+                name = project.getGroupId();
+            }
+
+            projectGroup.setName( name );
+
+            // ----------------------------------------------------------------------
+            // Description
+            // ----------------------------------------------------------------------
+
+            projectGroup.setDescription( project.getDescription() );
         }
-
-        projectGroup.setName( name );
-
-        // ----------------------------------------------------------------------
-        // Description
-        // ----------------------------------------------------------------------
-
-        projectGroup.setDescription( project.getDescription() );
 
         result.addProjectGroup( projectGroup );
 

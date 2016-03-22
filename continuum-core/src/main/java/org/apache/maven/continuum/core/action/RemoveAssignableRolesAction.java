@@ -19,10 +19,12 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.role.RoleManager;
 import org.codehaus.plexus.redback.role.RoleManagerException;
 
@@ -32,20 +34,16 @@ import java.util.Map;
  * AddAssignableRolesAction:
  *
  * @author: Emmanuel Venisse <evenisse@apache.org>
- * @version: $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action" role-hint="remove-assignable-roles"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "remove-assignable-roles" )
 public class RemoveAssignableRolesAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement role-hint="jdo"
-     */
-    private ContinuumStore store;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement( hint = "default" )
     private RoleManager roleManager;
 
     public void execute( Map context )
@@ -53,7 +51,7 @@ public class RemoveAssignableRolesAction
     {
         int projectGroupId = getProjectGroupId( context );
 
-        ProjectGroup projectGroup = store.getProjectGroup( projectGroupId );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroup( projectGroupId );
 
         try
         {

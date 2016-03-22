@@ -1,6 +1,24 @@
  -----
  Continuum Security Configuration
  -----
+ 2008-09-01
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
 
 Continuum Security Configuration
 
@@ -9,13 +27,15 @@ Continuum Security Configuration
 
    * <<<~/.m2/security.properties>>>
   
+   * <<<$CONTINUUM_BASE/conf/security.properties>>>
+
    * <<<$CONTINUUM_HOME/conf/security.properties>>>
 
    []
 
- (In the above list, <<<~>>> is the home directory of the user who is running
+ (In the list above, <<<~>>> is the home directory of the user who is running
  Continuum, and <<<$CONTINUUM_HOME>>> is the directory where Continuum is installed,
- such as <<</opt/continuum-1.1>>>.)
+ such as <<</opt/continuum-1.2>>>.)
 
 ~~TODO: Link to Redback documentation when available
 
@@ -49,3 +69,19 @@ security.policy.password.rule.nowhitespace.enabled=true
  can be found in:
  <<<$CONTINUUM_HOME/apps/continuum/webapp/WEB-INF/classes/META-INF/plexus/application.xml>>>
 
+* Additional CSRF Prevention
+
+  To help prevent cross-site request forgery, it is possible to enable a basic check that the referrer is the current
+  site.
+
+  <Note:> This is only a generic solution that may prevent some types of attacks but not others. It may cause problems
+  with certain user agents. By default, the check is off.
+
+  To enable the check, change the following configuration value in the <<<struts.xml>>> file in the <<<WEB-INF/classes>>>
+  directory of the web application (2 locations):
+
+----
+<interceptor-ref name="redbackSecureActions">
+  <param name="enableReferrerCheck">false</param>
+</interceptor-ref>
+----

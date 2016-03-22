@@ -19,8 +19,11 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
@@ -28,26 +31,27 @@ import java.util.Map;
  * AddBuildDefinitionToProjectAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="update-build-definition-from-project-group"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "update-build-definition-from-project-group" )
 public class UpdateBuildDefinitionFromProjectGroupAction
     extends AbstractBuildDefinitionContinuumAction
 {
 
-    public void execute( Map map )
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    public void execute( Map context )
         throws Exception
     {
-        BuildDefinition buildDefinition = getBuildDefinition( map );
-        int projectGroupId = getProjectGroupId( map );
+        BuildDefinition buildDefinition = getBuildDefinition( context );
+        int projectGroupId = getProjectGroupId( context );
 
-        ProjectGroup projectGroup = store.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
 
         resolveDefaultBuildDefinitionsForProjectGroup( buildDefinition, projectGroup );
 
         updateBuildDefinitionInList( projectGroup.getBuildDefinitions(), buildDefinition );
 
-        map.put( AbstractContinuumAction.KEY_BUILD_DEFINITION, buildDefinition );
+        AbstractContinuumAction.setBuildDefinition( context, buildDefinition );
     }
 }

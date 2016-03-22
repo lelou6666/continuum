@@ -21,11 +21,12 @@ package org.apache.maven.continuum.execution;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumBuildCancelledException
     extends ContinuumBuildExecutorException
 {
+    private static final long serialVersionUID = 6658199253278756183L;
+
     public ContinuumBuildCancelledException( String message )
     {
         super( message );

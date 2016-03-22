@@ -25,6 +25,8 @@ package org.apache.maven.continuum.release;
 public class ContinuumReleaseException
     extends Exception
 {
+    private static final long serialVersionUID = 2167029372282426809L;
+
     public ContinuumReleaseException( String id )
     {
         super( id );

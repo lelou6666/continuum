@@ -17,36 +17,58 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-<ww:i18n name="localization.Continuum">
+<s:i18n name="localization.Continuum">
   <head>
     <title>
-      <ww:text name="configuration.page.title"/>
+      <s:text name="configuration.page.title"/>
     </title>
   </head>
   <body>
   <div id="axial" class="h3">
     <h3>
-      <ww:text name="configuration.section.title"/>
+      <s:text name="configuration.section.title"/>
     </h3>
 
     <div class="axial">
       <table border="1" cellspacing="2" cellpadding="3" width="100%">
-        <c1:data label="%{getText('configuration.workingDirectory.label')}" name="workingDirectory"/>
-        <c1:data label="%{getText('configuration.buildOutputDirectory.label')}" name="buildOutputDirectory"/>
-        <c1:data label="%{getText('configuration.deploymentRepositoryDirectory.label')}"
-                 name="deploymentRepositoryDirectory"/>
-        <c1:data label="%{getText('configuration.baseUrl.label')}" name="baseUrl"/>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.workingDirectory.label'/>:</label></th>
+          <td><s:property value="workingDirectory"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.buildOutputDirectory.label'/>:</label></th>
+          <td><s:property value="buildOutputDirectory"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.releaseOutputDirectory.label'/>:</label></th>
+          <td><s:property value="releaseOutputDirectory"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.deploymentRepositoryDirectory.label'/>:</label></th>
+          <td><s:property value="deploymentRepositoryDirectory"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.baseUrl.label'/>:</label></th>
+          <td><s:property value="baseUrl"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.allowed.build.parallel'/>:</label></th>
+          <td><s:property value="numberOfAllowedBuildsinParallel"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='configuration.distributedBuildEnabled.label'/>:</label></th>
+          <td><s:property value="distributedBuildEnabled"/></td>
+        </tr>
       </table>
       <div class="functnbar3">
-        <ww:form action="configuration!input.action" method="post">
-          <ww:submit value="%{getText('edit')}"/>
-        </ww:form>
+        <s:form action="configuration" method="post">
+          <s:submit value="%{getText('edit')}"/>
+        </s:form>
       </div>
     </div>
   </div>
   </body>
-</ww:i18n>
+</s:i18n>
 </html>

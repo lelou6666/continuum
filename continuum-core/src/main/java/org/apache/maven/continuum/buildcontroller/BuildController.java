@@ -19,16 +19,17 @@ package org.apache.maven.continuum.buildcontroller;
  * under the License.
  */
 
+import org.apache.continuum.utils.build.BuildTrigger;
+import org.apache.maven.continuum.model.scm.ScmResult;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface BuildController
 {
     String ROLE = BuildController.class.getName();
 
-    void build( int projectId, int buildDefinitionId, int trigger )
+    void build( int projectId, int buildDefinitionId, BuildTrigger buildTrigger, ScmResult scmResult )
         throws TaskExecutionException;
 }

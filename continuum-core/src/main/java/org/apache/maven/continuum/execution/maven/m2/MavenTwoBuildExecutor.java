@@ -19,6 +19,7 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
+import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.metadata.ArtifactMetadata;
 import org.apache.maven.continuum.configuration.ConfigurationException;
@@ -28,17 +29,20 @@ import org.apache.maven.continuum.execution.ContinuumBuildExecutionResult;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorException;
+import org.apache.maven.continuum.execution.shared.JUnitReportArchiver;
 import org.apache.maven.continuum.installation.InstallationService;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.scm.ChangeFile;
+import org.apache.maven.continuum.model.scm.ChangeSet;
+import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifactMetadata;
-import org.codehaus.plexus.util.DirectoryScanner;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
@@ -47,14 +51,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class MavenTwoBuildExecutor
     extends AbstractBuildExecutor
@@ -72,20 +74,17 @@ public class MavenTwoBuildExecutor
     //
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenBuilderHelper builderHelper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenProjectHelper projectHelper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ConfigurationService configurationService;
+
+    @Requirement
+    private JUnitReportArchiver testReportArchiver;
 
     // ----------------------------------------------------------------------
     //
@@ -96,15 +95,51 @@ public class MavenTwoBuildExecutor
         super( ID, true );
     }
 
+    public MavenBuilderHelper getBuilderHelper()
+    {
+        return builderHelper;
+    }
+
+    public void setBuilderHelper( MavenBuilderHelper builderHelper )
+    {
+        this.builderHelper = builderHelper;
+    }
+
+    public MavenProjectHelper getProjectHelper()
+    {
+        return projectHelper;
+    }
+
+    public void setProjectHelper( MavenProjectHelper projectHelper )
+    {
+        this.projectHelper = projectHelper;
+    }
+
+    public ConfigurationService getConfigurationService()
+    {
+        return configurationService;
+    }
+
+    public void setConfigurationService( ConfigurationService configurationService )
+    {
+        this.configurationService = configurationService;
+    }
+
+    public void setTestReportArchiver( JUnitReportArchiver testReportArchiver )
+    {
+        this.testReportArchiver = testReportArchiver;
+    }
+
     // ----------------------------------------------------------------------
     // ContinuumBuilder Implementation
     // ----------------------------------------------------------------------
 
-    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput )
+    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput,
+                                                List<Project> projectsWithCommonScmRoot, String projectScmRootUrl )
         throws ContinuumBuildExecutorException
     {
-        String executable = getInstallationService().getExecutorConfigurator( InstallationService.MAVEN2_TYPE )
-            .getExecutable();
+        String executable = getInstallationService().getExecutorConfigurator(
+            InstallationService.MAVEN2_TYPE ).getExecutable();
 
         StringBuffer arguments = new StringBuffer();
 
@@ -125,6 +160,14 @@ public class MavenTwoBuildExecutor
             arguments.append( "\"-D" ).append( name ).append( "=" ).append( value ).append( "\" " );
         }
 
+        // append -Dmaven.repo.local if project group has a local repository
+        LocalRepository repository = project.getProjectGroup().getLocalRepository();
+        if ( repository != null )
+        {
+            arguments.append( "\"-Dmaven.repo.local=" ).append( StringUtils.clean( repository.getLocation() ) ).append(
+                "\" " );
+        }
+
         arguments.append( StringUtils.clean( buildDefinition.getGoals() ) );
 
         Map<String, String> environments = getEnvironments( buildDefinition );
@@ -135,10 +178,11 @@ public class MavenTwoBuildExecutor
             setResolveExecutable( false );
         }
 
-        return executeShellCommand( project, executable, arguments.toString(), buildOutput, environments );
+        return executeShellCommand( project, executable, arguments.toString(), buildOutput, environments, null, null );
     }
 
-    public void updateProjectFromCheckOut( File workingDirectory, Project project, BuildDefinition buildDefinition )
+    public void updateProjectFromCheckOut( File workingDirectory, Project project, BuildDefinition buildDefinition,
+                                           ScmResult scmResult )
         throws ContinuumBuildExecutorException
     {
         File f = getPomFile( getBuildFileForProject( project, buildDefinition ), workingDirectory );
@@ -147,10 +191,9 @@ public class MavenTwoBuildExecutor
         {
             throw new ContinuumBuildExecutorException( "Could not find Maven project descriptor." );
         }
-
         ContinuumProjectBuildingResult result = new ContinuumProjectBuildingResult();
-
-        builderHelper.mapMetadataToProject( result, f, project );
+        boolean update = isDescriptionUpdated( buildDefinition, scmResult, project );
+        builderHelper.mapMetadataToProject( result, f, project, update );
 
         if ( result.hasErrors() )
         {
@@ -177,28 +220,12 @@ public class MavenTwoBuildExecutor
         return f;
     }
 
-    public List getDeployableArtifacts( Project continuumProject, File workingDirectory,
-                                        BuildDefinition buildDefinition )
+    @Override
+    public List<Artifact> getDeployableArtifacts( Project continuumProject, File workingDirectory,
+                                                  BuildDefinition buildDefinition )
         throws ContinuumBuildExecutorException
     {
-        File f = getPomFile( getBuildFileForProject( continuumProject, buildDefinition ), workingDirectory );
-
-        if ( !f.exists() )
-        {
-            throw new ContinuumBuildExecutorException( "Could not find Maven project descriptor '" + f + "'." );
-        }
-
-        MavenProject project;
-
-        ContinuumProjectBuildingResult result = new ContinuumProjectBuildingResult();
-
-        project = builderHelper.getMavenProject( result, f );
-
-        if ( result.hasErrors() )
-        {
-            throw new ContinuumBuildExecutorException(
-                "Unable to read the Maven project descriptor '" + f + "': " + result.getErrorsAsString() );
-        }
+        MavenProject project = getMavenProject( continuumProject, workingDirectory, buildDefinition );
 
         // Maven could help us out a lot more here by knowing how to get the deployment artifacts from a project.
         // TODO: this is currently quite lame
@@ -271,72 +298,161 @@ public class MavenTwoBuildExecutor
             }
         }
 
-        List attachedArtifacts = project.getAttachedArtifacts();
+        List<Artifact> attachedArtifacts = project.getAttachedArtifacts();
 
-        List artifacts = new ArrayList( attachedArtifacts.size() + 1 );
+        List<Artifact> artifacts = new ArrayList<Artifact>( attachedArtifacts.size() + 1 );
 
         if ( artifact.getFile().exists() )
         {
             artifacts.add( artifact );
         }
 
-        for ( Iterator iterator = attachedArtifacts.iterator(); iterator.hasNext(); )
+        for ( Artifact attachedArtifact : attachedArtifacts )
         {
-            Artifact attachedArtifact = (Artifact) iterator.next();
             artifacts.add( attachedArtifact );
         }
 
         return artifacts;
     }
 
-    public void backupTestFiles( Project project, int buildId )
+    private MavenProject getMavenProject( Project continuumProject, File workingDirectory,
+                                          BuildDefinition buildDefinition )
+        throws ContinuumBuildExecutorException
+    {
+        ContinuumProjectBuildingResult result = new ContinuumProjectBuildingResult();
+
+        File f = getPomFile( getBuildFileForProject( continuumProject, buildDefinition ), workingDirectory );
+
+        if ( !f.exists() )
+        {
+            throw new ContinuumBuildExecutorException( "Could not find Maven project descriptor '" + f + "'." );
+        }
+
+        MavenProject project = builderHelper.getMavenProject( result, f );
+
+        if ( result.hasErrors() )
+        {
+            throw new ContinuumBuildExecutorException(
+                "Unable to read the Maven project descriptor '" + f + "': " + result.getErrorsAsString() );
+        }
+        return project;
+    }
+
+    @Override
+    public void backupTestFiles( Project project, int buildId, String projectScmRootUrl,
+                                 List<Project> projectsWithCommonScmRoot )
     {
         File backupDirectory = null;
         try
         {
             backupDirectory = configurationService.getTestReportsDirectory( buildId, project.getId() );
-            if ( !backupDirectory.exists() )
-            {
-                backupDirectory.mkdirs();
-            }
+            testReportArchiver.archiveReports(
+                getWorkingDirectory( project, projectScmRootUrl, projectsWithCommonScmRoot ),
+                backupDirectory );
         }
         catch ( ConfigurationException e )
         {
-            getLogger().info( "error on surefire backup directory creation skip backup " + e.getMessage(), e );
+            log.error( "failed to get backup directory", e );
         }
-        backupTestFiles( getWorkingDirectory( project ), backupDirectory );
+        catch ( IOException e )
+        {
+            log.warn( "failed to copy test results to backup directory", e );
+        }
     }
 
-    private void backupTestFiles( File workingDir, File backupDirectory )
+    /**
+     * @return true if changes are in the current project, not only in sub-modules and in non-recursive mode
+     * @see org.apache.maven.continuum.execution.ContinuumBuildExecutor#shouldBuild(java.util.List, org.apache.maven.continuum.model.project.Project, java.io.File, org.apache.maven.continuum.model.project.BuildDefinition)
+     */
+    @Override
+    public boolean shouldBuild( List<ChangeSet> changes, Project continuumProject, File workingDirectory,
+                                BuildDefinition buildDefinition )
+        throws ContinuumBuildExecutorException
     {
-        DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setBasedir( workingDir );
-        scanner.setIncludes(
-            new String[]{"**/target/surefire-reports/TEST-*.xml", "**/target/surefire-it-reports/TEST-*.xml"} );
-        scanner.scan();
-
-        String[] testResultFiles = scanner.getIncludedFiles();
-        if ( testResultFiles.length > 0 )
+        //Check if it's a recursive build
+        boolean isRecursive = false;
+        if ( StringUtils.isNotEmpty( buildDefinition.getArguments() ) )
         {
-            getLogger().info( "Backup surefire files." );
+            isRecursive = buildDefinition.getArguments().indexOf( "-N" ) < 0 && buildDefinition.getArguments().indexOf(
+                "--non-recursive" ) < 0;
         }
-        for ( String testResultFile : testResultFiles )
+        if ( isRecursive && changes != null && !changes.isEmpty() )
         {
-            File xmlFile = new File( workingDir, testResultFile );
-            try
+            if ( log.isInfoEnabled() )
             {
-                if ( backupDirectory != null )
+                log.info( "recursive build and changes found --> building" );
+            }
+            return true;
+        }
+
+        MavenProject project = getMavenProject( continuumProject, workingDirectory, buildDefinition );
+
+        if ( changes == null || changes.isEmpty() )
+        {
+            if ( log.isInfoEnabled() )
+            {
+                log.info( "Found no changes, not building" );
+            }
+            return false;
+        }
+
+        //check if changes are only in sub-modules or not
+        List<String> modules = project.getModules();
+
+        List<ChangeFile> files = new ArrayList<ChangeFile>();
+        for ( ChangeSet changeSet : changes )
+        {
+            files.addAll( changeSet.getFiles() );
+        }
+
+        int i = 0;
+        while ( i <= files.size() - 1 )
+        {
+            ChangeFile file = files.get( i );
+            if ( log.isDebugEnabled() )
+            {
+                log.debug( "changeFile.name " + file.getName() );
+                log.debug( "check in modules " + modules );
+            }
+            boolean found = false;
+            for ( String module : modules )
+            {
+                if ( file.getName().indexOf( module ) >= 0 )
                 {
-                    FileUtils.copyFileToDirectory( xmlFile, backupDirectory );
+                    if ( log.isDebugEnabled() )
+                    {
+                        log.debug( "changeFile.name " + file.getName() + " removed because in a module" );
+                    }
+                    files.remove( file );
+                    found = true;
+                    break;
+                }
+                if ( log.isDebugEnabled() )
+                {
+                    log.debug( "no remving file " + file.getName() + " not in module " + module );
                 }
             }
-            catch ( IOException e )
+            if ( !found )
             {
-                getLogger().info( "failed to backup unit report file " + xmlFile.getPath() );
+                i++;
             }
         }
+
+        boolean shouldBuild = !files.isEmpty();
+
+        if ( !shouldBuild )
+        {
+            log.info( "Changes are only in sub-modules." );
+        }
+
+        if ( log.isDebugEnabled() )
+        {
+            log.debug( "shoulbuild = " + shouldBuild );
+        }
+        return shouldBuild;
     }
 
+    @Override
     protected Map<String, String> getEnvironments( BuildDefinition buildDefinition )
     {
         Profile profile = buildDefinition.getProfile();

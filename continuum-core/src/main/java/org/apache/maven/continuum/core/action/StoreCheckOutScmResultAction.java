@@ -19,27 +19,26 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ScmResult;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="store-checkout-scm-result"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "store-checkout-scm-result" )
 public class StoreCheckOutScmResultAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement role-hint="jdo"
-     */
-    private ContinuumStore store;
+
+    @Requirement
+    private ProjectDao projectDao;
 
     public void execute( Map context )
         throws TaskExecutionException
@@ -50,13 +49,13 @@ public class StoreCheckOutScmResultAction
             //
             // ----------------------------------------------------------------------
 
-            ScmResult scmResult = AbstractContinuumAction.getCheckoutResult( context, null );
+            ScmResult scmResult = CheckoutProjectContinuumAction.getCheckoutScmResult( context, null );
 
-            Project project = store.getProject( getProjectId( context ) );
+            Project project = projectDao.getProject( getProjectId( context ) );
 
             project.setCheckoutResult( scmResult );
 
-            store.updateProject( project );
+            projectDao.updateProject( project );
         }
         catch ( ContinuumStoreException e )
         {

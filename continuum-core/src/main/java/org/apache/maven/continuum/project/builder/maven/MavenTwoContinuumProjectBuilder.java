@@ -19,6 +19,10 @@ package org.apache.maven.continuum.project.builder.maven;
  * under the License.
  */
 
+import org.apache.continuum.dao.LocalRepositoryDao;
+import org.apache.continuum.dao.ProjectGroupDao;
+import org.apache.continuum.dao.ScheduleDao;
+import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
 import org.apache.maven.continuum.configuration.ConfigurationService;
@@ -33,25 +37,24 @@ import org.apache.maven.continuum.project.builder.AbstractContinuumProjectBuilde
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilderException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.project.builder.ContinuumProjectBuilder" role-hint="maven-two-builder"
  */
+@Component( role = org.apache.maven.continuum.project.builder.ContinuumProjectBuilder.class, hint = "maven-two-builder" )
 public class MavenTwoContinuumProjectBuilder
     extends AbstractContinuumProjectBuilder
     implements ContinuumProjectBuilder
@@ -60,25 +63,25 @@ public class MavenTwoContinuumProjectBuilder
 
     private static final String POM_PART = "/pom.xml";
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
+    private LocalRepositoryDao localRepositoryDao;
+
+    @Requirement
     private MavenBuilderHelper builderHelper;
 
-    /**
-     * @plexus.requirement role-hint="jdo"
-     */
-    private ContinuumStore store;
+    @Requirement
+    private ScheduleDao scheduleDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionService buildDefinitionService;
 
-    /**
-     * @plexus.configuration
-     */
-    private List excludedPackagingTypes = new ArrayList();
+    @Configuration( "" )
+    private List<String> excludedPackagingTypes = new ArrayList<String>();
+
+    private Project rootProject;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
 
     // ----------------------------------------------------------------------
     // AbstractContinuumProjectBuilder Implementation
@@ -86,17 +89,19 @@ public class MavenTwoContinuumProjectBuilder
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password )
         throws ContinuumProjectBuilderException
     {
-        return buildProjectsFromMetadata( url, username, password, true );
+        return buildProjectsFromMetadata( url, username, password, true, false );
     }
 
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
-                                                                     boolean loadRecursiveProjects )
+                                                                     boolean loadRecursiveProjects,
+                                                                     boolean checkoutInSingleDirectory )
         throws ContinuumProjectBuilderException
     {
         try
         {
-            return buildProjectsFromMetadata( url, username, password, loadRecursiveProjects, buildDefinitionService
-                .getDefaultMavenTwoBuildDefinitionTemplate() );
+            return buildProjectsFromMetadata( url, username, password, loadRecursiveProjects,
+                                              buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate(),
+                                              checkoutInSingleDirectory );
         }
         catch ( BuildDefinitionServiceException e )
         {
@@ -106,7 +111,19 @@ public class MavenTwoContinuumProjectBuilder
 
     public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
                                                                      boolean loadRecursiveProjects,
-                                                                     BuildDefinitionTemplate buildDefinitionTemplate )
+                                                                     BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                     boolean checkoutInSingleDirectory )
+        throws ContinuumProjectBuilderException
+    {
+        return buildProjectsFromMetadata( url, username, password, loadRecursiveProjects, buildDefinitionTemplate,
+                                          checkoutInSingleDirectory, -1 );
+    }
+
+    public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                                     boolean loadRecursiveProjects,
+                                                                     BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                     boolean checkoutInSingleDirectory,
+                                                                     int projectGroupId )
         throws ContinuumProjectBuilderException
     {
         // ----------------------------------------------------------------------
@@ -117,9 +134,21 @@ public class MavenTwoContinuumProjectBuilder
 
         try
         {
-            readModules( url, result, true, username, password, null, loadRecursiveProjects, buildDefinitionTemplate );
+            ProjectGroup projectGroup = null;
+            if ( projectGroupId > 0 )
+            {
+                projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+            }
+
+            importProject( url, result, projectGroup, username, password, null, loadRecursiveProjects,
+                           buildDefinitionTemplate,
+                           checkoutInSingleDirectory );
         }
         catch ( BuildDefinitionServiceException e )
+        {
+            throw new ContinuumProjectBuilderException( e.getMessage(), e );
+        }
+        catch ( ContinuumStoreException e )
         {
             throw new ContinuumProjectBuilderException( e.getMessage(), e );
         }
@@ -130,107 +159,83 @@ public class MavenTwoContinuumProjectBuilder
     //
     // ----------------------------------------------------------------------
 
-    private void readModules( URL url, ContinuumProjectBuildingResult result, boolean groupPom, String username,
-                              String password, String scmUrl, boolean loadRecursiveProjects,
-                              BuildDefinitionTemplate buildDefinitionTemplate )
+    private void importProject( URL url, ContinuumProjectBuildingResult result, ProjectGroup projectGroup,
+                                String username, String password, String scmUrl, boolean loadRecursiveProjects,
+                                BuildDefinitionTemplate buildDefinitionTemplate, boolean checkoutInSingleDirectory )
         throws ContinuumProjectBuilderException, BuildDefinitionServiceException
     {
-
-        MavenProject mavenProject;
+        File importRoot = fsManager.createTempFile( "continuum-m2import-", "", fsManager.getTempDir() );
+        if ( !importRoot.mkdirs() )
+        {
+            throw new ContinuumProjectBuilderException( "failed to create directory for import: " + importRoot );
+        }
 
         try
         {
-            mavenProject = builderHelper.getMavenProject( result, createMetadataFile( url, username, password ) );
-
-            if ( result.hasErrors() )
+            importProjects( importRoot, url, result, projectGroup, username, password, scmUrl, loadRecursiveProjects,
+                            buildDefinitionTemplate, checkoutInSingleDirectory );
+        }
+        finally
+        {
+            if ( importRoot.exists() )
             {
-                return;
-            }
-        }
-        catch ( MalformedURLException e )
-        {
-            getLogger().debug( "Error adding project: Malformed URL " + url, e );
-            result.addError( ContinuumProjectBuildingResult.ERROR_MALFORMED_URL );
-            return;
-        }
-        catch ( FileNotFoundException e )
-        {
-            getLogger().debug( "Error adding project: File not found " + url, e );
-            result.addError( ContinuumProjectBuildingResult.ERROR_POM_NOT_FOUND );
-            return;
-        }
-        catch ( ConnectException e )
-        {
-            getLogger().debug( "Error adding project: Unable to connect " + url, e );
-            result.addError( ContinuumProjectBuildingResult.ERROR_CONNECT );
-            return;
-        }
-        catch ( IOException e )
-        {
-            if ( e.getMessage() != null )
-            {
-                if ( e.getMessage().indexOf( "Server returned HTTP response code: 401" ) >= 0 )
+                try
                 {
-                    getLogger().debug( "Error adding project: Unauthorized " + url, e );
-                    result.addError( ContinuumProjectBuildingResult.ERROR_UNAUTHORIZED );
-                    return;
+                    fsManager.removeDir( importRoot );
+                }
+                catch ( IOException e )
+                {
+                    log.warn( "failed to remove {} after project import: {}", importRoot, e.getMessage() );
                 }
             }
-            getLogger().info( "Error adding project: Unknown error downloading from " + url, e );
-            result.addError( ContinuumProjectBuildingResult.ERROR_UNKNOWN );
+        }
+    }
+
+    private void importProjects( File importRoot, URL url, ContinuumProjectBuildingResult result,
+                                 ProjectGroup projectGroup, String username, String password, String scmUrl,
+                                 boolean loadRecursiveProjects, BuildDefinitionTemplate buildDefinitionTemplate,
+                                 boolean checkoutInSingleDirectory )
+        throws ContinuumProjectBuilderException, BuildDefinitionServiceException
+    {
+        File pomFile = createMetadataFile( importRoot, result, url, username, password );
+
+        if ( result.hasErrors() )
+        {
             return;
         }
-        getLogger().debug( "groupPom " + groupPom );
-        if ( groupPom )
+
+        MavenProject mavenProject = builderHelper.getMavenProject( result, pomFile );
+
+        if ( result.hasErrors() )
         {
-            ProjectGroup projectGroup = buildProjectGroup( mavenProject, result );
+            return;
+        }
+
+        log.debug( "projectGroup " + projectGroup );
+
+        if ( projectGroup == null )
+        {
+            projectGroup = buildProjectGroup( mavenProject, result );
 
             // project groups have the top lvl build definition which is the default build defintion for the sub
             // projects
-            getLogger().debug( "projectGroup != null" + ( projectGroup != null ) );
+            log.debug( "projectGroup != null" + ( projectGroup != null ) );
             if ( projectGroup != null )
             {
-                List<BuildDefinition> buildDefinitions =
-                    getBuildDefinitions( buildDefinitionTemplate, loadRecursiveProjects );
-                boolean defaultSetted = false;
+                List<BuildDefinition> buildDefinitions = getBuildDefinitions( buildDefinitionTemplate,
+                                                                              loadRecursiveProjects,
+                                                                              mavenProject.getBuild().getDefaultGoal() );
                 for ( BuildDefinition buildDefinition : buildDefinitions )
                 {
-                    if ( !defaultSetted && buildDefinition.isDefaultForProject() )
-                    {
-                        buildDefinition.setDefaultForProject( true );
-                        defaultSetted = true;
-                    }
-                    buildDefinition = buildDefinitionService.addBuildDefinition(
-                        buildDefinitionService.cloneBuildDefinition( buildDefinition ) );
-                    //CONTINUUM-1296
-                    String defaultGoal = mavenProject.getBuild().getDefaultGoal();
-                    if ( StringUtils.isNotEmpty( defaultGoal ) )
-                    {
-                        buildDefinition.setGoals( defaultGoal );
-                    }
-                    if ( buildDefinition.getSchedule() == null )
-                    {
-                        try
-                        {
-                            Schedule schedule = store.getScheduleByName( ConfigurationService.DEFAULT_SCHEDULE_NAME );
-
-                            buildDefinition.setSchedule( schedule );
-                        }
-                        catch ( ContinuumStoreException e )
-                        {
-                            getLogger().warn( "Can't get default schedule.", e );
-                        }
-                    }
-                    // jdo complains that Collections.singletonList(bd) is a second class object and fails.
-                    //ArrayList arrayList = new ArrayList();
-
-                    //arrayList.add( buildDefinition );
+                    buildDefinition = persistBuildDefinition( buildDefinition );
 
                     projectGroup.addBuildDefinition( buildDefinition );
-                    // .setBuildDefinitions( arrayList );
                 }
-                result.addProjectGroup( projectGroup );
             }
+        }
+        if ( result.getProjectGroups().isEmpty() )
+        {
+            result.addProjectGroup( projectGroup );
         }
 
         if ( !excludedPackagingTypes.contains( mavenProject.getPackaging() ) )
@@ -251,12 +256,16 @@ public class MavenTwoContinuumProjectBuilder
                 }
             }
 
-            builderHelper.mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, groupPom );
+            continuumProject.setCheckedOutInSingleDirectory( checkoutInSingleDirectory );
+
+            // New project
+            builderHelper.mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, true );
 
             if ( result.hasErrors() )
             {
-                getLogger().info(
-                    "Error adding project: Unknown error mapping project " + url + ": " + result.getErrorsAsString() );
+                log.info(
+                    "Error adding project: Unknown error mapping project " + url + ": "
+                        + result.getErrorsAsString() );
                 return;
             }
 
@@ -276,10 +285,49 @@ public class MavenTwoContinuumProjectBuilder
                 continuumProject.setScmTag( mavenProject.getScm().getTag() );
             }
 
+            // CONTINUUM-2563
+            // Don't create if the project has a build definition template assigned to it already
+            if ( !loadRecursiveProjects && buildDefinitionTemplate.equals( getDefaultBuildDefinitionTemplate() ) )
+            {
+                List<BuildDefinition> buildDefinitions = projectGroup.getBuildDefinitions();
+                for ( BuildDefinition buildDefinition : buildDefinitions )
+                {
+                    if ( buildDefinition.isDefaultForProject() )
+                    {
+                        // create a default build definition at the project level
+                        BuildDefinition projectBuildDef =
+                            buildDefinitionService.cloneBuildDefinition( buildDefinition );
+                        projectBuildDef.setDefaultForProject( true );
+
+                        String arguments = projectBuildDef.getArguments().replace( "--non-recursive", "" );
+                        arguments = arguments.replace( "-N", "" );
+                        arguments = arguments.trim();
+
+                        // add build definition only if it differs
+                        if ( !projectBuildDef.getArguments().equals( arguments ) )
+                        {
+                            log.info( "Adding default build definition for project '" + continuumProject.getName() +
+                                          "' without '--non-recursive' flag." );
+
+                            projectBuildDef.setArguments( arguments );
+                            continuumProject.addBuildDefinition( projectBuildDef );
+                        }
+
+                        break;
+                    }
+                }
+            }
+
             result.addProject( continuumProject, MavenTwoBuildExecutor.ID );
+
+            if ( checkoutInSingleDirectory && rootProject == null )
+            {
+                rootProject = continuumProject;
+                result.setRootProject( rootProject );
+            }
         }
 
-        List modules = mavenProject.getModules();
+        List<String> modules = mavenProject.getModules();
 
         String prefix = url.toExternalForm();
 
@@ -303,10 +351,8 @@ public class MavenTwoContinuumProjectBuilder
         prefix = prefix.substring( 0, lastSlash );
         if ( loadRecursiveProjects )
         {
-            for ( Iterator it = modules.iterator(); it.hasNext(); )
+            for ( String module : modules )
             {
-                String module = (String) it.next();
-
                 if ( StringUtils.isNotEmpty( module ) )
                 {
                     String urlString = prefix + "/" + module + POM_PART + suffix;
@@ -315,39 +361,94 @@ public class MavenTwoContinuumProjectBuilder
 
                     try
                     {
+                        urlString = StringUtils.replace( urlString, '\\', '/' );
                         moduleUrl = new URL( urlString );
                     }
                     catch ( MalformedURLException e )
                     {
-                        getLogger().debug( "Error adding project module: Malformed URL " + urlString, e );
+                        log.debug( "Error adding project module: Malformed URL " + urlString, e );
                         result.addError( ContinuumProjectBuildingResult.ERROR_MALFORMED_URL, urlString );
                         continue;
                     }
 
-                    String moduleScmUrl;
-                    if ( scmUrl.endsWith( "/" ) )
+                    String moduleScmUrl = "";
+
+                    String modulePath = StringUtils.replace( new String( module ), '\\', '/' );
+
+                    // check if module is relative
+                    if ( modulePath.indexOf( "../" ) != -1 )
                     {
-                        moduleScmUrl = scmUrl + module;
+                        int depth = StringUtils.countMatches( StringUtils.substring( modulePath, 0,
+                                                                                     modulePath.lastIndexOf( '/' ) +
+                                                                                         1 ), "/" );
+                        String baseUrl = "";
+                        for ( int j = 1; j <= depth; j++ )
+                        {
+                            scmUrl = StringUtils.chompLast( new String( scmUrl ), "/" );
+                            baseUrl = StringUtils.substring( scmUrl, 0, scmUrl.lastIndexOf( '/' ) );
+                        }
+                        moduleScmUrl = baseUrl + "/" + StringUtils.substring( modulePath, modulePath.lastIndexOf(
+                            "../" ) + 3 );
                     }
                     else
                     {
-                        moduleScmUrl = scmUrl + "/" + module;
+                        scmUrl = StringUtils.chompLast( scmUrl, "/" );
+                        moduleScmUrl = scmUrl + "/" + modulePath;
                     }
                     // we are in recursive loading mode
-                    readModules( moduleUrl, result, false, username, password, moduleScmUrl, true,
-                                 buildDefinitionTemplate );
+                    importProjects( importRoot, moduleUrl, result, projectGroup, username, password, moduleScmUrl, true,
+                                    buildDefinitionTemplate, checkoutInSingleDirectory );
                 }
             }
         }
     }
 
-    private List<BuildDefinition> getBuildDefinitions( BuildDefinitionTemplate template, boolean loadRecursiveProjects )
+    private BuildDefinition persistBuildDefinition( BuildDefinition buildDefinition )
+        throws BuildDefinitionServiceException
+    {
+        buildDefinition = buildDefinitionService.addBuildDefinition( buildDefinition );
+        if ( buildDefinition.getSchedule() == null )
+        {
+            try
+            {
+                Schedule schedule = scheduleDao.getScheduleByName(
+                    ConfigurationService.DEFAULT_SCHEDULE_NAME );
+
+                buildDefinition.setSchedule( schedule );
+            }
+            catch ( ContinuumStoreException e )
+            {
+                log.warn( "Can't get default schedule.", e );
+            }
+        }
+        return buildDefinition;
+    }
+
+    private List<BuildDefinition> getBuildDefinitions( BuildDefinitionTemplate template, boolean loadRecursiveProjects,
+                                                       String defaultGoal )
         throws ContinuumProjectBuilderException, BuildDefinitionServiceException
     {
         List<BuildDefinition> buildDefinitions = new ArrayList<BuildDefinition>();
-        for ( Iterator<BuildDefinition> iterator = template.getBuildDefinitions().iterator(); iterator.hasNext(); )
+        boolean defaultSet = false;
+        for ( BuildDefinition buildDefinition : template.getBuildDefinitions() )
         {
-            BuildDefinition buildDefinition = iterator.next();
+            buildDefinition = buildDefinitionService.cloneBuildDefinition( buildDefinition );
+
+            if ( !defaultSet && buildDefinition.isDefaultForProject() )
+            {
+                defaultSet = true;
+
+                //CONTINUUM-1296
+                if ( StringUtils.isNotEmpty( defaultGoal ) )
+                {
+                    buildDefinition.setGoals( defaultGoal );
+                }
+            }
+            else
+            {
+                buildDefinition.setDefaultForProject( false );
+            }
+
             // due to CONTINUUM-1207 CONTINUUM-1436 user can do what they want with arguments
             // we must remove if exists --non-recursive or -N
             if ( !loadRecursiveProjects )
@@ -355,12 +456,13 @@ public class MavenTwoContinuumProjectBuilder
                 if ( StringUtils.isEmpty( buildDefinition.getArguments() ) )
                 {
                     // strange for a mvn build 
-                    getLogger().info( "build definition has empty args" );
+                    log.info( "build definition '" + buildDefinition.getId() + "' has empty args" );
                 }
                 else
                 {
                     String arguments = buildDefinition.getArguments().replace( "--non-recursive", "" );
                     arguments = arguments.replace( "-N", "" );
+                    arguments = arguments.trim();
                     buildDefinition.setArguments( arguments );
                 }
             }
@@ -407,9 +509,23 @@ public class MavenTwoContinuumProjectBuilder
 
         projectGroup.setDescription( mavenProject.getDescription() );
 
+        // ----------------------------------------------------------------------
+        // Local Repository
+        // ----------------------------------------------------------------------
+
+        try
+        {
+            LocalRepository repository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
+
+            projectGroup.setLocalRepository( repository );
+        }
+        catch ( ContinuumStoreException e )
+        {
+            log.warn( "Can't get default repository.", e );
+        }
+
         return projectGroup;
     }
-
 
     public BuildDefinitionTemplate getDefaultBuildDefinitionTemplate()
         throws ContinuumProjectBuilderException

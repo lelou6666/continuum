@@ -19,30 +19,38 @@ package org.apache.maven.continuum.notification;
  * under the License.
  */
 
+import org.apache.continuum.dao.BuildResultDao;
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.apache.maven.continuum.store.ContinuumStore;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumNotificationDispatcherTest
     extends AbstractContinuumTest
 {
+    private BuildResultDao buildResultDao;
+
+    @Before
+    public void setUp()
+        throws Exception
+    {
+        buildResultDao = lookup( BuildResultDao.class );
+    }
+
+    @Test
     public void testNotificationDispatcher()
         throws Exception
     {
-        ContinuumNotificationDispatcher notificationDispatcher =
-            (ContinuumNotificationDispatcher) lookup( ContinuumNotificationDispatcher.ROLE );
+        ContinuumNotificationDispatcher notificationDispatcher = lookup( ContinuumNotificationDispatcher.class );
 
-        ContinuumStore store = getStore();
+        Project project = addProject( "Notification Dispatcher Test Project" );
 
-        Project project = addProject( store, "Notification Dispatcher Test Project" );
-
-        project = store.getProjectWithBuildDetails( project.getId() );
+        project = getProjectDao().getProjectWithBuildDetails( project.getId() );
 
         BuildResult build = new BuildResult();
 
@@ -52,9 +60,9 @@ public class ContinuumNotificationDispatcherTest
 
         build.setTrigger( ContinuumProjectState.TRIGGER_SCHEDULED );
 
-        store.addBuildResult( project, build );
+        buildResultDao.addBuildResult( project, build );
 
-        build = store.getBuildResult( build.getId() );
+        build = buildResultDao.getBuildResult( build.getId() );
 
         notificationDispatcher.buildComplete( project, null, build );
     }

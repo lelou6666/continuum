@@ -6,9 +6,26 @@
  Nov 12 2007
  ------
 
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
 Guide to use XML-RPC with Continuum
 
-%{toc|section=0}
+~~%{toc|section=0}
 
 * {Introduction}
 
@@ -16,13 +33,13 @@ Guide to use XML-RPC with Continuum
 
 * {Requirements}
 
-    To connect to a Continuum instance, you must use the {{{http://repo1.maven.org/maven2/org/apache/maven/continuum/continuum-xmlrpc-client/}continuum-xmlrpc-client}} jar.
+    To connect to a Continuum instance, you must use the {{{http://repo1.maven.org/maven2/org/apache/continuum/continuum-xmlrpc-client/}continuum-xmlrpc-client}} jar.
 
     This library have some others jars as dependencies, so the best way to start the development of a Continuum xmlrpc client is to create a maven2 project with the following dependencies:
 
 +--------------------------+
     <dependency>
-      <groupId>org.apache.maven.continuum</groupId>
+      <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-xmlrpc-client</artifactId>
       <version>YOUR_CONTINUUM_VERSION</version>
     </dependency>
@@ -31,7 +48,7 @@ Guide to use XML-RPC with Continuum
 * {Connection to Continuum}
 
     To connect to your Continuum with the client API, you must use the
-    {{{http://maven.apache.org/continuum/ref/latest/apidocs/org/apache/maven/continuum/xmlrpc/client/ContinuumXmlRpcClient.html}ContinuumXmlRpcClient}} class.
+    {{{http://continuum.apache.org/ref/latest/apidocs/org/apache/maven/continuum/xmlrpc/client/ContinuumXmlRpcClient.html}ContinuumXmlRpcClient}} class.
 
     The constructor use 3 parameters:
     
@@ -42,7 +59,7 @@ Guide to use XML-RPC with Continuum
     * password, the user's password
 
 +--------------------------+
-String url = "http://localhost:8080/continuum/xmlrpc";
+URL url = new URL( "http://localhost:8080/continuum/xmlrpc" );
 ContinuumXmlRpcClient client = new ContinuumXmlRpcClient( url, username, password );
 +--------------------------+
 
@@ -104,6 +121,36 @@ client.buildProject( project.getId(), buildDefinitionId );
     To do this, you can write a simple xmlrpc client that will use a project id as parameter and you'll use the <<<buildProject(...)>>> method described above.
     
     This method will start a forced build.
+
+* {Removing a project}
+
+    A project can be removed by supplying the project id.
+
++--------------------------+
+List<ProjectSummary> projects = client.getProjects( projectGroupId );
+...
+  client.removeProject( ps.getId() );
++--------------------------+
+
+* {Removing build results}
+
+    Currently, to remove a build result, you need the entire build result (rather than just the summary).
+
++--------------------------+
+List<BuildResultSummary> results = client.getBuildResultsForProject( ps.getId() );
+...
+  BuildResult br = client.getBuildResult( ps.getId(), brs.getId() );
+  client.removeBuildResult( br );
++--------------------------+
+
+* {Editing build queue}
+
+    You can edit all projects which are in the build queue or check if one project is currently in the build queue.
+
++--------------------------+
+List<BuildProjectTask> prjsInBuildQueue = client.getProjectsInBuildQueue();
+client.isProjectInBuildingQueue( int projectId );
++--------------------------+
 
 * {Backup}
 

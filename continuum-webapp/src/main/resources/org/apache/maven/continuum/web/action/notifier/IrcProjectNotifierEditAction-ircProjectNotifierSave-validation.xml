@@ -17,14 +17,19 @@
   ~ under the License.
   -->
 
-<!DOCTYPE validators PUBLIC
-    "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
-    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+<!DOCTYPE validators PUBLIC 
+  "-//Apache Struts//XWork Validator 1.0.2//EN"
+  "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
 
 <validators>
   <field name="host">
     <field-validator type="requiredstring">
       <message key="ircNotifier.host.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="trim">true</param>
+      <param name="regex"><![CDATA[[a-zA-Z0-9_.:\\/-]*]]></param>
+      <message key="ircNotifier.host.invalid"/>
     </field-validator>
   </field>
   <field name="port">
@@ -37,6 +42,11 @@
   <field name="channel">
     <field-validator type="requiredstring">
       <message key="ircNotifier.channel.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="trim">true</param>
+      <param name="regex"><![CDATA[[a-zA-Z0-9_.#-]*]]></param>
+      <message key="ircNotifier.channel.invalid"/>
     </field-validator>
   </field>
 </validators>

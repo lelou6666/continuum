@@ -17,43 +17,41 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="buildDefinition.template.page.title"/></title>
+        <title><s:text name="buildDefinition.template.page.title"/></title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <h3><ww:text name="buildDefinition.template.section.title"/></h3>
+        <h3><s:text name="buildDefinition.template.section.title"/></h3>
+
+        <s:if test="hasActionErrors()">
+            <div class="errormessage">
+                <s:actionerror/>
+            </div>
+            <input type="button" value="Back" onClick="history.go(-1)">
+        </s:if>
+        <s:if test="hasActionMessages()">
+            <div class="warningmessage">
+                <s:actionmessage/>
+            </div>
+        </s:if>
 
         <div class="axial">
-          <ww:form action="saveBuildDefinitionTemplate" method="post" validate="true" name="buildDefinitionTemplate"
-                   onsubmit="customOnsubmit_saveBuildDefinitionTemplate();">
-            <c:choose>
-            
-              <c:when test="${!empty actionErrors}">
-                <div class="errormessage">
-                  <c:forEach items="${actionErrors}" var="actionError">
-                    <p><ww:text name="${actionError}"/></p>
-                  </c:forEach>
-                </div>
-                <input type="button" value="Back" onClick="history.go(-1)">
-              </c:when>
-  
-              <c:when test="${empty actionErrors}">
+          <s:form action="saveBuildDefinitionTemplate" method="post" name="buildDefinitionTemplate" validate="false">
+              <s:if test="!hasActionErrors()">
                 <table>
                   <tbody>
-                    <ww:textfield label="%{getText('buildDefinitionTemplate.name')}" name="buildDefinitionTemplate.name" required="true"/>
-                    <ww:optiontransferselect 
+                    <s:textfield label="%{getText('buildDefinitionTemplate.name')}" name="buildDefinitionTemplate.name" requiredLabel="true" size="100"/>
+                    <s:optiontransferselect
                         label="%{getText('buildDefinitionTemplate.builddefinitions.define')}"    
                         name="buildDefinitionIds"
                         list="buildDefinitions" 
                         listKey="id"
                         listValue="description"
-                        headerKey="-1"
+                        headerKey="hk-1"
                         headerValue="%{getText('buildDefinitionTemplate.available.builddefinitions')}"
                         multiple="true"
                         emptyOption="false"
@@ -61,24 +59,29 @@
                         doubleList="buildDefinitionTemplate.buildDefinitions" 
                         doubleListKey="id"
                         doubleListValue="description"
-                        doubleHeaderKey="-1"
+                        doubleHeaderKey="hk-1"
                         doubleHeaderValue="%{getText('buildDefinitionTemplate.available.builddefinitions.used')}" 
                         doubleMultiple="true" 
                         doubleEmptyOption="false"
-                        formName="buildDefinitionTemplate" />                    
+                        formName="buildDefinitionTemplate"
+                        addAllToRightOnclick="selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_selectedBuildDefinitionIds'), 'key', 'hk-1');"
+                        addToRightOnclick="selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_buildDefinitionIds'), 'key', 'hk-1');selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_selectedBuildDefinitionIds'), 'key', 'hk-1');"
+                        addAllToLeftOnclick="selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_buildDefinitionIds'), 'key', 'hk-1');"
+                        addToLeftOnclick="selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_buildDefinitionIds'), 'key', 'hk-1');selectAllOptionsExceptSome(document.getElementById('saveBuildDefinitionTemplate_selectedBuildDefinitionIds'), 'key', 'hk-1');"
+                        />
                   </tbody>
                 </table>
                 <div class="functnbar3">
-                  <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+                  <s:submit value="%{getText('save')}" theme="simple"/>
+                  <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
                 </div>
-                <ww:hidden name="buildDefinitionTemplate.id"/>
-                <ww:hidden name="buildDefinitionTemplate.continuumDefault"/>
-              </c:when>
-            
-            </c:choose>
-          </ww:form>
+                <s:hidden name="buildDefinitionTemplate.id"/>
+                <s:hidden name="buildDefinitionTemplate.continuumDefault"/>
+              </s:if>
+          </s:form>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>
+

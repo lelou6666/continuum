@@ -19,49 +19,40 @@ package org.apache.maven.continuum.wagon;
  * under the License.
  */
 
+import org.apache.maven.continuum.PlexusSpringTestCase;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
+import org.apache.maven.continuum.notification.MessageContext;
+import org.apache.maven.continuum.notification.Notifier;
 import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.codehaus.plexus.PlexusTestCase;
-import org.codehaus.plexus.notification.notifier.Notifier;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:nramirez@exist">Napoleon Esmundo C. Ramirez</a>
  */
 public class WagonContinuumNotifierTest
-    extends PlexusTestCase
+    extends PlexusSpringTestCase
 {
     private ServletServer server;
 
     private Notifier notifier;
 
-    private Project project;
+    private MessageContext context;
 
-    private BuildResult build;
-
-    private BuildDefinition buildDefinition;
-
-    private Map context;
-
-
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
+        server = lookup( ServletServer.class );
+        notifier = (Notifier) lookup( Notifier.class.getName(), "wagon" );
 
-        server = (ServletServer) lookup( ServletServer.ROLE );
-        notifier = (Notifier) lookup( Notifier.ROLE, "wagon" );
-
-        project = new Project();
+        Project project = new Project();
         project.setId( 2 );
 
-        build = new BuildResult();
+        BuildResult build = new BuildResult();
         build.setId( 1 );
         build.setProject( project );
         build.setStartTime( System.currentTimeMillis() );
@@ -70,13 +61,13 @@ public class WagonContinuumNotifierTest
         build.setTrigger( ContinuumProjectState.TRIGGER_FORCED );
         build.setExitCode( 0 );
 
-        buildDefinition = new BuildDefinition();
+        BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setBuildFile( "pom.xml" );
 
-        context = new HashMap();
-        context.put( ContinuumNotificationDispatcher.CONTEXT_PROJECT, project );
-        context.put( ContinuumNotificationDispatcher.CONTEXT_BUILD, build );
-        context.put( ContinuumNotificationDispatcher.CONTEXT_BUILD_DEFINITION, buildDefinition );
+        context = new MessageContext();
+        context.setProject( project );
+        context.setBuildResult( build );
+        context.setBuildDefinition( buildDefinition );
 
         String basedir = System.getProperty( "basedir" );
         if ( basedir == null )
@@ -85,18 +76,10 @@ public class WagonContinuumNotifierTest
         }
     }
 
+    @Test
     public void testSendNotification()
         throws Exception
     {
-        notifier.sendNotification( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE, new HashSet(),
-                                   new HashMap(), context );
+        notifier.sendMessage( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE, context );
     }
-
-    protected void tearDown()
-        throws Exception
-    {
-        release( server );
-    }
-
-
 }

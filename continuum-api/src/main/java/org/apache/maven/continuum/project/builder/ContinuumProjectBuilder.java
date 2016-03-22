@@ -19,14 +19,12 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
-import java.net.URL;
-
-import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+
+import java.net.URL;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ContinuumProjectBuilder
 {
@@ -36,11 +34,21 @@ public interface ContinuumProjectBuilder
         throws ContinuumProjectBuilderException;
 
     ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
-                                                              boolean recursiveProjects )
+                                                              boolean recursiveProjects,
+                                                              boolean checkoutInSingleDirectory )
         throws ContinuumProjectBuilderException;
 
     ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
-                                                              boolean recursiveProjects, BuildDefinitionTemplate buildDefinitionTemplate )
+                                                              boolean recursiveProjects,
+                                                              BuildDefinitionTemplate buildDefinitionTemplate,
+                                                              boolean checkoutInSingleDirectory )
+        throws ContinuumProjectBuilderException;
+
+    ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                              boolean recursiveProjects,
+                                                              BuildDefinitionTemplate buildDefinitionTemplate,
+                                                              boolean checkoutInSingleDirectory,
+                                                              int projectGroupId )
         throws ContinuumProjectBuilderException;
 
     BuildDefinitionTemplate getDefaultBuildDefinitionTemplate()

@@ -22,6 +22,7 @@ package org.apache.maven.continuum.xmlrpc.server;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.xmlrpc.ContinuumService;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.authorization.AuthorizationException;
 import org.codehaus.plexus.redback.system.SecuritySession;
 import org.codehaus.plexus.redback.system.SecuritySystem;
@@ -29,14 +30,12 @@ import org.codehaus.plexus.util.StringUtils;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public abstract class AbstractContinuumSecureService
     implements ContinuumService, ContinuumXmlRpcComponent
 {
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+
+    @Requirement( hint = "default" )
     private SecuritySystem securitySystem;
 
     private ContinuumXmlRpcConfig config;
@@ -63,12 +62,8 @@ public abstract class AbstractContinuumSecureService
      */
     public boolean isAuthenticated()
     {
-        if ( getSecuritySession() == null || !getSecuritySession().isAuthenticated() )
-        {
-            return false;
-        }
+        return !( getSecuritySession() == null || !getSecuritySession().isAuthenticated() );
 
-        return true;
     }
 
     /**
@@ -500,5 +495,52 @@ public abstract class AbstractContinuumSecureService
         }
 
         checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_BUILD_TEMPLATES );
+    }
+
+    protected void checkManageQueuesAuthorization()
+        throws ContinuumException
+    {
+        if ( !isAuthenticated() )
+        {
+            throw new ContinuumException( "Authentication required." );
+        }
+
+        checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_QUEUES );
+    }
+
+    protected void checkManagePurgingAuthorization()
+        throws ContinuumException
+    {
+        if ( !isAuthenticated() )
+        {
+            throw new ContinuumException( "Authentication required." );
+        }
+
+        try
+        {
+            checkAuthorization( ContinuumRoleConstants.SYSTEM_ADMINISTRATOR_ROLE );
+        }
+        catch ( ContinuumException e )
+        {
+            checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_PURGING );
+        }
+    }
+
+    protected void checkManageRepositoriesAuthorization()
+        throws ContinuumException
+    {
+        if ( !isAuthenticated() )
+        {
+            throw new ContinuumException( "Authentication required." );
+        }
+
+        try
+        {
+            checkAuthorization( ContinuumRoleConstants.SYSTEM_ADMINISTRATOR_ROLE );
+        }
+        catch ( ContinuumException e )
+        {
+            checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_REPOSITORIES );
+        }
     }
 }

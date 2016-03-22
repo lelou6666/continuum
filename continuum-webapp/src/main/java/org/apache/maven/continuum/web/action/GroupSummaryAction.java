@@ -19,46 +19,51 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.model.project.ProjectGroupSummary;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.model.project.BuildResult;
-import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.GroupSummary;
-import org.apache.maven.continuum.web.model.ProjectSummary;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="groupSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "groupSummary", instantiationStrategy = "per-lookup"  )
 public class GroupSummaryAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( GroupSummaryAction.class );
+
     private String infoMessage;
 
-    private List groups;
+    private List<GroupSummary> groups;
 
-    public String execute()
+    public String browse()
         throws ContinuumException
     {
-        groups = new ArrayList();
+        groups = new ArrayList<GroupSummary>();
 
-        Collection projectGroups = getContinuum().getAllProjectGroupsWithProjects();
+        //TODO: Merge this two requests to one
+        Collection<ProjectGroup> projectGroups = getContinuum().getAllProjectGroups();
+        Map<Integer, ProjectGroupSummary> summaries = getContinuum().getProjectsSummaryByGroups();
 
-        for ( Iterator j = projectGroups.iterator(); j.hasNext(); )
+        for ( ProjectGroup projectGroup : projectGroups )
         {
-            ProjectGroup projectGroup = (ProjectGroup) j.next();
 
             if ( isAuthorized( projectGroup.getName() ) )
             {
-                getLogger().debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                }
 
                 GroupSummary groupModel = new GroupSummary();
                 groupModel.setId( projectGroup.getId() );
@@ -66,107 +71,23 @@ public class GroupSummaryAction
                 groupModel.setName( projectGroup.getName() );
                 groupModel.setDescription( projectGroup.getDescription() );
 
-                //TODO: Create a summary jpox request so code will be more simple and performance will be better
-                Collection projects = projectGroup.getProjects();
+                ProjectGroupSummary summary = summaries.get( projectGroup.getId() );
 
-                groupModel.setNumProjects( projects.size() );
-
-                Map buildResults = getContinuum().getLatestBuildResults();
-
-                Map buildResultsInSuccess = getContinuum().getBuildResultsInSuccess();
-
-                List projectModels = new ArrayList();
-                int numSuccesses = 0;
-                int numFailures = 0;
-                int numErrors = 0;
-
-                for ( Iterator i = projects.iterator(); i.hasNext(); )
+                if ( summary != null )
                 {
-                    Project project = (Project) i.next();
-
-                    if ( groupModel.getProjectType() == null )
-                    {
-                        groupModel.setProjectType( project.getExecutorId() );
-                    }
-
-                    ProjectSummary model = new ProjectSummary();
-
-                    getLogger().debug( "GroupSummaryAction: building project model " + project.getName() );
-
-                    model.setId( project.getId() );
-
-                    model.setName( project.getName() );
-
-                    model.setVersion( project.getVersion() );
-
-                    model.setProjectGroupId( project.getProjectGroup().getId() );
-
-                    model.setProjectGroupName( project.getProjectGroup().getName() );
-
-                    if ( getContinuum().isInBuildingQueue( project.getId() ) )
-                    {
-                        model.setInBuildingQueue( true );
-                    }
-                    else if ( getContinuum().isInCheckoutQueue( project.getId() ) )
-                    {
-                        model.setInCheckoutQueue( true );
-                    }
-                    else
-                    {
-                        model.setInBuildingQueue( false );
-                        model.setInCheckoutQueue( false );
-                    }
-
-                    model.setState( project.getState() );
-
-                    if ( project.getState() == 2 )
-                    {
-                        numSuccesses++;
-                    }
-                    else if ( project.getState() == 3 )
-                    {
-                        numFailures++;
-                    }
-                    else if ( project.getState() == 4 )
-                    {
-                        numErrors++;
-                    }
-
-                    model.setBuildNumber( project.getBuildNumber() );
-
-                    if ( buildResultsInSuccess != null )
-                    {
-                        BuildResult buildInSuccess =
-                            (BuildResult) buildResultsInSuccess.get( new Integer( project.getId() ) );
-
-                        if ( buildInSuccess != null )
-                        {
-                            model.setBuildInSuccessId( buildInSuccess.getId() );
-                        }
-                    }
-
-                    if ( buildResults != null )
-                    {
-                        BuildResult latestBuild = (BuildResult) buildResults.get( new Integer( project.getId() ) );
-
-                        if ( latestBuild != null )
-                        {
-                            model.setLatestBuildId( latestBuild.getId() );
-                        }
-                    }
-                    getLogger().debug( "GroupSummaryAction: adding model to group " + model.getName() );
-                    projectModels.add( model );
+                    groupModel.setNumProjects( summary.getNumberOfProjects() );
+                    groupModel.setNumErrors( summary.getNumberOfErrors() );
+                    groupModel.setNumFailures( summary.getNumberOfFailures() );
+                    groupModel.setNumSuccesses( summary.getNumberOfSuccesses() );
                 }
 
                 //todo wire in the next scheduled build for the project group and a meaningful status message
                 //groupModel.setNextScheduledBuild( "unknown" );
                 //groupModel.setStatusMessage( "none" );
-
-                groupModel.setNumSuccesses( numSuccesses );
-                groupModel.setNumFailures( numFailures );
-                groupModel.setNumErrors( numErrors );
-                groupModel.setProjects( projectModels );
-                getLogger().debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                }
                 groups.add( groupModel );
             }
         }
@@ -174,11 +95,10 @@ public class GroupSummaryAction
         return SUCCESS;
     }
 
-    public List getGroups()
+    public List<GroupSummary> getGroups()
     {
         return groups;
     }
-
 
     public String getInfoMessage()
     {

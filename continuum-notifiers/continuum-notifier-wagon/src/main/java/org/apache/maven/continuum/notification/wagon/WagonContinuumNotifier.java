@@ -32,6 +32,8 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
+import org.apache.maven.continuum.notification.MessageContext;
+import org.apache.maven.continuum.notification.NotificationException;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.model.Site;
 import org.apache.maven.profiles.DefaultProfileManager;
@@ -58,56 +60,48 @@ import org.apache.maven.wagon.proxy.ProxyInfo;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
-import org.codehaus.plexus.notification.NotificationException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
  * @author <a href="mailto:nramirez@exist.com">Napoleon Esmundo C. Ramirez</a>
- * @plexus.component role="org.codehaus.plexus.notification.notifier.Notifier" role-hint="wagon"
  */
+@Service( "notifier#wagon" )
 public class WagonContinuumNotifier
     extends AbstractContinuumNotifier
     implements Contextualizable
 {
     public static final String BUILD_OUTPUT_FILE_NAME = "buildresult.txt";
 
-    private static final String CONTEXT_MAVEN_PROJECT = "CONTEXT_MAVEN_PROJECT";
+    private static final Logger log = LoggerFactory.getLogger( WagonContinuumNotifier.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private WagonManager wagonManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private MavenProjectBuilder projectBuilder;
 
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private MavenSettingsBuilder settingsBuilder;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String localRepository;
 
     private Settings settings;
@@ -116,18 +110,25 @@ public class WagonContinuumNotifier
 
     private PlexusContainer container;
 
-    public void sendNotification( String source, Set recipients, Map configuration, Map context )
+    public WagonContinuumNotifier()
+    {
+    }
+
+    public String getType()
+    {
+        return "wagon";
+    }
+
+    public void sendMessage( String messageId, MessageContext context )
         throws NotificationException
     {
-        Project project = (Project) context.get( ContinuumNotificationDispatcher.CONTEXT_PROJECT );
+        Project project = context.getProject();
 
-        ProjectNotifier projectNotifier =
-            (ProjectNotifier) context.get( ContinuumNotificationDispatcher.CONTEXT_PROJECT_NOTIFIER );
+        List<ProjectNotifier> notifiers = context.getNotifiers();
 
-        BuildResult build = (BuildResult) context.get( ContinuumNotificationDispatcher.CONTEXT_BUILD );
+        BuildResult build = context.getBuildResult();
 
-        BuildDefinition buildDefinition =
-            (BuildDefinition) context.get( ContinuumNotificationDispatcher.CONTEXT_BUILD_DEFINITION );
+        BuildDefinition buildDefinition = context.getBuildDefinition();
 
         // ----------------------------------------------------------------------
         // If there wasn't any building done, don't notify
@@ -146,11 +147,13 @@ public class WagonContinuumNotifier
              * acquire the MavenProject associated to the Project in context
              */
             MavenProject mavenProject = getMavenProject( project, buildDefinition );
-            configuration.put( CONTEXT_MAVEN_PROJECT, mavenProject );
 
-            if ( source.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
+            if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
             {
-                buildComplete( project, projectNotifier, build, configuration );
+                for ( ProjectNotifier notifier : notifiers )
+                {
+                    buildComplete( notifier, build, mavenProject );
+                }
             }
         }
         catch ( ContinuumException e )
@@ -159,20 +162,21 @@ public class WagonContinuumNotifier
         }
     }
 
-    private void buildComplete( Project project, ProjectNotifier projectNotifier, BuildResult build, Map configuration )
+    private void buildComplete( ProjectNotifier notifier, BuildResult build, MavenProject mavenProject )
         throws ContinuumException
     {
-        String id = null;
-        String url = null;
+        String id;
+        String url;
+
+        Map<String, String> configuration = notifier.getConfiguration();
 
         if ( configuration.containsKey( "url" ) )
         {
-            url = (String) configuration.get( "url" );
-            id = (String) configuration.get( "id" );
+            url = configuration.get( "url" );
+            id = configuration.get( "id" );
         }
         else
         {
-            MavenProject mavenProject = (MavenProject) configuration.get( CONTEXT_MAVEN_PROJECT );
             DistributionManagement distributionManagement = mavenProject.getDistributionManagement();
 
             if ( distributionManagement == null )
@@ -216,7 +220,7 @@ public class WagonContinuumNotifier
 
         try
         {
-            if ( getLogger().isDebugEnabled() )
+            if ( log.isDebugEnabled() )
             {
                 Debug debug = new Debug();
 
@@ -283,25 +287,19 @@ public class WagonContinuumNotifier
             }
             catch ( ConnectionException e )
             {
-                getLogger().error( "Error disconnecting wagon - ignored", e );
+                log.error( "Error disconnecting wagon - ignored", e );
             }
         }
-    }
-
-    public void sendNotification( String arg0, Set arg1, Properties arg2 )
-        throws NotificationException
-    {
-        throw new NotificationException( "Not implemented." );
     }
 
     private MavenProject getMavenProject( Project project, BuildDefinition buildDefinition )
         throws ContinuumException
     {
-        File projectWorkingDir =
-            new File( configurationService.getWorkingDirectory(), Integer.toString( project.getId() ) );
+        File projectWorkingDir = new File( configurationService.getWorkingDirectory(), Integer.toString(
+            project.getId() ) );
         File pomFile = new File( projectWorkingDir, buildDefinition.getBuildFile() );
 
-        MavenProject mavenProject = null;
+        MavenProject mavenProject;
 
         try
         {
@@ -325,11 +323,11 @@ public class WagonContinuumNotifier
             }
             catch ( IOException e )
             {
-                getLogger().error( "Failed to get Settings", e );
+                log.error( "Failed to get Settings", e );
             }
             catch ( XmlPullParserException e )
             {
-                getLogger().error( "Failed to get Settings", e );
+                log.error( "Failed to get Settings", e );
             }
         }
 
@@ -369,9 +367,8 @@ public class WagonContinuumNotifier
         Settings settings = getSettings();
         if ( settings.getProxies() != null && !settings.getProxies().isEmpty() )
         {
-            for ( Iterator i = settings.getProxies().iterator(); i.hasNext(); )
+            for ( Proxy p : (List<Proxy>) settings.getProxies() )
             {
-                Proxy p = (Proxy) i.next();
                 wagonManager.addProxy( p.getProtocol(), p.getHost(), p.getPort(), p.getUsername(), p.getPassword(),
                                        p.getNonProxyHosts() );
             }

@@ -19,6 +19,7 @@ package org.apache.maven.continuum;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,53 +30,115 @@ import java.util.Properties;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 
+=======
+import org.apache.continuum.dao.DaoUtils;
+import org.apache.continuum.dao.ProjectDao;
+import org.apache.continuum.dao.ProjectGroupDao;
+import org.apache.continuum.dao.ProjectScmRootDao;
+import org.apache.continuum.dao.ScheduleDao;
+import org.apache.continuum.utils.file.FileSystemManager;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
+import org.apache.maven.continuum.initialization.ContinuumInitializer;
+import org.apache.maven.continuum.jdo.MemoryJdoFactory;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
-import org.apache.maven.continuum.store.ContinuumStore;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
 import org.codehaus.plexus.jdo.DefaultConfigurableJdoFactory;
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.jdo.JdoFactory;
 import org.codehaus.plexus.spring.PlexusInSpringTestCase;
 import org.jpox.SchemaTool;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
+<<<<<<< HEAD
+=======
+import javax.jdo.PersistenceManager;
+import javax.jdo.PersistenceManagerFactory;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+>>>>>>> refs/remotes/apache/trunk
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public abstract class AbstractContinuumTest
+<<<<<<< HEAD
     extends PlexusInSpringTestCase
+=======
+    extends PlexusSpringTestCase
+>>>>>>> refs/remotes/apache/trunk
 {
-    private ContinuumStore store;
+    private DaoUtils daoUtils;
+
+    private ProjectDao projectDao;
+
+    private ProjectGroupDao projectGroupDao;
+
+    private ScheduleDao scheduleDao;
+
+    private ProjectScmRootDao projectScmRootDao;
+
+    private FileSystemManager fsManager;
+
+    @Rule
+    public TestName testName = new TestName();
+
+    protected String getName()
+    {
+        return testName.getMethodName();
+    }
 
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
 
-    protected void setUp()
+    @Before
+    public void setupContinuum()
         throws Exception
     {
-        super.setUp();
+        init();
+        getProjectDao();
+        getProjectGroupDao();
+        getScheduleDao();
+        getProjectScmRootDao();
+        getFileSystemManager();
 
-        getStore();
+        setUpConfigurationService( (ConfigurationService) lookup( "configurationService" ) );
 
-        setUpConfigurationService( (ConfigurationService) lookup( ConfigurationService.ROLE ) );
-
-        Collection projectGroups = store.getAllProjectGroupsWithProjects();
-
-        assertEquals( 0, projectGroups.size() );
-
-        createDefaultProjectGroup();
-
-        projectGroups = store.getAllProjectGroupsWithProjects();
+        Collection<ProjectGroup> projectGroups = projectGroupDao.getAllProjectGroupsWithProjects();
+        if ( projectGroups.size() == 0 ) //if ContinuumInitializer is loaded by Spring at startup, size == 1
+        {
+            createDefaultProjectGroup();
+            projectGroups = projectGroupDao.getAllProjectGroupsWithProjects();
+        }
 
         assertEquals( 1, projectGroups.size() );
+    }
+
+    @After
+    public void wipeData()
+        throws Exception
+    {
+        daoUtils.eraseDatabase();
     }
 
     protected void createDefaultProjectGroup()
@@ -93,22 +156,22 @@ public abstract class AbstractContinuumTest
 
             group.setName( "Default Project Group" );
 
-            group.setGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
+            group.setGroupId( ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID );
 
             group.setDescription( "Contains all projects that do not have a group of their own" );
 
-            store.addProjectGroup( group );
+            projectGroupDao.addProjectGroup( group );
         }
     }
 
     public static void setUpConfigurationService( ConfigurationService configurationService )
         throws Exception
     {
-        configurationService.load();
-
         configurationService.setBuildOutputDirectory( getTestFile( "target/build-output" ) );
 
         configurationService.setWorkingDirectory( getTestFile( "target/working-directory" ) );
+
+        configurationService.setReleaseOutputDirectory( getTestFile( "target/release-output" ) );
 
         configurationService.store();
     }
@@ -116,56 +179,30 @@ public abstract class AbstractContinuumTest
     protected ProjectGroup getDefaultProjectGroup()
         throws ContinuumStoreException
     {
-        return store.getProjectGroupByGroupIdWithProjects( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
+        return projectGroupDao.getProjectGroupByGroupIdWithProjects(
+            ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID );
     }
 
     // ----------------------------------------------------------------------
     // Store
     // ----------------------------------------------------------------------
 
-    protected ContinuumStore getStore()
+    private void init()
         throws Exception
     {
-        if ( store != null )
-        {
-            return store;
-        }
-
         // ----------------------------------------------------------------------
         // Set up the JDO factory
         // ----------------------------------------------------------------------
 
-        Object o = lookup( JdoFactory.ROLE, "continuum" );
+        MemoryJdoFactory jdoFactory = (MemoryJdoFactory) lookup( JdoFactory.class, "continuum" );
 
-        assertEquals( DefaultConfigurableJdoFactory.class.getName(), o.getClass().getName() );
+        assertEquals( MemoryJdoFactory.class.getName(), jdoFactory.getClass().getName() );
 
-        DefaultConfigurableJdoFactory jdoFactory = (DefaultConfigurableJdoFactory) o;
+        String url = "jdbc:hsqldb:mem:" + getClass().getName() + "." + getName();
 
-        jdoFactory.setPersistenceManagerFactoryClass( "org.jpox.PersistenceManagerFactoryImpl" );
+        jdoFactory.setUrl( url );
 
-        jdoFactory.setDriverName( "org.hsqldb.jdbcDriver" );
-
-        jdoFactory.setUrl( "jdbc:hsqldb:mem:" + getClass().getName() + "." + getName() );
-
-        jdoFactory.setUserName( "sa" );
-
-        jdoFactory.setPassword( "" );
-
-        jdoFactory.setProperty( "org.jpox.transactionIsolation", "READ_UNCOMMITTED" );
-
-        jdoFactory.setProperty( "org.jpox.poid.transactionIsolation", "READ_UNCOMMITTED" );
-
-        jdoFactory.setProperty( "org.jpox.autoCreateTables", "true" );
-
-        Properties properties = jdoFactory.getProperties();
-
-        for ( Map.Entry entry : properties.entrySet() )
-        {
-            System.setProperty( (String) entry.getKey(), (String) entry.getValue() );
-        }
-
-        SchemaTool.createSchemaTables( new URL[]{getClass().getResource( "/META-INF/package.jdo" )}, new URL[]{}, null,
-                                       false, null );
+        jdoFactory.reconfigure();
 
         // ----------------------------------------------------------------------
         // Check the configuration
@@ -175,6 +212,8 @@ public abstract class AbstractContinuumTest
 
         assertNotNull( pmf );
 
+        assertEquals( url, pmf.getConnectionURL() );
+
         PersistenceManager pm = pmf.getPersistenceManager();
 
         pm.close();
@@ -183,9 +222,67 @@ public abstract class AbstractContinuumTest
         //
         // ----------------------------------------------------------------------
 
-        store = (ContinuumStore) lookup( ContinuumStore.ROLE, "jdo" );
+        Properties properties = jdoFactory.getProperties();
 
-        return store;
+        for ( Map.Entry entry : properties.entrySet() )
+        {
+            System.setProperty( (String) entry.getKey(), (String) entry.getValue() );
+        }
+
+        SchemaTool.createSchemaTables( new URL[] { getClass().getResource( "/package.jdo" ) }, new URL[] {}, null,
+                                       false,
+                                       null );
+
+        // ----------------------------------------------------------------------
+        //
+        // ----------------------------------------------------------------------
+        daoUtils = lookup( DaoUtils.class );
+        daoUtils.rebuildStore();
+    }
+
+    protected ProjectDao getProjectDao()
+    {
+        if ( projectDao == null )
+        {
+            projectDao = (ProjectDao) lookup( ProjectDao.class.getName() );
+        }
+        return projectDao;
+    }
+
+    protected ProjectGroupDao getProjectGroupDao()
+    {
+        if ( projectGroupDao == null )
+        {
+            projectGroupDao = (ProjectGroupDao) lookup( ProjectGroupDao.class.getName() );
+        }
+        return projectGroupDao;
+    }
+
+    protected ScheduleDao getScheduleDao()
+    {
+        if ( scheduleDao == null )
+        {
+            scheduleDao = (ScheduleDao) lookup( ScheduleDao.class.getName() );
+        }
+        return scheduleDao;
+    }
+
+    protected ProjectScmRootDao getProjectScmRootDao()
+    {
+        if ( projectScmRootDao == null )
+        {
+            projectScmRootDao = (ProjectScmRootDao) lookup( ProjectScmRootDao.class.getName() );
+        }
+        return projectScmRootDao;
+    }
+
+    public FileSystemManager getFileSystemManager()
+    {
+        if ( fsManager == null )
+        {
+            fsManager = (FileSystemManager) lookup( FileSystemManager.class );
+        }
+        return fsManager;
     }
 
     // ----------------------------------------------------------------------
@@ -217,7 +314,7 @@ public abstract class AbstractContinuumTest
 
         makeProject( project, name, version );
 
-        List notifiers = createMailNotifierList( emailAddress );
+        List<ProjectNotifier> notifiers = createMailNotifierList( emailAddress );
 
         project.setNotifiers( notifiers );
 
@@ -251,7 +348,7 @@ public abstract class AbstractContinuumTest
         return project;
     }
 
-    protected static List createMailNotifierList( String emailAddress )
+    protected static List<ProjectNotifier> createMailNotifierList( String emailAddress )
     {
         if ( emailAddress == null )
         {
@@ -268,7 +365,7 @@ public abstract class AbstractContinuumTest
 
         notifier.setConfiguration( props );
 
-        List notifiers = new ArrayList();
+        List<ProjectNotifier> notifiers = new ArrayList<ProjectNotifier>();
 
         notifiers.add( notifier );
 
@@ -279,7 +376,7 @@ public abstract class AbstractContinuumTest
     // Public utility methods
     // ----------------------------------------------------------------------
 
-    public Project addProject( ContinuumStore store, Project project )
+    public Project addProject( Project project )
         throws Exception
     {
         ProjectGroup defaultProjectGroup = getDefaultProjectGroup();
@@ -299,32 +396,20 @@ public abstract class AbstractContinuumTest
         project.setCheckoutResult( scmResult );
 
         defaultProjectGroup.addProject( project );
-        store.updateProjectGroup( defaultProjectGroup );
 
-        project = store.getProject( project.getId() );
+        projectGroupDao.updateProjectGroup( defaultProjectGroup );
+
+        project = projectDao.getProject( project.getId() );
+
         assertNotNull( "project group == null", project.getProjectGroup() );
 
         return project;
     }
 
-    public Project addProject( ContinuumStore store, String name )
+    public Project addProject( String name )
         throws Exception
     {
-        return addProject( store, makeStubProject( name ) );
-    }
-
-    public Project addProject( ContinuumStore store, String name, String nagEmailAddress, String version )
-        throws Exception
-    {
-        return addProject( store, makeProject( name, nagEmailAddress, version ) );
-    }
-
-    public static void setCheckoutDone( ContinuumStore store, Project project, ScmResult scmResult )
-        throws ContinuumStoreException
-    {
-        project.setCheckoutResult( scmResult );
-
-        store.updateProject( project );
+        return addProject( makeStubProject( name ) );
     }
 
     // ----------------------------------------------------------------------
@@ -341,11 +426,9 @@ public abstract class AbstractContinuumTest
         assertProjectEquals( name, createMailNotifierList( emailAddress ), version, actual );
     }
 
-    public void assertProjectEquals( String name, List notifiers, String version, Project actual )
+    public void assertProjectEquals( String name, List<ProjectNotifier> notifiers, String version, Project actual )
     {
         assertEquals( "project.name", name, actual.getName() );
-
-//        assertEquals( "project.scmUrl", scmUrl, actual.getScmUrl() );
 
         if ( notifiers != null )
         {
@@ -355,15 +438,14 @@ public abstract class AbstractContinuumTest
 
             for ( int i = 0; i < notifiers.size(); i++ )
             {
-                ProjectNotifier notifier = (ProjectNotifier) notifiers.get( i );
+                ProjectNotifier notifier = notifiers.get( i );
 
                 ProjectNotifier actualNotifier = (ProjectNotifier) actual.getNotifiers().get( i );
 
                 assertEquals( "project.notifiers.notifier.type", notifier.getType(), actualNotifier.getType() );
 
-                assertEquals( "project.notifiers.notifier.configuration.address",
-                              notifier.getConfiguration().get( "address" ),
-                              actualNotifier.getConfiguration().get( "address" ) );
+                assertEquals( "project.notifiers.notifier.configuration.address", notifier.getConfiguration().get(
+                    "address" ), actualNotifier.getConfiguration().get( "address" ) );
             }
         }
 
@@ -380,8 +462,33 @@ public abstract class AbstractContinuumTest
 
         projectGroup.setName( name );
 
+        projectGroup.setGroupId( name );
+
         projectGroup.setDescription( description );
 
         return projectGroup;
+    }
+
+    public Project addProject( String name, ProjectGroup group )
+        throws Exception
+    {
+        Project project = makeStubProject( name );
+
+        project.setGroupId( group.getGroupId() );
+
+        group.addProject( project );
+
+        try
+        {
+            projectGroupDao.getProjectGroup( group.getId() );
+
+            projectGroupDao.updateProjectGroup( group );
+        }
+        catch ( ContinuumObjectNotFoundException e )
+        {
+            projectGroupDao.addProjectGroup( group );
+        }
+
+        return projectDao.getProject( project.getId() );
     }
 }

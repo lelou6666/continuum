@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -21,22 +22,46 @@
   <parent>
     <groupId>org.apache.continuum</groupId>
     <artifactId>continuum-xmlrpc</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-xmlrpc-client</artifactId>
-  <name>Continuum XMLRPC :: Client</name>
+  <name>Continuum :: XMLRPC :: Client</name>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-xmlrpc-api</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.xmlrpc</groupId>
       <artifactId>xmlrpc-client</artifactId>
-      <version>3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
   <build>
@@ -44,25 +69,27 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <executable>java</executable>
+          <mainClass>org.apache.maven.continuum.xmlrpc.client.SampleClient</mainClass>
           <arguments>
-            <argument>-Dmyproperty=myvalue</argument>
-            <argument>-classpath</argument>
+            <!--argument>-Dmyproperty=myvalue</argument>
+            <argument>-classpath</argument-->
             <!-- automatically creates the classpath using all project dependencies, 
                  also adding the project build directory -->
-            <classpath />
-            <argument>org.apache.continuum.xmlrpc.client.SampleClient</argument>
+            <!--classpath /-->
+            <argument>${url}/xmlrpc</argument>
+            <argument>${username}</argument>
+            <argument>${password}</argument>
           </arguments>
         </configuration>
       </plugin>
     </plugins>
   </build>
+  <properties>
+    <url>http://localhost:${port}/continuum</url>
+    <port>8080</port>
+    <username>admin</username>
+    <password>admin123</password>
+  </properties>
 </project>
