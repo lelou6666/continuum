@@ -18,6 +18,7 @@
   ~ under the License.
   -->
 
+<<<<<<< HEAD
 <project name="Apache Maven Continuum">
   <skin>
     <groupId>org.apache.maven.skins</groupId>
@@ -137,5 +138,20 @@
 
     ${reports}
 
+=======
+<project name="Apache Continuum">
+  <skin>
+    <groupId>org.apache.continuum</groupId>
+    <artifactId>continuum-skin</artifactId>
+    <version>1.0</version>
+  </skin>
+  <body>
+    <breadcrumbs>
+      <item name="Continuum" href="http://continuum.apache.org/" />
+      <item name="Reference Library" href="/"/>
+    </breadcrumbs>
+
+    <menu ref="modules" />
+>>>>>>> refs/remotes/apache/trunk
   </body>
 </project>
