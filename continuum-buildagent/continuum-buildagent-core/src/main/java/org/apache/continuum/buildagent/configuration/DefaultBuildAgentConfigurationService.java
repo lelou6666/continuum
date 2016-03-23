@@ -19,17 +19,16 @@ package org.apache.continuum.buildagent.configuration;
  * under the License.
  */
 
+import org.apache.continuum.buildagent.model.Installation;
+import org.apache.continuum.buildagent.model.LocalRepository;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
-import javax.annotation.Resource;
-
-import org.apache.continuum.buildagent.model.Installation;
-import org.apache.continuum.buildagent.model.LocalRepository;
-import org.codehaus.plexus.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DefaultBuildAgentConfigurationService
     implements BuildAgentConfigurationService
@@ -38,6 +37,9 @@ public class DefaultBuildAgentConfigurationService
 
     @Resource
     private BuildAgentConfiguration buildAgentConfiguration;
+
+    @Resource
+    FileSystemManager fsManager;
 
     private GeneralBuildAgentConfiguration generalBuildAgentConfiguration;
 
@@ -106,11 +108,11 @@ public class DefaultBuildAgentConfigurationService
         {
             if ( file.exists() )
             {
-                return FileUtils.fileRead( file.getAbsolutePath() );
+                return fsManager.fileContents( file );
             }
             else
             {
-                return "There are no output for this build.";
+                return "There is no output for this build.";
             }
         }
         catch ( IOException e )
@@ -149,7 +151,33 @@ public class DefaultBuildAgentConfigurationService
     {
         return generalBuildAgentConfiguration.getLocalRepositories();
     }
-    
+
+    public LocalRepository getLocalRepositoryByName( String name )
+        throws BuildAgentConfigurationException
+    {
+        for ( LocalRepository repo : generalBuildAgentConfiguration.getLocalRepositories() )
+        {
+            if ( name.equalsIgnoreCase( repo.getName() ) )
+            {
+                return repo;
+            }
+        }
+        throw new BuildAgentConfigurationException( String.format( "local repository matching '%s' not found", name ) );
+    }
+
+    public String getSharedSecretPassword()
+    {
+        return generalBuildAgentConfiguration.getSharedSecretPassword();
+    }
+
+    public void store()
+        throws BuildAgentConfigurationException
+    {
+        buildAgentConfiguration.setContinuumBuildAgentConfiguration( generalBuildAgentConfiguration );
+
+        buildAgentConfiguration.save();
+    }
+
     private void loadData()
         throws BuildAgentConfigurationException
     {

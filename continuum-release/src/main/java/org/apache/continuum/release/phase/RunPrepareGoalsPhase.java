@@ -19,20 +19,23 @@ package org.apache.continuum.release.phase;
  * under the License.
  */
 
-import java.io.File;
-import java.util.List;
-
-import org.apache.maven.settings.Settings;
 import org.apache.maven.shared.release.ReleaseExecutionException;
 import org.apache.maven.shared.release.ReleaseFailureException;
 import org.apache.maven.shared.release.ReleaseResult;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.env.ReleaseEnvironment;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.io.File;
+import java.util.List;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * Run Release Preparation Goals
- * @plexus.component role="org.apache.maven.shared.release.phase.ReleasePhase" role-hint="run-release-prepare-goals"
  */
+@Component( role = org.apache.maven.shared.release.phase.ReleasePhase.class, hint = "run-release-prepare-goals" )
 public class RunPrepareGoalsPhase
     extends AbstractContinuumRunGoalsPhase
 {
@@ -42,6 +45,7 @@ public class RunPrepareGoalsPhase
         return releaseDescriptor.getPreparationGoals();
     }
 
+<<<<<<< HEAD
     public ReleaseResult execute(ReleaseDescriptor releaseDescriptor,
 			ReleaseEnvironment releaseEnvironment, List reactorProjects)
 			throws ReleaseExecutionException, ReleaseFailureException {
@@ -49,8 +53,19 @@ public class RunPrepareGoalsPhase
     	return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ), 
                 releaseDescriptor.getAdditionalArguments() );
 	}
+=======
+    public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                  List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
 
-    public ReleaseResult simulate( ReleaseDescriptor releaseDescriptor, Settings settings, List reactorProjects )
+        return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ),
+                        releaseDescriptor.getAdditionalArguments() );
+    }
+>>>>>>> refs/remotes/apache/trunk
+
+    public ReleaseResult simulate( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                   List reactorProjects )
         throws ReleaseExecutionException, ReleaseFailureException
     {
         ReleaseResult result = new ReleaseResult();
@@ -58,7 +73,7 @@ public class RunPrepareGoalsPhase
         logInfo( result, "Executing preparation goals - since this is simulation mode it is running against the " +
             "original project, not the rewritten ones" );
 
-        execute( releaseDescriptor, settings, reactorProjects );
+        execute( releaseDescriptor, releaseEnvironment, reactorProjects );
 
         return result;
     }

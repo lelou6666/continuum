@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -27,13 +27,13 @@ import org.testng.annotations.Test;
  * http://code.google.com/p/testng/source/browse/trunk/CHANGES.txt
  * Waiting 5.9 release. It's comming soon.
  */
+
 /**
  * Based on LoginTest of Emmanuel Venisse test.
  *
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "login" } )
+@Test( groups = {"login"} )
 public class LoginTest
     extends AbstractContinuumTest
 {
@@ -42,52 +42,43 @@ public class LoginTest
         goToLoginPage();
         getSelenium().type( "loginForm_username", "badUsername" );
         getSelenium().type( "loginForm_username", getProperty( "ADMIN_PASSWORD" ) );
-        getSelenium().click( "loginForm__login" );
+        getSelenium().click( "//input[@value='Login']" );
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
         assertTextPresent( "You have entered an incorrect username and/or password" );
     }
 
-    @Test( dependsOnMethods = { "testWithBadUsername" }, alwaysRun = true )
     public void testWithBadPassword()
     {
-        goToLoginPage();
-        getSelenium().type( "loginForm_username", getProperty( "ADMIN_USERNAME" ) );
-        getSelenium().type( "loginForm_password", "badPassword" );
-        getSelenium().click( "loginForm__login" );
-        getSelenium().waitForPageToLoad( maxWaitTimeInMs );
+        login( getProperty( "ADMIN_USERNAME" ), "badPassword" );
         assertTextPresent( "You have entered an incorrect username and/or password" );
     }
 
-    @Test( dependsOnMethods = { "testWithBadPassword" }, alwaysRun = true )
     public void testWithEmptyUsername()
     {
         goToLoginPage();
         getSelenium().type( "loginForm_password", "password" );
-        getSelenium().click( "loginForm__login" );
+        getSelenium().click( "//input[@value='Login']" );
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
         assertTextPresent( "User Name is required" );
     }
 
-    @Test( dependsOnMethods = { "testWithEmptyUsername" }, alwaysRun = true )
     public void testWithEmptyPassword()
     {
         goToLoginPage();
         getSelenium().type( "loginForm_username", getProperty( "ADMIN_USERNAME" ) );
-        getSelenium().click( "loginForm__login" );
+        getSelenium().click( "//input[@value='Login']" );
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
         assertTextPresent( "You have entered an incorrect username and/or password" );
     }
 
-    @Test( groups = { "loginSuccess" }, dependsOnMethods = { "testWithEmptyPassword" }, alwaysRun = true )
     public void testWithCorrectUsernamePassword()
     {
-        goToLoginPage();
-        getSelenium().type( "loginForm_username", getProperty( "ADMIN_USERNAME" ) );
-        getSelenium().type( "loginForm_password", getProperty( "ADMIN_PASSWORD" ) );
-        getSelenium().click( "loginForm__login" );
-        getSelenium().waitForPageToLoad( maxWaitTimeInMs );
+        String username = getProperty( "ADMIN_USERNAME" );
+        String password = getProperty( "ADMIN_PASSWORD" );
+        login( username, password );
         assertTextPresent( "Edit Details" );
         assertTextPresent( "Logout" );
-        assertTextPresent( getProperty( "ADMIN_USERNAME" ) );
+        assertTextPresent( username );
     }
+
 }

@@ -18,34 +18,36 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
         <title><s:text name="releasePerformFromScm.page.title"/></title>
     </head>
     <body>
-      <h2><s:text name="releasePerformFromScm.section.title"/></h2>
-      <s:form action="releasePerformFromScm" method="post" validate="true">
-        <h3><s:text name="releasePerformFromScm.parameters.section.title"/></h3>
+      <h3><s:text name="releasePerformFromScm.section.title"/></h3>
+      <s:form action="releasePerformFromScm" validate="true">
+        <tr><td>
         <s:hidden name="projectId"/>
+        </td></tr>
+        <tr><td>
         <div class="axial">
           <table border="1" cellspacing="2" cellpadding="3" width="100%">
-            <s:textfield label="%{getText('releasePerformFromScm.scmUrl.label')}" name="scmUrl"/>
-            <s:textfield label="%{getText('releasePerformFromScm.scmUsername.label')}" name="scmUsername"/>
-            <s:password label="%{getText('releasePerformFromScm.scmPassword.label')}" name="scmPassword"/>
-            <s:textfield label="%{getText('releasePerformFromScm.scmTag.label')}" name="scmTag"/>
-            <c:if test="${!empty (scmTagBase)}">
-              <s:textfield label="%{getText('releasePerformFromScm.scmTagBase.label')}" name="scmTagBase"/>
-            </c:if>
-            <s:textfield label="%{getText('releasePerformFromScm.goals.label')}" name="goals"/>
-            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments"/>
+            <s:textfield label="%{getText('releasePerformFromScm.scmUrl.label')}" name="scmUrl" size="100"/>
+            <s:textfield label="%{getText('releasePerformFromScm.scmUsername.label')}" name="scmUsername" size="100"/>
+            <s:password label="%{getText('releasePerformFromScm.scmPassword.label')}" name="scmPassword" size="100"/>
+            <s:textfield label="%{getText('releasePerformFromScm.scmTag.label')}" name="scmTag" size="100"/>
+            <s:if test="scmTagBase.length() > 0">
+              <s:textfield label="%{getText('releasePerformFromScm.scmTagBase.label')}" name="scmTagBase" size="100"/>
+            </s:if>
+            <s:textfield label="%{getText('releasePerformFromScm.goals.label')}" name="goals" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments" size="100"/>
             <s:checkbox label="%{getText('releasePerformFromScm.useReleaseProfile.label')}" name="useReleaseProfile"/>
             <s:select label="%{getText('releasePerformFromScm.buildEnvironment.label')}" name="profileId" list="profiles" listValue="name"
                        listKey="id" headerKey="-1" headerValue=""/>
           </table>
         </div>
         <s:submit value="%{getText('submit')}"/>
+        </tr></td>
       </s:form>
     </body>
   </s:i18n>

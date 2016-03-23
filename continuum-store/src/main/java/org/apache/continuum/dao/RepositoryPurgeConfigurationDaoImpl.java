@@ -19,24 +19,23 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+
 import java.util.Collections;
 import java.util.List;
-
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
-import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
-import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.springframework.stereotype.Repository;
-
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.RepositoryPurgeConfigurationDao"
  */
-@Repository("repositoryPurgeConfigurationDao")
+@Repository( "repositoryPurgeConfigurationDao" )
+@Component( role = org.apache.continuum.dao.RepositoryPurgeConfigurationDao.class )
 public class RepositoryPurgeConfigurationDaoImpl
     extends AbstractDao
     implements RepositoryPurgeConfigurationDao
@@ -75,7 +74,7 @@ public class RepositoryPurgeConfigurationDaoImpl
             rollback( tx );
         }
     }
-    
+
     public List<RepositoryPurgeConfiguration> getEnableRepositoryPurgeConfigurationsBySchedule( int scheduleId )
     {
         PersistenceManager pm = getPersistenceManager();
@@ -139,14 +138,14 @@ public class RepositoryPurgeConfigurationDaoImpl
     public RepositoryPurgeConfiguration getRepositoryPurgeConfiguration( int configurationId )
         throws ContinuumStoreException
     {
-        return (RepositoryPurgeConfiguration) getObjectById( RepositoryPurgeConfiguration.class, configurationId );
+        return getObjectById( RepositoryPurgeConfiguration.class, configurationId );
     }
 
     public RepositoryPurgeConfiguration addRepositoryPurgeConfiguration(
         RepositoryPurgeConfiguration purgeConfiguration )
         throws ContinuumStoreException
     {
-        return (RepositoryPurgeConfiguration) addObject( purgeConfiguration );
+        return addObject( purgeConfiguration );
     }
 
     public void updateRepositoryPurgeConfiguration( RepositoryPurgeConfiguration purgeConfiguration )

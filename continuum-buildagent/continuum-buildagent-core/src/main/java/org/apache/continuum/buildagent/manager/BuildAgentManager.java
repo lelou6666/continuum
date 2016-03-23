@@ -19,9 +19,9 @@ package org.apache.continuum.buildagent.manager;
  * under the License.
  */
 
-import java.util.Map;
-
 import org.apache.maven.continuum.ContinuumException;
+
+import java.util.Map;
 
 public interface BuildAgentManager
 {
@@ -30,7 +30,7 @@ public interface BuildAgentManager
     void returnBuildResult( Map<String, Object> result )
         throws ContinuumException;
 
-    void startProjectBuild( int projectId )
+    void startProjectBuild( int projectId, int buildDefinition )
         throws ContinuumException;
 
     Map<String, String> getEnvironments( int buildDefinitionId, String installationType )
@@ -46,5 +46,8 @@ public interface BuildAgentManager
         throws ContinuumException;
 
     void endPrepareBuild( Map<String, Object> context )
+        throws ContinuumException;
+
+    boolean pingMaster()
         throws ContinuumException;
 }

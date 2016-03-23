@@ -9,7 +9,7 @@ package org.apache.continuum.web.test.parent;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -21,19 +21,18 @@ package org.apache.continuum.web.test.parent;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
 public abstract class AbstractLocalRepositoryTest
-    extends AbstractSeleniumTest
+    extends AbstractAdminTest
 {
-    public void goToLocalRepositoryPage()
+    void goToLocalRepositoryPage()
     {
         clickLinkWithText( "Local Repositories" );
 
         assertLocalRepositoryPage();
     }
 
-    public void assertLocalRepositoryPage()
+    void assertLocalRepositoryPage()
     {
         assertPage( "Continuum - Local Repositories" );
         assertTextPresent( "Local Repositories" );
@@ -46,7 +45,7 @@ public abstract class AbstractLocalRepositoryTest
         assertButtonWithValuePresent( "Add" );
     }
 
-    public void assertAddLocalRepositoryPage()
+    void assertAddLocalRepositoryPage()
     {
         assertPage( "Continuum - Add/Edit Local Repository" );
         assertTextPresent( "Add/Edit Local Repository" );
@@ -60,7 +59,7 @@ public abstract class AbstractLocalRepositoryTest
         assertButtonWithValuePresent( "Cancel" );
     }
 
-    public void removeLocalRepository( String name )
+    protected void removeLocalRepository( String name )
     {
         goToLocalRepositoryPage();
         String xPath = "//preceding::td[text()='" + name + "']//following::img[@alt='Delete']";
@@ -73,14 +72,14 @@ public abstract class AbstractLocalRepositoryTest
         assertLocalRepositoryPage();
     }
 
-    public void goToAddLocalRepository()
+    protected void goToAddLocalRepository()
     {
         goToLocalRepositoryPage();
         clickButtonWithValue( "Add" );
         assertAddLocalRepositoryPage();
     }
 
-    public void goToEditLocalRepository( String name, String location )
+    protected void goToEditLocalRepository( String name, String location )
     {
         goToLocalRepositoryPage();
         String xPath = "//preceding::td[text()='" + name + "']//following::img[@alt='Edit']";
@@ -90,7 +89,7 @@ public abstract class AbstractLocalRepositoryTest
         assertFieldValue( location, "repository.location" );
     }
 
-    public void addEditLocalRepository( String name, String location, boolean success )
+    protected void addEditLocalRepository( String name, String location, boolean success )
     {
         setFieldValue( "repository.name", name );
         setFieldValue( "repository.location", location );

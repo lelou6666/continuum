@@ -19,9 +19,6 @@ package org.apache.maven.continuum.web.action.component;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
@@ -29,16 +26,19 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.action.AbstractBuildDefinitionAction;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.BuildDefinitionSummary;
+import org.codehaus.plexus.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * BuildDefinitionSummaryAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildDefinitionSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildDefinitionSummary", instantiationStrategy = "per-lookup" )
 public class BuildDefinitionSummaryAction
     extends AbstractBuildDefinitionAction
 {
@@ -49,7 +49,7 @@ public class BuildDefinitionSummaryAction
     private String projectGroupName;
 
     private int projectId;
-    
+
     // Allow dont remove default group build definition in project list 
     private int defaultGroupDefinitionId;
 
@@ -74,7 +74,7 @@ public class BuildDefinitionSummaryAction
             checkViewProjectGroupAuthorization( projectGroupName );
 
             groupBuildDefinitionSummaries = gatherGroupBuildDefinitionSummaries( projectGroupId );
-            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId );
+            projectBuildDefinitionSummaries = gatherProjectBuildDefinitionSummaries( projectId, projectGroupId );
 
             fixDefaultBuildDefinitions();
 
@@ -105,9 +105,10 @@ public class BuildDefinitionSummaryAction
 
             checkViewProjectGroupAuthorization( projectGroup.getName() );
 
-            for ( Project project : (List<Project>) projectGroup.getProjects() )
+            for ( Project project : projectGroup.getProjects() )
             {
-                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId() ) );
+                projectBuildDefinitionSummaries.addAll( gatherProjectBuildDefinitionSummaries( project.getId(),
+                                                                                               projectGroupId ) );
 
             }
 
@@ -146,7 +147,7 @@ public class BuildDefinitionSummaryAction
             {
                 defaultGroupDefinitionId = bds.getId();
             }
-        
+
             if ( containsDefaultBDForProject )
             {
                 bds.setIsDefault( false );
@@ -154,18 +155,19 @@ public class BuildDefinitionSummaryAction
         }
     }
 
-    private List<BuildDefinitionSummary> gatherProjectBuildDefinitionSummaries( int projectId )
+    private List<BuildDefinitionSummary> gatherProjectBuildDefinitionSummaries( int projectId, int projectGroupId )
         throws ContinuumException
     {
         List<BuildDefinitionSummary> summaryList = new ArrayList<BuildDefinitionSummary>();
 
         Project project = getContinuum().getProjectWithAllDetails( projectId );
-        for ( BuildDefinition bd : (List<BuildDefinition>) project.getBuildDefinitions() )
+        for ( BuildDefinition bd : project.getBuildDefinitions() )
         {
             BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "PROJECT" );
             bds.setProjectId( project.getId() );
             bds.setProjectName( project.getName() );
+            bds.setProjectGroupId( projectGroupId );
 
             summaryList.add( bds );
         }
@@ -180,7 +182,7 @@ public class BuildDefinitionSummaryAction
 
         projectGroup = getContinuum().getProjectGroupWithBuildDetails( projectGroupId );
 
-        for ( BuildDefinition bd : (List<BuildDefinition>) projectGroup.getBuildDefinitions() )
+        for ( BuildDefinition bd : projectGroup.getBuildDefinitions() )
         {
             BuildDefinitionSummary bds = generateBuildDefinitionSummary( bd );
             bds.setFrom( "GROUP" );
@@ -191,7 +193,6 @@ public class BuildDefinitionSummaryAction
 
         return summaryList;
     }
-
 
     public int getProjectId()
     {

@@ -19,11 +19,6 @@ package org.apache.continuum.scm;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-
-import javax.annotation.Resource;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.scm.ScmException;
@@ -39,12 +34,17 @@ import org.apache.maven.scm.repository.ScmRepository;
 import org.apache.maven.scm.repository.ScmRepositoryException;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import javax.annotation.Resource;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  * @todo consider folding some of this into Maven SCM itself
  */
-@Service("continuumScm")
+@Service( "continuumScm" )
 public class DefaultContinuumScm
     implements ContinuumScm
 {
@@ -144,6 +144,7 @@ public class DefaultContinuumScm
         throws ScmException
     {
         ScmVersion scmVersion = getScmVersion( configuration );
+        Date startDate = null;
 
         // TODO: probably need to base this from a working directory in the main configuration
         File workingDirectory = configuration.getWorkingDirectory();
@@ -154,7 +155,17 @@ public class DefaultContinuumScm
 
         ScmFileSet fileSet = new ScmFileSet( workingDirectory );
 
-        result = scmManager.changeLog( repository, fileSet, scmVersion, scmVersion );
+        if ( scmVersion == null || StringUtils.isBlank( scmVersion.getName() ) )
+        {
+            // let's get the start date instead
+            startDate = getScmStartDate( configuration );
+
+            result = scmManager.changeLog( repository, fileSet, startDate, null, 0, null, null );
+        }
+        else
+        {
+            result = scmManager.changeLog( repository, fileSet, scmVersion, scmVersion );
+        }
 
         return result;
     }
@@ -204,6 +215,21 @@ public class DefaultContinuumScm
         }
 
         return repository;
+    }
+
+    private Date getScmStartDate( ContinuumScmConfiguration configuration )
+    {
+        Date startDate = configuration.getLatestUpdateDate();
+
+        if ( startDate == null )
+        {
+            // start date defaults to January 1, 1970
+            Calendar cal = Calendar.getInstance();
+            cal.set( 1970, Calendar.JANUARY, 1 );
+            startDate = cal.getTime();
+        }
+
+        return startDate;
     }
 
     public ScmManager getScmManager()

@@ -19,14 +19,6 @@ package org.apache.continuum.buildagent.build.execution;
  * under the License.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import org.apache.continuum.buildagent.configuration.BuildAgentConfigurationService;
 import org.apache.continuum.buildagent.installation.BuildAgentInstallationService;
 import org.apache.continuum.buildagent.manager.BuildAgentManager;
@@ -42,46 +34,43 @@ import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.commandline.ExecutableResolver;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.cli.CommandLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public abstract class AbstractBuildExecutor
     implements ContinuumAgentBuildExecutor, Initializable
 {
     protected static final Logger log = LoggerFactory.getLogger( AbstractBuildExecutor.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ShellCommandHelper shellCommandHelper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ExecutableResolver executableResolver;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentConfigurationService buildAgentConfigurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentInstallationService buildAgentInstallationService;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String defaultExecutable;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentManager buildAgentManager;
 
     // ----------------------------------------------------------------------
@@ -167,7 +156,7 @@ public abstract class AbstractBuildExecutor
             if ( StringUtils.isEmpty( defaultExecutable ) )
             {
                 log.warn( "The default executable for build executor '" + id + "' is not set. " +
-                    "This will cause a problem unless the project has a executable configured." );
+                              "This will cause a problem unless the project has a executable configured." );
             }
             else
             {
@@ -181,7 +170,7 @@ public abstract class AbstractBuildExecutor
                 else
                 {
                     log.info( "Resolved the executable '" + defaultExecutable + "' to " + "'" +
-                        resolvedExecutable.getAbsolutePath() + "'." );
+                                  resolvedExecutable.getAbsolutePath() + "'." );
                 }
             }
         }
@@ -267,15 +256,15 @@ public abstract class AbstractBuildExecutor
 
         try
         {
-            ExecutionResult result =
-                getShellCommandHelper().executeShellCommand( workingDirectory, actualExecutable, arguments, output,
-                                                             project.getId(), environments );
+            ExecutionResult result = getShellCommandHelper().executeShellCommand( workingDirectory, actualExecutable,
+                                                                                  arguments, output, project.getId(),
+                                                                                  environments );
 
             log.info( "Exit code: " + result.getExitCode() );
 
             return new ContinuumAgentBuildExecutionResult( output, result.getExitCode() );
         }
-        catch ( CommandLineException e )
+        catch ( Exception e )
         {
             if ( e.getCause() instanceof InterruptedException )
             {
@@ -287,12 +276,6 @@ public abstract class AbstractBuildExecutor
                     "Error while executing shell command. The most common error is that '" + executable + "' " +
                         "is not in your path.", e );
             }
-        }
-        catch ( Exception e )
-        {
-            throw new ContinuumAgentBuildExecutorException(
-                "Error while executing shell command. " + "The most common error is that '" + executable + "' " +
-                    "is not in your path.", e );
         }
     }
 
@@ -385,14 +368,15 @@ public abstract class AbstractBuildExecutor
             projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_URL, "" );
         }
         projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_PARENT, getProjectParent( project.getParent() ) );
-        projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPERS,
-                        getProjectDevelopers( project.getDevelopers() ) );
-        projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEPENDENCIES,
-                        getProjectDependencies( project.getDependencies() ) );
+        projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPERS, getProjectDevelopers(
+            project.getDevelopers() ) );
+        projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEPENDENCIES, getProjectDependencies(
+            project.getDependencies() ) );
         projectMap.put( ContinuumBuildAgentUtil.KEY_PROJECT_NOTIFIERS, getProjectNotifiers( project.getNotifiers() ) );
 
         try
         {
+            log.debug( "Update project {}" + project.getId() );
             buildAgentManager.updateProject( projectMap );
         }
         catch ( Exception e )
@@ -410,18 +394,25 @@ public abstract class AbstractBuildExecutor
             for ( ProjectDeveloper developer : developers )
             {
                 Map<String, String> map = new HashMap<String, String>();
-                map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_NAME, developer.getName() );
-                if ( StringUtils.isNotEmpty( developer.getEmail() ) )
+                if ( StringUtils.isNotEmpty( developer.getName() ) )
                 {
-                	map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_EMAIL, developer.getEmail() );
+                    map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_NAME, developer.getName() );
                 }
                 else
                 {
-                	map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_EMAIL, "" );
+                    map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_NAME, "" );
+                }
+                if ( StringUtils.isNotEmpty( developer.getEmail() ) )
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_EMAIL, developer.getEmail() );
+                }
+                else
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_EMAIL, "" );
                 }
                 if ( StringUtils.isNotEmpty( developer.getScmId() ) )
                 {
-                	map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_SCMID, developer.getScmId() );
+                    map.put( ContinuumBuildAgentUtil.KEY_PROJECT_DEVELOPER_SCMID, developer.getScmId() );
                 }
                 else
                 {
@@ -477,9 +468,23 @@ public abstract class AbstractBuildExecutor
             for ( ProjectDependency dependency : dependencies )
             {
                 Map<String, Object> map = new HashMap<String, Object>();
-                map.put( ContinuumBuildAgentUtil.KEY_GROUP_ID, dependency.getGroupId() );
-                map.put( ContinuumBuildAgentUtil.KEY_ARTIFACT_ID, dependency.getArtifactId() );
-                if ( StringUtils.isNotBlank( dependency.getVersion() ) )
+                if ( StringUtils.isNotEmpty( dependency.getGroupId() ) )
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_GROUP_ID, dependency.getGroupId() );
+                }
+                else
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_GROUP_ID, "" );
+                }
+                if ( StringUtils.isNotEmpty( dependency.getArtifactId() ) )
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_ARTIFACT_ID, dependency.getArtifactId() );
+                }
+                else
+                {
+                    map.put( ContinuumBuildAgentUtil.KEY_ARTIFACT_ID, "" );
+                }
+                if ( StringUtils.isNotEmpty( dependency.getVersion() ) )
                 {
                     map.put( ContinuumBuildAgentUtil.KEY_PROJECT_VERSION, dependency.getVersion() );
                 }
@@ -494,7 +499,6 @@ public abstract class AbstractBuildExecutor
         return pDependencies;
     }
 
-    //TODO: Check the content of this method, it always return an empty list
     protected List<Map<String, Object>> getProjectNotifiers( List<ProjectNotifier> notifiers )
     {
         List<Map<String, Object>> pNotifiers = new ArrayList<Map<String, Object>>();
@@ -529,6 +533,7 @@ public abstract class AbstractBuildExecutor
                 map.put( ContinuumBuildAgentUtil.KEY_NOTIFIER_SEND_ON_FAILURE, notifier.isSendOnFailure() );
                 map.put( ContinuumBuildAgentUtil.KEY_NOTIFIER_SEND_ON_SCMFAILURE, notifier.isSendOnScmFailure() );
                 map.put( ContinuumBuildAgentUtil.KEY_NOTIFIER_SEND_ON_WARNING, notifier.isSendOnWarning() );
+                pNotifiers.add( map );
             }
         }
         return pNotifiers;
@@ -536,8 +541,8 @@ public abstract class AbstractBuildExecutor
 
     public boolean isBuilding( Project project )
     {
-        return project.getState() == ContinuumProjectState.BUILDING ||
-            getShellCommandHelper().isRunning( project.getId() );
+        return project.getState() == ContinuumProjectState.BUILDING || getShellCommandHelper().isRunning(
+            project.getId() );
     }
 
     public void killProcess( Project project )

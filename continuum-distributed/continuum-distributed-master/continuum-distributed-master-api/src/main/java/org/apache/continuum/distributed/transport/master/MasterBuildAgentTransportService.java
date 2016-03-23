@@ -26,19 +26,19 @@ import java.util.Map;
 /**
  * MasterBuildAgentTransportService
  */
-@ServiceObject("MasterBuildAgentTransportService")
+@ServiceObject( "MasterBuildAgentTransportService" )
 public interface MasterBuildAgentTransportService
 {
-    public Boolean returnBuildResult( Map<String, Object> buildResult )
+    public Boolean returnBuildResult( Map<String, Object> buildResult, String buildAgentUrl )
         throws Exception;
 
-    public Boolean startProjectBuild( Integer projectId )
+    public Boolean startProjectBuild( Integer projectId, Integer buildDefinitionId, String buildAgentUrl )
         throws Exception;
 
-    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult )
+    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception;
 
-    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult )
+    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception;
 
     public Map<String, String> getEnvironments( Integer buildDefinitionId, String installationType )
@@ -50,6 +50,6 @@ public interface MasterBuildAgentTransportService
     public Boolean ping()
         throws Exception;
 
-    public Boolean shouldBuild( Map<String, Object> context )
+    public Boolean shouldBuild( Map<String, Object> context, String buildAgentUrl )
         throws Exception;
 }

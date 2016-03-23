@@ -19,6 +19,19 @@ package org.apache.continuum.buildagent.build.execution.maven.m1;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectDependency;
+import org.apache.maven.continuum.model.project.ProjectDeveloper;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -27,21 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectDependency;
-import org.apache.maven.continuum.model.project.ProjectDeveloper;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-/**
- * @plexus.component role="org.apache.continuum.buildagent.build.execution.maven.m1.BuildAgentMavenOneMetadataHelper" role-hint="default"
- */
+@Component( role = org.apache.continuum.buildagent.build.execution.maven.m1.BuildAgentMavenOneMetadataHelper.class, hint = "default" )
 public class DefaultBuildAgentMavenOneMetadataHelper
     implements BuildAgentMavenOneMetadataHelper
 {

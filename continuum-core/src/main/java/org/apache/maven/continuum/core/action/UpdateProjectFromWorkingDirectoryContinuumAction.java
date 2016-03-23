@@ -19,9 +19,12 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.Map;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.dao.BuildDefinitionDao;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.ContinuumException;
@@ -33,34 +36,30 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="update-project-from-working-directory"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "update-project-from-working-directory" )
 public class UpdateProjectFromWorkingDirectoryContinuumAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildExecutorManager buildExecutorManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionDao buildDefinitionDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
     public void execute( Map context )
@@ -83,9 +82,16 @@ public class UpdateProjectFromWorkingDirectoryContinuumAction
         ScmResult scmResult = (ScmResult) context.get( "scmResult" );
         List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
         String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+<<<<<<< HEAD
         
         builder.updateProjectFromCheckOut( workingDirectoryService.getWorkingDirectory( project, 
                         projectScmRootUrl, projectsWithCommonScmRoot ), project, buildDefinition, scmResult );
+=======
+
+        builder.updateProjectFromCheckOut( workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
+                                                                                        projectsWithCommonScmRoot ),
+                                           project, buildDefinition, scmResult );
+>>>>>>> refs/remotes/apache/trunk
         // ----------------------------------------------------------------------
         // Store the new descriptor
         // ----------------------------------------------------------------------

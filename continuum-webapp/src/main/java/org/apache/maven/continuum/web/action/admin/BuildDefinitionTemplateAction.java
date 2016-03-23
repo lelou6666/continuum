@@ -20,15 +20,7 @@ package org.apache.maven.continuum.web.action.admin;
  */
 
 import com.opensymphony.xwork2.Preparable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
@@ -42,17 +34,25 @@ import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.AbstractBuildDefinitionAction;
 import org.apache.maven.continuum.web.model.BuildDefinitionSummary;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildDefinitionTemplates"
  * @since 16 sept. 07
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildDefinitionTemplates", instantiationStrategy = "per-lookup" )
 public class BuildDefinitionTemplateAction
     extends AbstractBuildDefinitionAction
     implements SecureAction, Preparable
@@ -149,28 +149,29 @@ public class BuildDefinitionTemplateAction
         throws Exception
     {
         List<BuildDefinition> selectedBuildDefinitions = getBuildDefinitionsFromSelectedBuildDefinitions();
-        
+
         BuildDefinitionTemplate result;
-        
+
         AuditLog event = new AuditLog( buildDefinitionTemplate.getName(), AuditLogConstants.ADD_TEMPLATE );
         event.setCategory( AuditLogConstants.TEMPLATE );
         event.setCurrentUser( getPrincipal() );
-        
+
         if ( this.buildDefinitionTemplate.getId() > 0 )
         {
             buildDefinitionTemplate.setBuildDefinitions( selectedBuildDefinitions );
-            result = this.getContinuum().getBuildDefinitionService().updateBuildDefinitionTemplate( buildDefinitionTemplate );
+            result = this.getContinuum().getBuildDefinitionService().updateBuildDefinitionTemplate(
+                buildDefinitionTemplate );
             event.setAction( AuditLogConstants.MODIFY_TEMPLATE );
         }
         else
         {
             buildDefinitionTemplate.setBuildDefinitions( selectedBuildDefinitions );
-            this.buildDefinitionTemplate =
-                this.getContinuum().getBuildDefinitionService().addBuildDefinitionTemplate( buildDefinitionTemplate );
+            this.buildDefinitionTemplate = this.getContinuum().getBuildDefinitionService().addBuildDefinitionTemplate(
+                buildDefinitionTemplate );
             result = this.buildDefinitionTemplate;
         }
-        
-        if ( result ==  null )
+
+        if ( result == null )
         {
             addActionError( getText( "buildDefintionTemplate.name.exists" ) );
             return INPUT;
@@ -190,12 +191,12 @@ public class BuildDefinitionTemplateAction
         {
             buildDefinitionTemplate = getContinuum().getBuildDefinitionService().getBuildDefinitionTemplate(
                 this.buildDefinitionTemplate.getId() );
-            
+
             AuditLog event = new AuditLog( buildDefinitionTemplate.getName(), AuditLogConstants.REMOVE_TEMPLATE );
             event.setCategory( AuditLogConstants.TEMPLATE );
             event.setCurrentUser( getPrincipal() );
             event.log();
-            
+
             this.getContinuum().getBuildDefinitionService().removeBuildDefinitionTemplate( buildDefinitionTemplate );
         }
         else
@@ -205,7 +206,7 @@ public class BuildDefinitionTemplateAction
         return SUCCESS;
     }
 
-    private List<BuildDefinition> getBuildDefinitionsFromSelectedBuildDefinitions()
+    public List<BuildDefinition> getBuildDefinitionsFromSelectedBuildDefinitions()
         throws ContinuumException
     {
         if ( this.selectedBuildDefinitionIds == null )
@@ -215,8 +216,8 @@ public class BuildDefinitionTemplateAction
         List<BuildDefinition> selectedBuildDefinitions = new ArrayList<BuildDefinition>();
         for ( String selectedBuildDefinitionId : selectedBuildDefinitionIds )
         {
-            BuildDefinition buildDefinition =
-                getContinuum().getBuildDefinition( Integer.parseInt( selectedBuildDefinitionId ) );
+            BuildDefinition buildDefinition = getContinuum().getBuildDefinition( Integer.parseInt(
+                selectedBuildDefinitionId ) );
             selectedBuildDefinitions.add( buildDefinition );
         }
         return selectedBuildDefinitions;
@@ -226,16 +227,11 @@ public class BuildDefinitionTemplateAction
     //  BuildDefinition
     // -----------------------------------------------------
 
-    public String inputBuildDefinition()
-    {
-        return INPUT;
-    }
-
     public String editBuildDefinition()
         throws Exception
     {
-        this.buildDefinition =
-            getContinuum().getBuildDefinitionService().getBuildDefinition( this.buildDefinition.getId() );
+        this.buildDefinition = getContinuum().getBuildDefinitionService().getBuildDefinition(
+            this.buildDefinition.getId() );
         return SUCCESS;
     }
 
@@ -243,6 +239,11 @@ public class BuildDefinitionTemplateAction
         throws Exception
     {
         Schedule schedule = null;
+
+        // need to escape xml to prevent xss attacks
+        buildDefinition.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml(
+            buildDefinition.getDescription() ) ) );
+
         if ( buildDefinition.getProfile() != null )
         {
             Profile profile = getContinuum().getProfileService().getProfile( buildDefinition.getProfile().getId() );
@@ -270,10 +271,10 @@ public class BuildDefinitionTemplateAction
         }
         else
         {
-            this.buildDefinition =
-                this.getContinuum().getBuildDefinitionService().addBuildDefinition( buildDefinition );
+            this.buildDefinition = this.getContinuum().getBuildDefinitionService().addBuildDefinition(
+                buildDefinition );
         }
-        
+
         if ( schedule != null )
         {
             getContinuum().activeBuildDefinitionSchedule( schedule );
@@ -287,9 +288,17 @@ public class BuildDefinitionTemplateAction
     {
         if ( confirmed )
         {
-            buildDefinition =
-                getContinuum().getBuildDefinitionService().getBuildDefinition( this.buildDefinition.getId() );
-            this.getContinuum().getBuildDefinitionService().removeBuildDefinition( buildDefinition );
+            if ( getContinuum().getBuildDefinitionService().isBuildDefinitionInUse( buildDefinition ) )
+            {
+                addActionError( getText( "buildDefinition.used" ) );
+                return ERROR;
+            }
+            else
+            {
+                buildDefinition =
+                    getContinuum().getBuildDefinitionService().getBuildDefinition( this.buildDefinition.getId() );
+                this.getContinuum().getBuildDefinitionService().removeBuildDefinition( buildDefinition );
+            }
         }
         else
         {

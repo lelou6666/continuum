@@ -19,9 +19,6 @@ package org.apache.continuum.buildagent.action;
  * under the License.
  */
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.buildagent.buildcontext.BuildContext;
 import org.apache.continuum.buildagent.taskqueue.manager.BuildAgentTaskQueueManager;
 import org.apache.continuum.buildagent.utils.ContinuumBuildAgentUtil;
@@ -30,21 +27,22 @@ import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.ContinuumException;
 import org.codehaus.plexus.action.AbstractAction;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.TaskQueueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @plexus.component role="org.codehaus.plexus.action.Action" role-hint="create-agent-build-project-task"
- */
+import java.util.List;
+import java.util.Map;
+
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "create-agent-build-project-task" )
 public class CreateBuildProjectTaskAction
     extends AbstractAction
 {
     private static final Logger log = LoggerFactory.getLogger( CreateBuildProjectTaskAction.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentTaskQueueManager buildAgentTaskQueueManager;
 
     public void execute( Map context )
@@ -54,18 +52,21 @@ public class CreateBuildProjectTaskAction
 
         for ( BuildContext buildContext : buildContexts )
         {
-        	BuildTrigger buildTrigger = new BuildTrigger( buildContext.getTrigger(), buildContext.getUsername() );
-        	
-        	BuildProjectTask buildProjectTask =
-                new BuildProjectTask( buildContext.getProjectId(), buildContext.getBuildDefinitionId(),
-                		              buildTrigger, buildContext.getProjectName(), buildContext.getBuildDefinitionLabel(),
-                                      buildContext.getScmResult(), buildContext.getProjectGroupId() );
+            BuildTrigger buildTrigger = new BuildTrigger( buildContext.getTrigger(), buildContext.getUsername() );
+
+            BuildProjectTask buildProjectTask = new BuildProjectTask( buildContext.getProjectId(),
+                                                                      buildContext.getBuildDefinitionId(), buildTrigger,
+                                                                      buildContext.getProjectName(),
+                                                                      buildContext.getBuildDefinitionLabel(),
+                                                                      buildContext.getScmResult(),
+                                                                      buildContext.getProjectGroupId() );
             buildProjectTask.setMaxExecutionTime( buildContext.getMaxExecutionTime() * 1000 );
 
             try
             {
                 if ( !buildAgentTaskQueueManager.isProjectInBuildQueue( buildProjectTask.getProjectId() ) )
                 {
+                    log.info( "Adding project {} to build queue", buildProjectTask.getProjectId() );
                     buildAgentTaskQueueManager.getBuildQueue().put( buildProjectTask );
                 }
             }

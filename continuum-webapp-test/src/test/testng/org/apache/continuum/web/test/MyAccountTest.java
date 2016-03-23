@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,7 +19,7 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-import org.apache.continuum.web.test.parent.AbstractSeleniumTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,35 +27,35 @@ import org.testng.annotations.Test;
  * Based on MyAccountTest of Emmanuel Venisse test.
  *
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "myAccount" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = {"myAccount"} )
 public class MyAccountTest
-    extends AbstractSeleniumTest
+    extends AbstractAdminTest
 {
 
-    public String newFullName = "Admin_FullName";
+    private static final String NEW_FULL_NAME = "Admin_FullName";
 
-    public String newEmail = "new_admin@mail.com";
+    private static final String NEW_EMAIL = "new_admin@mail.com";
 
     public void testMyAccountEdit()
         throws Exception
     {
         clickLinkWithText( "Edit Details" );
         String email = getFieldValue( "user.email" );
-        setFieldValue( "user.fullName", newFullName );
-        setFieldValue( "user.email", newEmail );
+        String fullName = getFieldValue( "user.fullName" );
+        setFieldValue( "user.fullName", NEW_FULL_NAME );
+        setFieldValue( "user.email", NEW_EMAIL );
         submit();
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
         Assert.assertEquals( "Continuum - Group Summary", getTitle() );
         clickLinkWithText( "Edit Details" );
-        assertFieldValue( newFullName, "user.fullName" );
-        assertFieldValue( newEmail, "user.email" );
-        setFieldValue( "user.fullName", getProperty( "ADMIN_USERNAME" ) );
+        assertFieldValue( NEW_FULL_NAME, "user.fullName" );
+        assertFieldValue( NEW_EMAIL, "user.email" );
+        setFieldValue( "user.fullName", fullName );
         setFieldValue( "user.email", email );
         submit();
         clickLinkWithText( "Edit Details" );
-        assertFieldValue( getProperty( "ADMIN_USERNAME" ), "user.fullName" );
+        assertFieldValue( fullName, "user.fullName" );
         assertFieldValue( email, "user.email" );
     }
 }

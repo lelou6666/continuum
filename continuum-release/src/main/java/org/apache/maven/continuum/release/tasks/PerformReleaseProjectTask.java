@@ -27,7 +27,6 @@ import java.io.File;
 
 /**
  * @author Edwin Punzalan
- * @version $Id$
  */
 public class PerformReleaseProjectTask
     extends AbstractReleaseProjectTask
@@ -37,7 +36,7 @@ public class PerformReleaseProjectTask
     private String goals;
 
     private boolean useReleaseProfile = true;
-    
+
     private LocalRepository localRepository;
 
     public PerformReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, File buildDirectory, String goals,
@@ -47,7 +46,8 @@ public class PerformReleaseProjectTask
     }
 
     public PerformReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, File buildDirectory, String goals,
-                                      boolean useReleaseProfile, ReleaseManagerListener listener, LocalRepository repository )
+                                      boolean useReleaseProfile, ReleaseManagerListener listener,
+                                      LocalRepository repository )
     {
         super( releaseId, descriptor, listener );
         setBuildDirectory( buildDirectory );
@@ -55,7 +55,7 @@ public class PerformReleaseProjectTask
         setUseReleaseProfile( useReleaseProfile );
         setLocalRepository( repository );
     }
-    
+
     public String getGoals()
     {
         return goals;
@@ -85,12 +85,12 @@ public class PerformReleaseProjectTask
     {
         this.buildDirectory = buildDirectory;
     }
-    
+
     public LocalRepository getLocalRepository()
     {
         return localRepository;
     }
-    
+
     public void setLocalRepository( LocalRepository localRepository )
     {
         this.localRepository = localRepository;

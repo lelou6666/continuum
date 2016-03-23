@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,25 +19,102 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-import org.apache.continuum.web.test.parent.AbstractContinuumTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.testng.Assert.assertTrue;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "buildDefinition" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = { "buildDefinition" } )
 public class BuildDefinitionTest
-    extends AbstractContinuumTest
+    extends AbstractAdminTest
 {
+    private String defaultProjectGroupName;
+
+    private String defaultProjectGroupId;
+
+    private String defaultProjectGroupDescription;
+
+    private String projectGroupName;
+
+    private String projectGroupId;
+
+    private String projectGroupDescription;
+
+    private String buildDefinitionPomName;
+
+    private String buildDefinitionGoals;
+
+    private String buildDefinitionArguments;
+
+    private String buildDefinitionDescription;
+
+    private String projectName;
+
+    private String antProjectName;
+
+    private String buildDefinitionId;
+
+    @BeforeClass
+    public void createProject()
+    {
+        projectGroupName = getProperty( "BUILD_DEFINITION_PROJECT_GROUP_NAME" );
+        projectGroupId = getProperty( "BUILD_DEFINITION_PROJECT_GROUP_ID" );
+        projectGroupDescription = getProperty( "BUILD_DEFINITION_PROJECT_GROUP_DESCRIPTION" );
+
+        projectName = getProperty( "MAVEN2_POM_PROJECT_NAME" );
+        String projectPomUrl = getProperty( "MAVEN2_POM_URL" );
+        String pomUsername = getProperty( "MAVEN2_POM_USERNAME" );
+        String pomPassword = getProperty( "MAVEN2_POM_PASSWORD" );
+
+        antProjectName = getProperty( "BUILD_DEFINITION_ANT_PROJECT_NAME" );
+        String antProjectDescription = getProperty( "ANT_DESCRIPTION" );
+        String antProjectVersion = getProperty( "ANT_VERSION" );
+        String antProjectTag = getProperty( "ANT_TAG" );
+        String antScmUrl = getProperty( "ANT_SCM_URL" );
+        String antScmUsername = getProperty( "ANT_SCM_USERNAME" );
+        String antScmPassword = getProperty( "ANT_SCM_PASSWORD" );
+
+        loginAsAdmin();
+        addProjectGroup( projectGroupName, projectGroupId, projectGroupDescription, true, false );
+        clickLinkWithText( projectGroupName );
+        if ( !isLinkPresent( projectName ) )
+        {
+            addMavenTwoProject( projectPomUrl, pomUsername, pomPassword, projectGroupName, true );
+        }
+        if ( !isLinkPresent( antProjectName ) )
+        {
+            goToAddAntProjectPage();
+            addProject( antProjectName, antProjectDescription, antProjectVersion, antScmUrl, antScmUsername,
+                        antScmPassword, antProjectTag, projectGroupName, true, "ant" );
+        }
+    }
+
+    @BeforeMethod
+    protected void setUp()
+        throws Exception
+    {
+        defaultProjectGroupName = getProperty( "DEFAULT_PROJECT_GROUP_NAME" );
+        defaultProjectGroupId = getProperty( "DEFAULT_PROJECT_GROUP_ID" );
+        defaultProjectGroupDescription = getProperty( "DEFAULT_PROJECT_GROUP_DESCRIPTION" );
+
+        buildDefinitionPomName = getProperty( "BUILD_DEFINITION_POM_NAME" );
+        buildDefinitionGoals = getProperty( "BUILD_DEFINITION_GOALS" );
+        buildDefinitionArguments = getProperty( "BUILD_DEFINITION_ARGUMENTS" );
+        buildDefinitionDescription = getProperty( "BUILD_DEFINITION_DESCRIPTION" );
+    }
+
     public void testDefaultGroupBuildDefinition()
         throws Exception
     {
-        String DEFAULT_PROJ_GRP_NAME = getProperty( "DEFAULT_PROJ_GRP_NAME" );
-        String DEFAULT_PROJ_GRP_ID = getProperty( "DEFAULT_PROJ_GRP_ID" );
-        String DEFAULT_PROJ_GRP_DESCRIPTION = getProperty( "DEFAULT_PROJ_GRP_DESCRIPTION" );
-
-        goToGroupBuildDefinitionPage( DEFAULT_PROJ_GRP_NAME, DEFAULT_PROJ_GRP_ID, DEFAULT_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( defaultProjectGroupName, defaultProjectGroupId, defaultProjectGroupDescription );
         String tableElement = "ec_table";
         assertCellValueFromTable( "Goals", tableElement, 0, 0 );
         assertCellValueFromTable( "Arguments", tableElement, 0, 1 );
@@ -58,7 +135,7 @@ public class BuildDefinitionTest
         assertCellValueFromTable( "GROUP", tableElement, 1, 5 );
         assertCellValueFromTable( "false", tableElement, 1, 6 );
         assertCellValueFromTable( "true", tableElement, 1, 7 );
-        assertCellValueFromTable( "Default Maven 2 Build Definition", tableElement, 1, 8 );
+        assertCellValueFromTable( "Default Maven Build Definition", tableElement, 1, 8 );
         assertCellValueFromTable( "maven2", tableElement, 1, 9 );
         assertCellValueFromTable( "false", tableElement, 1, 10 );
         assertImgWithAlt( "Edit" );
@@ -66,136 +143,204 @@ public class BuildDefinitionTest
         assertImgWithAlt( "Build" );
     }
 
-    @Test( dependsOnMethods = { "testAddProjectGroup2" } )
     public void testAddInvalidGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         clickButtonWithValue( "Add" );
         setFieldValue( "buildFile", "" );
+        setFieldValue( "goals", "" );
         clickButtonWithValue( "Save" );
         assertTextPresent( "Build file is required and cannot contain spaces only" );
+        assertTextPresent( "Goals are required" );
     }
 
-    @Test( dependsOnMethods = { "testAddProjectGroup2" } )
+    public void testAddGroupBuildDefinitionWithXSS()
+        throws Exception
+    {
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
+        clickButtonWithValue( "Add" );
+        setFieldValue( "buildFile", "<script>alert('xss')</script>" );
+        setFieldValue( "description", "<script>alert('xss')</script>" );
+        clickButtonWithValue( "Save" );
+        assertTextPresent( "Build file contains invalid characters." );
+    }
+
     public void testBuildFromGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         clickImgWithAlt( "Build" );
-        assertProjectGroupSummaryPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        assertGroupBuildDefinitionPage( projectGroupName );
+        assertTextPresent( "successfully queued builds" );
     }
 
-    @Test( dependsOnMethods = { "testAddProjectGroup2" } )
-    public void testAddDefautltGroupBuildDefinition()
+    public void testAddDefaultGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        String BUILD_POM_NAME = getProperty( "BUILD_POM_NAME" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_ARGUMENTS = getProperty( "BUILD_ARGUMENTS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         clickButtonWithValue( "Add" );
-        addEditGroupBuildDefinition( TEST2_PROJ_GRP_NAME, BUILD_POM_NAME, BUILD_GOALS, BUILD_ARGUMENTS,
-                                     BUILD_DESCRIPTION, true, true, true );
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, buildDefinitionDescription, true, false, true,
+                                     MAVEN_PROJECT_TYPE, true );
     }
 
-    @Test( dependsOnMethods = { "testAddProjectGroup2" } )
-    public void testAddNotDefautltGroupBuildDefinition()
+    public void testAddNotDefaultGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        String BUILD_POM_NAME = getProperty( "BUILD_POM_NAME" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_ARGUMENTS = getProperty( "BUILD_ARGUMENTS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         clickButtonWithValue( "Add" );
-        addEditGroupBuildDefinition( TEST2_PROJ_GRP_NAME, BUILD_POM_NAME, BUILD_GOALS, BUILD_ARGUMENTS,
-                                     BUILD_DESCRIPTION, false, false, false );
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, buildDefinitionDescription, false, false, false,
+                                     MAVEN_PROJECT_TYPE, true );
     }
 
-    @Test( dependsOnMethods = { "testAddNotDefautltGroupBuildDefinition" } )
+    @Test( dependsOnMethods = { "testAddNotDefaultGroupBuildDefinition" } )
     public void testEditGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        String BUILD_POM_NAME = getProperty( "BUILD_POM_NAME" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_ARGUMENTS = getProperty( "BUILD_ARGUMENTS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
         String newPom = "newpom.xml";
         String newGoals = "new goals";
         String newArguments = "new arguments";
         String newDescription = "new description";
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         clickImgWithAlt( "Edit" );
-        addEditGroupBuildDefinition( TEST2_PROJ_GRP_NAME, newPom, newGoals, newArguments, newDescription, false, false,
-                                     false );
+        addEditGroupBuildDefinition( projectGroupName, newPom, newGoals, newArguments, newDescription, false, false,
+                                     false, MAVEN_PROJECT_TYPE, true );
         clickImgWithAlt( "Edit" );
-        addEditGroupBuildDefinition( TEST2_PROJ_GRP_NAME, BUILD_POM_NAME, BUILD_GOALS, BUILD_ARGUMENTS,
-                                     BUILD_DESCRIPTION, true, true, false );
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, buildDefinitionDescription, true, true, false,
+                                     MAVEN_PROJECT_TYPE, true );
+        clickImgWithAlt( "Edit" );
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, buildDefinitionDescription, false, true, false,
+                                     MAVEN_PROJECT_TYPE, true );
     }
 
     @Test( dependsOnMethods = { "testEditGroupBuildDefinition" } )
     public void testDeleteGroupBuildDefinition()
         throws Exception
     {
-        String TEST2_PROJ_GRP_NAME = getProperty( "TEST2_PROJ_GRP_NAME" );
-        String TEST2_PROJ_GRP_ID = getProperty( "TEST2_PROJ_GRP_ID" );
-        String TEST2_PROJ_GRP_DESCRIPTION = getProperty( "TEST2_PROJ_GRP_DESCRIPTION" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
-        goToGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME, TEST2_PROJ_GRP_ID, TEST2_PROJ_GRP_DESCRIPTION );
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
         // Click in Delete Image
         clickLinkWithXPath( "(//a[contains(@href,'removeGroupBuildDefinition')])//img" );
-        assertDeleteBuildDefinitionPage( BUILD_DESCRIPTION, BUILD_GOALS );
+        assertDeleteBuildDefinitionPage( buildDefinitionDescription, buildDefinitionGoals );
         clickButtonWithValue( "Delete" );
-        assertGroupBuildDefinitionPage( TEST2_PROJ_GRP_NAME );
+        assertGroupBuildDefinitionPage( projectGroupName );
     }
 
-    @Test( dependsOnMethods = { "testMoveProject" } )
-    public void testAddNotDefautltProjectBuildDefinition()
+    public void testAddNotDefaultProjectBuildDefinition()
         throws Exception
     {
-        String TEST_PROJ_GRP_NAME = getProperty( "TEST_PROJ_GRP_NAME" );
-        String M2_PROJ_GRP_NAME = getProperty( "M2_PROJ_GRP_NAME" );
-        String BUILD_POM_NAME = getProperty( "BUILD_POM_NAME" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_ARGUMENTS = getProperty( "BUILD_ARGUMENTS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
-        goToProjectInformationPage( TEST_PROJ_GRP_NAME, M2_PROJ_GRP_NAME );
+        goToProjectInformationPage( projectGroupName, projectName );
         clickLinkWithXPath( "//input[contains(@id,'buildDefinition')]" );
-        addEditGroupBuildDefinition( null, BUILD_POM_NAME, BUILD_GOALS, BUILD_ARGUMENTS, BUILD_DESCRIPTION, false,
-                                     false, false );
+        addEditGroupBuildDefinition( null, buildDefinitionPomName, buildDefinitionGoals, buildDefinitionArguments,
+                                     buildDefinitionDescription, false, false, false, MAVEN_PROJECT_TYPE, true );
+        String value = getSelenium().getAttribute(
+            "xpath=(//a[contains(@href,'removeProjectBuildDefinition')])[last()]/@href" );
+        Matcher m = Pattern.compile( "^.*buildDefinitionId=([0-9]+).*$" ).matcher( value );
+        assertTrue( m.matches() );
+        buildDefinitionId = m.group( 1 );
     }
 
-    @Test( dependsOnMethods = { "testAddNotDefautltProjectBuildDefinition" } )
+    public void testAddNotDefaultProjectBuildDefinitionWithLongMavenGoal()
+        throws Exception
+    {
+        goToProjectInformationPage( projectGroupName, projectName );
+        clickLinkWithXPath( "//input[contains(@id,'buildDefinition')]" );
+        addEditGroupBuildDefinition( null, buildDefinitionPomName,
+                                     "clean org.apache.maven.plugins:maven-compile-plugin:2.4:compile",
+                                     buildDefinitionArguments, buildDefinitionDescription, false, false, false,
+                                     MAVEN_PROJECT_TYPE, true );
+    }
+
+    @Test( dependsOnMethods = { "testAddNotDefaultProjectBuildDefinition" } )
     public void testDeleteProjectBuildDefinition()
         throws Exception
     {
-        String TEST_PROJ_GRP_NAME = getProperty( "TEST_PROJ_GRP_NAME" );
-        String M2_PROJ_GRP_NAME = getProperty( "M2_PROJ_GRP_NAME" );
-        String BUILD_GOALS = getProperty( "BUILD_GOALS" );
-        String BUILD_DESCRIPTION = getProperty( "BUILD_DESCRIPTION" );
-        goToProjectInformationPage( TEST_PROJ_GRP_NAME, M2_PROJ_GRP_NAME );
+        goToProjectInformationPage( projectGroupName, projectName );
         // Click in Delete Image
-        clickLinkWithXPath( "(//a[contains(@href,'removeProjectBuildDefinition')])//img" );
-        assertDeleteBuildDefinitionPage( BUILD_DESCRIPTION, BUILD_GOALS );
+        String locator = "id=remove-build-definition-" + buildDefinitionId;
+        assertElementPresent( locator );
+        clickLinkWithLocator( locator );
+        assertDeleteBuildDefinitionPage( buildDefinitionDescription, buildDefinitionGoals );
         clickButtonWithValue( "Delete" );
         assertProjectInformationPage();
+
+        assertElementNotPresent( locator );
+    }
+
+    public void testAddNotDefaultProjectBuildDefinitionAnt()
+        throws Exception
+    {
+        goToProjectInformationPage( projectGroupName, antProjectName );
+        clickLinkWithXPath( "//input[contains(@id,'buildDefinition')]" );
+        addEditGroupBuildDefinition( null, "build-other.xml", "package", "", "other build file", false, false, false,
+                                     ANT_PROJECT_TYPE, true );
+    }
+
+    public void testAddNotDefaultProjectBuildDefinitionAntWithPathBuildFile()
+        throws Exception
+    {
+        goToProjectInformationPage( projectGroupName, antProjectName );
+        clickLinkWithXPath( "//input[contains(@id,'buildDefinition')]" );
+        addEditGroupBuildDefinition( null, "Quartz/path\\build.xml", "package", "", "build file with path", false,
+                                     false, false, ANT_PROJECT_TYPE, true );
+    }
+
+    public void testAddNotDefaultProjectBuildDefinitionAntWithInvalidBuildFile()
+        throws Exception
+    {
+        goToProjectInformationPage( projectGroupName, antProjectName );
+        clickLinkWithXPath( "//input[contains(@id,'buildDefinition')]" );
+        addEditGroupBuildDefinition( null, "<script>alert('xss');</script>", "package", "", "invalid build file",
+                                     false, false, false, ANT_PROJECT_TYPE, false );
+
+        assertTextPresent( "Build file contains invalid characters" );
+
+        // confirm error page contains the right fields still
+        assertTextPresent( "Ant build filename*:" );
+        assertTextPresent( "Targets:" );
+    }
+
+    public void testEditBuildDefinitionFromSummary()
+        throws Exception
+    {
+        goToProjectInformationPage( projectGroupName, projectName );
+        clickLinkWithLocator( "buildDefinition_0" ); // Add button for project build definition
+        String description = "testEditBuildDefinitionFromSummary";
+        addEditGroupBuildDefinition( null, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, description, false, false,
+                                     false, MAVEN_PROJECT_TYPE, true );
+
+        assertProjectInformationPage();
+        String xPath = "//preceding::td[text()='" + description + "']//following::img[@alt='Edit']";
+        clickLinkWithXPath( xPath );
+
+        addEditGroupBuildDefinition( null, buildDefinitionPomName, "new goals", buildDefinitionArguments,
+                                     description, false, false, false, MAVEN_PROJECT_TYPE, true );
+
+        assertProjectInformationPage();
+        assertTextPresent( "new goals" );
+    }
+
+    public void testEditGroupBuildDefinitionFromSummary()
+        throws Exception
+    {
+        goToGroupBuildDefinitionPage( projectGroupName, projectGroupId, projectGroupDescription );
+        clickButtonWithValue( "Add" );
+        String description = "testEditGroupBuildDefinitionFromSummary";
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, buildDefinitionGoals,
+                                     buildDefinitionArguments, description, false, false,
+                                     false, MAVEN_PROJECT_TYPE, true );
+
+        goToProjectInformationPage( projectGroupName, projectName );
+        String xPath = "//preceding::td[text()='" + description + "']//following::img[@alt='Edit']";
+        clickLinkWithXPath( xPath );
+
+        addEditGroupBuildDefinition( projectGroupName, buildDefinitionPomName, "new goals", buildDefinitionArguments,
+                                     description, false, false, false, MAVEN_PROJECT_TYPE, true );
+
+        assertTextPresent( "new goals" );
     }
 }

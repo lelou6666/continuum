@@ -21,17 +21,16 @@ package org.apache.maven.continuum.build.settings;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class SchedulesActivationException
     extends Exception
 {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = -7901082128754563858L;
+     *
+     */
+    private static final long serialVersionUID = -7901082128754563858L;
 
-	public SchedulesActivationException( String message )
+    public SchedulesActivationException( String message )
     {
         super( message );
     }

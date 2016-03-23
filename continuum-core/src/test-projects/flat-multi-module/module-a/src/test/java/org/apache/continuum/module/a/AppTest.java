@@ -55,6 +55,7 @@ public class AppTest
         assertTrue( true );
     }
 }
+<<<<<<< HEAD
 package org.apache.continuum.module.a;
 
 import junit.framework.Test;
@@ -93,3 +94,5 @@ public class AppTest
         assertTrue( true );
     }
 }
+=======
+>>>>>>> refs/remotes/apache/trunk

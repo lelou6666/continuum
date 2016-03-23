@@ -19,22 +19,23 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.continuum.buildagent.NoBuildAgentException;
 import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
+import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
+import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.apache.maven.continuum.project.ContinuumProjectState;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildProject"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildProject", instantiationStrategy = "per-lookup" )
 public class BuildProjectAction
     extends ContinuumActionSupport
 {
@@ -43,10 +44,6 @@ public class BuildProjectAction
     private int buildDefinitionId;
 
     private int projectGroupId;
-
-    private boolean fromGroupPage = false;
-
-    private boolean fromProjectPage = false;
 
     private String projectGroupName = "";
 
@@ -61,7 +58,7 @@ public class BuildProjectAction
         {
             return REQUIRES_AUTHORIZATION;
         }
-        
+
         BuildTrigger buildTrigger = new BuildTrigger( ContinuumProjectState.TRIGGER_FORCED, getPrincipal() );
 
         try
@@ -70,26 +67,35 @@ public class BuildProjectAction
             {
                 if ( buildDefinitionId > 0 )
                 {
-                	getContinuum().buildProjectWithBuildDefinition( projectId, buildDefinitionId, buildTrigger );
+                    getContinuum().buildProjectWithBuildDefinition( projectId, buildDefinitionId, buildTrigger );
+                    addActionMessage( getText( "build.project.success" ) );
                 }
                 else
                 {
-                	getContinuum().buildProject( projectId, buildTrigger.getUsername() );
+                    getContinuum().buildProject( projectId, buildTrigger.getTriggeredBy() );
+                    addActionMessage( getText( "build.project.success" ) );
                 }
             }
             else
             {
                 if ( buildDefinitionId > 0 )
                 {
-                	getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId, buildTrigger );
+                    getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId,
+                                                                         buildTrigger );
+                    addActionMessage( getText( "build.projects.success" ) );
                 }
                 else
                 {
                     //TODO: Check if this code is called, I don't think
                     //If it is, it should used the projectId
-                	getContinuum().buildProjects( buildTrigger.getUsername() );
+                    getContinuum().buildProjects( buildTrigger.getTriggeredBy() );
+                    addActionMessage( getText( "build.projects.success" ) );
                 }
             }
+        }
+        catch ( BuildException be )
+        {
+            addActionError( be.getLocalizedMessage() );
         }
         catch ( NoBuildAgentException e )
         {
@@ -102,32 +108,17 @@ public class BuildProjectAction
 
         AuditLog event = new AuditLog( AuditLogConstants.FORCE_BUILD );
         event.setCurrentUser( getPrincipal() );
-
         if ( projectId > 0 )
         {
             event.setResource( "Project id=" + projectId );
             event.setCategory( AuditLogConstants.PROJECT );
-            event.log();
-
-            if ( fromGroupPage || hasActionErrors() )
-            {
-                return "to_group_page";
-            }
-            if ( fromProjectPage )
-            {
-                return "to_project_page";
-            }
         }
         else
         {
             event.setResource( "Project Group id=" + projectGroupId );
             event.setCategory( AuditLogConstants.PROJECT_GROUP );
-            event.log();
-            if ( fromGroupPage )
-            {
-                return "to_group_page";
-            }
         }
+        event.log();
 
         return SUCCESS;
     }
@@ -160,26 +151,6 @@ public class BuildProjectAction
     public void setProjectGroupId( int projectGroupId )
     {
         this.projectGroupId = projectGroupId;
-    }
-
-    public boolean isFromGroupPage()
-    {
-        return fromGroupPage;
-    }
-
-    public void setFromGroupPage( boolean fromGroupPage )
-    {
-        this.fromGroupPage = fromGroupPage;
-    }
-
-    public boolean isFromProjectPage()
-    {
-        return fromProjectPage;
-    }
-
-    public void setFromProjectPage( boolean fromProjectPage )
-    {
-        this.fromProjectPage = fromProjectPage;
     }
 
     public String getProjectGroupName()

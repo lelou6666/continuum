@@ -18,8 +18,6 @@
   --%>
 
 <%@ taglib prefix="s" uri="/struts-tags" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
 <s:i18n name="localization.Continuum">
 <head>
@@ -27,12 +25,24 @@
 </head>
 
 <body>
-<h1><s:text name="appearance.section.title"/></h1>
+
+<div class="h3">
+<h3><s:text name="appearance.companyDetails"/></h3>
+
+  <s:if test="hasActionErrors()">
+    <div class="errormessage">
+      <s:actionerror/>
+    </div>
+  </s:if>
+  <s:if test="hasActionMessages()">
+    <div class="warningmessage">
+      <s:actionmessage/>
+    </div>
+  </s:if>
 
 <div style="float: right">
   <a href="<s:url action='editAppearance' />"><s:text name="edit"/></a>
 </div>
-<h2><s:text name="appearance.companyDetails"/></h2>
 
 <p>
   <s:text name="appearance.description"/>
@@ -40,13 +50,8 @@
 
 <s:set name="companyPom" value="companyPom"/>
 
-<c:if test="${empty (companyPom.groupId) || empty (companyPom.artifactId)}">
-  <p>
-    <s:text name="appearance.noCompanyPom"/> <a href="<s:url action='editAppearance' />"><s:text name="appearance.selectCompanyPom"/></a>
-  </p>
-</c:if>
+<s:if test="companyPom.groupId.length() > 0 && companyPom.artifactId.length() > 0">
 
-<c:if test="${!empty (companyPom.groupId) && !empty (companyPom.artifactId)}">
   <p>
     <s:text name="appearance.detailsIntroduction"/> <s:text name="appearance.maybeChange"/>
     <a href="<s:url action='editCompanyPom'/>"><s:text name="appearance.editThePomLink"/></a>.
@@ -56,9 +61,9 @@
   <table>
     <s:label name="companyPom.groupId" label="%{getText('appearance.companyPom.groupId')}"/>
     <s:label name="companyPom.artifactId" label="%{getText('appearance.companyPom.artifactId')}"/>
-    <c:if test="${companyModel != null}">
+    <s:if test="companyModel != null">
       <s:label name="companyModel.version" label="%{getText('appearance.companyPom.version')}"/>
-    </c:if>
+    </s:if>
   </table>
 
   <div style="float: right">
@@ -66,34 +71,45 @@
   </div>
   <h3><s:text name="appearance.companyPom.section.title"/></h3>
 
-  <c:choose>
-    <c:when test="${companyModel != null}">
+    <s:if test="companyModel != null">
       <table>
         <tr>
           <th><s:text name="appearance.companyPom.organizationName.label"/></th>
-          <td>${companyModel.organization.name}</td>
+          <td><s:property value="companyModel.organization.name"/></td>
         </tr>
         <tr>
           <th><s:text name="appearance.companyPom.organizationUrl.label"/></th>
-          <td><a href="${companyModel.organization.url}" target="_blank">
-            <code>${companyModel.organization.url}</code>
-          </a></td>
+          <s:set var="companyOrgUrl" value="companyModel.organization.url" />
+          <td><s:a href="%{#companyOrgUrl}" target="_blank">
+            <code><s:property value="#companyOrgUrl"/></code>
+          </s:a></td>
         </tr>
         <tr>
           <th><s:text name="appearance.companyPom.organizationLogoUrl.label"/></th>
           <td>
-            <code>${companyModel.properties['organization.logo']}</code>
+            <code><s:property value="companyModel.properties['organization.logo']"/></code>
           </td>
         </tr>
       </table>
-    </c:when>
-    <c:otherwise>
-      <s:text name="appearance.companyPomDoesNotExist"><s:param>${companyPom.groupId}:${companyPom.artifactId}</s:param></s:text>
+    </s:if>
+    <s:else>
+      <s:text name="appearance.companyPomDoesNotExist">
+        <s:param>
+          <s:property value="companyPom.groupId + ':' + companyPom.artifactId"/>
+        </s:param>
+      </s:text>
       <a href="<s:url action='editCompanyPom' />"><s:text name="appearance.createCompanyPom"/></a>
-    </c:otherwise>
-  </c:choose>
-</c:if>
-<s:form action="saveFooter!saveFooter.action" method="get" namespace="/admin">
+    </s:else>
+</s:if>
+<s:else>
+    <p>
+      <s:text name="appearance.noCompanyPom"/> <a href="<s:url action='editAppearance' />"><s:text name="appearance.selectCompanyPom"/></a>
+    </p>
+</s:else>
+</div>
+
+<s:form action="saveFooter" method="post" namespace="/admin">
+  <s:token/>
   <div id="axial" class="h3">
     <h3><s:text name="appearance.footerContent"/></h3>
     <div class="axial">
@@ -103,7 +119,8 @@
         </tbody>
       </table>
       <div class="functnbar3">
-        <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+        <s:submit value="%{getText('save')}" theme="simple"/>
+        <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
       </div>      
     </div>
   </div>

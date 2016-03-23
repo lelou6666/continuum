@@ -19,43 +19,58 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
-import java.net.URL;
-
-import junit.framework.TestCase;
-
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 
 /**
  * Test for {@link AbstractContinuumProjectBuilder}
  *
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public abstract class AbstractContinuumProjectBuilderTest
-    extends TestCase
 {
 
     private ContinuumProjectBuilder builder;
 
-    protected void setUp()
+    private File importRoot;
+
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
+        File tmpDir = new File( System.getProperty( "java.io.tmpdir" ) );
+        importRoot = File.createTempFile( getClass().getSimpleName(), "", tmpDir );
         builder = new ContinuumProjectBuilder();
     }
 
-    /**
-     * Test for CONTINUUM-747. Disable as it requires a password protected resource under https.
-     *
-     * @throws Exception
-     */
-    public void disabledTestCreateMetadataFileURLStringString()
+    @After
+    public void tearDown()
+        throws IOException
+    {
+        if ( importRoot.exists() )
+        {
+            FileUtils.deleteDirectory( importRoot );
+        }
+    }
+
+    @Test
+    @Ignore( "requires a password protected resource under https" )
+    public void testCreateMetadataFileURLStringString()
         throws Exception
     {
+
         URL url = new URL( "https://someurl/pom.xml" );
         String username = "myusername";
         String password = "mypassword";
-        builder.createMetadataFile( url, username, password, new ContinuumProjectBuildingResult() );
+        builder.createMetadataFile( importRoot, url, username, password, new ContinuumProjectBuildingResult() );
     }
 
     private class ContinuumProjectBuilder
@@ -69,7 +84,11 @@ public abstract class AbstractContinuumProjectBuilderTest
         }
 
         public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+<<<<<<< HEAD
         					boolean recursiveProjects, boolean checkoutInSingleDirectory )
+=======
+                                                                         boolean recursiveProjects,
+                                                                         boolean checkoutInSingleDirectory )
             throws ContinuumProjectBuilderException
         {
             return null;
@@ -77,7 +96,23 @@ public abstract class AbstractContinuumProjectBuilderTest
 
         public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
                                                                          boolean recursiveProjects,
+                                                                         BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                         boolean checkoutInSingleDirectory )
+>>>>>>> refs/remotes/apache/trunk
+            throws ContinuumProjectBuilderException
+        {
+            return null;
+        }
+
+        public ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                                         boolean recursiveProjects,
+<<<<<<< HEAD
                                                                          BuildDefinitionTemplate buildDefinitionTemplate, boolean checkoutInSingleDirectory )
+=======
+                                                                         BuildDefinitionTemplate buildDefinitionTemplate,
+                                                                         boolean checkoutInSingleDirectory,
+                                                                         int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
             throws ContinuumProjectBuilderException
         {
             return null;

@@ -19,14 +19,13 @@ package org.apache.maven.continuum.notification.mail;
  * under the License.
  */
 
+import org.apache.maven.continuum.project.ContinuumProjectState;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.maven.continuum.project.ContinuumProjectState;
-
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class FormatterTool
 {

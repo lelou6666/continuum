@@ -19,30 +19,35 @@ package org.apache.maven.continuum.utils;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.List;
 
 import javax.annotation.Resource;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.util.List;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
-@Service("workingDirectoryService#chrootJail")
+@Service( "workingDirectoryService#chrootJail" )
 public class ChrootJailWorkingDirectoryService
     implements WorkingDirectoryService
 {
     @Resource
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private File chrootJailDirectory;
 
     public void setConfigurationService( ConfigurationService configurationService )
@@ -67,7 +72,11 @@ public class ChrootJailWorkingDirectoryService
 
     public File getWorkingDirectory( Project project )
     {
+<<<<<<< HEAD
     	return getWorkingDirectory( project, true );
+=======
+        return getWorkingDirectory( project, true );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public File getWorkingDirectory( Project project, boolean shouldSet )
@@ -78,7 +87,11 @@ public class ChrootJailWorkingDirectoryService
         f = new File( f, getConfigurationService().getWorkingDirectory().getPath() );
         return new File( f, Integer.toString( project.getId() ) );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public File getWorkingDirectory( Project project, String projectScmRoot, List<Project> projects )
     {
         return getWorkingDirectory( project, true );

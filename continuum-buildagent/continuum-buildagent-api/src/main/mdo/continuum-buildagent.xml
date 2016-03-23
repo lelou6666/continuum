@@ -16,6 +16,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <model xsd.namespace="http://modello.codehaus.org/xsd/modello-1.0.0.xsd">
   <id>continuum-buildagent</id>
   <name>ContinuumBuildAgentConfigurationModel</name>
@@ -63,6 +64,11 @@
             <multiplicity>*</multiplicity>
           </association>
         </field>
+        <field>
+          <name>sharedSecretPassword</name>
+          <version>1.4.1+</version>
+          <type>String</type>
+        </field>
       </fields>
     </class>
     <class xml.tagName="buildagent-installation">
@@ -83,12 +89,12 @@
           <name>varName</name>
           <version>1.0.0+</version>
           <type>String</type>
-        </field>   
+        </field>
         <field>
           <name>name</name>
           <version>1.0.0+</version>
           <type>String</type>
-        </field>                     
+        </field>
       </fields>
     </class>
     <class>
@@ -107,7 +113,7 @@
           <type>String</type>
           <required>true</required>
           <description>
-          The file system location for this repository
+            The file system location for this repository
           </description>
         </field>
         <field>
@@ -116,7 +122,7 @@
           <type>String</type>
           <defaultValue>default</defaultValue>
           <description>
-          The layout of the repository. Valid values are "default" and "legacy"
+            The layout of the repository. Valid values are "default" and "legacy"
           </description>
         </field>
       </fields>

@@ -19,10 +19,6 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.continuum.buildmanager.BuildManagerException;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
@@ -30,19 +26,27 @@ import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildResults"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildResults", instantiationStrategy = "per-lookup" )
 public class BuildResultsListAction
     extends AbstractBuildAction
 {
     private static final Logger logger = LoggerFactory.getLogger( BuildResultsListAction.class );
+
+    private static final int MAX_PAGE_LEN = 100;
+
+    private static final int MIN_PAGE_LEN = 10;
 
     private Project project;
 
@@ -58,6 +62,10 @@ public class BuildResultsListAction
 
     private String projectGroupName = "";
 
+    private int page;
+
+    private int length = MAX_PAGE_LEN / 4;
+
     public String execute()
         throws ContinuumException
     {
@@ -72,7 +80,12 @@ public class BuildResultsListAction
 
         project = getContinuum().getProject( projectId );
 
-        buildResults = getContinuum().getBuildResultsForProject( projectId );
+        int adjPage = Math.max( 1, page ), adjLength = Math.max( MIN_PAGE_LEN, Math.min( MAX_PAGE_LEN, length ) );
+
+        page = adjPage;
+        length = adjLength;
+
+        buildResults = getContinuum().getBuildResultsForProject( projectId, ( page - 1 ) * length, length );
 
         return SUCCESS;
     }
@@ -102,7 +115,8 @@ public class BuildResultsListAction
 
                         getContinuum().removeBuildResult( buildId );
 
-                        AuditLog event = new AuditLog( "Build Result id=" + buildId, AuditLogConstants.REMOVE_BUILD_RESULT );
+                        AuditLog event = new AuditLog( "Build Result id=" + buildId,
+                                                       AuditLogConstants.REMOVE_BUILD_RESULT );
                         event.setCategory( AuditLogConstants.BUILD_RESULT );
                         event.setCurrentUser( getPrincipal() );
                         event.log();
@@ -148,6 +162,26 @@ public class BuildResultsListAction
             this.setSelectedBuildResults( buildResultsRemovable );
         }
         return CONFIRM;
+    }
+
+    public int getPage()
+    {
+        return page;
+    }
+
+    public void setPage( int page )
+    {
+        this.page = page;
+    }
+
+    public int getLength()
+    {
+        return length;
+    }
+
+    public void setLength( int length )
+    {
+        this.length = length;
     }
 
     public int getProjectId()

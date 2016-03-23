@@ -19,17 +19,8 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.collections.ComparatorUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.continuum.buildagent.NoBuildAgentException;
 import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
@@ -41,6 +32,7 @@ import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
@@ -49,6 +41,8 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.bean.ProjectGroupUserBean;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.RBACManager;
 import org.codehaus.plexus.redback.rbac.RbacManagerException;
 import org.codehaus.plexus.redback.rbac.RbacObjectNotFoundException;
@@ -60,13 +54,22 @@ import org.codehaus.plexus.redback.users.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * ProjectGroupAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="projectGroup"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectGroup", instantiationStrategy = "per-lookup" )
 public class ProjectGroupAction
     extends ContinuumConfirmAction
 {
@@ -81,19 +84,13 @@ public class ProjectGroupAction
         FILTER_CRITERIA.put( "email", "Email contains" );
     }
 
-    /**
-     * @plexus.requirement role-hint="cached"
-     */
+    @Requirement( hint = "cached" )
     private RBACManager rbac;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private RoleManager roleManager;
 
-    /**
-     * @plexus.requirement role-hint="parallel"
-     */
+    @Requirement( hint = "parallel" )
     private BuildsManager parallelBuildsManager;
 
     private int projectGroupId;
@@ -107,8 +104,6 @@ public class ProjectGroupAction
     private Map projects = new HashMap();
 
     private Map<Integer, String> projectGroups = new HashMap<Integer, String>();
-
-    private boolean confirmed;
 
     private boolean projectInCOQueue = false;
 
@@ -147,7 +142,14 @@ public class ProjectGroupAction
 
     private List<ProjectScmRoot> projectScmRoots;
 
-    public String summary()
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+        repositories = getContinuum().getRepositoryService().getAllLocalRepositories();
+    }
+
+    public String browse()
         throws ContinuumException
     {
         try
@@ -168,8 +170,8 @@ public class ProjectGroupAction
 
         projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
 
-        List<BuildDefinition> projectGroupBuildDefs =
-            getContinuum().getBuildDefinitionsForProjectGroup( projectGroupId );
+        List<BuildDefinition> projectGroupBuildDefs = getContinuum().getBuildDefinitionsForProjectGroup(
+            projectGroupId );
 
         if ( projectGroupBuildDefs != null )
         {
@@ -179,7 +181,8 @@ public class ProjectGroupAction
 
                 if ( !buildDefinition.isDefaultForProject() )
                 {
-                    String key = StringUtils.isEmpty( buildDefinition.getDescription() ) ? buildDefinition.getGoals()
+                    String key = StringUtils.isEmpty( buildDefinition.getDescription() )
+                        ? buildDefinition.getGoals()
                         : buildDefinition.getDescription();
                     buildDefinitions.put( key, buildDefinition.getId() );
                 }
@@ -206,9 +209,8 @@ public class ProjectGroupAction
                     url = rootProject.getUrl();
                 }
 
-                for ( Object o : projectGroup.getProjects() )
+                for ( Project p : projectGroup.getProjects() )
                 {
-                    Project p = (Project) o;
                     if ( "maven2".equals( p.getExecutorId() ) )
                     {
                         nbMaven2Projects += 1;
@@ -281,13 +283,13 @@ public class ProjectGroupAction
     public String buildDefinitions()
         throws ContinuumException
     {
-        return summary();
+        return browse();
     }
 
     public String notifiers()
         throws ContinuumException
     {
-        return summary();
+        return browse();
     }
 
     public String remove()
@@ -303,23 +305,15 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        if ( confirmed )
+        try
         {
-            try
-            {
-                getContinuum().removeProjectGroup( projectGroupId );
-            }
-            catch ( ContinuumException e )
-            {
-                logger.error( "Error while removing project group with id " + projectGroupId, e );
-                addActionError( getText( "projectGroup.delete.error", "Unable to remove project group",
-                                         Integer.toString( projectGroupId ) ) );
-            }
+            getContinuum().removeProjectGroup( projectGroupId );
         }
-        else
+        catch ( ContinuumException e )
         {
-            name = getProjectGroupName();
-            return CONFIRM;
+            logger.error( "Error while removing project group with id " + projectGroupId, e );
+            addActionError( getText( "projectGroup.delete.error",
+                                     new String[] { Integer.toString( projectGroupId ), e.getMessage() } ) );
         }
 
         AuditLog event = new AuditLog( "Project Group id=" + projectGroupId, AuditLogConstants.REMOVE_PROJECT_GROUP );
@@ -328,6 +322,23 @@ public class ProjectGroupAction
         event.log();
 
         return SUCCESS;
+    }
+
+    public String confirmRemove()
+        throws ContinuumException
+    {
+        try
+        {
+            checkRemoveProjectGroupAuthorization( getProjectGroupName() );
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+
+        name = getProjectGroupName();
+        return CONFIRM;
     }
 
     private void initialize()
@@ -432,32 +443,18 @@ public class ProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        if ( name != null )
+        for ( ProjectGroup projectGroup : getContinuum().getAllProjectGroups() )
         {
-            if ( name.equals( "" ) )
+            if ( name.equals( projectGroup.getName() ) && projectGroup.getId() != projectGroupId )
             {
-                addActionError( getText( "projectGroup.error.name.required" ) );
+                addActionError( getText( "projectGroup.error.name.already.exists" ) );
             }
-            else if ( name.trim().equals( "" ) )
-            {
-                addActionError( getText( "projectGroup.error.name.cannot.be.spaces" ) );
-            }
-            else
-            {
-                name = name.trim();
-                for ( ProjectGroup projectGroup : getContinuum().getAllProjectGroups() )
-                {
-                    if ( name.equals( projectGroup.getName() ) && projectGroup.getId() != projectGroupId )
-                    {
-                        addActionError( getText( "projectGroup.error.name.already.exists" ) );
-                    }
-                }
-            }
-            if ( hasActionErrors() )
-            {
-                initialize();
-                return INPUT;
-            }
+        }
+
+        if ( hasActionErrors() )
+        {
+            initialize();
+            return INPUT;
         }
 
         projectGroup = getContinuum().getProjectGroupWithProjects( projectGroupId );
@@ -483,7 +480,7 @@ public class ProjectGroupAction
 
         }
 
-        projectGroup.setDescription( description );
+        projectGroup.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
 
         // [CONTINUUM-2228]. In select field can't select empty values.
         if ( repositoryId > 0 )
@@ -532,11 +529,17 @@ public class ProjectGroupAction
                 project.setProjectGroup( newProjectGroup );
 
                 // CONTINUUM-1512
-                Collection<BuildResult> results = getContinuum().getBuildResultsForProject( project.getId() );
-                for ( BuildResult br : results )
+                int batchSize = 100;
+                Collection<BuildResult> results;
+                do
                 {
-                    getContinuum().removeBuildResult( br.getId() );
+                    results = getContinuum().getBuildResultsForProject( project.getId(), 0, batchSize );
+                    for ( BuildResult br : results )
+                    {
+                        getContinuum().removeBuildResult( br.getId() );
+                    }
                 }
+                while ( results != null && results.size() > 0 );
 
                 getContinuum().updateProject( project );
             }
@@ -562,19 +565,24 @@ public class ProjectGroupAction
             addActionError( authzE.getMessage() );
             return REQUIRES_AUTHORIZATION;
         }
-        
+
         BuildTrigger buildTrigger = new BuildTrigger( ContinuumProjectState.TRIGGER_FORCED, getPrincipal() );
 
         try
         {
             if ( this.getBuildDefinitionId() == -1 )
             {
-            	getContinuum().buildProjectGroup( projectGroupId, buildTrigger );
+                getContinuum().buildProjectGroup( projectGroupId, buildTrigger );
             }
             else
             {
-            	getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId, buildTrigger );
+                getContinuum().buildProjectGroupWithBuildDefinition( projectGroupId, buildDefinitionId, buildTrigger );
             }
+            addActionMessage( getText( "build.projects.success" ) );
+        }
+        catch ( BuildException be )
+        {
+            addActionError( be.getLocalizedMessage() );
         }
         catch ( NoBuildAgentException e )
         {
@@ -645,7 +653,7 @@ public class ProjectGroupAction
                     else
                     {
                         logger.info( "Attempt to release group '" + projectGroup.getName() + "' failed as project '" +
-                            p.getName() + "' and project '" + parent.getName() + "' are both parents" );
+                                         p.getName() + "' and project '" + parent.getName() + "' are both parents" );
 
                         // currently, we have no provisions for releasing 2 or more parents
                         // at the same time, this will be implemented in the future
@@ -658,7 +666,7 @@ public class ProjectGroupAction
                 {
                     logger.info(
                         "Attempt to release group '" + projectGroup.getName() + "' failed as project '" + p.getName() +
-                            "' is not a Maven 2 project (executor '" + p.getExecutorId() + "')" );
+                            "' is not a Maven project (executor '" + p.getExecutorId() + "')" );
                     allMavenTwo = false;
                 }
             }
@@ -724,7 +732,7 @@ public class ProjectGroupAction
             List<UserAssignment> userAssignments = rbac.getUserAssignmentsForRoles( roleNames );
             for ( UserAssignment ua : userAssignments )
             {
-                User u = getSecuritySystem().getUserManager().findUser( ua.getPrincipal() );
+                User u = getUser( ua.getPrincipal() );
                 if ( u != null )
                 {
                     users.add( u );
@@ -763,15 +771,22 @@ public class ProjectGroupAction
             try
             {
                 Collection<Role> effectiveRoles = rbac.getEffectivelyAssignedRoles( user.getUsername() );
+                boolean isGroupUser = false;
 
                 for ( Role role : effectiveRoles )
                 {
-                    if ( role.getName().indexOf( projectGroup.getName() ) > -1 )
+                    String projectGroupName = StringUtils.substringAfter( role.getName(), "-" ).trim();
+
+                    if ( projectGroupName.equals( projectGroup.getName() ) )
                     {
-                        pgUser.setRoles( effectiveRoles );
-                        projectGroupUsers.add( pgUser );
-                        break;
+                        pgUser.addRole( role );
+                        isGroupUser = true;
                     }
+                }
+
+                if ( isGroupUser )
+                {
+                    projectGroupUsers.add( pgUser );
                 }
             }
             catch ( RbacObjectNotFoundException e )
@@ -877,16 +892,6 @@ public class ProjectGroupAction
     public void setProjectGroup( ProjectGroup projectGroup )
     {
         this.projectGroup = projectGroup;
-    }
-
-    public boolean isConfirmed()
-    {
-        return confirmed;
-    }
-
-    public void setConfirmed( boolean confirmed )
-    {
-        this.confirmed = confirmed;
     }
 
     public String getDescription()
@@ -1124,5 +1129,11 @@ public class ProjectGroupAction
     public void setSorterProperty( String sorterProperty )
     {
         this.sorterProperty = sorterProperty;
+    }
+
+    // for testing
+    public void setRbacManager( RBACManager rbac )
+    {
+        this.rbac = rbac;
     }
 }

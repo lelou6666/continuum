@@ -21,6 +21,7 @@ package org.apache.continuum.dao;
 
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.springframework.stereotype.Repository;
 
 import javax.jdo.Extent;
@@ -32,10 +33,9 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.DirectoryPurgeConfigurationDao"
  */
-@Repository("directoryPurgeConfigurationDao")
+@Repository( "directoryPurgeConfigurationDao" )
+@Component( role = org.apache.continuum.dao.DirectoryPurgeConfigurationDao.class )
 public class DirectoryPurgeConfigurationDaoImpl
     extends AbstractDao
     implements DirectoryPurgeConfigurationDao
@@ -74,7 +74,7 @@ public class DirectoryPurgeConfigurationDaoImpl
             rollback( tx );
         }
     }
-    
+
     public List<DirectoryPurgeConfiguration> getEnableDirectoryPurgeConfigurationsBySchedule( int scheduleId )
     {
         PersistenceManager pm = getPersistenceManager();
@@ -172,13 +172,13 @@ public class DirectoryPurgeConfigurationDaoImpl
     public DirectoryPurgeConfiguration getDirectoryPurgeConfiguration( int configurationId )
         throws ContinuumStoreException
     {
-        return (DirectoryPurgeConfiguration) getObjectById( DirectoryPurgeConfiguration.class, configurationId );
+        return getObjectById( DirectoryPurgeConfiguration.class, configurationId );
     }
 
     public DirectoryPurgeConfiguration addDirectoryPurgeConfiguration( DirectoryPurgeConfiguration purgeConfiguration )
         throws ContinuumStoreException
     {
-        return (DirectoryPurgeConfiguration) addObject( purgeConfiguration );
+        return addObject( purgeConfiguration );
     }
 
     public void updateDirectoryPurgeConfiguration( DirectoryPurgeConfiguration purgeConfiguration )

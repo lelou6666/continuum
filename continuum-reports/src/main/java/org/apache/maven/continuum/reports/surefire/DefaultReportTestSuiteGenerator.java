@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.reports.surefire;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.reports.surefire;
 
 import org.apache.maven.continuum.configuration.ConfigurationException;
 import org.apache.maven.continuum.configuration.ConfigurationService;
@@ -26,21 +27,20 @@ import org.codehaus.plexus.util.DirectoryScanner;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
-import javax.annotation.Resource;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import javax.annotation.Resource;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 12 nov. 07
  */
-@Service("reportTestSuiteGenerator")
+@Service( "reportTestSuiteGenerator" )
 public class DefaultReportTestSuiteGenerator
     implements ReportTestSuiteGenerator, Initializable
 {

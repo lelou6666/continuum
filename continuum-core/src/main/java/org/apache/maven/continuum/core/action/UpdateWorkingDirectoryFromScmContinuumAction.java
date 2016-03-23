@@ -19,16 +19,11 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.io.File;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.dao.BuildResultDao;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.scm.ContinuumScm;
 import org.apache.continuum.scm.ContinuumScmConfiguration;
+import org.apache.continuum.scm.ContinuumScmUtils;
 import org.apache.continuum.utils.ContinuumUtils;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
@@ -46,40 +41,37 @@ import org.apache.maven.scm.ScmFile;
 import org.apache.maven.scm.command.update.UpdateScmResult;
 import org.apache.maven.scm.manager.NoSuchScmProviderException;
 import org.apache.maven.scm.repository.ScmRepositoryException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.io.File;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action" role-hint="update-working-directory-from-scm"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "update-working-directory-from-scm" )
 public class UpdateWorkingDirectoryFromScmContinuumAction
     extends AbstractContinuumAction
 {
     private static final String KEY_UPDATE_SCM_RESULT = "update-result";
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ContinuumNotificationDispatcher notifier;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ContinuumScm scm;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildResultDao buildResultDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
     public void execute( Map context )
@@ -116,6 +108,7 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
         {
             notifier.checkoutStarted( project, buildDefinition );
 
+<<<<<<< HEAD
             List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );           
             String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
             
@@ -124,6 +117,15 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
                 workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
                                                              projectsWithCommonScmRoot );    
             
+=======
+            List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
+            String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+
+            // TODO: not sure why this is different to the context, but it all needs to change
+            File workingDirectory = workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
+                                                                                 projectsWithCommonScmRoot );
+
+>>>>>>> refs/remotes/apache/trunk
             ContinuumScmConfiguration config = createScmConfiguration( project, workingDirectory, projectScmRootUrl );
             config.setLatestUpdateDate( latestUpdateDate );
             String tag = config.getTag();
@@ -193,7 +195,7 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
             }
             catch ( Exception e )
             {
-            // nasty nasty, but we're in finally, so just sacrifice the state to keep the original exception
+                // nasty nasty, but we're in finally, so just sacrifice the state to keep the original exception
                 getLogger().error( e.getMessage(), e );
             }
 
@@ -204,11 +206,20 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
         AbstractContinuumAction.setProject( context, project );
     }
 
+<<<<<<< HEAD
     private ContinuumScmConfiguration createScmConfiguration( Project project, File workingDirectory, String scmRootUrl )
     {
         ContinuumScmConfiguration config = new ContinuumScmConfiguration();
         
         if( project.isCheckedOutInSingleDirectory() && scmRootUrl!= null && !"".equals( scmRootUrl ) )
+=======
+    private ContinuumScmConfiguration createScmConfiguration( Project project, File workingDirectory,
+                                                              String scmRootUrl )
+    {
+        ContinuumScmConfiguration config = new ContinuumScmConfiguration();
+
+        if ( project.isCheckedOutInSingleDirectory() && scmRootUrl != null && !"".equals( scmRootUrl ) )
+>>>>>>> refs/remotes/apache/trunk
         {
             config.setUrl( scmRootUrl );
         }
@@ -216,9 +227,17 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
         {
             config.setUrl( project.getScmUrl() );
         }
+<<<<<<< HEAD
         
         config.setUsername( project.getScmUsername() );
         config.setPassword( project.getScmPassword() );
+=======
+
+        // CONTINUUM-2628
+        config = ContinuumScmUtils.setSCMCredentialsforSSH( config, config.getUrl(), project.getScmUsername(),
+                                                            project.getScmPassword() );
+
+>>>>>>> refs/remotes/apache/trunk
         config.setUseCredentialsCache( project.isScmUseCache() );
         config.setWorkingDirectory( workingDirectory );
         config.setTag( project.getScmTag() );
@@ -352,10 +371,20 @@ public class UpdateWorkingDirectoryFromScmContinuumAction
         }
         return message.toString();
     }
+<<<<<<< HEAD
     
+    public static ScmResult getUpdateScmResult( Map<String, Object> context, ScmResult defaultValue )
+=======
+
     public static ScmResult getUpdateScmResult( Map<String, Object> context, ScmResult defaultValue )
     {
         return (ScmResult) getObject( context, KEY_UPDATE_SCM_RESULT, defaultValue );
+    }
+
+    public static void setUpdateScmResult( Map<String, Object> context, ScmResult scmResult )
+>>>>>>> refs/remotes/apache/trunk
+    {
+        context.put( KEY_UPDATE_SCM_RESULT, scmResult );
     }
     
     public static void setUpdateScmResult( Map<String, Object> context, ScmResult scmResult )

@@ -9,7 +9,7 @@ package org.apache.continuum.web.test.parent;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -23,62 +23,64 @@ import com.thoughtworks.selenium.DefaultSelenium;
 import com.thoughtworks.selenium.Selenium;
 import org.apache.commons.io.IOUtils;
 import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
  * Based on AbstractSeleniumTestCase of Emmanuel Venisse test.
  *
  * @author José Morales Martínez
- * @version $Id$
  */
 public abstract class AbstractSeleniumTest
 {
-    public static String baseUrl;
+    protected static String baseUrl;
 
-    public static String browser;
+    static String browser;
 
-    public static String maxWaitTimeInMs;
+    protected static String maxWaitTimeInMs;
 
-    private static ThreadLocal<Selenium> selenium = new ThreadLocal<Selenium>();
+    private static final ThreadLocal<Selenium> selenium = new ThreadLocal<Selenium>();
 
     private static Properties p;
 
     private final static String PROPERTIES_SEPARATOR = "=";
-    
+
     private static String maxProjectWaitTimeInMs;
 
     /**
-     * Initialize properties.
+     * Initialize selenium
      */
-    public void open()
+    void open( String baseUrl, String browser, String seleniumHost, int seleniumPort )
         throws Exception
     {
         InputStream input = this.getClass().getClassLoader().getResourceAsStream( "testng.properties" );
         p = new Properties();
         p.load( input );
 
+        // for running in the IDE
+        String svnBaseUrl = "file://localhost/" + new File( "target/example-svn" ).getAbsolutePath();
+        for ( String key : p.stringPropertyNames() )
+        {
+            String value = p.getProperty( key );
+            String newValue = value.replace( "${svn.base.url}", svnBaseUrl );
+            newValue = newValue.replace( "${maven.home}", System.getProperty( "maven.home", "/usr/share/maven" ) );
+            p.setProperty( key, newValue );
+        }
+
         maxWaitTimeInMs = getProperty( "MAX_WAIT_TIME_IN_MS" );
         maxProjectWaitTimeInMs = getProperty( "MAX_PROJECT_WAIT_TIME_IN_MS" );
-    }
 
-    /**
-     * Initialize selenium
-     */
-    public void open( String baseUrl, String browser, String seleniumHost, int seleniumPort )
-        throws Exception
-    {
-        this.baseUrl = baseUrl;
+        AbstractSeleniumTest.baseUrl = baseUrl;
 
-        this.browser = browser;
+        AbstractSeleniumTest.browser = browser;
 
         if ( getSelenium() == null )
         {
@@ -128,6 +130,7 @@ public abstract class AbstractSeleniumTest
     /**
      * Close selenium session. Called from AfterSuite method of sub-class
      */
+    @AfterSuite( alwaysRun = true )
     public void close()
         throws Exception
     {
@@ -142,117 +145,98 @@ public abstract class AbstractSeleniumTest
     // Auxiliar methods. This method help us and simplify test.
     // *******************************************************
 
-    public void assertFieldValue( String fieldValue, String fieldName )
+    protected void assertFieldValue( String fieldValue, String fieldName )
     {
         assertElementPresent( fieldName );
         Assert.assertEquals( fieldValue, getSelenium().getValue( fieldName ) );
     }
 
-    public void assertPage( String title )
+    protected void assertPage( String title )
     {
         Assert.assertEquals( getTitle(), title );
     }
 
-    public String getTitle()
+    protected String getTitle()
     {
         return getSelenium().getTitle();
     }
 
-    public String getHtmlContent()
-    {
-        return getSelenium().getHtmlSource();
-    }
-
-    public void assertTextPresent( String text )
+    protected void assertTextPresent( String text )
     {
         Assert.assertTrue( getSelenium().isTextPresent( text ), "'" + text + "' isn't present." );
     }
 
-    public void assertTextNotPresent( String text )
+    protected void assertTextNotPresent( String text )
     {
         Assert.assertFalse( getSelenium().isTextPresent( text ), "'" + text + "' is present." );
     }
 
-    public void assertElementPresent( String elementLocator )
+    protected void assertElementPresent( String elementLocator )
     {
         Assert.assertTrue( isElementPresent( elementLocator ), "'" + elementLocator + "' isn't present." );
     }
 
-    public void assertElementNotPresent( String elementLocator )
+    protected void assertElementNotPresent( String elementLocator )
     {
         Assert.assertFalse( isElementPresent( elementLocator ), "'" + elementLocator + "' is present." );
     }
 
-    public void assertLinkPresent( String text )
+    protected void assertLinkPresent( String text )
     {
         Assert.assertTrue( isElementPresent( "link=" + text ), "The link '" + text + "' isn't present." );
     }
 
-    public void assertLinkNotPresent( String text )
+    protected void assertLinkNotPresent( String text )
     {
-            Assert.assertFalse( isElementPresent( "link=" + text ), "The link '" + text + "' is present." );
+        Assert.assertFalse( isElementPresent( "link=" + text ), "The link '" + text + "' is present." );
     }
 
-    public void assertImgWithAlt( String alt )
+    protected void assertImgWithAlt( String alt )
     {
         assertElementPresent( "//img[@alt='" + alt + "']" );
     }
 
-    public void assertImgWithAltAtRowCol( boolean isALink, String alt, int row, int column )
-    {
-        String locator = "//tr[" + row + "]/td[" + column + "]/";
-        locator += isALink ? "a/" : "";
-        locator += "img[@alt='" + alt + "']";
-
-        assertElementPresent( locator );
-    }
-
-    public void assertImgWithAltNotPresent( String alt )
-    {
-        assertElementNotPresent( "//img[@alt='" + alt + "']" );
-    }
-
-    public void assertCellValueFromTable( String expected, String tableElement, int row, int column )
+    protected void assertCellValueFromTable( String expected, String tableElement, int row, int column )
     {
         Assert.assertEquals( expected, getCellValueFromTable( tableElement, row, column ) );
     }
 
-    public boolean isTextPresent( String text )
+    protected boolean isTextPresent( String text )
     {
         return getSelenium().isTextPresent( text );
     }
 
-    public boolean isLinkPresent( String text )
+    protected boolean isLinkPresent( String text )
     {
         return isElementPresent( "link=" + text );
     }
 
-    public boolean isElementPresent( String locator )
+    protected boolean isElementPresent( String locator )
     {
         return getSelenium().isElementPresent( locator );
     }
 
-    public void waitPage()
+    protected void waitPage()
     {
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
     }
 
-    public String getFieldValue( String fieldName )
+    protected String getFieldValue( String fieldName )
     {
         return getSelenium().getValue( fieldName );
     }
 
-    public String getCellValueFromTable( String tableElement, int row, int column )
+    String getCellValueFromTable( String tableElement, int row, int column )
     {
         return getSelenium().getTable( tableElement + "." + row + "." + column );
     }
 
-    public void selectValue( String locator, String value )
+    protected void selectValue( String locator, String value )
     {
         getSelenium().select( locator, "label=" + value );
     }
 
-    public void assertOptionPresent( String selectField, String[] options )
+    void assertOptionPresent( String selectField, String[] options )
     {
         assertElementPresent( selectField );
         String[] optionsPresent = getSelenium().getSelectOptions( selectField );
@@ -262,51 +246,43 @@ public abstract class AbstractSeleniumTest
         Assert.assertTrue( present.containsAll( expected ), "Options expected are not included in present options" );
     }
 
-    public void assertSelectedValue( String value, String fieldName )
+    protected void submit()
     {
-        assertElementPresent( fieldName );
-        String optionsPresent = getSelenium().getSelectedLabel( value );
-
-        Assert.assertEquals( optionsPresent, value );
+        submit( true );
     }
 
-    public void submit()
+    protected void submit( boolean wait )
     {
-        clickLinkWithXPath( "//input[@type='submit']" );
+        clickLinkWithXPath( "//input[@type='submit']", wait );
     }
 
-    public void assertButtonWithValuePresent( String text )
+    protected void assertButtonWithValuePresent( String text )
     {
         Assert.assertTrue( isButtonWithValuePresent( text ), "'" + text + "' button isn't present" );
     }
 
-    public void assertButtonWithIdPresent( String id )
+    void assertButtonWithIdPresent( String id )
     {
         Assert.assertTrue( isButtonWithIdPresent( id ), "'Button with id =" + id + "' isn't present" );
     }
 
-    public void assertButtonWithValueNotPresent( String text )
+    boolean isButtonWithValuePresent( String text )
     {
-        Assert.assertFalse( isButtonWithValuePresent( text ), "'" + text + "' button is present" );
+        return isElementPresent( "//button[@value='" + text + "']" ) || isElementPresent(
+            "//input[@value='" + text + "']" );
     }
 
-    public boolean isButtonWithValuePresent( String text )
-    {
-        return isElementPresent( "//button[@value='" + text + "']" )
-            || isElementPresent( "//input[@value='" + text + "']" );
-    }
-
-    public boolean isButtonWithIdPresent( String text )
+    boolean isButtonWithIdPresent( String text )
     {
         return isElementPresent( "//button[@id='" + text + "']" ) || isElementPresent( "//input[@id='" + text + "']" );
     }
 
-    public void clickButtonWithValue( String text )
+    protected void clickButtonWithValue( String text )
     {
         clickButtonWithValue( text, true );
     }
 
-    public void clickButtonWithValue( String text, boolean wait )
+    void clickButtonWithValue( String text, boolean wait )
     {
         assertButtonWithValuePresent( text );
 
@@ -320,47 +296,37 @@ public abstract class AbstractSeleniumTest
         }
     }
 
-    public void clickSubmitWithLocator( String locator )
+    void clickSubmitWithLocator( String locator )
     {
         clickLinkWithLocator( locator );
     }
 
-    public void clickSubmitWithLocator( String locator, boolean wait )
-    {
-        clickLinkWithLocator( locator, wait );
-    }
-
-    public void clickImgWithAlt( String alt )
+    protected void clickImgWithAlt( String alt )
     {
         clickLinkWithLocator( "//img[@alt='" + alt + "']" );
     }
 
-    public void clickLinkWithText( String text )
+    protected void clickLinkWithText( String text )
     {
-        clickLinkWithText( text, true );
+        clickLinkWithLocator( "link=" + text, true );
     }
 
-    public void clickLinkWithText( String text, boolean wait )
-    {
-        clickLinkWithLocator( "link=" + text, wait );
-    }
-
-    public void clickLinkWithXPath( String xpath )
+    protected void clickLinkWithXPath( String xpath )
     {
         clickLinkWithXPath( xpath, true );
     }
 
-    public void clickLinkWithXPath( String xpath, boolean wait )
+    protected void clickLinkWithXPath( String xpath, boolean wait )
     {
         clickLinkWithLocator( "xpath=" + xpath, wait );
     }
 
-    public void clickLinkWithLocator( String locator )
+    protected void clickLinkWithLocator( String locator )
     {
         clickLinkWithLocator( locator, true );
     }
 
-    public void clickLinkWithLocator( String locator, boolean wait )
+    protected void clickLinkWithLocator( String locator, boolean wait )
     {
         getSelenium().click( locator );
         if ( wait )
@@ -369,99 +335,79 @@ public abstract class AbstractSeleniumTest
         }
     }
 
-    public void setFieldValues( Map<String, String> fieldMap )
-    {
-        Map.Entry<String, String> entry;
-
-        for ( Iterator<Entry<String, String>> entries = fieldMap.entrySet().iterator(); entries.hasNext(); )
-        {
-            entry = entries.next();
-
-            getSelenium().type( entry.getKey(), entry.getValue() );
-        }
-    }
-
-    public void setFieldValue( String fieldName, String value )
+    protected void setFieldValue( String fieldName, String value )
     {
         getSelenium().type( fieldName, value );
     }
 
-    public void checkField( String locator )
+    protected void checkField( String locator )
     {
         getSelenium().check( locator );
     }
 
-    public void uncheckField( String locator )
+    protected void uncheckField( String locator )
     {
         getSelenium().uncheck( locator );
     }
 
-    public boolean isChecked( String locator )
+    boolean isChecked( String locator )
     {
         return getSelenium().isChecked( locator );
     }
 
-    public void assertIsChecked( String locator )
+    void assertIsChecked( String locator )
     {
-        Assert.assertTrue( getSelenium().isChecked( locator ) );
+        Assert.assertTrue( isChecked( locator ) );
     }
 
-    public void assertIsNotChecked( String locator )
+    void click( String locator )
     {
-        Assert.assertFalse( getSelenium().isChecked( locator ) );
+        getSelenium().click( locator );
     }
 
-    public void clickAndWait( String locator )
+    protected void clickAndWait( String locator )
     {
         getSelenium().click( locator );
         getSelenium().waitForPageToLoad( maxWaitTimeInMs );
     }
 
-    public void waitForElementPresent( String locator )
-        throws Exception
+    protected void waitForElementPresent( String locator )
     {
         waitForElementPresent( locator, true );
     }
-    
+
     /*
      * This will wait for the condition to be met.
      *   * shouldBePresent - if the locator is expected or not (true or false respectively)
      */
-    public void waitForElementPresent( String locator, boolean shouldBePresent )
-        throws Exception
+    void waitForElementPresent( String locator, boolean shouldBePresent )
     {
-        if ( browser.equals( "*iexplore" ) )
+        waitForOneOfElementsPresent( Collections.singletonList( locator ), shouldBePresent );
+    }
+
+    protected void waitForOneOfElementsPresent( List<String> locators, boolean shouldBePresent )
+    {
+        int currentIt = 0;
+        int maxIt = Integer.valueOf( getProperty( "WAIT_TRIES" ) );
+        String pageLoadTimeInMs = maxWaitTimeInMs;
+
+        while ( currentIt < maxIt )
         {
-            int currentIt = 0;
-            int maxIt = Integer.valueOf( getProperty( "WAIT_TRIES" ) );
-            String pageLoadTimeInMs = getProperty( "PAGE_LOAD_TIME_IN_MS" );
-            
-            while ( isElementPresent( locator ) != shouldBePresent && currentIt < maxIt )
+            for ( String locator : locators )
             {
-                getSelenium().waitForPageToLoad( pageLoadTimeInMs );
-                currentIt++;
+                if ( isElementPresent( locator ) == shouldBePresent )
+                {
+                    return;
+                }
             }
-        }
-        else
-        {
-            String condition = "selenium.isElementPresent(\"" + locator + "\") == " + shouldBePresent;
-            waitForCondition( condition );
+
+            getSelenium().waitForPageToLoad( pageLoadTimeInMs );
+            currentIt++;
         }
     }
 
-    public void selectForOption( String locator, String text )
+    void assertEnabled()
     {
-        getSelenium().addSelection( locator, "label=" + text );
-    }
-
-    public void unselectForOption( String locator, String text )
-    {
-        getSelenium().removeSelection( locator, "label=" + text );
-    }
-    
-    public void waitForCondition( String condition )
-        throws Exception
-    {
-        getSelenium().waitForCondition( condition, maxProjectWaitTimeInMs );
+        Assert.assertTrue( getSelenium().isEditable( "alwaysBuild" ), "'" + "alwaysBuild" + "' is disabled" );
     }
 }

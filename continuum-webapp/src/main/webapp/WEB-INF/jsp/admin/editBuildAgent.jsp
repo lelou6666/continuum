@@ -16,46 +16,47 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-  
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
+
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
-      <title><s:text name="buildAgent.page.title"/><title>
+      <title><s:text name="buildAgent.page.title"/></title>
     </head>
     <body>
     <div class="app">
       <div id="axial" class="h3">
         <h3><s:text name="buildAgent.section.title"/></h3>
+
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
         
         <div class="axial">
           <s:form action="saveBuildAgent" method="post" validate="true">
-            <c:if test="${!empty actionErrors}">
-              <div class="errormessage">
-                <s:iterator value="actionErrors">
-                  <p><s:property/></p>
-                </s:iterator>
-              </div>
-            </c:if>
             
             <table>
               <s:hidden name="type"/>
-              <c:choose>
-                <c:when test="${type=='new'}">
-                  <s:textfield label="%{getText('buildAgent.url.label')}" name="buildAgent.url" required="true"/>
-                </c:when>
-                <c:otherwise>
+                <s:if test="type == 'new'">
+                  <s:textfield label="%{getText('buildAgent.url.label')}" name="buildAgent.url" requiredLabel="true" size="100"/>
+                </s:if>
+                <s:else>
                   <s:hidden name="buildAgent.url"/>
-                  <s:textfield label="%{getText('buildAgent.url.label')}" name="buildAgent.url" required="true" disabled="true"/>
-                </c:otherwise>
-              </c:choose>
-              <s:textfield label="%{getText('buildAgent.description.label')}" name="buildAgent.description"/>
+                  <s:textfield label="%{getText('buildAgent.url.label')}" name="buildAgent.url" requiredLabel="true" disabled="true" size="100"/>
+                </s:else>
+              <s:textfield label="%{getText('buildAgent.description.label')}" name="buildAgent.description" size="100"/>
               <s:checkbox label="%{getText('buildAgent.enabled.label')}" name="buildAgent.enabled" value="buildAgent.enabled" fieldValue="true"/>
             </table>
             <div class="functnbar3">
-              <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+              <s:submit value="%{getText('save')}" theme="simple"/>
+              <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
             </div>
           </s:form>
         </div>

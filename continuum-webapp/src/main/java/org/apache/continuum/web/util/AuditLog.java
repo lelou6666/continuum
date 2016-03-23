@@ -25,7 +25,6 @@ import org.slf4j.MDC;
 
 /**
  * @author Jevica Arianne B. Zurbano
- * @version $Id: AuditLog.java
  * @since 17 apr 09
  */
 public class AuditLog
@@ -35,7 +34,7 @@ public class AuditLog
     private String action;
 
     private String category;
-    
+
     private String resource;
 
     private String currentUser;
@@ -97,7 +96,7 @@ public class AuditLog
         {
             MDC.put( "security.currentUser", currentUser );
         }
-        
+
         if ( resource != null )
         {
             if ( category != null )

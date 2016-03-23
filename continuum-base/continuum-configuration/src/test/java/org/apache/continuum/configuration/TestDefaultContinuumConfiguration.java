@@ -19,32 +19,40 @@ package org.apache.continuum.configuration;
  * under the License.
  */
 
+import org.apache.continuum.utils.file.DefaultFileSystemManager;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.PlexusSpringTestCase;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codehaus.plexus.spring.PlexusInSpringTestCase;
-import org.codehaus.plexus.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 17 juin 2008
  */
 public class TestDefaultContinuumConfiguration
-    extends PlexusInSpringTestCase
+    extends PlexusSpringTestCase
 {
     private static final Logger log = LoggerFactory.getLogger( TestDefaultContinuumConfiguration.class );
 
     private static final String confFile = "target/test-classes/conf/continuum.xml";
 
-    @Override
-    protected void setUp()
+    private FileSystemManager fsManager;
+
+    @Before
+    public void setUp()
         throws Exception
     {
         log.info( "appserver.base : " + System.getProperty( "appserver.base" ) );
+
+        fsManager = new DefaultFileSystemManager(); // can't lookup since we're before spring/plexus setup
 
         File originalConf = new File( getBasedir(), "src/test/resources/conf/continuum.xml" );
 
@@ -53,22 +61,22 @@ public class TestDefaultContinuumConfiguration
         {
             confUsed.delete();
         }
-        FileUtils.copyFile( originalConf, confUsed );
-
-        super.setUp();
+        fsManager.copyFile( originalConf, confUsed );
     }
 
+    @Test
     public void testLoad()
         throws Exception
     {
-        ContinuumConfiguration configuration =
-            (ContinuumConfiguration) lookup( ContinuumConfiguration.class, "default" );
+        ContinuumConfiguration configuration = (ContinuumConfiguration) lookup( ContinuumConfiguration.class,
+                                                                                "default" );
         assertNotNull( configuration );
         GeneralConfiguration generalConfiguration = configuration.getGeneralConfiguration();
         assertNotNull( generalConfiguration );
         assertNotNull( generalConfiguration.getBaseUrl() );
         assertEquals( "http://test", generalConfiguration.getBaseUrl() );
         assertEquals( new File( "myBuildOutputDir" ), generalConfiguration.getBuildOutputDirectory() );
+        assertTrue( generalConfiguration.isDistributedBuildEnabled() );
         assertNotNull( generalConfiguration.getBuildAgents() );
         org.apache.continuum.configuration.BuildAgentConfiguration buildAgentConfig =
             generalConfiguration.getBuildAgents().get( 0 );
@@ -85,6 +93,7 @@ public class TestDefaultContinuumConfiguration
         assertEquals( "linux", agentConfig.getDescription() );
     }
 
+    @Test
     public void testDefaultConfiguration()
         throws Exception
     {
@@ -93,8 +102,8 @@ public class TestDefaultContinuumConfiguration
         {
             conf.delete();
         }
-        ContinuumConfiguration configuration =
-            (ContinuumConfiguration) lookup( ContinuumConfiguration.class, "default" );
+        ContinuumConfiguration configuration = (ContinuumConfiguration) lookup( ContinuumConfiguration.class,
+                                                                                "default" );
         assertNotNull( configuration );
         GeneralConfiguration generalConfiguration = new GeneralConfiguration();
         generalConfiguration.setBaseUrl( "http://test/zloug" );
@@ -123,12 +132,13 @@ public class TestDefaultContinuumConfiguration
         List<BuildAgentGroupConfiguration> buildAgentGroups = new ArrayList<BuildAgentGroupConfiguration>();
         buildAgentGroups.add( buildAgentGroupConfiguration );
 
+        generalConfiguration.setDistributedBuildEnabled( false );
         generalConfiguration.setBuildAgents( buildAgents );
         generalConfiguration.setBuildAgentGroups( buildAgentGroups );
         configuration.setGeneralConfiguration( generalConfiguration );
         configuration.save();
 
-        String contents = FileUtils.fileRead( conf );
+        String contents = fsManager.fileContents( conf );
         assertTrue( contents.indexOf( "http://test/zloug" ) > 0 );
         assertTrue( contents.indexOf( "localhost" ) > 0 );
         assertTrue( contents.indexOf( "8080" ) > 0 );
@@ -144,21 +154,21 @@ public class TestDefaultContinuumConfiguration
         assertEquals( 8080, configuration.getGeneralConfiguration().getProxyConfiguration().getProxyPort() );
         assertEquals( targetDir.getPath(),
                       configuration.getGeneralConfiguration().getBuildOutputDirectory().getPath() );
-        assertEquals( "http://buildagent/test",
-                      configuration.getGeneralConfiguration().getBuildAgents().get( 0 ).getUrl() );
+        assertEquals( "http://buildagent/test", configuration.getGeneralConfiguration().getBuildAgents().get(
+            0 ).getUrl() );
         assertFalse( configuration.getGeneralConfiguration().getBuildAgents().get( 0 ).isEnabled() );
-        assertEquals( "http://buildagent-node-2/test",
-                      configuration.getGeneralConfiguration().getBuildAgents().get( 1 ).getUrl() );
+        assertEquals( "http://buildagent-node-2/test", configuration.getGeneralConfiguration().getBuildAgents().get(
+            1 ).getUrl() );
         assertTrue( configuration.getGeneralConfiguration().getBuildAgents().get( 1 ).isEnabled() );
 
-        assertEquals( "secret-agent",
-                      configuration.getGeneralConfiguration().getBuildAgentGroups().get( 0 ).getName() );
-        assertEquals( "http://buildagent/test",
-                      configuration.getGeneralConfiguration().getBuildAgentGroups().get( 0 ).getBuildAgents().get(
-                          0 ).getUrl() );
+        assertEquals( "secret-agent", configuration.getGeneralConfiguration().getBuildAgentGroups().get(
+            0 ).getName() );
+        assertEquals( "http://buildagent/test", configuration.getGeneralConfiguration().getBuildAgentGroups().get(
+            0 ).getBuildAgents().get( 0 ).getUrl() );
         assertEquals( "http://buildagent-node-2/test",
                       configuration.getGeneralConfiguration().getBuildAgentGroups().get( 0 ).getBuildAgents().get(
                           1 ).getUrl() );
+        assertFalse( configuration.getGeneralConfiguration().isDistributedBuildEnabled() );
         log.info( "generalConfiguration " + configuration.getGeneralConfiguration().toString() );
     }
 }

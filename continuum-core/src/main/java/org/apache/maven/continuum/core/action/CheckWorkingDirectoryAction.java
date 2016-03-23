@@ -19,34 +19,46 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="check-working-directory"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "check-working-directory" )
 public class CheckWorkingDirectoryAction
     extends AbstractContinuumAction
 {
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
+=======
+
+    @Requirement
+>>>>>>> refs/remotes/apache/trunk
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
     
+    private static final String KEY_WORKING_DIRECTORY_EXISTS = "working-directory-exists";
+
     private static final String KEY_WORKING_DIRECTORY_EXISTS = "working-directory-exists";
 
     public void execute( Map context )
@@ -55,10 +67,16 @@ public class CheckWorkingDirectoryAction
         Project project = projectDao.getProject( getProjectId( context ) );
         List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
         String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+<<<<<<< HEAD
        
         File workingDirectory =
             workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
                                                          projectsWithCommonScmRoot );
+=======
+
+        File workingDirectory = workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
+                                                                             projectsWithCommonScmRoot );
+>>>>>>> refs/remotes/apache/trunk
 
         if ( !workingDirectory.exists() )
         {
@@ -79,7 +97,11 @@ public class CheckWorkingDirectoryAction
 
         setWorkingDirectoryExists( context, files.length > 0 );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public static boolean isWorkingDirectoryExists( Map<String, Object> context )
     {
         return getBoolean( context, KEY_WORKING_DIRECTORY_EXISTS, false );

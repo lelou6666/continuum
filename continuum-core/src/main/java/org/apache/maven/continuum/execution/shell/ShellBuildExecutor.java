@@ -40,7 +40,6 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ShellBuildExecutor
     extends AbstractBuildExecutor
@@ -67,15 +66,26 @@ public class ShellBuildExecutor
     // ContinuumBuilder implementation
     // ----------------------------------------------------------------------
 
+<<<<<<< HEAD
     public synchronized ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition,
                                                              File buildOutput, List<Project> projectsWithCommonScmRoot, String projectScmRootUrl )
+=======
+    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition,
+                                                             File buildOutput, List<Project> projectsWithCommonScmRoot,
+                                                             String projectScmRootUrl )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumBuildExecutorException
     {
         // TODO: this should be validated earlier?
         String executable = getBuildFileForProject( project, buildDefinition );
 
+<<<<<<< HEAD
         return executeShellCommand( project, executable, buildDefinition.getArguments(), buildOutput,
                                     getEnvironments( buildDefinition ), null, null );
+=======
+        return executeShellCommand( project, executable, buildDefinition.getArguments(), buildOutput, getEnvironments(
+            buildDefinition ), null, null );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     protected Map<String, String> getEnvironments( BuildDefinition buildDefinition )

@@ -1,27 +1,28 @@
 <?xml version='1.0' encoding='UTF-8'?>
+
 <!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>  
+  <parent>
     <artifactId>continuum</artifactId>
     <groupId>org.apache.continuum</groupId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-core</artifactId>
@@ -49,17 +50,13 @@ under the License.
       <artifactId>maven-settings</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact-manager</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-notifier-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-reports</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
@@ -67,7 +64,7 @@ under the License.
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>file-management</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-velocity</artifactId>
@@ -87,27 +84,37 @@ under the License.
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-component-api</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
     </dependency>
+    <!-- start - order matters, requires maven 2.0.9+ -->
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-artifact-manager</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact-manager</artifactId>
+    </dependency>
+    <!-- end - order matters -->
     <dependency>
       <groupId>org.apache.maven.scm</groupId>
       <artifactId>maven-scm-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
-      <artifactId>maven-project</artifactId> 
+      <artifactId>maven-project</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-action</artifactId>
@@ -163,11 +170,11 @@ under the License.
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context-support</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
@@ -175,14 +182,14 @@ under the License.
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-builder</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-distributed-slave-client</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>velocity</groupId>
-      <artifactId>velocity</artifactId>      
+      <artifactId>velocity</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.release</groupId>
@@ -191,7 +198,7 @@ under the License.
     <dependency>
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
-    </dependency>    
+    </dependency>
     <!-- contains redback-core.xml that is needed to instantiate some test classes -->
     <dependency>
       <groupId>org.codehaus.redback</groupId>
@@ -211,11 +218,6 @@ under the License.
       <scope>test</scope>
     </dependency>
     <!-- === Testing Dependencies === -->
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
@@ -242,35 +244,18 @@ under the License.
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
+      <groupId>org.codehaus.redback</groupId>
       <artifactId>plexus-spring</artifactId>
       <scope>test</scope>
-    </dependency>  
-    <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock-junit3</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- dependency of jmock3 -->
-    <dependency>
-      <groupId>cglib</groupId>
-      <artifactId>cglib-nodep</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- dependency of jmock3 -->
-    <dependency>
-      <groupId>org.objenesis</groupId>
-      <artifactId>objenesis</artifactId>  
-      <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock</artifactId>
-      <scope>test</scope>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
     </dependency>
     <dependency>
-      <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -278,18 +263,16 @@ under the License.
     <plugins>
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-maven-plugin</artifactId>
+        <artifactId>plexus-component-metadata</artifactId>
         <executions>
           <execution>
             <id>generate</id>
-            <phase>generate-resources</phase>
             <goals>
-              <goal>descriptor</goal>
+              <goal>generate-metadata</goal>
             </goals>
           </execution>
           <execution>
             <id>merge</id>
-            <phase>process-resources</phase>
             <configuration>
               <descriptors>
                 <descriptor>${basedir}/src/main/resources/META-INF/plexus/components-fragment.xml</descriptor>
@@ -298,7 +281,7 @@ under the License.
               <output>${project.build.outputDirectory}/META-INF/plexus/components.xml</output>
             </configuration>
             <goals>
-              <goal>merge-descriptors</goal>
+              <goal>merge-metadata</goal>
             </goals>
           </execution>
         </executions>
@@ -306,28 +289,65 @@ under the License.
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <!-- this test only test cancelling Taskqueue implementation from plexus-task -->
-            <exclude>**/BuildProjectTaskExecutorTest.*</exclude>
-          </excludes>
-        </configuration>        
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <excludes>
+                <!-- this test only test cancelling Taskqueue implementation from plexus-task -->
+                <exclude>**/BuildProjectTaskExecutorTest.*</exclude>
+                <!-- CONTINUUM-2559 -->
+                <exclude>**/MailContinuumNotifierTest.*</exclude>
+                <!-- Requires low memory for meaningful result -->
+                <exclude>**/CleanWorkingDirectoryActionTest.*</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>src/test-projects/**</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <profiles>
     <profile>
-      <id>it</id>
+      <id>lowmem-test</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <argLine>-Xmx512m</argLine>
-              <childDelegation>true</childDelegation>
-            </configuration>
-          </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>lowmem-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>-Xmx2m -Xms2m</argLine>
+                            <includes>
+                                <include>**/CleanWorkingDirectoryActionTest.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
       </build>
     </profile>

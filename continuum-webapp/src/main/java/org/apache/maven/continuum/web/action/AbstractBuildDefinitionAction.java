@@ -27,7 +27,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 16 sept. 07
  */
 public abstract class AbstractBuildDefinitionAction
@@ -53,7 +52,7 @@ public abstract class AbstractBuildDefinitionAction
         }
         bds.setDescription( buildDefinition.getDescription() );
         bds.setType( buildDefinition.getType() );
-        bds.setAlwaysBuild( buildDefinition.isBuildFresh() || buildDefinition.isAlwaysBuild() );
+        bds.setAlwaysBuild( buildDefinition.isAlwaysBuild() );
         return bds;
     }
 

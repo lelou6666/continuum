@@ -19,9 +19,9 @@ package org.apache.continuum.web.action.admin;
  * under the License.
  */
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.configuration.BuildAgentConfiguration;
 import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
-import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
@@ -30,7 +30,7 @@ import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumConfirmAction;
-import org.apache.struts2.ServletActionContext;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.redback.integration.interceptor.SecureAction;
@@ -41,13 +41,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author Maria Catherine Tan
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildAgent"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildAgent", instantiationStrategy = "per-lookup" )
 public class BuildAgentAction
     extends ContinuumConfirmAction
     implements SecureAction
@@ -70,8 +69,6 @@ public class BuildAgentAction
 
     private boolean confirmed;
 
-    private String message;
-
     private String type;
 
     private String typeGroup;
@@ -88,11 +85,14 @@ public class BuildAgentAction
     {
         if ( buildAgent != null && !StringUtils.isBlank( buildAgent.getUrl() ) )
         {
+            String escapedBuildAgentUrl = StringEscapeUtils.escapeXml( buildAgent.getUrl() );
+            buildAgent.setUrl( escapedBuildAgentUrl );
+
             List<BuildAgentConfiguration> agents = getContinuum().getConfiguration().getBuildAgents();
 
             for ( BuildAgentConfiguration agent : agents )
             {
-                if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+                if ( agent.getUrl().equals( escapedBuildAgentUrl ) )
                 {
                     buildAgent = agent;
                     type = "edit";
@@ -102,6 +102,8 @@ public class BuildAgentAction
         else
         {
             type = "new";
+            buildAgent = new BuildAgentConfiguration();
+            buildAgent.setEnabled( true );
         }
 
         return INPUT;
@@ -110,16 +112,8 @@ public class BuildAgentAction
     public String list()
         throws Exception
     {
-        String errorMessage = ServletActionContext.getRequest().getParameter( "errorMessage" );
-
-        if ( errorMessage != null )
-        {
-            addActionError( errorMessage );
-        }
-
         this.buildAgents = getContinuum().getConfiguration().getBuildAgents();
         this.buildAgentGroups = getContinuum().getConfiguration().getBuildAgentGroups();
-
         return SUCCESS;
     }
 
@@ -128,22 +122,26 @@ public class BuildAgentAction
     {
         ConfigurationService configuration = getContinuum().getConfiguration();
 
-        for ( BuildAgentConfiguration agent : configuration.getBuildAgents() )
+        if ( buildAgent != null )
         {
-            if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+            for ( BuildAgentConfiguration agent : configuration.getBuildAgents() )
             {
-                buildAgent = agent;
-
-                try
+                if ( agent.getUrl().equals( buildAgent.getUrl() ) )
                 {
-                    installations = getContinuum().getDistributedBuildManager().getAvailableInstallations( buildAgent.getUrl() );
-                }
-                catch ( ContinuumException e )
-                {
-                    logger.error( "Unable to retrieve installations of build agent '" + agent.getUrl() + "'", e );
-                }
+                    buildAgent = agent;
 
-                break;
+                    try
+                    {
+                        installations = getContinuum().getDistributedBuildManager().getAvailableInstallations(
+                            buildAgent.getUrl() );
+                    }
+                    catch ( ContinuumException e )
+                    {
+                        logger.error( "Unable to retrieve installations of build agent '" + agent.getUrl() + "'", e );
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -157,20 +155,42 @@ public class BuildAgentAction
 
         ConfigurationService configuration = getContinuum().getConfiguration();
 
+        // escape xml to prevent xss attacks
+        buildAgent.setDescription(
+            StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( buildAgent.getDescription() ) ) );
+
         if ( configuration.getBuildAgents() != null )
         {
             for ( BuildAgentConfiguration agent : configuration.getBuildAgents() )
             {
-                if ( buildAgent.getUrl().equals( agent.getUrl() ) )
+                if ( agent.getUrl().equals( buildAgent.getUrl() ) )
                 {
-                    agent.setDescription( buildAgent.getDescription() );
-                    agent.setEnabled( buildAgent.isEnabled() );
-
-                    configuration.updateBuildAgent( agent );
-                    configuration.store();
+                    if ( type.equals( "new" ) )
+                    {
+                        addActionError( getText( "buildAgent.error.duplicate" ) );
+                        return INPUT;
+                    }
+                    else
+                    {
+                        agent.setDescription( buildAgent.getDescription() );
+                        agent.setEnabled( buildAgent.isEnabled() );
+                        configuration.updateBuildAgent( agent );
+                        configuration.store();
+                    }
                     found = true;
                 }
             }
+        }
+
+        // update first, so that we don't add or change it if it fails
+        try
+        {
+            getContinuum().getDistributedBuildManager().update( buildAgent );
+        }
+        catch ( ContinuumException e )
+        {
+            addActionError( e.getMessage() );
+            return INPUT;
         }
 
         AuditLog event = new AuditLog( "Build Agent URL=" + buildAgent.getUrl(), AuditLogConstants.MODIFY_BUILD_AGENT );
@@ -183,16 +203,7 @@ public class BuildAgentAction
             configuration.store();
             event.setAction( AuditLogConstants.ADD_BUILD_AGENT );
         }
-        else
-        {
-            if ( type.equals( "new" ) )
-            {
-                addActionError( getResourceBundle().getString( "buildAgent.error.duplicate" ) );
-                return INPUT;
-            }
-        }
 
-        getContinuum().getDistributedBuildManager().reload();
         event.log();
 
         return SUCCESS;
@@ -201,6 +212,8 @@ public class BuildAgentAction
     public String delete()
         throws Exception
     {
+        buildAgent.setUrl( StringEscapeUtils.escapeXml( buildAgent.getUrl() ) );
+
         if ( !confirmed )
         {
             return CONFIRM;
@@ -208,19 +221,19 @@ public class BuildAgentAction
 
         if ( getContinuum().getDistributedBuildManager().isBuildAgentBusy( buildAgent.getUrl() ) )
         {
-            message = getText( "buildAgent.error.delete.busy" );
+            addActionError( getText( "buildAgent.error.delete.busy" ) );
             return ERROR;
         }
 
         ConfigurationService configuration = getContinuum().getConfiguration();
 
         if ( configuration.getBuildAgentGroups() != null )
-        {   
+        {
             for ( BuildAgentGroupConfiguration buildAgentGroup : configuration.getBuildAgentGroups() )
             {
                 if ( configuration.containsBuildAgentUrl( buildAgent.getUrl(), buildAgentGroup ) )
                 {
-                    message = getText( "buildAgent.error.remove.in.use" );
+                    addActionError( getText( "buildAgent.error.remove.in.use" ) );
                     return ERROR;
                 }
             }
@@ -232,11 +245,13 @@ public class BuildAgentAction
             {
                 if ( buildAgent.getUrl().equals( agent.getUrl() ) )
                 {
-                    getContinuum().getDistributedBuildManager().removeDistributedBuildQueueOfAgent( buildAgent.getUrl() );
+                    getContinuum().getDistributedBuildManager().removeDistributedBuildQueueOfAgent(
+                        buildAgent.getUrl() );
                     configuration.removeBuildAgent( agent );
                     configuration.store();
 
-                    AuditLog event = new AuditLog( "Build Agent URL=" + agent.getUrl(), AuditLogConstants.REMOVE_BUILD_AGENT );
+                    AuditLog event =
+                        new AuditLog( "Build Agent URL=" + agent.getUrl(), AuditLogConstants.REMOVE_BUILD_AGENT );
                     event.setCategory( AuditLogConstants.BUILD_AGENT );
                     event.setCurrentUser( getPrincipal() );
                     event.log();
@@ -247,14 +262,15 @@ public class BuildAgentAction
                 }
             }
         }
-
-        message = getText( "buildAgent.error.notfound" );
+        addActionError( getText( "buildAgent.error.notfound" ) );
         return ERROR;
     }
 
     public String deleteGroup()
         throws Exception
     {
+        buildAgentGroup.setName( StringEscapeUtils.escapeXml( buildAgentGroup.getName() ) );
+
         if ( !confirmed )
         {
             return CONFIRM;
@@ -265,7 +281,7 @@ public class BuildAgentAction
         {
             if ( buildAgentGroup.getName().equals( profile.getBuildAgentGroup() ) )
             {
-                message = getText( "buildAgentGroup.error.remove.in.use" );
+                addActionError( getText( "buildAgentGroup.error.remove.in.use", new String[] { profile.getName() } ) );
                 return ERROR;
             }
         }
@@ -278,7 +294,8 @@ public class BuildAgentAction
             {
                 configuration.removeBuildAgentGroup( group );
 
-                AuditLog event = new AuditLog( "Build Agent Group=" + group.getName(), AuditLogConstants.REMOVE_BUILD_AGENT_GROUP );
+                AuditLog event =
+                    new AuditLog( "Build Agent Group=" + group.getName(), AuditLogConstants.REMOVE_BUILD_AGENT_GROUP );
                 event.setCategory( AuditLogConstants.BUILD_AGENT );
                 event.setCurrentUser( getPrincipal() );
                 event.log();
@@ -287,7 +304,7 @@ public class BuildAgentAction
             }
         }
 
-        message = getText( "buildAgentGroup.error.doesnotexist" );
+        addActionError( getText( "buildAgentGroup.error.doesnotexist" ) );
         return ERROR;
     }
 
@@ -303,7 +320,7 @@ public class BuildAgentAction
         {
             if ( buildAgentGroup.getName().equals( "" ) )
             {
-                addActionError( getResourceBundle().getString( "buildAgentGroup.error.name.required" ) );
+                addActionError( getText( "buildAgentGroup.error.name.required" ) );
                 return INPUT;
             }
             else if ( buildAgentGroup.getName().trim().equals( "" ) )
@@ -327,7 +344,8 @@ public class BuildAgentAction
             }
         }
 
-        AuditLog event = new AuditLog( "Build Agent Group=" + buildAgentGroup.getName(), AuditLogConstants.MODIFY_BUILD_AGENT_GROUP );
+        AuditLog event = new AuditLog( "Build Agent Group=" + buildAgentGroup.getName(),
+                                       AuditLogConstants.MODIFY_BUILD_AGENT_GROUP );
         event.setCategory( AuditLogConstants.BUILD_AGENT );
         event.setCurrentUser( getPrincipal() );
 
@@ -342,7 +360,7 @@ public class BuildAgentAction
         {
             if ( typeGroup.equals( "new" ) )
             {
-                addActionError( getResourceBundle().getString( "buildAgentGroup.error.duplicate" ) );
+                addActionError( getText( "buildAgentGroup.error.duplicate" ) );
                 return INPUT;
             }
             else if ( typeGroup.equals( "edit" ) )
@@ -365,16 +383,19 @@ public class BuildAgentAction
 
         if ( buildAgentGroup != null && !StringUtils.isBlank( buildAgentGroup.getName() ) )
         {
+            String escapedBuildAgentGroupName = StringEscapeUtils.escapeXml( buildAgentGroup.getName() );
+            buildAgentGroup.setName( escapedBuildAgentGroupName );
+
             List<BuildAgentGroupConfiguration> agentGroups = configuration.getBuildAgentGroups();
 
             for ( BuildAgentGroupConfiguration group : agentGroups )
             {
-                if ( buildAgentGroup.getName().equals( group.getName() ) )
+                if ( group.getName().equals( escapedBuildAgentGroupName ) )
                 {
                     buildAgentGroup = group;
                     typeGroup = "edit";
 
-                    this.buildAgentGroup = configuration.getBuildAgentGroup( buildAgentGroup.getName() );
+                    this.buildAgentGroup = configuration.getBuildAgentGroup( escapedBuildAgentGroupName );
                     this.buildAgents = configuration.getBuildAgents();
 
                     this.selectedBuildAgentIds = new ArrayList<String>();
@@ -404,6 +425,7 @@ public class BuildAgentAction
         }
         else
         {
+            buildAgentGroup = new BuildAgentGroupConfiguration();
             typeGroup = "new";
         }
         return INPUT;
@@ -476,16 +498,6 @@ public class BuildAgentAction
     public void setConfirmed( boolean confirmed )
     {
         this.confirmed = confirmed;
-    }
-
-    public String getMessage()
-    {
-        return this.message;
-    }
-
-    public void setMessage( String message )
-    {
-        this.message = message;
     }
 
     public String getType()

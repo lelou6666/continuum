@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface DirectoryPurgeConfigurationDao
 {
@@ -35,7 +34,7 @@ public interface DirectoryPurgeConfigurationDao
     List<DirectoryPurgeConfiguration> getDirectoryPurgeConfigurationsBySchedule( int scheduleId );
 
     List<DirectoryPurgeConfiguration> getEnableDirectoryPurgeConfigurationsBySchedule( int scheduleId );
-    
+
     List<DirectoryPurgeConfiguration> getDirectoryPurgeConfigurationsByLocation( String location );
 
     List<DirectoryPurgeConfiguration> getDirectoryPurgeConfigurationsByType( String type );

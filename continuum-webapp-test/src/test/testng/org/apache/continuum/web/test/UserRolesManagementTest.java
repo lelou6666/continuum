@@ -1,35 +1,63 @@
 package org.apache.continuum.web.test;
 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import org.apache.continuum.web.test.parent.AbstractUserRolesManagementTest;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
-@Test( groups = { "userroles" }, dependsOnMethods = { "testWithCorrectUsernamePassword" }, sequential = true )
+import java.util.ArrayList;
+import java.util.List;
+
+@Test( groups = {"userroles"}, sequential = true )
 public class UserRolesManagementTest
     extends AbstractUserRolesManagementTest
 {
+
+    public static final String TEST_GROUP = "UserRoles Test Group";
+
+    private List<String> usernames = new ArrayList<String>();
+
     public void testBasicAddDeleteUser()
     {
         username = getProperty( "GUEST_USERNAME" );
         fullname = getProperty( "GUEST_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
-        deleteUser( username, fullname, getUserEmail() );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
+        deleteUser( username );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
-    
+
     /*
      * GUEST USER ROLE
      * Guest Role could only view the About Page. Project Groups should not be shown when clicking
      * Show Project Group link.
     */
-    @Test( dependsOnMethods = { "testBasicAddDeleteUser" } )
+    @Test( dependsOnMethods = {"testBasicAddDeleteUser"} )
     public void testAddUserWithGuestRole()
     {
         username = getProperty( "GUEST_USERNAME" );
         fullname = getProperty( "GUEST_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         //checkUserRoleWithValue( fullname );
         clickLinkWithLocator( "addRolesToUser_addNDSelectedRoles", false );
@@ -42,18 +70,17 @@ public class UserRolesManagementTest
         clickLinkWithText( "Logout" );
     }
 
-    @Test( dependsOnMethods = { "testAddUserWithGuestRole" } )
+    @Test( dependsOnMethods = {"testAddUserWithGuestRole"} )
     public void testGuestUserRoleFunction()
     {
         username = getProperty( "GUEST_USERNAME" );
         fullname = getProperty( "GUEST_FULLNAME" );
-        login( username, getUserRoleNewPassword() );
+        loginAs( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         goToAboutPage();
         clickLinkWithText( "Show Project Groups" );
         assertTextPresent( "Project Groups list is empty" );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
 
@@ -62,13 +89,13 @@ public class UserRolesManagementTest
      * Registered User Role could only view the About Page. Project Groups should not be shown when clicking
      * Show Project Group link.
     */
-    @Test( dependsOnMethods = { "testBasicAddDeleteUser" , "testGuestUserRoleFunction" } )
+    @Test( dependsOnMethods = {"testBasicAddDeleteUser", "testGuestUserRoleFunction"} )
     public void testAddUserWithRegisteredUserRole()
     {
         username = getProperty( "REGISTERED_USERNAME" );
         fullname = getProperty( "REGISTERED_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -82,7 +109,7 @@ public class UserRolesManagementTest
         // assertTextPresent("You are already logged in.");
     }
 
-    @Test( dependsOnMethods = { "testAddUserWithRegisteredUserRole" } )
+    @Test( dependsOnMethods = {"testAddUserWithRegisteredUserRole"} )
     public void testRegisteredRoleFunction()
     {
         username = getProperty( "REGISTERED_USERNAME" );
@@ -93,7 +120,6 @@ public class UserRolesManagementTest
         clickLinkWithText( "Show Project Groups" );
         assertTextPresent( "Project Groups list is empty." );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
     /*
@@ -104,13 +130,13 @@ public class UserRolesManagementTest
      * when system admin user is logged in since the user that is used 
      * to test the other functionalities is a system admin user.
      */
-    @Test( dependsOnMethods = { "testBasicAddDeleteUser" , "testRegisteredRoleFunction" } )
+    @Test( dependsOnMethods = {"testBasicAddDeleteUser", "testRegisteredRoleFunction"} )
     public void testAddUserWithSystemAdminRole()
     {
         username = getProperty( "SYSAD_USERNAME" );
         fullname = getProperty( "SYSAD_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -124,19 +150,18 @@ public class UserRolesManagementTest
         clickLinkWithText( "Logout" );
     }
 
-    @Test( dependsOnMethods = { "testAddUserWithSystemAdminRole" } )
+    @Test( dependsOnMethods = {"testAddUserWithSystemAdminRole"} )
     public void testSystemAdminRoleFunction()
     {
-	    username = getProperty( "SYSAD_USERNAME" );
+        username = getProperty( "SYSAD_USERNAME" );
         fullname = getProperty( "SYSAD_FULLNAME" );
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Show Project Groups" );
         assertTextNotPresent( "Project Groups list is empty." );
         assertLinkPresent( "Default Project Group" );
-	
+
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
     /* 
@@ -145,16 +170,16 @@ public class UserRolesManagementTest
      * but can assign a User to a project.
      *
      */
-    @Test( dependsOnMethods = { "testBasicAddDeleteUser" , "testSystemAdminRoleFunction" } )
+    @Test( dependsOnMethods = {"testBasicAddDeleteUser", "testSystemAdminRoleFunction"} )
     public void testAddUserWithUserAdminRole()
     {
         username = getProperty( "USERADMIN_USERNAME" );
         fullname = getProperty( "USERADMIN_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
-		clickButtonWithValue( "Submit" );
+        clickButtonWithValue( "Submit" );
 
         clickLinkWithText( "Logout" );
 
@@ -164,8 +189,8 @@ public class UserRolesManagementTest
 
         clickLinkWithText( "Logout" );
     }
-    
-    @Test( dependsOnMethods = { "testAddUserWithUserAdminRole" } )
+
+    @Test( dependsOnMethods = {"testAddUserWithUserAdminRole"} )
     public void testUserAdminFunction()
     {
         username = getProperty( "USERADMIN_USERNAME" );
@@ -177,23 +202,22 @@ public class UserRolesManagementTest
         // add user
         clickLinkWithText( "Users" );
         clickButtonWithValue( "Create New User" );
-	    assertCreateUserPage();
-	    setFieldValue( "user.username", "guest0" );
+        assertCreateUserPage();
+        setFieldValue( "user.username", "guest0" );
         setFieldValue( "user.fullName", "guest0" );
         setFieldValue( "user.email", "guest0@guest0.com" );
         setFieldValue( "user.password", "pass" );
         setFieldValue( "user.confirmPassword", "pass" );
         submit();
-        assertUserRolesPage( );
+        assertUserRolesPage();
         clickButtonWithValue( "Submit" );
         selectValue( "name=ec_rd", "50" );
         waitPage();
         // delete user	
-        deleteUser( "guest0", "guest0", "guest0@guest0.com" );	
+        deleteUser( "guest0" );
         // TODO edit user
 
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
     /*
@@ -203,20 +227,20 @@ public class UserRolesManagementTest
      *    projects, can build/release projects
      * - Cannot add users, --- --- ---
      */
-    @Test( dependsOnMethods = { "testBasicAddDeleteUser" , "testUserAdminFunction" } )
+    @Test( dependsOnMethods = {"testBasicAddDeleteUser", "testUserAdminFunction"} )
     public void testAddUserWithContinuumGroupProjectAdminRole()
     {
         username = getProperty( "GROUPPROJECTADMIN_USERNAME" );
         fullname = getProperty( "GROUPPROJECTADMIN_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
 
         // enable distributed build
         clickLinkWithText( "Configuration" );
-        clickLinkWithLocator( "configuration_distributedBuildEnabled", false );
+        checkField( "distributedBuildEnabled" );
         clickButtonWithValue( "Save" );
 
         clickLinkWithText( "Logout" );
@@ -225,14 +249,14 @@ public class UserRolesManagementTest
         changePassword( getUserRolePassword(), getUserRoleNewPassword() );
         assertTextPresent( "Password successfully changed" );
 
-	    assertProjectAdministratorAccess();
+        assertProjectAdministratorAccess();
 
         clickLinkWithText( "Logout" );
 
-        login( getAdminUsername(), getAdminPassword() );
+        loginAsAdmin();
         // disable distributed build
         clickLinkWithText( "Configuration" );
-        clickLinkWithLocator( "configuration_distributedBuildEnabled", false );
+        uncheckField( "distributedBuildEnabled" );
         clickButtonWithValue( "Save" );
 
         clickLinkWithText( "Logout" );
@@ -243,8 +267,9 @@ public class UserRolesManagementTest
         clickLinkWithText( "Logout" );
     }
 
-    @Test( dependsOnMethods = { "testAddUserWithContinuumGroupProjectAdminRole" } )
-    public void testContinuumGroupProjectAdmin_AddProjectGroup() throws Exception
+    @Test( dependsOnMethods = {"testAddUserWithContinuumGroupProjectAdminRole"} )
+    public void testContinuumGroupProjectAdmin_AddProjectGroup()
+        throws Exception
     {
         username = getProperty( "GROUPPROJECTADMIN_USERNAME" );
         fullname = getProperty( "GROUPPROJECTADMIN_FULLNAME" );
@@ -254,17 +279,18 @@ public class UserRolesManagementTest
         assertTextNotPresent( "Project Groups list is empty." );
         // test add project group
         clickButtonWithValue( "Add Project Group" );
-        setFieldValue( "name", "Test Group" );
-        setFieldValue( "groupId", "Test Group" );
+        setFieldValue( "name", TEST_GROUP );
+        setFieldValue( "groupId", TEST_GROUP );
         setFieldValue( "description", "testing project group" );
         submit();
     }
 
-    @Test( dependsOnMethods = { "testContinuumGroupProjectAdmin_AddProjectGroup" } )
-    public void testContinuumGroupProjectAdmin_AddProjectToProjectGroup() throws Exception
+    @Test( dependsOnMethods = {"testContinuumGroupProjectAdmin_AddProjectGroup"} )
+    public void testContinuumGroupProjectAdmin_AddProjectToProjectGroup()
+        throws Exception
     {
-        clickLinkWithText( "Test Group" );
-        clickButtonWithValue( "Add" );	
+        clickLinkWithText( TEST_GROUP );
+        clickButtonWithValue( "Add" );
         assertAddMavenTwoProjectPage();
         setFieldValue( "m2PomUrl", getProperty( "M2_POM_URL" ) );
         clickButtonWithValue( "Add" );
@@ -272,24 +298,24 @@ public class UserRolesManagementTest
         assertTextPresent( "ContinuumBuildQueueTestData" );
         waitForProjectCheckout();
     }
-    
-    @Test( dependsOnMethods = { "testContinuumGroupProjectAdmin_AddProjectToProjectGroup" } )
-    public void testContinuumGroupProjectAdmin_BuildProject() throws Exception
+
+    @Test( dependsOnMethods = {"testContinuumGroupProjectAdmin_AddProjectToProjectGroup"} )
+    public void testContinuumGroupProjectAdmin_BuildProject()
+        throws Exception
     {
-        buildProjectGroup( "Test Group", "Test Group", "testing project group", "ContinuumBuildQueueTestData" );
+        buildProjectGroup( TEST_GROUP, TEST_GROUP, "testing project group", "ContinuumBuildQueueTestData", true );
     }
 
-    @Test( dependsOnMethods = { "testContinuumGroupProjectAdmin_BuildProject" } )
+    @Test( dependsOnMethods = {"testContinuumGroupProjectAdmin_BuildProject"} )
     public void testContinuumGroupProjectAdmin_AssignUserToAGroup()
     {
         clickLinkWithText( "Users" );
         clickLinkWithText( "guest1" );
         clickLinkWithText( "Edit Roles" );
         checkUserRoleWithValue( "Guest" );
-        checkResourceRoleWithValue( "Project Developer - Test Group" );
+        checkResourceRoleWithValue( "Project Developer - " + TEST_GROUP );
         submit();
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
     /*
@@ -327,7 +353,7 @@ public class UserRolesManagementTest
         }
         else
         {
-            title = "Continuum - Add Maven 2 Project";
+            title = "Continuum - Add Maven Project";
         }
         waitAddProject( title );
 	// build the project added in the project group
@@ -339,13 +365,13 @@ public class UserRolesManagementTest
     }
     */
 
-    @Test( dependsOnMethods = { "testContinuumGroupProjectAdmin_AssignUserToAGroup" } )
+    @Test( dependsOnMethods = {"testContinuumGroupProjectAdmin_AssignUserToAGroup"} )
     public void testUserWithContinuumGroupProjectDeveloperRole()
     {
         username = getProperty( "GROUPPROJECTDEVELOPER_USERNAME" );
         fullname = getProperty( "GROUPPROJECTDEVELOPER_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -359,16 +385,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumGroupProjectDeveloperRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumGroupProjectDeveloperRole"} )
     public void testUserWithContinuumGroupProjectUserRole()
     {
         username = getProperty( "GROUPPROJECTUSER_USERNAME" );
         fullname = getProperty( "GROUPPROJECTUSER_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -382,16 +407,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumGroupProjectUserRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumGroupProjectUserRole"} )
     public void testUserWithContinuumManageBuildEnvironmentRole()
     {
         username = getProperty( "MANAGEBUILDENVIRONMENT_USERNAME" );
         fullname = getProperty( "MANAGEBUILDENVIRONMENT_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -399,22 +423,21 @@ public class UserRolesManagementTest
 
         login( username, getUserRolePassword() );
         changePassword( getUserRolePassword(), getUserRoleNewPassword() );
-        assertTextPresent( "Password successfully changed" );	
+        assertTextPresent( "Password successfully changed" );
         clickLinkWithText( "Logout" );
 
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageBuildEnvironmentRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageBuildEnvironmentRole"} )
     public void testUserWithContinuumManageBuildTemplatesRole()
     {
         username = getProperty( "MANAGEBUILDTEMPLATES_USERNAME" );
         fullname = getProperty( "MANAGEBUILDTEMPLATES_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -428,16 +451,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageBuildTemplatesRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageBuildTemplatesRole"} )
     public void testUserWithContinuumManageInstallationsRole()
     {
         username = getProperty( "MANAGEINSTALLATIONS_USERNAME" );
         fullname = getProperty( "MANAGEINSTALLATIONS_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -451,16 +473,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageInstallationsRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageInstallationsRole"} )
     public void testUserWithContinuumManageLocalRepoRole()
     {
         username = getProperty( "MANAGELOCALREPOS_USERNAME" );
         fullname = getProperty( "MANAGELOCALREPOS_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -474,16 +495,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageLocalRepoRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageLocalRepoRole"} )
     public void testUserWithContinuumManagePurgingRole()
     {
         username = getProperty( "MANAGEPURGING_USERNAME" );
         fullname = getProperty( "MANAGEPURGING_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -497,19 +517,18 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManagePurgingRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManagePurgingRole"} )
     public void testUserWithContinuumManageQueuesRole()
     {
         username = getProperty( "MANAGEQUEUES_USERNAME" );
         fullname = getProperty( "MANAGEQUEUES_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
-	    clickButtonWithValue( "Submit" );
+        clickButtonWithValue( "Submit" );
         clickLinkWithText( "Logout" );
 
         login( username, getUserRolePassword() );
@@ -520,16 +539,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageQueuesRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageQueuesRole"} )
     public void testUserWithContinuumManageSchedulingRole()
     {
         username = getProperty( "MANAGESCHEDULING_USERNAME" );
         fullname = getProperty( "MANAGESCHEDULING_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkUserRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -543,16 +561,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithContinuumManageSchedulingRole" } )
+    @Test( dependsOnMethods = {"testUserWithContinuumManageSchedulingRole"} )
     public void testUserWithProjectAdminDefaultProjectGroup()
     {
         username = getProperty( "PROJECTADMINISTRATOR_DEFAULTPROJECTGROUP_USERNAME" );
         fullname = getProperty( "PROJECTADMINISTRATOR_DEFAULTPROJECTGROUP_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkResourceRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -566,16 +583,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithProjectAdminDefaultProjectGroup" } )
+    @Test( dependsOnMethods = {"testUserWithProjectAdminDefaultProjectGroup"} )
     public void testUserWithProjectDevDefaultProjectGroup()
     {
         username = getProperty( "PROJECTDEVELOPER_DEFAULTPROJECTGROUP_USERNAME" );
         fullname = getProperty( "PROJECTDEVELOPER_DEFAULTPROJECTGROUP_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkResourceRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -589,16 +605,15 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
-    @Test( dependsOnMethods = { "testUserWithProjectDevDefaultProjectGroup" } )
+    @Test( dependsOnMethods = {"testUserWithProjectDevDefaultProjectGroup"} )
     public void testUserWithProjectUserDefaultProjectGroup()
     {
         username = getProperty( "PROJECTUSER_DEFAULTPROJECTGROUP_USERNAME" );
         fullname = getProperty( "PROJECTUSER_DEFAULTPROJECTGROUP_FULLNAME" );
 
-        createUser( username, fullname, getUserEmail(), getUserRolePassword(), true );
+        createUser( username, fullname, getUserEmail(), getUserRolePassword() );
         assertCreatedUserInfo( username );
         checkResourceRoleWithValue( fullname );
         clickButtonWithValue( "Submit" );
@@ -612,7 +627,30 @@ public class UserRolesManagementTest
         login( username, getUserRoleNewPassword() );
         assertLeftNavMenuWithRole( fullname );
         clickLinkWithText( "Logout" );
-        login( getAdminUsername(), getAdminPassword() );
     }
 
+    @AfterMethod
+    public void trackUserToDelete()
+    {
+        // record to delete at end, as some are used across dependent tests
+        // TODO: refactor!
+        usernames.add( username );
+    }
+
+    @AfterClass
+    public void cleanup()
+    {
+        loginAsAdmin();
+        if ( !isTextPresent( "List of Users" ) )
+        {
+            clickLinkWithText( "Users" );
+        }
+
+        for ( String username : usernames )
+        {
+            deleteUser( username, false );
+        }
+
+        removeProjectGroup( TEST_GROUP, false );
+    }
 }

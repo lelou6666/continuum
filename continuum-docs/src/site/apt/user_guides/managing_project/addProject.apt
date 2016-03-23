@@ -7,15 +7,32 @@
  Oct 11 2007
  ------
 
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
 Add a Project
 
 ~~%{toc|section=0}
 
-* {Maven 2 project}
+* {Maven project (Maven 2 or Maven 3)}
 
-  From the menu, choose the <<Maven 2.0.x Project>> entry
+  From the menu, choose the <<Maven Project>> entry
 
-[../../images/add-m2-project-menu.png] Add a Maven 2 project
+[../../images/add-m2-project-menu.png] Add a Maven project
 
   The <<<pom.xml>>> file must be available through one of the following protocols: http, https, or ftp.
 
@@ -27,7 +44,7 @@ Add a Project
 
   <<Note:>> This doesn't support multi module projects.
 
-[../../images/add-m2-project.png] Add a Maven 2 project
+[../../images/add-m2-project.png] Add a Maven project
 
   You can supply a username and password if the POM URL requires authentication.  This information will be stored in the database in plain text and reused later for SCM checkouts and updates.
 
@@ -137,7 +154,18 @@ simple-flat-multi-module
            `-- ...
 +----------------------------+
 
+<<<<<<< HEAD
   If you want to add only the root POM without sub-modules, select the <<load only root as recursive build>> radio box. 
+=======
+  If you want to add the multi-module project as a single Continuum project, select the <<load only root as recursive build>>
+  radio box.
+
+  For a project or POM that was added as a single Continuum project and as it's own project group, the <<<--non-recursive>>>
+  flag in the default project group build definition will be removed. But if the project or POM was added as a single
+  Continuum project to an already existing project group, a project level build definition with the <<<--non-recursive>>> flag
+  stripped from the <<<arguments>>> field will be created for the project and will be set as the project's default build definition.
+  See {{{http://jira.codehaus.org/browse/CONTINUUM-2563} CONTINUUM-2563}} for the related issue.
+>>>>>>> refs/remotes/apache/trunk
 
   You can choose a <<Build Definition Template>> which will be applied to your project.  If you choose a <<Build Definition
   Template>>, the build definitions from the template will be added in addition to any build definitions that are defined

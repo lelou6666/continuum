@@ -19,26 +19,23 @@ package org.apache.continuum.buildagent.build.execution.manager;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.continuum.buildagent.build.execution.ContinuumAgentBuildExecutor;
 import org.apache.maven.continuum.ContinuumException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @plexus.component role="org.apache.continuum.buildagent.build.execution.manager.BuildAgentBuildExecutorManager"
- * role-hint"default"
- */
+import java.util.HashMap;
+import java.util.Map;
+
+@Component( role = org.apache.continuum.buildagent.build.execution.manager.BuildAgentBuildExecutorManager.class, hint = "default" )
 public class DefaultBuildAgentBuildExecutorManager
     implements BuildAgentBuildExecutorManager
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultBuildAgentBuildExecutorManager.class );
 
-    /**
-     * @plexus.requirement role="org.apache.continuum.buildagent.build.execution.ContinuumAgentBuildExecutor"
-     */
+    @Requirement( role = org.apache.continuum.buildagent.build.execution.ContinuumAgentBuildExecutor.class )
     private Map<String, ContinuumAgentBuildExecutor> executors;
 
     // ----------------------------------------------------------------------

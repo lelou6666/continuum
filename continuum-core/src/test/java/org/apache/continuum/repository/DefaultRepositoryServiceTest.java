@@ -24,12 +24,15 @@ import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public class DefaultRepositoryServiceTest
@@ -41,20 +44,16 @@ public class DefaultRepositoryServiceTest
 
     private LocalRepository repository;
 
-    @Override
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        repositoryPurgeConfigurationDao =
-            (RepositoryPurgeConfigurationDao) lookup( RepositoryPurgeConfigurationDao.class.getName() );
-
-        repositoryService = (RepositoryService) lookup( RepositoryService.ROLE );
-
+        repositoryPurgeConfigurationDao = lookup( RepositoryPurgeConfigurationDao.class );
+        repositoryService = lookup( RepositoryService.class );
         setupDefaultRepository();
     }
 
+    @Test
     public void testRemoveRepository()
         throws Exception
     {
@@ -90,6 +89,14 @@ public class DefaultRepositoryServiceTest
         List<LocalRepository> repositories = repositoryService.getAllLocalRepositories();
         assertEquals( "check # repositories", 1, repositories.size() );
         assertTrue( "check if repository was added", repositories.contains( repository ) );
+
+        LocalRepository repo = repositoryService.getLocalRepositoryByName( "DefaultRepo" );
+        assertNotNull( repo );
+        assertEquals( "check if repository name is the same", repository.getName(), repo.getName() );
+
+        repo = repositoryService.getLocalRepositoryByLocation( repository.getLocation() );
+        assertNotNull( repo );
+        assertEquals( "check if repository location is the same", repository.getLocation(), repo.getLocation() );
 
         ProjectGroup retrievedGroup = getDefaultProjectGroup();
         assertNotNull( retrievedGroup.getLocalRepository() );

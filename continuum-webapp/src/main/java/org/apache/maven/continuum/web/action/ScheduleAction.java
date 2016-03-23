@@ -20,12 +20,7 @@ package org.apache.maven.continuum.web.action;
  */
 
 import com.opensymphony.xwork2.Preparable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
@@ -34,14 +29,18 @@ import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.web.exception.AuthenticationRequiredException;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 /**
  * @author Nik Gonzalez
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="schedule"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "schedule", instantiationStrategy = "per-lookup"  )
 public class ScheduleAction
     extends ContinuumConfirmAction
     implements Preparable
@@ -83,7 +82,7 @@ public class ScheduleAction
     private List<BuildQueue> availableBuildQueues;
 
     private List<BuildQueue> selectedBuildQueues = new ArrayList<BuildQueue>();
-    
+
     private List<String> selectedBuildQueuesIds = new ArrayList<String>();
 
     public void prepare()
@@ -218,8 +217,8 @@ public class ScheduleAction
             logger.error( "Can't create schedule. No schedule name was supplied." );
             addActionError( getText( "buildDefinition.noname.save.error.message" ) );
         }
-        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled()
-            && ( selectedBuildQueuesIds == null || selectedBuildQueuesIds.isEmpty() ) )
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() &&
+            ( selectedBuildQueuesIds == null || selectedBuildQueuesIds.isEmpty() ) )
         {
             addActionError( getText( "schedule.buildqueues.empty.error" ) );
         }
@@ -241,11 +240,11 @@ public class ScheduleAction
         {
             logger.debug( "Unexpected error getting schedule" );
         }
-        
+
         AuditLog event = new AuditLog( getName(), AuditLogConstants.ADD_SCHEDULE );
         event.setCategory( AuditLogConstants.SCHEDULE );
         event.setCurrentUser( getPrincipal() );
-        
+
         if ( id == 0 )
         {
             try
@@ -283,15 +282,17 @@ public class ScheduleAction
         schedule.setActive( active );
         schedule.setCronExpression( getCronExpression() );
         schedule.setDelay( delay );
-        schedule.setDescription( description );
+        schedule.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
         schedule.setName( name );
-        schedule.setMaxJobExecutionTime(maxJobExecutionTime);
-        if (!getContinuum().getConfiguration().isDistributedBuildEnabled()) {
+        schedule.setMaxJobExecutionTime( maxJobExecutionTime );
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
             // if distributed build don't update schedules
-            schedule.setBuildQueues(null);
-            for (String id : selectedBuildQueuesIds) {
-                BuildQueue buildQueue = getContinuum().getBuildQueue(Integer.parseInt(id));
-                schedule.addBuildQueue(buildQueue);
+            schedule.setBuildQueues( null );
+            for ( String id : selectedBuildQueuesIds )
+            {
+                BuildQueue buildQueue = getContinuum().getBuildQueue( Integer.parseInt( id ) );
+                schedule.addBuildQueue( buildQueue );
             }
         }
 
@@ -338,7 +339,7 @@ public class ScheduleAction
             addActionError( e.getMessage() );
             return REQUIRES_AUTHENTICATION;
         }
-        
+
         if ( confirmed )
         {
             try
@@ -359,7 +360,7 @@ public class ScheduleAction
 
             return CONFIRM;
         }
-        
+
         AuditLog event = new AuditLog( name, AuditLogConstants.REMOVE_SCHEDULE );
         event.setCategory( AuditLogConstants.SCHEDULE );
         event.setCurrentUser( getPrincipal() );

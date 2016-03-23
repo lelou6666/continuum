@@ -19,101 +19,107 @@ package org.apache.maven.continuum.release.phase;
  * under the License.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
-import org.apache.maven.scm.ScmFileSet;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.PlexusSpringTestCase;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.shared.release.phase.ReleasePhase;
-import org.codehaus.plexus.spring.PlexusInSpringTestCase;
-import org.codehaus.plexus.util.FileUtils;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+
+import static org.junit.Assert.*;
 
 public class UpdateWorkingCopyPhaseTest
-    extends PlexusInSpringTestCase
+    extends PlexusSpringTestCase
 {
+    private FileSystemManager fsManager;
+
     private UpdateWorkingCopyPhase phase;
-    
-    protected void setUp()
+
+    private ContinuumReleaseDescriptor releaseDescriptor;
+
+    private File workingDirectory;
+
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-        
-        phase = (UpdateWorkingCopyPhase) lookup( ReleasePhase.ROLE, "update-working-copy" );
-        
+        fsManager = lookup( FileSystemManager.class );
+
+        phase = (UpdateWorkingCopyPhase) lookup( ReleasePhase.class, "update-working-copy" );
+        assertNotNull( phase );
+
+        releaseDescriptor = createReleaseDescriptor();
+
+        workingDirectory = new File( releaseDescriptor.getWorkingDirectory() );
+
+        // Ensure every test method starts with no working dir
+        fsManager.removeDir( workingDirectory );
+        assertFalse( workingDirectory.exists() );
+
         // set up project scm
         File scmPathFile = new File( getBasedir(), "target/scm-src" ).getAbsoluteFile();
         File scmTargetPathFile = new File( getBasedir(), "/target/scm-test" ).getAbsoluteFile();
-        FileUtils.copyDirectoryStructure( scmPathFile, scmTargetPathFile );
+        fsManager.copyDir( scmPathFile, scmTargetPathFile );
     }
-    
+
+    @Test
     public void testWorkingDirDoesNotExist()
         throws Exception
     {
-        assertNotNull( phase );
-        
-        ContinuumReleaseDescriptor releaseDescriptor = createReleaseDescriptor();
-        
-        File workingDirectory = new File( releaseDescriptor.getWorkingDirectory() );
-        
-        // assert no working directory yet
-        assertFalse( workingDirectory.exists() );
-        
         phase.execute( releaseDescriptor, new Settings(), null );
-        
-        assertTrue( workingDirectory.exists() );
+        assertPopulatedWorkingDirectory();
     }
-    
+
+    @Test
     public void testWorkingDirAlreadyExistsWithProjectCheckout()
         throws Exception
     {
-        assertNotNull( phase );
-        
-        ContinuumReleaseDescriptor releaseDescriptor = createReleaseDescriptor();
-        
-        File workingDirectory = new File( releaseDescriptor.getWorkingDirectory() );
-        
-        // assert working directory already exists with project checkout
-        assertTrue( workingDirectory.exists() );
-        assertTrue( workingDirectory.listFiles().length > 0 );
-        
+        // Run the update once, should checkout out the project into working dir
         phase.execute( releaseDescriptor, new Settings(), null );
-        
-        assertTrue( workingDirectory.exists() );
+        assertPopulatedWorkingDirectory();
+
+        // Run again, to ensure nothing funny happened
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
     }
-    
+
+    @Test
     public void testWorkingDirAlreadyExistsNoProjectCheckout()
         throws Exception
     {
-        assertNotNull( phase );
-        
-        ContinuumReleaseDescriptor releaseDescriptor = createReleaseDescriptor();
-        
-        File workingDirectory = new File( releaseDescriptor.getWorkingDirectory() );
-        FileUtils.deleteDirectory( workingDirectory );
         workingDirectory.mkdirs();
-        
-        // assert empty working directory
+        assertEmptyWorkingDirectory();
+
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
+    }
+
+    private void assertEmptyWorkingDirectory()
+    {
         assertTrue( workingDirectory.exists() );
         assertTrue( workingDirectory.listFiles().length == 0 );
-        
-        phase.execute( releaseDescriptor, new Settings(), null );
-        
-        assertTrue( workingDirectory.exists() );
     }
-    
+
+    private void assertPopulatedWorkingDirectory()
+    {
+        assertTrue( workingDirectory.exists() );
+        assertTrue( workingDirectory.listFiles().length > 0 );
+    }
+
     private ContinuumReleaseDescriptor createReleaseDescriptor()
     {
         // project source and working directory paths
         String projectUrl = getBasedir() + "/target/scm-test/trunk";
         String workingDirPath = getBasedir() + "/target/test-classes/updateWorkingCopy_working-directory";
-        
+
         // create release descriptor
         ContinuumReleaseDescriptor releaseDescriptor = new ContinuumReleaseDescriptor();
-        releaseDescriptor.setScmSourceUrl( "scm:svn:file://" + projectUrl );
+        releaseDescriptor.setScmSourceUrl( "scm:svn:file://localhost/" + projectUrl );
         releaseDescriptor.setWorkingDirectory( workingDirPath );
-        
+
         return releaseDescriptor;
     }
 }

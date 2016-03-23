@@ -21,7 +21,6 @@ package org.apache.continuum.repository;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public class RepositoryServiceException
@@ -31,12 +30,12 @@ public class RepositoryServiceException
     {
         super( message );
     }
-    
+
     public RepositoryServiceException( Throwable cause )
     {
         super( cause );
     }
-    
+
     public RepositoryServiceException( String message, Throwable cause )
     {
         super( message, cause );

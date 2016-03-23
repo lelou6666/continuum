@@ -19,18 +19,19 @@ package org.apache.continuum.buildagent.manager;
  * under the License.
  */
 
-import java.util.Map;
-
 import org.apache.maven.continuum.release.ContinuumReleaseException;
+import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.shared.release.ReleaseResult;
+
+import java.util.Map;
+import java.util.Properties;
 
 public interface BuildAgentReleaseManager
 {
     String ROLE = BuildAgentReleaseManager.class.getName();
 
-    String releasePrepare( Map<String, Object> project, Map<String, Object> properties,
-                           Map<String, String> releaseVersion, Map<String, String> developmentVersion,
-                           Map<String, String> environments, String username )
+    String releasePrepare( Map<String, Object> project, Properties properties, Map<String, String> releaseVersion,
+                           Map<String, String> developmentVersion, Map<String, String> environments, String username )
         throws ContinuumReleaseException;
 
     ReleaseResult getReleaseResult( String releaseId );
@@ -41,7 +42,8 @@ public interface BuildAgentReleaseManager
 
     String getPreparedReleaseName( String releaseId );
 
-    void releasePerform( String releaseId, String goals, String arguments, boolean useReleaseProfile, Map repository, String username )
+    void releasePerform( String releaseId, String goals, String arguments, boolean useReleaseProfile, Map repository,
+                         String username )
         throws ContinuumReleaseException;
 
     String releasePerformFromScm( String goals, String arguments, boolean useReleaseProfile, Map repository,
@@ -53,4 +55,6 @@ public interface BuildAgentReleaseManager
 
     void releaseRollback( String releaseId, int projectId )
         throws ContinuumReleaseException;
+
+    ContinuumReleaseManager getReleaseManager();
 }

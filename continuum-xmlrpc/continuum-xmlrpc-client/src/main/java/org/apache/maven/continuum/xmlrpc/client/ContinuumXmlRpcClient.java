@@ -19,17 +19,15 @@ package org.apache.maven.continuum.xmlrpc.client;
  * under the License.
  */
 
-import java.net.URL;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.xmlrpc.release.ContinuumReleaseResult;
 import org.apache.continuum.xmlrpc.repository.DirectoryPurgeConfiguration;
 import org.apache.continuum.xmlrpc.repository.LocalRepository;
 import org.apache.continuum.xmlrpc.repository.RepositoryPurgeConfiguration;
+import org.apache.continuum.xmlrpc.utils.BuildTrigger;
 import org.apache.maven.continuum.xmlrpc.ContinuumService;
 import org.apache.maven.continuum.xmlrpc.project.AddingResult;
+import org.apache.maven.continuum.xmlrpc.project.BuildAgentConfiguration;
+import org.apache.maven.continuum.xmlrpc.project.BuildAgentGroupConfiguration;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinition;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.xmlrpc.project.BuildProjectTask;
@@ -40,18 +38,26 @@ import org.apache.maven.continuum.xmlrpc.project.Project;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroup;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroupSummary;
 import org.apache.maven.continuum.xmlrpc.project.ProjectNotifier;
+import org.apache.maven.continuum.xmlrpc.project.ProjectScmRoot;
 import org.apache.maven.continuum.xmlrpc.project.ProjectSummary;
+import org.apache.maven.continuum.xmlrpc.project.ReleaseListenerSummary;
 import org.apache.maven.continuum.xmlrpc.project.Schedule;
 import org.apache.maven.continuum.xmlrpc.system.Installation;
 import org.apache.maven.continuum.xmlrpc.system.Profile;
 import org.apache.maven.continuum.xmlrpc.system.SystemConfiguration;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+import org.apache.xmlrpc.client.XmlRpcCommonsTransportFactory;
 import org.apache.xmlrpc.client.util.ClientFactory;
+
+import java.net.URL;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class ContinuumXmlRpcClient
     implements ContinuumService
@@ -97,6 +103,7 @@ public class ContinuumXmlRpcClient
         config.setServerURL( serviceUrl );
 
         XmlRpcClient client = new XmlRpcClient();
+        client.setTransportFactory( new XmlRpcCommonsTransportFactory( client ) );
         client.setConfig( config );
         ClientFactory factory = new ClientFactory( client );
         continuum = (ContinuumService) factory.newInstance( ContinuumService.class );
@@ -323,6 +330,18 @@ public class ContinuumXmlRpcClient
         return continuum.buildProject( projectId, buildDefinitionId );
     }
 
+    public int buildProject( int projectId, BuildTrigger buildTrigger )
+        throws Exception
+    {
+        return continuum.buildProject( projectId, buildTrigger );
+    }
+
+    public int buildProject( int projectId, int buildDefinitionId, BuildTrigger buildTrigger )
+        throws Exception
+    {
+        return continuum.buildProject( projectId, buildDefinitionId, buildTrigger );
+    }
+
     public int buildGroup( int projectGroupId )
         throws Exception
     {
@@ -333,6 +352,22 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.buildGroup( projectGroupId, buildDefinitionId );
+    }
+
+    // ----------------------------------------------------------------------
+    // SCM roots
+    // ----------------------------------------------------------------------
+
+    public List<ProjectScmRoot> getProjectScmRootByProjectGroup( int projectGroupId )
+        throws Exception
+    {
+        return continuum.getProjectScmRootByProjectGroup( projectGroupId );
+    }
+
+    public ProjectScmRoot getProjectScmRootByProject( int projectId )
+        throws Exception
+    {
+        return continuum.getProjectScmRootByProject( projectId );
     }
 
     // ----------------------------------------------------------------------
@@ -351,10 +386,10 @@ public class ContinuumXmlRpcClient
         return continuum.getBuildResult( projectId, buildId );
     }
 
-    public List<BuildResultSummary> getBuildResultsForProject( int projectId )
+    public List<BuildResultSummary> getBuildResultsForProject( int projectId, int offset, int length )
         throws Exception
     {
-        return continuum.getBuildResultsForProject( projectId );
+        return continuum.getBuildResultsForProject( projectId, offset, length );
     }
 
     public int removeBuildResult( BuildResult br )
@@ -383,6 +418,27 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.addMavenTwoProject( url, projectGroupId );
+    }
+
+    public AddingResult addMavenTwoProject( String url, int projectGroupId, boolean checkoutInSingleDirectory )
+        throws Exception
+    {
+        return continuum.addMavenTwoProject( url, projectGroupId, checkoutInSingleDirectory );
+    }
+
+    public AddingResult addMavenTwoProjectAsSingleProject( String url, int projectGroupId )
+        throws Exception
+    {
+        return continuum.addMavenTwoProjectAsSingleProject( url, projectGroupId );
+    }
+
+    public AddingResult addMavenTwoProject( String url, int projectGroupId, boolean checkProtocol,
+                                            boolean useCredentialsCache, boolean recursiveProjects,
+                                            boolean checkoutInSingleDirectory )
+        throws Exception
+    {
+        return continuum.addMavenTwoProject( url, projectGroupId, checkProtocol, useCredentialsCache, recursiveProjects,
+                                             checkoutInSingleDirectory );
     }
 
     // ----------------------------------------------------------------------
@@ -459,6 +515,12 @@ public class ContinuumXmlRpcClient
         return continuum.getProfile( profileId );
     }
 
+    public Profile getProfileWithName( String profileName )
+        throws Exception
+    {
+        return continuum.getProfileWithName( profileName );
+    }
+
     // ----------------------------------------------------------------------
     // Installations
     // ----------------------------------------------------------------------
@@ -473,6 +535,18 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.getInstallation( installationId );
+    }
+
+    public Installation getInstallation( String installationName )
+        throws Exception
+    {
+        return continuum.getInstallation( installationName );
+    }
+
+    public List<Installation> getBuildAgentInstallations( String url )
+        throws Exception
+    {
+        return continuum.getBuildAgentInstallations( url );
     }
 
     // ----------------------------------------------------------------------
@@ -497,6 +571,17 @@ public class ContinuumXmlRpcClient
     // ----------------------------------------------------------------------
     // Queue
     // ----------------------------------------------------------------------
+    public boolean isProjectInPrepareBuildQueue( int projectId )
+        throws Exception
+    {
+        return continuum.isProjectInPrepareBuildQueue( projectId );
+    }
+
+    public boolean isProjectInPrepareBuildQueue( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.isProjectInPrepareBuildQueue( projectId, buildDefinitionId );
+    }
 
     public List<BuildProjectTask> getProjectsInBuildQueue()
         throws Exception
@@ -510,6 +595,36 @@ public class ContinuumXmlRpcClient
         return continuum.isProjectInBuildingQueue( projectId );
     }
 
+    public boolean isProjectInBuildingQueue( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.isProjectInBuildingQueue( projectId, buildDefinitionId );
+    }
+
+    public boolean isProjectCurrentlyPreparingBuild( int projectId )
+        throws Exception
+    {
+        return continuum.isProjectCurrentlyPreparingBuild( projectId );
+    }
+
+    public boolean isProjectCurrentlyPreparingBuild( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.isProjectCurrentlyPreparingBuild( projectId, buildDefinitionId );
+    }
+
+    public boolean isProjectCurrentlyBuilding( int projectId )
+        throws Exception
+    {
+        return continuum.isProjectCurrentlyBuilding( projectId );
+    }
+
+    public boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.isProjectCurrentlyBuilding( projectId, buildDefinitionId );
+    }
+
     public int removeProjectsFromBuildingQueue( int[] projectsId )
         throws Exception
     {
@@ -520,6 +635,12 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.cancelCurrentBuild();
+    }
+
+    public boolean cancelBuild( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.cancelBuild( projectId, buildDefinitionId );
     }
 
     // ----------------------------------------------------------------------
@@ -614,16 +735,16 @@ public class ContinuumXmlRpcClient
         return continuum.getAllDirectoryPurgeConfigurations();
     }
 
-    public void purgeLocalRepository( int repoPurgeId )
+    public int purgeLocalRepository( int repoPurgeId )
         throws Exception
     {
-        continuum.purgeLocalRepository( repoPurgeId );
+        return continuum.purgeLocalRepository( repoPurgeId );
     }
 
-    public void purgeDirectory( int dirPurgeId )
+    public int purgeDirectory( int dirPurgeId )
         throws Exception
     {
-        continuum.purgeDirectory( dirPurgeId );
+        return continuum.purgeDirectory( dirPurgeId );
     }
 
     // ----------------------------------------------------------------------
@@ -660,6 +781,41 @@ public class ContinuumXmlRpcClient
         return continuum.getAllLocalRepositories();
     }
 
+    // ----------------------------------------------------------------------
+    // ConfigurationService
+    // ----------------------------------------------------------------------
+
+    public BuildAgentConfiguration addBuildAgent( BuildAgentConfiguration buildAgentConfiguration )
+        throws Exception
+    {
+        return continuum.addBuildAgent( buildAgentConfiguration );
+    }
+
+    public BuildAgentConfiguration getBuildAgent( String url )
+
+    {
+        return continuum.getBuildAgent( url );
+    }
+
+    public BuildAgentConfiguration updateBuildAgent( BuildAgentConfiguration buildAgentConfiguration )
+        throws Exception
+
+    {
+        return continuum.updateBuildAgent( buildAgentConfiguration );
+    }
+
+    public boolean removeBuildAgent( String url )
+        throws Exception
+
+    {
+        return continuum.removeBuildAgent( url );
+    }
+
+    public List<BuildAgentConfiguration> getAllBuildAgents()
+    {
+        return continuum.getAllBuildAgents();
+    }
+
     public Map<String, Object> addAntProjectRPC( Map<String, Object> project, int projectGroupId )
         throws Exception
     {
@@ -694,6 +850,28 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.addMavenTwoProjectRPC( url, projectGroupId );
+    }
+
+    public Map<String, Object> addMavenTwoProjectRPC( String url, int projectGroupId,
+                                                      boolean checkoutInSingleDirectory )
+        throws Exception
+    {
+        return continuum.addMavenTwoProjectRPC( url, projectGroupId, checkoutInSingleDirectory );
+    }
+
+    public Map<String, Object> addMavenTwoProjectAsSingleProjectRPC( String url, int projectGroupId )
+        throws Exception
+    {
+        return continuum.addMavenTwoProjectAsSingleProjectRPC( url, projectGroupId );
+    }
+
+    public Map<String, Object> addMavenTwoProjectRPC( String url, int projectGroupId, boolean checkProtocol,
+                                                      boolean useCredentialsCache, boolean recursiveProjects,
+                                                      boolean checkoutInSingleDirectory )
+        throws Exception
+    {
+        return continuum.addMavenTwoProjectRPC( url, projectGroupId, checkProtocol, useCredentialsCache,
+                                                recursiveProjects, checkoutInSingleDirectory );
     }
 
     public Map<String, Object> addProjectGroupRPC( String groupName, String groupId, String description )
@@ -750,10 +928,10 @@ public class ContinuumXmlRpcClient
         return continuum.getBuildResultRPC( projectId, buildId );
     }
 
-    public List<Object> getBuildResultsForProjectRPC( int projectId )
+    public List<Object> getBuildResultsForProjectRPC( int projectId, int offset, int length )
         throws Exception
     {
-        return continuum.getBuildResultsForProjectRPC( projectId );
+        return continuum.getBuildResultsForProjectRPC( projectId, offset, length );
     }
 
     public Map<String, Object> getInstallationRPC( int installationId )
@@ -762,10 +940,22 @@ public class ContinuumXmlRpcClient
         return continuum.getInstallationRPC( installationId );
     }
 
+    public Map<String, Object> getInstallationRPC( String installationName )
+        throws Exception
+    {
+        return continuum.getInstallationRPC( installationName );
+    }
+
     public List<Object> getInstallationsRPC()
         throws Exception
     {
         return continuum.getInstallationsRPC();
+    }
+
+    public List<Object> getBuildAgentInstallationsRPC( String url )
+        throws Exception
+    {
+        return continuum.getBuildAgentInstallationsRPC( url );
     }
 
     public Map<String, Object> getLatestBuildResultRPC( int projectId )
@@ -778,6 +968,12 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.getProfileRPC( profileId );
+    }
+
+    public Map<String, Object> getProfileWithNameRPC( String profileName )
+        throws Exception
+    {
+        return continuum.getProfileWithNameRPC( profileName );
     }
 
     public List<Object> getProfilesRPC()
@@ -1115,5 +1311,159 @@ public class ContinuumXmlRpcClient
         throws Exception
     {
         return continuum.getAllLocalRepositoriesRPC();
+    }
+
+    public Map<String, Object> addBuildAgentRPC( Map<String, Object> buildAgentConfiguration )
+        throws Exception
+    {
+        return continuum.addBuildAgentRPC( buildAgentConfiguration );
+    }
+
+    public Map<String, Object> getBuildAgentRPC( String url )
+
+    {
+        return continuum.getBuildAgentRPC( url );
+    }
+
+    public Map<String, Object> updateBuildAgentRPC( Map<String, Object> buildAgentConfiguration )
+        throws Exception
+
+    {
+        return continuum.updateBuildAgentRPC( buildAgentConfiguration );
+    }
+
+    public List<Object> getAllBuildAgentsRPC()
+    {
+        return continuum.getAllBuildAgentsRPC();
+    }
+
+    public int releasePerform( int projectId, String releaseId, String goals, String arguments,
+                               boolean useReleaseProfile, String repositoryName, String username )
+        throws Exception
+    {
+        return continuum.releasePerform( projectId, releaseId, goals, arguments, useReleaseProfile, repositoryName,
+                                         username );
+    }
+
+    public String releasePrepare( int projectId, Properties releaseProperties, Map<String, String> releaseVersions,
+                                  Map<String, String> developmentVersions, Map<String, String> environments,
+                                  String username )
+        throws Exception
+    {
+        return continuum.releasePrepare( projectId, releaseProperties, releaseVersions, developmentVersions,
+                                         environments, username );
+    }
+
+    public ReleaseListenerSummary getListener( int projectId, String releaseId )
+        throws Exception
+    {
+        return continuum.getListener( projectId, releaseId );
+    }
+
+    public int releaseCleanup( int projectId, String releaseId )
+        throws Exception
+    {
+        return continuum.releaseCleanup( projectId, releaseId );
+    }
+
+    public int releaseCleanup( int projectId, String releaseId, String releaseType )
+        throws Exception
+    {
+        return continuum.releaseCleanup( projectId, releaseId, releaseType );
+    }
+
+    public int releaseRollback( int projectId, String releaseId )
+        throws Exception
+    {
+        return continuum.releaseRollback( projectId, releaseId );
+    }
+
+    public Map<String, Object> getReleasePluginParameters( int projectId )
+        throws Exception
+    {
+        return continuum.getReleasePluginParameters( projectId );
+    }
+
+    public List<Map<String, String>> getProjectReleaseAndDevelopmentVersions( int projectId, String pomFilename,
+                                                                              boolean autoVersionSubmodules )
+        throws Exception
+    {
+        return continuum.getProjectReleaseAndDevelopmentVersions( projectId, pomFilename, autoVersionSubmodules );
+    }
+
+    public boolean pingBuildAgent( String buildAgentUrl )
+        throws Exception
+    {
+        return continuum.pingBuildAgent( buildAgentUrl );
+    }
+
+    public String getBuildAgentUrl( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.getBuildAgentUrl( projectId, buildDefinitionId );
+    }
+
+    public BuildDefinition getBuildDefinition( int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.getBuildDefinition( buildDefinitionId );
+    }
+
+    public Map<String, Object> getBuildDefinitionRPC( int buildDefinitionId )
+        throws Exception
+    {
+        return continuum.getBuildDefinitionRPC( buildDefinitionId );
+    }
+
+    public BuildAgentGroupConfiguration addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws Exception
+    {
+        return continuum.addBuildAgentGroup( buildAgentGroup );
+    }
+
+    public Map<String, Object> addBuildAgentGroupRPC( Map<String, Object> buildAgentGroup )
+        throws Exception
+    {
+        return continuum.addBuildAgentGroupRPC( buildAgentGroup );
+    }
+
+    public BuildAgentGroupConfiguration getBuildAgentGroup( String name )
+    {
+        return continuum.getBuildAgentGroup( name );
+    }
+
+    public Map<String, Object> getBuildAgentGroupRPC( String name )
+    {
+        return continuum.getBuildAgentGroupRPC( name );
+    }
+
+    public BuildAgentGroupConfiguration updateBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws Exception
+    {
+        return continuum.updateBuildAgentGroup( buildAgentGroup );
+    }
+
+    public Map<String, Object> updateBuildAgentGroupRPC( Map<String, Object> buildAgentGroup )
+        throws Exception
+    {
+        return continuum.updateBuildAgentGroupRPC( buildAgentGroup );
+    }
+
+    public int removeBuildAgentGroup( String name )
+        throws Exception
+    {
+        return continuum.removeBuildAgentGroup( name );
+    }
+
+    public List<BuildAgentConfiguration> getBuildAgentsWithInstallations()
+        throws Exception
+    {
+        return continuum.getBuildAgentsWithInstallations();
+    }
+
+    public List<Object> getBuildAgentsWithInstallationsRPC()
+        throws Exception
+    {
+        return continuum.getBuildAgentsWithInstallationsRPC();
     }
 }

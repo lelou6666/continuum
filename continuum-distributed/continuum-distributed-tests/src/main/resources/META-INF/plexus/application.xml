@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,12 +18,13 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <plexus>
   <components>
-   
+
     <!--
-     | Logger manager
-     -->
+    | Logger manager
+    -->
     <component>
       <role>org.codehaus.plexus.logging.LoggerManager</role>
       <implementation>org.codehaus.plexus.logging.slf4j.Slf4jLoggerManager</implementation>
@@ -30,7 +32,7 @@
     </component>
 
   </components>
-  
+
   <lifecycle-handler-manager implementation="org.codehaus.plexus.lifecycle.DefaultLifecycleHandlerManager">
     <default-lifecycle-handler-id>plexus</default-lifecycle-handler-id>
     <lifecycle-handlers>

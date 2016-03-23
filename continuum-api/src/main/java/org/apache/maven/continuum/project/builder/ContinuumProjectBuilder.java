@@ -19,13 +19,12 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
-import java.net.URL;
-
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+
+import java.net.URL;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ContinuumProjectBuilder
 {
@@ -37,12 +36,26 @@ public interface ContinuumProjectBuilder
     ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
                                                               boolean recursiveProjects,
                                                               boolean checkoutInSingleDirectory )
+<<<<<<< HEAD
+=======
         throws ContinuumProjectBuilderException;
 
     ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
                                                               boolean recursiveProjects,
                                                               BuildDefinitionTemplate buildDefinitionTemplate,
                                                               boolean checkoutInSingleDirectory )
+>>>>>>> refs/remotes/apache/trunk
+        throws ContinuumProjectBuilderException;
+
+    ContinuumProjectBuildingResult buildProjectsFromMetadata( URL url, String username, String password,
+                                                              boolean recursiveProjects,
+                                                              BuildDefinitionTemplate buildDefinitionTemplate,
+<<<<<<< HEAD
+                                                              boolean checkoutInSingleDirectory )
+=======
+                                                              boolean checkoutInSingleDirectory,
+                                                              int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumProjectBuilderException;
 
     BuildDefinitionTemplate getDefaultBuildDefinitionTemplate()

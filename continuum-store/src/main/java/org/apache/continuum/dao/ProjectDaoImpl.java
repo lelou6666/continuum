@@ -19,30 +19,29 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.jdo.Extent;
-import javax.jdo.PersistenceManager;
-import javax.jdo.Query;
-import javax.jdo.Transaction;
-
 import org.apache.continuum.model.project.ProjectGroupSummary;
 import org.apache.continuum.model.project.ProjectSummaryResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.jdo.Extent;
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.ProjectDao"
  */
-@Repository("projectDao")
+@Repository( "projectDao" )
+@Component( role = org.apache.continuum.dao.ProjectDao.class )
 public class ProjectDaoImpl
     extends AbstractDao
     implements ProjectDao
@@ -61,7 +60,7 @@ public class ProjectDaoImpl
     public Project getProject( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId );
+        return getObjectById( Project.class, projectId );
     }
 
     public Project getProject( String groupId, String artifactId, String version )
@@ -185,19 +184,19 @@ public class ProjectDaoImpl
     public Project getProjectWithBuilds( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_WITH_BUILDS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_WITH_BUILDS_FETCH_GROUP );
     }
 
     public Project getProjectWithBuildDetails( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_BUILD_DETAILS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_BUILD_DETAILS_FETCH_GROUP );
     }
 
     public Project getProjectWithCheckoutResult( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_WITH_CHECKOUT_RESULT_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_WITH_CHECKOUT_RESULT_FETCH_GROUP );
     }
 
     public List<Project> getProjectsInGroup( int projectGroupId )
@@ -269,14 +268,13 @@ public class ProjectDaoImpl
     public Project getProjectWithAllDetails( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_ALL_DETAILS_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_ALL_DETAILS_FETCH_GROUP );
     }
 
     public List<Project> getAllProjectsByName()
     {
         return getAllObjectsDetached( Project.class, "name ascending", null );
     }
-
 
     public List<Project> getAllProjectsByNameWithDependencies()
     {
@@ -306,7 +304,7 @@ public class ProjectDaoImpl
     public Project getProjectWithDependencies( int projectId )
         throws ContinuumStoreException
     {
-        return (Project) getObjectById( Project.class, projectId, PROJECT_DEPENDENCIES_FETCH_GROUP );
+        return getObjectById( Project.class, projectId, PROJECT_DEPENDENCIES_FETCH_GROUP );
     }
 
     public Map<Integer, ProjectGroupSummary> getProjectsSummary()

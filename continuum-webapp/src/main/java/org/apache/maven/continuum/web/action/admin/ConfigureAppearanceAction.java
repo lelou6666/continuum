@@ -19,17 +19,13 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.opensymphony.xwork2.ModelDriven;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
 import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper;
-import org.apache.maven.continuum.execution.maven.m2.SettingsConfigurationException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.component.AbstractFooterAction;
 import org.apache.maven.continuum.web.appareance.AppareanceConfiguration;
@@ -42,6 +38,8 @@ import org.apache.maven.settings.Settings;
 import org.apache.maven.shared.app.company.CompanyPomHandler;
 import org.apache.maven.shared.app.configuration.Configuration;
 import org.apache.maven.shared.app.configuration.MavenAppConfiguration;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.plexus.registry.RegistryException;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -49,20 +47,21 @@ import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
 
-import com.opensymphony.xwork2.ModelDriven;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="configureAppearance"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "configureAppearance", instantiationStrategy = "per-lookup" )
 public class ConfigureAppearanceAction
     extends AbstractFooterAction
     implements ModelDriven, SecureAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private MavenAppConfiguration appConfiguration;
 
     /**
@@ -72,34 +71,22 @@ public class ConfigureAppearanceAction
 
     private Model companyModel;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private CompanyPomHandler companyPomHandler;
 
-    /**
-     * @plexus.requirement
-     */
-    private MavenBuilderHelper helper;
+    @Requirement
+    private LocalRepositoryHelper helper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder mavenSettingsBuilder;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ArtifactRepositoryFactory artifactRepositoryFactory;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private ArtifactRepositoryLayout layout;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private AppareanceConfiguration appareanceConfiguration;
 
     public String execute()
@@ -145,9 +132,10 @@ public class ConfigureAppearanceAction
                     {
                         for ( Repository repo : repos )
                         {
-                            remoteRepositories.add(
-                                artifactRepositoryFactory.createArtifactRepository( repo.getId(), repo
-                                    .getUrl(), layout, null, null ) );
+                            remoteRepositories.add( artifactRepositoryFactory.createArtifactRepository( repo.getId(),
+                                                                                                        repo.getUrl(),
+                                                                                                        layout, null,
+                                                                                                        null ) );
                         }
                     }
                 }

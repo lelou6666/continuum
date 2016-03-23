@@ -19,17 +19,19 @@ package org.apache.continuum.builder.distributed.manager;
  * under the License.
  */
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.buildagent.NoBuildAgentException;
 import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
+import org.apache.continuum.configuration.BuildAgentConfiguration;
+import org.apache.continuum.model.project.ProjectRunSummary;
 import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.continuum.taskqueue.PrepareBuildProjectsTask;
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.system.Installation;
+
+import java.util.List;
+import java.util.Map;
 
 public interface DistributedBuildManager
 {
@@ -41,12 +43,18 @@ public interface DistributedBuildManager
     void reload()
         throws ContinuumException;
 
+    void update( BuildAgentConfiguration buildAgent )
+        throws ContinuumException;
+
     void removeDistributedBuildQueueOfAgent( String buildAgentUrl )
         throws ContinuumException;
 
     boolean isBuildAgentBusy( String buildAgentUrl );
 
     List<Installation> getAvailableInstallations( String buildAgentUrl )
+        throws ContinuumException;
+
+    String getBuildAgentPlatform( String buildAgentUrl )
         throws ContinuumException;
 
     Map<String, List<PrepareBuildProjectsTask>> getProjectsInPrepareBuildQueue()
@@ -61,11 +69,12 @@ public interface DistributedBuildManager
     String generateWorkingCopyContent( int projectId, String directory, String baseUrl, String imagesBaseUrl )
         throws ContinuumException;
 
-    String getFileContent( int projectId, String directory, String filename )
+    Map<String, Object> getFileContent( int projectId, String directory, String filename )
         throws ContinuumException;
 
-    void prepareBuildProjects( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger, int projectGroupId,  
-                               String projectGroupName, String scmRootAddress, int scmRootId, List<ProjectScmRoot> scmRoots )
+    void prepareBuildProjects( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger,
+                               int projectGroupId, String projectGroupName, String scmRootAddress, int scmRootId,
+                               List<ProjectScmRoot> scmRoots )
         throws ContinuumException, NoBuildAgentException, NoBuildAgentInGroupException;
 
     Map<String, PrepareBuildProjectsTask> getProjectsCurrentlyPreparingBuild()
@@ -74,7 +83,7 @@ public interface DistributedBuildManager
     Map<String, BuildProjectTask> getProjectsCurrentlyBuilding()
         throws ContinuumException;
 
-    void removeFromPrepareBuildQueue( String buildAgnetUrl, int projectGroupId, int scmRootId )
+    void removeFromPrepareBuildQueue( String buildAgentUrl, int projectGroupId, int scmRootId )
         throws ContinuumException;
 
     void removeFromPrepareBuildQueue( List<String> hashCodes )
@@ -89,6 +98,9 @@ public interface DistributedBuildManager
     boolean isAgentAvailable( String buildAgentUrl )
         throws ContinuumException;
 
+    boolean pingBuildAgent( String buildAgentUrl )
+        throws ContinuumException;
+
     boolean isProjectInAnyPrepareBuildQueue( int projectId, int buildDefinitionId )
         throws ContinuumException;
 
@@ -99,5 +111,26 @@ public interface DistributedBuildManager
         throws ContinuumException;
 
     boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId )
+        throws ContinuumException;
+
+    String getBuildAgentUrl( int projectId, int buildDefinitionId )
+        throws ContinuumException;
+
+    List<ProjectRunSummary> getCurrentRuns();
+
+    ProjectRunSummary getCurrentRun( int projectId, int buildDefinitionId )
+        throws ContinuumException;
+
+    ProjectRunSummary getCanceledRun( int projectId, int buildDefinitionId )
+        throws ContinuumException;
+
+    void removeCanceledRun( ProjectRunSummary canceled );
+
+    void removeCurrentRun( int projectId, int buildDefinitionId );
+
+    void cancelBuild( int projectId )
+        throws ContinuumException;
+
+    void cancelGroupBuild( int projectGroupId )
         throws ContinuumException;
 }

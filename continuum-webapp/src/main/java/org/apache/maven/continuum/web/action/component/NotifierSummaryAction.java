@@ -22,10 +22,6 @@ package org.apache.maven.continuum.web.action.component;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
@@ -34,17 +30,21 @@ import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.NotifierSummary;
+import org.codehaus.plexus.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Component Action that prepares and provides Project Group Notifier and
  * Project Notifier summaries.
  *
  * @author <a href='mailto:rahul.thakur.xdev@gmail.com'>Rahul Thakur</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="notifierSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "notifierSummary", instantiationStrategy = "per-lookup" )
 public class NotifierSummaryAction
     extends ContinuumActionSupport
 {

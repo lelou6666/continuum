@@ -19,10 +19,6 @@ package org.apache.continuum.release.phase;
  * under the License.
  */
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
 import org.apache.continuum.utils.shell.ShellCommandHelper;
 import org.apache.maven.continuum.installation.InstallationService;
@@ -32,7 +28,12 @@ import org.apache.maven.shared.release.ReleaseResult;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.env.ReleaseEnvironment;
 import org.apache.maven.shared.release.phase.AbstractRunGoalsPhase;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
@@ -40,14 +41,11 @@ import org.codehaus.plexus.util.StringUtils;
 public abstract class AbstractContinuumRunGoalsPhase
     extends AbstractRunGoalsPhase
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private ShellCommandHelper shellCommandHelper;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private InstallationService installationService;
 
     /**
@@ -58,7 +56,7 @@ public abstract class AbstractContinuumRunGoalsPhase
         throws ReleaseExecutionException
     {
         ReleaseResult result = new ReleaseResult();
-        
+
         try
         {
             String goals = getGoals( releaseDescriptor );
@@ -72,12 +70,18 @@ public abstract class AbstractContinuumRunGoalsPhase
                 {
                     environments = ( (ContinuumReleaseDescriptor) releaseDescriptor ).getEnvironments();
 
-                    executable = ( (ContinuumReleaseDescriptor) releaseDescriptor).getExecutable();
+                    executable = ( (ContinuumReleaseDescriptor) releaseDescriptor ).getExecutable();
                 }
                 shellCommandHelper.executeGoals( determineWorkingDirectory( workingDirectory,
+<<<<<<< HEAD
                 								 releaseDescriptor.getScmRelativePathProjectDirectory() ),
                                                  executable, goals, releaseDescriptor.isInteractive(), additionalArguments, result, 
                                                  environments );
+=======
+                                                                            releaseDescriptor.getScmRelativePathProjectDirectory() ),
+                                                 executable, goals, releaseDescriptor.isInteractive(),
+                                                 additionalArguments, result, environments );
+>>>>>>> refs/remotes/apache/trunk
             }
         }
         catch ( Exception e )
@@ -90,23 +94,27 @@ public abstract class AbstractContinuumRunGoalsPhase
         return result;
     }
 
-	@Override
-	public ReleaseResult execute(ReleaseDescriptor arg0,
-			ReleaseEnvironment arg1, File arg2, String arg3)
-			throws ReleaseExecutionException {
-		return super.execute(arg0, arg1, arg2, arg3);
-	}
+    @Override
+    public ReleaseResult execute( ReleaseDescriptor arg0, ReleaseEnvironment arg1, File arg2, String arg3 )
+        throws ReleaseExecutionException
+    {
+        return super.execute( arg0, arg1, arg2, arg3 );
+    }
 
-	public ReleaseResult execute(ReleaseDescriptor releaseDescriptor,
-			ReleaseEnvironment releaseEnvironment, List reactorProjects)
-			throws ReleaseExecutionException, ReleaseFailureException {
-		
-		return execute(releaseDescriptor, new File(releaseDescriptor.getWorkingDirectory()), releaseDescriptor.getAdditionalArguments());
-	}
+    public ReleaseResult execute( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                  List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
 
-	public ReleaseResult simulate(ReleaseDescriptor releaseDescriptor,
-			ReleaseEnvironment releaseEnvironment, List reactorProjects)
-			throws ReleaseExecutionException, ReleaseFailureException {
-		return execute(releaseDescriptor, new File(releaseDescriptor.getWorkingDirectory()), releaseDescriptor.getAdditionalArguments());
-	}
+        return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ),
+                        releaseDescriptor.getAdditionalArguments() );
+    }
+
+    public ReleaseResult simulate( ReleaseDescriptor releaseDescriptor, ReleaseEnvironment releaseEnvironment,
+                                   List reactorProjects )
+        throws ReleaseExecutionException, ReleaseFailureException
+    {
+        return execute( releaseDescriptor, new File( releaseDescriptor.getWorkingDirectory() ),
+                        releaseDescriptor.getAdditionalArguments() );
+    }
 }

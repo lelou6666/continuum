@@ -19,21 +19,26 @@ package org.apache.continuum.utils.shell;
  * under the License.
  */
 
+import org.apache.maven.shared.release.ReleaseResult;
+
 import java.io.File;
 import java.util.Map;
-
-import org.apache.continuum.utils.shell.ExecutionResult;
-import org.apache.maven.shared.release.ReleaseResult;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ShellCommandHelper
 {
     String ROLE = ShellCommandHelper.class.getName();
 
+    Properties getSystemEnvVars();
+
     ExecutionResult executeShellCommand( File workingDirectory, String executable, String arguments, File output,
+                                         long idCommand, Map<String, String> environments )
+        throws Exception;
+
+    ExecutionResult executeShellCommand( File workingDirectory, String executable, String[] arguments, OutputConsumer io,
                                          long idCommand, Map<String, String> environments )
         throws Exception;
 

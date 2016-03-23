@@ -19,14 +19,14 @@ package org.apache.maven.continuum.xmlrpc;
  * under the License.
  */
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.xmlrpc.release.ContinuumReleaseResult;
 import org.apache.continuum.xmlrpc.repository.DirectoryPurgeConfiguration;
 import org.apache.continuum.xmlrpc.repository.LocalRepository;
 import org.apache.continuum.xmlrpc.repository.RepositoryPurgeConfiguration;
+import org.apache.continuum.xmlrpc.utils.BuildTrigger;
 import org.apache.maven.continuum.xmlrpc.project.AddingResult;
+import org.apache.maven.continuum.xmlrpc.project.BuildAgentConfiguration;
+import org.apache.maven.continuum.xmlrpc.project.BuildAgentGroupConfiguration;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinition;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.xmlrpc.project.BuildProjectTask;
@@ -36,15 +36,20 @@ import org.apache.maven.continuum.xmlrpc.project.Project;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroup;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroupSummary;
 import org.apache.maven.continuum.xmlrpc.project.ProjectNotifier;
+import org.apache.maven.continuum.xmlrpc.project.ProjectScmRoot;
 import org.apache.maven.continuum.xmlrpc.project.ProjectSummary;
+import org.apache.maven.continuum.xmlrpc.project.ReleaseListenerSummary;
 import org.apache.maven.continuum.xmlrpc.project.Schedule;
 import org.apache.maven.continuum.xmlrpc.system.Installation;
 import org.apache.maven.continuum.xmlrpc.system.Profile;
 import org.apache.maven.continuum.xmlrpc.system.SystemConfiguration;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface ContinuumService
 {
@@ -62,7 +67,6 @@ public interface ContinuumService
     List<ProjectSummary> getProjects( int projectGroupId )
         throws Exception;
 
-
     /**
      * Same method but compatible with standard XMLRPC
      *
@@ -72,7 +76,6 @@ public interface ContinuumService
      */
     List<Object> getProjectsRPC( int projectGroupId )
         throws Exception;
-
 
     /**
      * Get a project.
@@ -141,6 +144,7 @@ public interface ContinuumService
      */
     Map<String, Object> updateProjectRPC( Map<String, Object> project )
         throws Exception;
+
     // ----------------------------------------------------------------------
     // Projects Groups
     // ----------------------------------------------------------------------
@@ -393,10 +397,30 @@ public interface ContinuumService
         throws Exception;
 
     /**
+     * Get the build definition
+     *
+     * @param buildDefinitionId The build definition id
+     * @return The build definition
+     * @throws Exception
+     */
+    BuildDefinition getBuildDefinition( int buildDefinitionId )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param buildDefinitionId The build definition id
+     * @return The build definition as RPC value
+     * @throws Exception
+     */
+    Map<String, Object> getBuildDefinitionRPC( int buildDefinitionId )
+        throws Exception;
+
+    /**
      * Update a project build definition.
      *
      * @param projectId The project id
-     * @param buildDef  The build defintion to update
+     * @param buildDef  The build definition to update
      * @return the updated build definition
      * @throws Exception
      */
@@ -407,7 +431,7 @@ public interface ContinuumService
      * Same method but compatible with standard XMLRPC
      *
      * @param projectId The project id
-     * @param buildDef  The build defintion to update
+     * @param buildDef  The build definition to update
      * @return the updated build definition as RPC value
      * @throws Exception
      */
@@ -418,7 +442,7 @@ public interface ContinuumService
      * Update a project group build definition.
      *
      * @param projectGroupId The project group id
-     * @param buildDef       The build defintion to update
+     * @param buildDef       The build definition to update
      * @return the updated build definition
      * @throws Exception
      */
@@ -429,7 +453,7 @@ public interface ContinuumService
      * Same method but compatible with standard XMLRPC
      *
      * @param projectGroupId The project group id
-     * @param buildDef       The build defintion to update
+     * @param buildDef       The build definition to update
      * @return the updated build definition as RPC value
      * @throws Exception
      */
@@ -440,7 +464,7 @@ public interface ContinuumService
      * Add a project build definition.
      *
      * @param projectId The project id
-     * @param buildDef  The build defintion to update
+     * @param buildDef  The build definition to update
      * @return the added build definition
      * @throws Exception
      */
@@ -451,7 +475,7 @@ public interface ContinuumService
      * Same method but compatible with standard XMLRPC
      *
      * @param projectId The project id
-     * @param buildDef  The build defintion to update
+     * @param buildDef  The build definition to update
      * @return the added build definition as RPC value
      * @throws Exception
      */
@@ -462,7 +486,7 @@ public interface ContinuumService
      * Add a project group buildDefinition.
      *
      * @param projectGroupId The project group id
-     * @param buildDef       The build defintion to update
+     * @param buildDef       The build definition to update
      * @return the build definition added
      * @throws Exception
      */
@@ -473,7 +497,7 @@ public interface ContinuumService
      * Same method but compatible with standard XMLRPC
      *
      * @param projectGroupId The project group id
-     * @param buildDef       The build defintion to update
+     * @param buildDef       The build definition to update
      * @return the added build definition as RPC value
      * @throws Exception
      */
@@ -497,6 +521,7 @@ public interface ContinuumService
      */
     List<Object> getBuildDefinitionTemplatesRPC()
         throws Exception;
+
     // ----------------------------------------------------------------------
     // Building
     // ----------------------------------------------------------------------
@@ -540,6 +565,29 @@ public interface ContinuumService
         throws Exception;
 
     /**
+     * Forced build the project
+     *
+     * @param projectId    The project id
+     * @param buildTrigger The build trigger
+     * @return
+     * @throws Exception
+     */
+    int buildProject( int projectId, BuildTrigger buildTrigger )
+        throws Exception;
+
+    /**
+     * Forced build the project
+     *
+     * @param projectId         The project id
+     * @param buildDefinitionId The build definition id
+     * @param buildTrigger      The build trigger
+     * @return
+     * @throws Exception
+     */
+    int buildProject( int projectId, int buildDefinitionId, BuildTrigger buildTrigger )
+        throws Exception;
+
+    /**
      * Build the project group with the default build definition.
      *
      * @param projectGroupId The project group id
@@ -556,6 +604,30 @@ public interface ContinuumService
      * @throws Exception
      */
     int buildGroup( int projectGroupId, int buildDefinitionId )
+        throws Exception;
+
+    // ----------------------------------------------------------------------
+    // SCM roots
+    // ----------------------------------------------------------------------
+
+    /**
+     * Get the SCM roots for all projects in a project group
+     *
+     * @param projectGroupId the project group id
+     * @return
+     * @throws Exception
+     */
+    List<ProjectScmRoot> getProjectScmRootByProjectGroup( int projectGroupId )
+        throws Exception;
+
+    /**
+     * Get the SCM root for a specific project
+     *
+     * @param projectId the project id
+     * @return
+     * @throws Exception
+     */
+    ProjectScmRoot getProjectScmRootByProject( int projectId )
         throws Exception;
 
     // ----------------------------------------------------------------------
@@ -608,20 +680,24 @@ public interface ContinuumService
      * Returns the project build result summary list.
      *
      * @param projectId The project id
+     * @param offset the zero-based offset to fetch from
+     * @param length the maximum number of results to fetch, starting from offset
      * @return The build result list
      * @throws Exception
      */
-    List<BuildResultSummary> getBuildResultsForProject( int projectId )
+    List<BuildResultSummary> getBuildResultsForProject( int projectId, int offset, int length )
         throws Exception;
 
     /**
      * Same method but compatible with standard XMLRPC
      *
      * @param projectId The project id
+     * @param offset the zero-based offset of result set to start from
+     * @param length the number of results to return, starting from the offset
      * @return The build result list as RPC value
      * @throws Exception
      */
-    List<Object> getBuildResultsForProjectRPC( int projectId )
+    List<Object> getBuildResultsForProjectRPC( int projectId, int offset, int length )
         throws Exception;
 
     /**
@@ -699,6 +775,88 @@ public interface ContinuumService
      * @throws Exception
      */
     Map<String, Object> addMavenTwoProjectRPC( String url, int projectGroupId )
+        throws Exception;
+
+    /**
+     * Add a maven 2.x project from an url.
+     *
+     * @param url            The POM url
+     * @param projectGroupId The id of the group where projects will be stored
+     * @return The result of the action with the list of projects created
+     * @throws Exception
+     * @Param checkoutInSingleDirectory Determines whether the project will be stored on a single directory
+     */
+    AddingResult addMavenTwoProject( String url, int projectGroupId, boolean checkoutInSingleDirectory )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param url            The POM url
+     * @param projectGroupId The id of the group where projects will be stored
+     * @return The result of the action with the list of projects created as RPC value
+     * @throws Exception
+     * @Param checkoutInSingleDirectory Determines whether the project will be stored on a single directory
+     */
+    Map<String, Object> addMavenTwoProjectRPC( String url, int projectGroupId, boolean checkoutInSingleDirectory )
+        throws Exception;
+
+    /**
+     * Add a maven 2.x multi-module project from a url and add it to Continuum as a single project instead of as
+     * multiple projects (one project per module). To add a multi-module project with its modules as separate Continuum
+     * projects, use ContinuumService#addMavenTwoProject( String url, int projectGroupId, boolean
+     * checkoutInSingleDirectory) instead.
+     *
+     * @param url
+     * @param projectGroupId
+     * @return
+     * @throws Exception
+     */
+    AddingResult addMavenTwoProjectAsSingleProject( String url, int projectGroupId )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param url
+     * @param projectGroupId
+     * @return
+     * @throws Exception
+     */
+    Map<String, Object> addMavenTwoProjectAsSingleProjectRPC( String url, int projectGroupId )
+        throws Exception;
+
+    /**
+     * Add a maven 2.x multi-module project from a url
+     *
+     * @param url                       The POM url
+     * @param projectGroupId            The id of the group where projects will be stored
+     * @param checkProtocol             Determines whether the protocol will be checked
+     * @param useCredentialsCache       Determines whether user credentials will be cached
+     * @param recursiveProjects         Determines whether to load recursive projects
+     * @param checkoutInSingleDirectory Determines whether the project will be stored on a single directory
+     * @return The result of the action with the list of projects created
+     * @throws Exception
+     */
+    AddingResult addMavenTwoProject( String url, int projectGroupId, boolean checkProtocol, boolean useCredentialsCache,
+                                     boolean recursiveProjects, boolean checkoutInSingleDirectory )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param url                       The POM url
+     * @param projectGroupId            The id of the group where projects will be stored
+     * @param checkProtocol             Determines whether the protocol will be checked
+     * @param useCredentialsCache       Determines whether user credentials will be cached
+     * @param recursiveProjects         Determines whether to load recursive projects
+     * @param checkoutInSingleDirectory Determines whether the project will be stored on a single directory
+     * @return The result of the action with the list of projects created as RPC value
+     * @throws Exception
+     */
+    Map<String, Object> addMavenTwoProjectRPC( String url, int projectGroupId, boolean checkProtocol,
+                                               boolean useCredentialsCache, boolean recursiveProjects,
+                                               boolean checkoutInSingleDirectory )
         throws Exception;
 
     // ----------------------------------------------------------------------
@@ -907,6 +1065,12 @@ public interface ContinuumService
     Map<String, Object> getProfileRPC( int profileId )
         throws Exception;
 
+    Profile getProfileWithName( String profileName )
+        throws Exception;
+
+    Map<String, Object> getProfileWithNameRPC( String profileName )
+        throws Exception;
+
     Profile addProfile( Profile profile )
         throws Exception;
 
@@ -964,6 +1128,46 @@ public interface ContinuumService
     Map<String, Object> getInstallationRPC( int installationId )
         throws Exception;
 
+    /**
+     * Return the installation defined by this name
+     *
+     * @param installationName The installation name
+     * @return The installation
+     * @throws Exception
+     */
+    Installation getInstallation( String installationName )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param installationName The installation name
+     * @return The installation
+     * @throws Exception
+     */
+    Map<String, Object> getInstallationRPC( String installationName )
+        throws Exception;
+
+    /**
+     * Return the installations list defined by this URL.
+     *
+     * @param url The build agent URL
+     * @return The installations list.
+     * @throws Exception
+     */
+    List<Installation> getBuildAgentInstallations( String url )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param url The build agent URL
+     * @return The installations list.
+     * @throws Exception
+     */
+    List<Object> getBuildAgentInstallationsRPC( String url )
+        throws Exception;
+
     Installation addInstallation( Installation installation )
         throws Exception;
 
@@ -993,14 +1197,84 @@ public interface ContinuumService
     // Queue
     // ----------------------------------------------------------------------
 
+    /**
+     * Return true if the project is in prepare build queue
+     *
+     * @param projectId The project id
+     * @throws ContinuumException
+     */
+    boolean isProjectInPrepareBuildQueue( int projectId )
+        throws Exception;
 
     /**
-     * Return true is the project is in building queue.
+     * Return true if the project is in prepare build queue
      *
-     * @param projectGroupId The project group id
+     * @param projectId         The project id
+     * @param buildDefinitionId The build definition id
+     * @throws ContinuumException
+     */
+    boolean isProjectInPrepareBuildQueue( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    /**
+     * Return true if the project is in building queue.
+     *
+     * @param projectId The project id
      * @throws ContinuumException
      */
     boolean isProjectInBuildingQueue( int projectId )
+        throws Exception;
+
+    /**
+     * Return true if the project is in building queue.
+     *
+     * @param projectId         The project id
+     * @param buildDefinitionId The build definition id
+     * @throws ContinuumException
+     */
+    boolean isProjectInBuildingQueue( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    /**
+     * Return true if the project is currently preparing build
+     *
+     * @param projectId The project id
+     * @return
+     * @throws Exception
+     */
+    boolean isProjectCurrentlyPreparingBuild( int projectId )
+        throws Exception;
+
+    /**
+     * Return true if the project is currently preparing build
+     *
+     * @param projectId         The project id
+     * @param buildDefinitionId The build definition id
+     * @return
+     * @throws Exception
+     */
+    boolean isProjectCurrentlyPreparingBuild( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    /**
+     * Return true if the project is currently building
+     *
+     * @param projectId The project id
+     * @return
+     * @throws Exception
+     */
+    boolean isProjectCurrentlyBuilding( int projectId )
+        throws Exception;
+
+    /**
+     * Return true if the project is currently building
+     *
+     * @param projectId         The project id
+     * @param buildDefinitionId The build definition id
+     * @return
+     * @throws Exception
+     */
+    boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId )
         throws Exception;
 
     /**
@@ -1028,6 +1302,17 @@ public interface ContinuumService
      * @throws Exception
      */
     boolean cancelCurrentBuild()
+        throws Exception;
+
+    /**
+     * Cancel a project build
+     *
+     * @param projectId         the project id
+     * @param buildDefinitionId the build definition id
+     * @return
+     * @throws Exception
+     */
+    boolean cancelBuild( int projectId, int buildDefinitionId )
         throws Exception;
 
     // ----------------------------------------------------------------------
@@ -1313,10 +1598,10 @@ public interface ContinuumService
     List<Object> getAllDirectoryPurgeConfigurationsRPC()
         throws Exception;
 
-    void purgeLocalRepository( int repoPurgeId )
+    int purgeLocalRepository( int repoPurgeId )
         throws Exception;
 
-    void purgeDirectory( int dirPurgeId )
+    int purgeDirectory( int dirPurgeId )
         throws Exception;
 
     // ----------------------------------------------------------------------
@@ -1391,5 +1676,221 @@ public interface ContinuumService
      * @throws Exception
      */
     String getReleaseOutput( int releaseId )
+        throws Exception;
+
+    /**
+     * Release prepare a project
+     *
+     * @param projectId
+     * @param releaseProperties
+     * @param releaseVersions
+     * @param developmentVersions
+     * @param environments
+     * @param username
+     * @return The release id
+     * @throws Exception
+     */
+    String releasePrepare( int projectId, Properties releaseProperties, Map<String, String> releaseVersions,
+                           Map<String, String> developmentVersions, Map<String, String> environments, String username )
+        throws Exception;
+
+    /**
+     * Release perform a project
+     *
+     * @param projectId
+     * @param releaseId
+     * @param goals
+     * @param arguments
+     * @param useReleaseProfile
+     * @param repositoryName
+     * @param username
+     * @return
+     * @throws Exception
+     */
+    int releasePerform( int projectId, String releaseId, String goals, String arguments, boolean useReleaseProfile,
+                        String repositoryName, String username )
+        throws Exception;
+
+    /**
+     * Get release listener
+     *
+     * @param projectId
+     * @param releaseId
+     * @return
+     * @throws Exception
+     */
+    ReleaseListenerSummary getListener( int projectId, String releaseId )
+        throws Exception;
+
+    /**
+     * Cleanup the release
+     *
+     * @param projectId
+     * @param releaseId
+     * @return
+     * @throws Exception
+     */
+    int releaseCleanup( int projectId, String releaseId )
+        throws Exception;
+
+    /**
+     * Cleanup the release
+     *
+     * @param projectId
+     * @param releaseId
+     * @param releaseType
+     * @return
+     * @throws Exception
+     */
+    int releaseCleanup( int projectId, String releaseId, String releaseType )
+        throws Exception;
+
+    /**
+     * Rollback a release
+     *
+     * @param projectId
+     * @param releaseId
+     * @return
+     * @throws Exception
+     */
+    int releaseRollback( int projectId, String releaseId )
+        throws Exception;
+
+    /**
+     * Get release plugin parameters
+     *
+     * @param projectId
+     * @return
+     */
+    Map<String, Object> getReleasePluginParameters( int projectId )
+        throws Exception;
+
+    List<Map<String, String>> getProjectReleaseAndDevelopmentVersions( int projectId, String pomFilename,
+                                                                       boolean autoVersionSubmodules )
+        throws Exception;
+
+    /**
+     * Add/Register build agent to Continuum Master
+     *
+     * @return
+     * @throws Exception
+     */
+    BuildAgentConfiguration addBuildAgent( BuildAgentConfiguration buildAgentConfiguration )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @return
+     * @throws Exception
+     */
+    Map<String, Object> addBuildAgentRPC( Map<String, Object> buildAgentConfiguration )
+        throws Exception;
+
+    /**
+     * Get build agent in Continuum Master
+     *
+     * @param url - build agent URL
+     * @return
+     */
+    BuildAgentConfiguration getBuildAgent( String url );
+
+    /**
+     * Get the url of the build agent that is processing the project
+     *
+     * @param projectId         project Id
+     * @param buildDefinitionId build definition Id
+     * @return build agent url
+     */
+    String getBuildAgentUrl( int projectId, int buildDefinition )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @param url - build agent URL
+     * @return
+     */
+    Map<String, Object> getBuildAgentRPC( String url );
+
+    /**
+     * Update build agent in Continuum Master
+     *
+     * @return
+     * @throws Exception
+     */
+    BuildAgentConfiguration updateBuildAgent( BuildAgentConfiguration buildAgentConfiguration )
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @return
+     * @throws Exception
+     */
+    Map<String, Object> updateBuildAgentRPC( Map<String, Object> buildAgentConfiguration )
+        throws Exception;
+
+    /**
+     * remove build agent in Continuum Master
+     *
+     * @param url - build agent URL
+     * @return Exception
+     */
+    boolean removeBuildAgent( String url )
+        throws Exception;
+
+    /**
+     * List all build agent in Continuum Master
+     *
+     * @return
+     */
+    List<BuildAgentConfiguration> getAllBuildAgents();
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @return
+     */
+    List<Object> getAllBuildAgentsRPC();
+
+    /**
+     * Retrieve all enabled build agents with their available installations
+     *
+     * @return
+     * @throws Exception
+     */
+    List<BuildAgentConfiguration> getBuildAgentsWithInstallations()
+        throws Exception;
+
+    /**
+     * Same method but compatible with standard XMLRPC
+     *
+     * @return
+     * @throws Exception
+     */
+    List<Object> getBuildAgentsWithInstallationsRPC()
+        throws Exception;
+
+    boolean pingBuildAgent( String buildAgentUrl )
+        throws Exception;
+
+    BuildAgentGroupConfiguration addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws Exception;
+
+    Map<String, Object> addBuildAgentGroupRPC( Map<String, Object> buildAgentGroup )
+        throws Exception;
+
+    BuildAgentGroupConfiguration getBuildAgentGroup( String name );
+
+    Map<String, Object> getBuildAgentGroupRPC( String name );
+
+    BuildAgentGroupConfiguration updateBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws Exception;
+
+    Map<String, Object> updateBuildAgentGroupRPC( Map<String, Object> buildAgentGroup )
+        throws Exception;
+
+    int removeBuildAgentGroup( String name )
         throws Exception;
 }

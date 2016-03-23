@@ -26,11 +26,12 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 17 juin 2008
  */
 public class GeneralConfiguration
 {
+    private boolean initialized = false;
+
     private File workingDirectory;
 
     private File buildOutputDirectory;
@@ -40,14 +41,18 @@ public class GeneralConfiguration
     private String baseUrl;
 
     private ProxyConfiguration proxyConfiguration;
-    
+
     private File releaseOutputDirectory;
-    
+
     private int numberOfBuildsInParallel = 1;
 
     private List<BuildAgentConfiguration> buildAgents;
-    
+
     private List<BuildAgentGroupConfiguration> buildAgentGroups;
+
+    private boolean distributedBuildEnabled;
+
+    private String sharedSecretPassword;
 
     public GeneralConfiguration()
     {
@@ -114,7 +119,7 @@ public class GeneralConfiguration
     {
         return releaseOutputDirectory;
     }
-    
+
     public void setReleaseOutputDirectory( File releaseOutputDirectory )
     {
         this.releaseOutputDirectory = releaseOutputDirectory;
@@ -148,5 +153,35 @@ public class GeneralConfiguration
     public void setBuildAgentGroups( List<BuildAgentGroupConfiguration> buildAgentGroups )
     {
         this.buildAgentGroups = buildAgentGroups;
+    }
+
+    public boolean isDistributedBuildEnabled()
+    {
+        return distributedBuildEnabled;
+    }
+
+    public void setDistributedBuildEnabled( boolean distributedBuildEnabled )
+    {
+        this.distributedBuildEnabled = distributedBuildEnabled;
+    }
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+        this.sharedSecretPassword = sharedSecretPassword;
+    }
+
+    public String getSharedSecretPassword()
+    {
+        return sharedSecretPassword;
+    }
+
+    public boolean isInitialized()
+    {
+        return initialized;
+    }
+
+    public void setInitialized( boolean initialized )
+    {
+        this.initialized = initialized;
     }
 }

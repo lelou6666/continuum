@@ -17,7 +17,6 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="continuum" prefix="c1" %>
 
@@ -33,24 +32,29 @@
 
     <div class="axial">
       <s:form action="saveSchedule" method="post" validate="false" name="scheduleForm">
-        <c:if test="${!empty actionErrors}">
+        <s:hidden name="id"/>
+
+        <s:if test="hasActionErrors()">
           <div class="errormessage">
-            <s:iterator value="actionErrors">
-              <p><s:property/></p>
-            </s:iterator>
+            <s:actionerror/>
           </div>
-        </c:if>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
 
           <table>
-            <s:textfield label="%{getText('schedule.name.label')}" name="name" required="true">
-                <s:param name="desc"><p><s:text name="schedule.name.message"/></p></s:param>
+            <s:textfield label="%{getText('schedule.name.label')}" name="name" requiredLabel="true" size="100">
+                <s:param name="after"><p><s:text name="schedule.name.message"/></p></s:param>
             </s:textfield>
-            <s:textfield label="%{getText('schedule.description.label')}" name="description" required="true">
-                <s:param name="desc"><p><s:text name="schedule.description.message"/></p></s:param>
+            <s:textfield label="%{getText('schedule.description.label')}" name="description" requiredLabel="true" size="100">
+                <s:param name="after"><p><s:text name="schedule.description.message"/></p></s:param>
             </s:textfield>
 
             <tr>
-              <th><s:label theme="simple" value="%{getText('schedule.cronExpression.label')}:"/></th>
+              <td class="tdLabel"><s:label theme="simple" class="label" value="%{getText('schedule.cronExpression.label')}:"/></td>
               <td>
                 <table>
                   <s:textfield label="%{getText('schedule.second.label')}" name="second" size="10"/>
@@ -60,19 +64,19 @@
                   <s:textfield label="%{getText('schedule.month.label')}" name="month" size="10"/>
                   <s:textfield label="%{getText('schedule.dayOfWeek.label')}" name="dayOfWeek" size="10"/>
                   <s:textfield label="%{getText('schedule.year.label')}" name="year"  size="4">
-                    <s:param name="desc"><p><s:text name="schedule.cronExpression.message"/></p></s:param>
+                    <s:param name="after"><p><s:text name="schedule.cronExpression.message"/></p></s:param>
                   </s:textfield>
                 </table>
               </td>
             </tr>
 
-            <s:textfield label="%{getText('schedule.maxJobExecutionTime.label')}" name="maxJobExecutionTime" required="true">
-                <s:param name="desc"><p><s:text name="schedule.maxJobExecutionTime.message"/></p></s:param>
+            <s:textfield label="%{getText('schedule.maxJobExecutionTime.label')}" name="maxJobExecutionTime" requiredLabel="true" size="100">
+                <s:param name="after"><p><s:text name="schedule.maxJobExecutionTime.message"/></p></s:param>
             </s:textfield>
-            <s:textfield label="%{getText('schedule.quietPeriod.label')}" name="delay">
-                <s:param name="desc"><p><s:text name="schedule.quietPeriod.message"/></p></s:param>
+            <s:textfield label="%{getText('schedule.quietPeriod.label')}" name="delay" size="100">
+                <s:param name="after"><p><s:text name="schedule.quietPeriod.message"/></p></s:param>
             </s:textfield>
-    	      
+
             <c1:ifBuildTypeEnabled buildType="parallel">          
               <s:optiontransferselect 
                 label="%{getText('schedule.buildqueues.label')}"
@@ -80,7 +84,7 @@
                 list="availableBuildQueues"
                 listKey="id"
                 listValue="name"
-                headerKey="-1"
+                headerKey="hk-1"
                 headerValue="%{getText('schedule.available.buildqueues')}"
                 multiple="true"
                 size="8"
@@ -89,24 +93,28 @@
                 doubleList="selectedBuildQueues"
                 doubleListKey="id"
                 doubleListValue="name"
-                doubleHeaderKey="-1"
+                doubleHeaderKey="hk-1"
                 doubleSize="8"
                 doubleMultiple="true"
                 doubleEmptyOption="false"
                 doubleHeaderValue="%{getText('schedule.available.buildqueues.used')}"
                 formName="scheduleForm"
-                  />
+                addAllToRightOnclick="selectAllOptionsExceptSome(document.getElementById('saveSchedule_selectedBuildQueuesIds'), 'key', 'hk-1');"
+                addToRightOnclick="selectAllOptionsExceptSome(document.getElementById('saveSchedule_availableBuildQueuesIds'), 'key', 'hk-1');selectAllOptionsExceptSome(document.getElementById('saveSchedule_selectedBuildQueuesIds'), 'key', 'hk-1');"
+                addAllToLeftOnclick="selectAllOptionsExceptSome(document.getElementById('saveSchedule_availableBuildQueuesIds'), 'key', 'hk-1');"
+                addToLeftOnclick="selectAllOptionsExceptSome(document.getElementById('saveSchedule_availableBuildQueuesIds'), 'key', 'hk-1');selectAllOptionsExceptSome(document.getElementById('saveSchedule_selectedBuildQueuesIds'), 'key', 'hk-1');"
+                />
              </c1:ifBuildTypeEnabled>   
                                        
             <s:checkbox label="%{getText('schedule.enabled.label')}" name="active" value="active" fieldValue="true">
-                <s:param name="desc"><p><s:text name="schedule.enabled.message"/></p></s:param>
+                <s:param name="after"><p><s:text name="schedule.enabled.message"/></p></s:param>
             </s:checkbox>
 
           </table>
-          <s:hidden name="id"/>
-        <div class="functnbar3">
-          <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
-        </div>
+          <div class="functnbar3">
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+          </div>
       </s:form>
       
     </div>

@@ -19,16 +19,6 @@ package org.apache.maven.continuum.notification.mail;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.mail.Address;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMessage.RecipientType;
-
 import org.apache.continuum.dao.BuildDefinitionDao;
 import org.apache.continuum.dao.BuildResultDao;
 import org.apache.continuum.notification.mail.MockJavaMailSender;
@@ -42,29 +32,42 @@ import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.notification.MessageContext;
 import org.apache.maven.continuum.notification.Notifier;
 import org.apache.maven.continuum.project.ContinuumProjectState;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import javax.mail.Address;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage.RecipientType;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class MailContinuumNotifierTest
     extends AbstractContinuumTest
 {
     protected static final Logger logger = LoggerFactory.getLogger( MailContinuumNotifierTest.class );
 
+    @Test
     public void testSuccessfulBuild()
         throws Exception
     {
-        MailContinuumNotifier notifier = (MailContinuumNotifier) lookup( Notifier.class.getName(), "mail" );
+        MailContinuumNotifier notifier = (MailContinuumNotifier) lookup( Notifier.class, "mail" );
         String toOverride = "recipient@host.com";
         notifier.setToOverride( toOverride );
 
         ProjectGroup group = createStubProjectGroup( "foo.bar", "" );
 
-        BuildResultDao brDao = (BuildResultDao) lookup( BuildResultDao.class );
+        BuildResultDao brDao = lookup( BuildResultDao.class );
         Project project = addProject( "Test Project", group );
         BuildResult br = makeBuild( ContinuumProjectState.FAILED );
         brDao.addBuildResult( project, br );
@@ -95,8 +98,8 @@ public class MailContinuumNotifierTest
         build = brDao.getLatestBuildResultForProjectWithDetails( project.getId() );
         assertEquals( ContinuumProjectState.OK, build.getState() );
 
-        MimeMessage mailMessage =
-            sendNotificationAndGetMessage( project, build, buildDef, "lots out build output", toOverride );
+        MimeMessage mailMessage = sendNotificationAndGetMessage( project, build, buildDef, "lots out build output",
+                                                                 toOverride );
 
         assertEquals( "[continuum] BUILD SUCCESSFUL: foo.bar Test Project", mailMessage.getSubject() );
 
@@ -106,6 +109,7 @@ public class MailContinuumNotifierTest
         assertTrue( mailContent.indexOf( "Goals: clean install" ) > 0 );
     }
 
+    @Test
     public void testFailedBuild()
         throws Exception
     {
@@ -122,7 +126,8 @@ public class MailContinuumNotifierTest
         dumpContent( mailMessage );
     }
 
-    public void testErrorenousBuild()
+    @Test
+    public void testErroneousBuild()
         throws Exception
     {
         ProjectGroup group = createStubProjectGroup( "foo.bar", "" );
@@ -158,10 +163,10 @@ public class MailContinuumNotifierTest
         {
             assertEquals( "foo@bar", ( (InternetAddress) tos[0] ).getAddress() );
         }
-        assertTrue( "The template isn't loaded correctly.",
-                    ( (String) mailMessage.getContent() ).indexOf( "#shellBuildResult()" ) < 0 );
-        assertTrue( "The template isn't loaded correctly.",
-                    ( (String) mailMessage.getContent() ).indexOf( "Build statistics" ) > 0 );
+        assertTrue( "The template isn't loaded correctly.", ( (String) mailMessage.getContent() ).indexOf(
+            "#shellBuildResult()" ) < 0 );
+        assertTrue( "The template isn't loaded correctly.", ( (String) mailMessage.getContent() ).indexOf(
+            "Build statistics" ) > 0 );
 
         String mailContent = (String) mailMessage.getContent();
 
@@ -195,15 +200,11 @@ public class MailContinuumNotifierTest
         projectNotifiers.add( projectNotifier );
         context.setNotifier( projectNotifiers );
 
-        //context.put( ContinuumNotificationDispatcher.CONTEXT_BUILD_OUTPUT, buildOutput );
-
-        //context.put( "buildHost", "foo.bar.com" );
-
         // ----------------------------------------------------------------------
         //
         // ----------------------------------------------------------------------
 
-        Notifier notifier = (Notifier) lookup( Notifier.class.getName(), "mail" );
+        Notifier notifier = lookup( Notifier.class, "mail" );
 
         ( (MailContinuumNotifier) notifier ).setBuildHost( "foo.bar.com" );
 

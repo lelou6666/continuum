@@ -19,16 +19,15 @@ package org.apache.continuum.buildagent.installation;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.maven.continuum.execution.ExecutorConfigurator;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 
-/**
- * @plexus.component role="org.apache.continuum.buildagent.installation.BuildAgentInstallationService" role-hint="default"
- */
+import java.util.HashMap;
+import java.util.Map;
+
+@Component( role = org.apache.continuum.buildagent.installation.BuildAgentInstallationService.class, hint = "default" )
 public class DefaultBuildAgentInstallationService
     implements BuildAgentInstallationService, Initializable
 {
@@ -43,16 +42,19 @@ public class DefaultBuildAgentInstallationService
         throws InitializationException
     {
         this.typesValues = new HashMap<String, ExecutorConfigurator>();
-        this.typesValues.put( BuildAgentInstallationService.ANT_TYPE,
-                              new ExecutorConfigurator( "ant", "bin", "ANT_HOME", "-version" ) );
+        this.typesValues.put( BuildAgentInstallationService.ANT_TYPE, new ExecutorConfigurator( "ant", "bin",
+                                                                                                "ANT_HOME",
+                                                                                                "-version" ) );
 
         this.typesValues.put( BuildAgentInstallationService.ENVVAR_TYPE, null );
-        this.typesValues.put( BuildAgentInstallationService.JDK_TYPE,
-                              new ExecutorConfigurator( "java", "bin", "JAVA_HOME", "-version" ) );
-        this.typesValues.put( BuildAgentInstallationService.MAVEN1_TYPE,
-                              new ExecutorConfigurator( "maven", "bin", "MAVEN_HOME", "-v" ) );
-        this.typesValues
-            .put( BuildAgentInstallationService.MAVEN2_TYPE, new ExecutorConfigurator( "mvn", "bin", "M2_HOME", "-v" ) );
+        this.typesValues.put( BuildAgentInstallationService.JDK_TYPE, new ExecutorConfigurator( "java", "bin",
+                                                                                                "JAVA_HOME",
+                                                                                                "-version" ) );
+        this.typesValues.put( BuildAgentInstallationService.MAVEN1_TYPE, new ExecutorConfigurator( "maven", "bin",
+                                                                                                   "MAVEN_HOME",
+                                                                                                   "-v" ) );
+        this.typesValues.put( BuildAgentInstallationService.MAVEN2_TYPE, new ExecutorConfigurator( "mvn", "bin",
+                                                                                                   "M2_HOME", "-v" ) );
     }
 
     public String getEnvVar( String type )

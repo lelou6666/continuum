@@ -19,33 +19,31 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.continuum.configuration.BuildAgentConfigurationException;
 import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.utils.WorkingDirectoryService;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.release.ContinuumReleaseException;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.release.DefaultReleaseManagerListener;
+import org.apache.maven.continuum.utils.WorkingDirectoryService;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
  * @author Edwin Punzalan
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="releaseRollback"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releaseRollback", instantiationStrategy = "per-lookup"  )
 public class ReleaseRollbackAction
     extends ContinuumActionSupport
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
     private int projectId;
@@ -76,27 +74,37 @@ public class ReleaseRollbackAction
             {
                 releaseManager.releaseRollback( releaseId, projectId );
             }
+            catch ( ContinuumReleaseException e )
+            {
+                if ( e.getMessage() != null )
+                {
+                    addActionError( e.getMessage() );
+                    return RELEASE_ERROR;
+                }
+                else
+                {
+                    throw e;
+                }
+            }
             catch ( BuildAgentConfigurationException e )
             {
-                List<String> args = new ArrayList<String>();
-                args.add( e.getMessage() );
-
-                addActionError( getText( "releaseRollback.error", args ) );
-                return ERROR;
+                addActionError( "Error with configuration of build agent: " + e.getMessage() );
+                return RELEASE_ERROR;
             }
         }
         else
         {
             ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
-    
+
             ContinuumReleaseManagerListener listener = new DefaultReleaseManagerListener();
-            
+
             listener.setUsername( getPrincipal() );
-    
+
             Project project = getContinuum().getProject( projectId );
-    
-            releaseManager.rollback( releaseId, workingDirectoryService.getWorkingDirectory( project ).getPath(), listener );
-    
+
+            releaseManager.rollback( releaseId, workingDirectoryService.getWorkingDirectory( project ).getPath(),
+                                     listener );
+
             //recurse until rollback is finished
             while ( listener.getState() != ContinuumReleaseManagerListener.FINISHED )
             {
@@ -109,12 +117,12 @@ public class ReleaseRollbackAction
                     //do nothing
                 }
             }
-            
+
             AuditLog event = new AuditLog( "Release id=" + releaseId, AuditLogConstants.ROLLBACK_RELEASE );
             event.setCategory( AuditLogConstants.PROJECT );
             event.setCurrentUser( getPrincipal() );
             event.log();
-    
+
             releaseManager.getPreparedReleases().remove( releaseId );
         }
 

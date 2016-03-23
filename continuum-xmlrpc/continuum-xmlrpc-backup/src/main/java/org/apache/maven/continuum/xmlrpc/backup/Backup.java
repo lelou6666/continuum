@@ -21,25 +21,15 @@ package org.apache.maven.continuum.xmlrpc.backup;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.continuum.xmlrpc.release.ContinuumReleaseResult;
 import org.apache.continuum.xmlrpc.repository.DirectoryPurgeConfiguration;
 import org.apache.continuum.xmlrpc.repository.LocalRepository;
 import org.apache.continuum.xmlrpc.repository.RepositoryPurgeConfiguration;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.maven.continuum.xmlrpc.client.ContinuumXmlRpcClient;
-import org.apache.maven.continuum.xmlrpc.project.BuildDefinition;
-import org.apache.maven.continuum.xmlrpc.project.BuildDefinitionTemplate;
-import org.apache.maven.continuum.xmlrpc.project.BuildResult;
-import org.apache.maven.continuum.xmlrpc.project.BuildResultSummary;
-import org.apache.maven.continuum.xmlrpc.project.Project;
-import org.apache.maven.continuum.xmlrpc.project.ProjectDependency;
-import org.apache.maven.continuum.xmlrpc.project.ProjectDeveloper;
-import org.apache.maven.continuum.xmlrpc.project.ProjectGroup;
-import org.apache.maven.continuum.xmlrpc.project.ProjectNotifier;
-import org.apache.maven.continuum.xmlrpc.project.ProjectSummary;
-import org.apache.maven.continuum.xmlrpc.project.Schedule;
+import org.apache.maven.continuum.xmlrpc.project.*;
 import org.apache.maven.continuum.xmlrpc.scm.ChangeFile;
 import org.apache.maven.continuum.xmlrpc.scm.ChangeSet;
 import org.apache.maven.continuum.xmlrpc.scm.ScmResult;
@@ -138,7 +128,7 @@ public class Backup
         if ( !command.overwrite && out.exists() )
         {
             System.err.println( out.getAbsolutePath() +
-                " already exists and will not be overwritten unless the -overwrite flag is used." );
+                                    " already exists and will not be overwritten unless the -overwrite flag is used." );
             Args.usage( command );
             return;
         }
@@ -173,32 +163,32 @@ public class Backup
     private static class Commands
     {
 
-        @Argument(description = "Display help information", value = "help", alias = "h")
+        @Argument( description = "Display help information", value = "help", alias = "h" )
         private boolean help;
 
-        @Argument(description = "Display version information", value = "version", alias = "v")
+        @Argument( description = "Display version information", value = "version", alias = "v" )
         private boolean version;
 
-        @Argument(description = "Continuum XMLRPC URL", value = "url")
+        @Argument( description = "Continuum XMLRPC URL", value = "url" )
         private URL url;
 
-        @Argument(description = "Username", value = "username", alias = "u")
+        @Argument( description = "Username", value = "username", alias = "u" )
         private String username;
 
-        @Argument(description = "Password", value = "password", alias = "p")
+        @Argument( description = "Password", value = "password", alias = "p" )
         private String password;
 
-        @Argument(description = "Backup file", value = "outputFile", alias = "o")
+        @Argument( description = "Backup file", value = "outputFile", alias = "o" )
         private File outputFile;
 
         @Argument(
             description = "Whether to overwrite the designated backup file if it already exists in export mode. Default is false.",
-            value = "overwrite")
+            value = "overwrite" )
         private boolean overwrite;
 
         @Argument(
             description = "Turn on debugging information. Default is off.",
-            value = "debug")
+            value = "debug" )
         private boolean debug;
     }
 
@@ -260,10 +250,16 @@ public class Backup
                 List<BuildDefinition> bds = bdt.getBuildDefinitions();
                 if ( bds != null && !bds.isEmpty() )
                 {
+
+                    startTag( "buildDefinitions", true );
+
                     for ( BuildDefinition bd : bds )
                     {
                         backupBuildDefinition( bd );
                     }
+
+                    endTag( "buildDefinitions", true );
+
                 }
                 endTag( "buildDefinitionTemplate", true );
             }
@@ -319,7 +315,7 @@ public class Backup
         if ( pg.getProjects() != null && !pg.getProjects().isEmpty() )
         {
             startTag( "projects", true );
-            for ( ProjectSummary ps : (List<ProjectSummary>) pg.getProjects() )
+            for ( ProjectSummary ps : pg.getProjects() )
             {
                 backupProject( ps );
             }
@@ -329,7 +325,7 @@ public class Backup
         if ( pg.getBuildDefinitions() != null && !pg.getBuildDefinitions().isEmpty() )
         {
             startTag( "buildDefinitions", true );
-            for ( BuildDefinition bd : (List<BuildDefinition>) pg.getBuildDefinitions() )
+            for ( BuildDefinition bd : pg.getBuildDefinitions() )
             {
                 backupBuildDefinition( bd );
             }
@@ -339,7 +335,7 @@ public class Backup
         if ( pg.getNotifiers() != null && !pg.getNotifiers().isEmpty() )
         {
             startTag( "notifiers", true );
-            for ( ProjectNotifier notif : (List<ProjectNotifier>) pg.getNotifiers() )
+            for ( ProjectNotifier notif : pg.getNotifiers() )
             {
                 backupNotifier( notif );
             }
@@ -372,7 +368,7 @@ public class Backup
         if ( p.getDevelopers() != null && !p.getDevelopers().isEmpty() )
         {
             startTag( "developers", true );
-            for ( ProjectDeveloper pd : (List<ProjectDeveloper>) p.getDevelopers() )
+            for ( ProjectDeveloper pd : p.getDevelopers() )
             {
                 writeObject( pd, "developer", true );
             }
@@ -382,7 +378,7 @@ public class Backup
         if ( p.getDependencies() != null && !p.getDependencies().isEmpty() )
         {
             startTag( "dependencies", true );
-            for ( ProjectDependency pd : (List<ProjectDependency>) p.getDependencies() )
+            for ( ProjectDependency pd : p.getDependencies() )
             {
                 writeObject( pd, "dependency", true );
             }
@@ -392,7 +388,7 @@ public class Backup
         if ( p.getBuildDefinitions() != null && !p.getBuildDefinitions().isEmpty() )
         {
             startTag( "buildDefinitions", true );
-            for ( BuildDefinition bd : (List<BuildDefinition>) p.getBuildDefinitions() )
+            for ( BuildDefinition bd : p.getBuildDefinitions() )
             {
                 backupBuildDefinition( bd );
             }
@@ -402,24 +398,31 @@ public class Backup
         if ( p.getNotifiers() != null && !p.getNotifiers().isEmpty() )
         {
             startTag( "notifiers", true );
-            for ( ProjectNotifier notif : (List<ProjectNotifier>) p.getNotifiers() )
+            for ( ProjectNotifier notif : p.getNotifiers() )
             {
                 backupNotifier( notif );
             }
             endTag( "notifiers", true );
         }
 
-        List<BuildResultSummary> brs = client.getBuildResultsForProject( p.getId() );
-        if ( brs != null && !brs.isEmpty() )
+        int batchSize = 100, offset = 0;
+        List<BuildResultSummary> brs;
+        do
         {
-            startTag( "buildResults", true );
-            for ( BuildResultSummary brSummary : brs )
+            brs = client.getBuildResultsForProject( p.getId(), offset, batchSize );
+            if ( brs != null && !brs.isEmpty() )
             {
-                BuildResult br = client.getBuildResult( p.getId(), brSummary.getId() );
-                backupBuildResult( br );
+                startTag( "buildResults", true );
+                for ( BuildResultSummary brSummary : brs )
+                {
+                    BuildResult br = client.getBuildResult( p.getId(), brSummary.getId() );
+                    backupBuildResult( br );
+                }
+                endTag( "buildResults", true );
             }
-            endTag( "buildResults", true );
+            offset += batchSize;
         }
+        while ( brs != null && brs.size() == batchSize );
         endTag( "project", true );
     }
 
@@ -447,7 +450,7 @@ public class Backup
         if ( br.getModifiedDependencies() != null && !br.getModifiedDependencies().isEmpty() )
         {
             startTag( "dependencies", true );
-            for ( ProjectDependency pd : (List<ProjectDependency>) br.getModifiedDependencies() )
+            for ( ProjectDependency pd : br.getModifiedDependencies() )
             {
                 writeObject( pd, "dependency", true );
             }
@@ -570,8 +573,8 @@ public class Backup
             startTag( "environmentVariables", true );
             for ( Installation env : (List<Installation>) profile.getEnvironmentVariables() )
             {
-                writeTagWithParameter( "environmentVariable", "installationId",
-                                       String.valueOf( env.getInstallationId() ) );
+                writeTagWithParameter( "environmentVariable", "installationId", String.valueOf(
+                    env.getInstallationId() ) );
             }
             endTag( "environmentVariables", true );
         }
@@ -583,8 +586,8 @@ public class Backup
 
         if ( profile.getBuilder() != null )
         {
-            writeTagWithParameter( "builder", "installationId",
-                                   String.valueOf( profile.getBuilder().getInstallationId() ) );
+            writeTagWithParameter( "builder", "installationId", String.valueOf(
+                profile.getBuilder().getInstallationId() ) );
         }
 
         endTag( "profile", true );
@@ -604,7 +607,7 @@ public class Backup
         if ( scmResult.getChanges() != null && !scmResult.getChanges().isEmpty() )
         {
             startTag( "changeSets", true );
-            for ( ChangeSet cs : (List<ChangeSet>) scmResult.getChanges() )
+            for ( ChangeSet cs : scmResult.getChanges() )
             {
                 writeObject( cs, "changeSet", true );
             }
@@ -719,7 +722,7 @@ public class Backup
         }
         startTag( "repositoryPurgeConfiguration", true );
         writeSimpleFields( repoPurge );
-        
+
         if ( repoPurge.getRepository() != null )
         {
             writeTagWithParameter( "repository", "id", String.valueOf( repoPurge.getRepository().getId() ) );
@@ -756,7 +759,7 @@ public class Backup
         {
             return;
         }
-        startTag( "directoryPurgeConfiguration", true);
+        startTag( "directoryPurgeConfiguration", true );
         writeSimpleFields( dirPurge );
 
         if ( dirPurge.getSchedule() != null )

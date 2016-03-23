@@ -19,20 +19,13 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.continuum.builder.utils.ContinuumBuildConstant;
 import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
-import org.apache.continuum.buildmanager.BuildManagerException;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.configuration.ConfigurationException;
 import org.apache.maven.continuum.configuration.ConfigurationService;
@@ -43,21 +36,31 @@ import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.util.StateGenerator;
 import org.apache.struts2.ServletActionContext;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="buildResult"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildResult", instantiationStrategy = "per-lookup" )
 public class BuildResultAction
     extends AbstractBuildAction
 {
-    /**
-     * @plexus.requirement
-     */
+    private static Logger log = LoggerFactory.getLogger( BuildResultAction.class );
+
+    @Requirement
+    private FileSystemManager fsManager;
+
+    @Requirement
     private DistributedBuildManager distributedBuildManager;
 
     private Project project;
@@ -79,7 +82,7 @@ public class BuildResultAction
     private int projectGroupId;
 
     public String execute()
-        throws ContinuumException, ConfigurationException, IOException, BuildManagerException
+        throws ContinuumException, IOException, BuildManagerException
     {
         try
         {
@@ -96,12 +99,28 @@ public class BuildResultAction
 
         ConfigurationService configuration = getContinuum().getConfiguration();
 
-        // view build result of the current build from the distributed build agent
-        if ( configuration.isDistributedBuildEnabled() &&
-            project.getState() == ContinuumProjectState.BUILDING && getBuildId() == 0 )
+        buildResult = getContinuum().getBuildResult( getBuildId() );
+
+        boolean runningOnAgent = false;
+
+        if ( configuration.isDistributedBuildEnabled() )
         {
-            // if the project is currently building in distributed build agent, the build result will be stored in the database after the build is finished. 
-            // it's safe to assume that the build result will be null at this point
+            try
+            {
+                int buildDefinitionId = buildResult.getBuildDefinition().getId();
+                runningOnAgent = buildResult.getState() == ContinuumProjectState.BUILDING &&
+                    distributedBuildManager.getCurrentRun( getProjectId(), buildDefinitionId ).getBuildResultId()
+                        == getBuildId();
+            }
+            catch ( ContinuumException e )
+            {
+                log.debug( "running distributed build not found: {}", e.getMessage() );
+            }
+        }
+
+        // view build result of the current build from the distributed build agent
+        if ( runningOnAgent )
+        {
             Map<String, Object> map = distributedBuildManager.getBuildResult( project.getId() );
 
             if ( map == null )
@@ -119,8 +138,8 @@ public class BuildResultAction
 
                 if ( ServletActionContext.getRequest() != null )
                 {
-                    state =
-                        StateGenerator.generate( buildResult.getState(), ServletActionContext.getRequest().getContextPath() );
+                    state = StateGenerator.generate( buildResult.getState(),
+                                                     ServletActionContext.getRequest().getContextPath() );
                 }
             }
             changeSet = null;
@@ -134,18 +153,33 @@ public class BuildResultAction
             buildResult = getContinuum().getBuildResult( getBuildId() );
 
             // directory contains files ?
-            File surefireReportsDirectory =
-                configuration.getTestReportsDirectory( buildId, getProjectId() );
-            File[] files = surefireReportsDirectory.listFiles();
-            hasSurefireResults = files != null && files.length > 0;
+            File[] testReports = null;
+            try
+            {
+                File surefireReportsDirectory = configuration.getTestReportsDirectory( buildId, getProjectId() );
+                testReports = surefireReportsDirectory.listFiles();
+            }
+            catch ( ConfigurationException ce )
+            {
+                log.warn( "failed to access test reports", ce );
+            }
+
+            hasSurefireResults = testReports != null && testReports.length > 0;
             changeSet = getContinuum().getChangesSinceLastSuccess( getProjectId(), getBuildId() );
 
-            buildOutput = getBuildOutputText();
+            try
+            {
+                buildOutput = getBuildOutputText();
+            }
+            catch ( ConfigurationException ce )
+            {
+                log.warn( "failed to access build output", ce );
+            }
 
             if ( ServletActionContext.getRequest() != null )
             {
-                state =
-                    StateGenerator.generate( buildResult.getState(), ServletActionContext.getRequest().getContextPath() );
+                state = StateGenerator.generate( buildResult.getState(),
+                                                 ServletActionContext.getRequest().getContextPath() );
             }
 
             this.setCanDelete( this.canRemoveBuildResult( buildResult ) );
@@ -180,8 +214,8 @@ public class BuildResultAction
             }
             catch ( ContinuumException e )
             {
-                addActionError( getText( "buildResult.delete.error", "Unable to delete build result",
-                                         new Integer( buildId ).toString() ) );
+                addActionError( getText( "buildResult.delete.error", "Unable to delete build result", new Integer(
+                    buildId ).toString() ) );
             }
             catch ( BuildManagerException e )
             {
@@ -192,13 +226,12 @@ public class BuildResultAction
             event.setCategory( AuditLogConstants.BUILD_RESULT );
             event.setCurrentUser( getPrincipal() );
             event.log();
-            
+
             return SUCCESS;
         }
 
         return CONFIRM;
     }
-
 
     public String buildLogAsText()
         throws ConfigurationException, IOException
@@ -210,8 +243,7 @@ public class BuildResultAction
     public InputStream getBuildOutputInputStream()
         throws ConfigurationException, IOException
     {
-        String outputText = getBuildOutputText();
-        return outputText == null ? null : IOUtils.toInputStream( outputText );
+        return IOUtils.toInputStream( buildOutput );
     }
 
     private String getBuildOutputText()
@@ -222,11 +254,10 @@ public class BuildResultAction
 
         if ( buildOutputFile.exists() )
         {
-            return StringEscapeUtils.escapeHtml( FileUtils.fileRead( buildOutputFile ) );
+            return fsManager.fileContents( buildOutputFile );
         }
         return null;
     }
-
 
     public int getBuildId()
     {
@@ -293,5 +324,26 @@ public class BuildResultAction
     public void setDistributedBuildManager( DistributedBuildManager distributedBuildManager )
     {
         this.distributedBuildManager = distributedBuildManager;
+    }
+
+    public boolean isBuildInProgress()
+    {
+        int buildState = buildResult.getState();
+        return buildState == ContinuumProjectState.BUILDING;
+    }
+
+    public boolean isBuildSuccessful()
+    {
+        return buildResult.getState() == ContinuumProjectState.OK;
+    }
+
+    public boolean isShowBuildNumber()
+    {
+        return buildResult.getBuildNumber() != 0;
+    }
+
+    public boolean isShowBuildError()
+    {
+        return !isBuildSuccessful() && !StringUtils.isEmpty( buildResult.getError() );
     }
 }

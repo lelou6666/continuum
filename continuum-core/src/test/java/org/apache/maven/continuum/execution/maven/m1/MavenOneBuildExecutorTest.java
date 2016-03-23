@@ -19,20 +19,22 @@ package org.apache.maven.continuum.execution.maven.m1;
  * under the License.
  */
 
+import org.apache.maven.continuum.AbstractContinuumTest;
+import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.maven.continuum.AbstractContinuumTest;
-import org.apache.maven.continuum.execution.manager.BuildExecutorManager;
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.codehaus.plexus.util.FileUtils;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class MavenOneBuildExecutorTest
     extends AbstractContinuumTest
@@ -41,12 +43,11 @@ public class MavenOneBuildExecutorTest
 
     private MavenOneBuildExecutor executor;
 
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        BuildExecutorManager builderManager = (BuildExecutorManager) lookup( BuildExecutorManager.ROLE );
+        BuildExecutorManager builderManager = lookup( BuildExecutorManager.class );
 
         executor = (MavenOneBuildExecutor) builderManager.getBuildExecutor( MavenOneBuildExecutor.ID );
 
@@ -61,14 +62,15 @@ public class MavenOneBuildExecutorTest
             assertTrue( checkOut.mkdirs() );
         }
 
-        FileUtils.cleanDirectory( checkOut );
+        getFileSystemManager().wipeDir( checkOut );
 
     }
 
+    @Test
     public void testUpdatingAProjectFromScmWithAExistingProjectAndAEmptyMaven1Pom()
         throws Exception
     {
-        FileUtils.fileWrite( new File( checkOut, "project.xml" ).getAbsolutePath(), "<project/>" );
+        getFileSystemManager().writeFile( new File( checkOut, "project.xml" ), "<project/>" );
 
         // ----------------------------------------------------------------------
         // Make the "existing" project
@@ -125,11 +127,12 @@ public class MavenOneBuildExecutorTest
         assertEquals( "1.1-SNAPSHOT", project.getVersion() );
     }
 
+    @Test
     public void testUpdatingAProjectWithNagEMailAddress()
         throws Exception
     {
-        FileUtils.fileWrite( new File( checkOut, "project.xml" ).getAbsolutePath(),
-                             "<project><build><nagEmailAddress>myuser@myhost.org</nagEmailAddress></build></project>" );
+        getFileSystemManager().writeFile( new File( checkOut, "project.xml" ),
+                                          "<project><build><nagEmailAddress>myuser@myhost.org</nagEmailAddress></build></project>" );
 
         // ----------------------------------------------------------------------
         // Make the "existing" project
@@ -184,11 +187,12 @@ public class MavenOneBuildExecutorTest
         assertEquals( "myuser@myhost.org", actualNotifier.getConfiguration().get( "address" ) );
     }
 
+    @Test
     public void testUpdatingAProjectWithNagEMailAddressAndOneNotifier()
         throws Exception
     {
-        FileUtils.fileWrite( new File( checkOut, "project.xml" ).getAbsolutePath(),
-                             "<project><build><nagEmailAddress>myuser@myhost.org</nagEmailAddress></build></project>" );
+        getFileSystemManager().writeFile( new File( checkOut, "project.xml" ),
+                                          "<project><build><nagEmailAddress>myuser@myhost.org</nagEmailAddress></build></project>" );
 
         // ----------------------------------------------------------------------
         // Make the "existing" project
@@ -267,10 +271,11 @@ public class MavenOneBuildExecutorTest
         assertEquals( "dev@maven.apache.org", actualNotifier.getConfiguration().get( "address" ) );
     }
 
+    @Test
     public void testUpdatingAProjectWithOneNotifier()
         throws Exception
     {
-        FileUtils.fileWrite( new File( checkOut, "project.xml" ).getAbsolutePath(), "<project/>" );
+        getFileSystemManager().writeFile( new File( checkOut, "project.xml" ), "<project/>" );
 
         // ----------------------------------------------------------------------
         // Make the "existing" project

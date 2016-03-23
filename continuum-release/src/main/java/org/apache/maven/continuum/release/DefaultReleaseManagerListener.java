@@ -19,15 +19,14 @@ package org.apache.maven.continuum.release;
  * under the License.
  */
 
+import org.apache.maven.shared.release.ReleaseManagerListener;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.maven.shared.release.ReleaseManagerListener;
-
 /**
  * @author Edwin Punzalan
- * @version $Id$
  */
 public class DefaultReleaseManagerListener
     implements ReleaseManagerListener, ContinuumReleaseManagerListener
@@ -43,7 +42,7 @@ public class DefaultReleaseManagerListener
     private String error;
 
     private int state;
-    
+
     private String username;
 
     public void goalStart( String name, List phases )
@@ -112,12 +111,12 @@ public class DefaultReleaseManagerListener
     {
         return state;
     }
-    
+
     public void setUsername( String username )
     {
         this.username = username;
     }
-    
+
     public String getUsername()
     {
         return username;

@@ -23,11 +23,12 @@ import com.atlassian.xmlrpc.ServiceObject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * SlaveBuildAgentTransportService
  */
-@ServiceObject("SlaveBuildAgentTransportService")
+@ServiceObject( "SlaveBuildAgentTransportService" )
 public interface SlaveBuildAgentTransportService
 {
     public Boolean buildProjects( List<Map<String, Object>> projectsBuildContext )
@@ -51,7 +52,7 @@ public interface SlaveBuildAgentTransportService
     public String generateWorkingCopyContent( int projectId, String directory, String baseUrl, String imagesBaseUrl )
         throws Exception;
 
-    public String getProjectFileContent( int projectId, String directory, String filename )
+    public Map<String, Object> getProjectFile( int projectId, String directory, String filename )
         throws Exception;
 
     public Map getReleasePluginParameters( int projectId, String pomFilename )
@@ -60,14 +61,14 @@ public interface SlaveBuildAgentTransportService
     public List<Map<String, String>> processProject( int projectId, String pomFilename, boolean autoVersionSubmodules )
         throws Exception;
 
-    public String releasePrepare( Map project, Map properties, Map releaseVersion, Map developmentVersion,
+    public String releasePrepare( Map project, Properties properties, Map releaseVersion, Map developmentVersion,
                                   Map environments, String username )
         throws Exception;
 
     public Map<String, Object> getReleaseResult( String releaseId )
         throws Exception;
 
-    public Map getListener( String releaseId )
+    public Map<String, Object> getListener( String releaseId )
         throws Exception;
 
     public Boolean removeListener( String releaseId )
@@ -115,10 +116,22 @@ public interface SlaveBuildAgentTransportService
     public Boolean isProjectScmRootInQueue( int projectScmRootId, List<Integer> projectIds )
         throws Exception;
 
-    public Boolean isProjectCurrentlyBuilding( int projectId )
+    public Boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId )
         throws Exception;
 
-    public Boolean isProjectInBuildQueue( int projectId )
+    public Boolean isProjectInBuildQueue( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    public Boolean isProjectCurrentlyPreparingBuild( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    public Boolean isProjectInPrepareBuildQueue( int projectId, int buildDefinitionId )
+        throws Exception;
+
+    public Boolean isProjectGroupInPrepareBuildQueue( int projectGroupId )
+        throws Exception;
+
+    public Boolean isProjectGroupCurrentlyPreparingBuild( int projectGroupId )
         throws Exception;
 
     public Boolean removeFromPrepareBuildQueue( int projectGroupId, int scmRootId )
@@ -131,5 +144,40 @@ public interface SlaveBuildAgentTransportService
         throws Exception;
 
     public Boolean removeFromBuildQueue( List<String> hashCodes )
+        throws Exception;
+
+    /**
+     * Get build agent's platform.
+     *
+     * @return The operating system name of the build agent
+     * @throws Exception
+     */
+    public String getBuildAgentPlatform()
+        throws Exception;
+
+    /**
+     * Execute a directory purge on the build agent
+     *
+     * @param directoryType  valid types are <i>working</i> and <i>releases</i>
+     * @param daysOlder      days older
+     * @param retentionCount retention count
+     * @param deleteAll      delete all flag
+     * @throws Exception error that will occur during the purge
+     */
+    public void executeDirectoryPurge( String directoryType, int daysOlder, int retentionCount, boolean deleteAll )
+        throws Exception;
+
+    /**
+     * Execute a repository purge on the build agent
+     *
+     * @param repoName                used to determine location at the build agent
+     * @param daysOlder               age in days when file is eligible for purging
+     * @param retentionCount          number of artifact versions required to retain
+     * @param deleteAll               triggers full deletion
+     * @param deleteReleasedSnapshots whether to remove all snapshots matching a released artifact version
+     * @throws Exception
+     */
+    public void executeRepositoryPurge( String repoName, int daysOlder, int retentionCount, boolean deleteAll,
+                                        boolean deleteReleasedSnapshots )
         throws Exception;
 }

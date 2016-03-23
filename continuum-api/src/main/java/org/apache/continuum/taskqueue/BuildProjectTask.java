@@ -19,15 +19,14 @@ package org.apache.continuum.taskqueue;
  * under the License.
  */
 
-import java.io.Serializable;
-
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.codehaus.plexus.taskqueue.Task;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildProjectTask
     implements Task, Serializable
@@ -89,9 +88,9 @@ public class BuildProjectTask
 
     public BuildTrigger getBuildTrigger()
     {
-    	return buildTrigger;
+        return buildTrigger;
     }
-    
+
     public void setBuildTrigger( BuildTrigger buildTrigger )
     {
         this.buildTrigger = buildTrigger;
@@ -149,7 +148,7 @@ public class BuildProjectTask
 
     public int hashCode()
     {
-    	return this.getBuildDefinitionId() + this.getProjectId() + this.buildTrigger.getTrigger();
+        return this.getBuildDefinitionId() + this.getProjectId() + this.buildTrigger.getTrigger();
     }
 
     public int getHashCode()

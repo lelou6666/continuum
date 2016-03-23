@@ -19,21 +19,12 @@ package org.apache.maven.continuum;
  * under the License.
  */
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
-
 import org.apache.continuum.dao.DaoUtils;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.continuum.dao.ProjectScmRootDao;
 import org.apache.continuum.dao.ScheduleDao;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
@@ -47,15 +38,29 @@ import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.jdo.JdoFactory;
-import org.codehaus.plexus.spring.PlexusInSpringTestCase;
 import org.jpox.SchemaTool;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
+
+import javax.jdo.PersistenceManager;
+import javax.jdo.PersistenceManagerFactory;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public abstract class AbstractContinuumTest
-    extends PlexusInSpringTestCase
+    extends PlexusSpringTestCase
 {
     private DaoUtils daoUtils;
 
@@ -67,46 +72,55 @@ public abstract class AbstractContinuumTest
     
     private ProjectScmRootDao projectScmRootDao;
 
+    private ProjectScmRootDao projectScmRootDao;
+
+    private FileSystemManager fsManager;
+
+    @Rule
+    public TestName testName = new TestName();
+
+    protected String getName()
+    {
+        return testName.getMethodName();
+    }
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
 
-    @Override
-    protected void setUp()
+    @Before
+    public void setupContinuum()
         throws Exception
     {
-        super.setUp();
-
         init();
-
         getProjectDao();
-
         getProjectGroupDao();
-
         getScheduleDao();
+<<<<<<< HEAD
         
         getProjectScmRootDao();
+=======
+        getProjectScmRootDao();
+        getFileSystemManager();
+>>>>>>> refs/remotes/apache/trunk
 
         setUpConfigurationService( (ConfigurationService) lookup( "configurationService" ) );
 
         Collection<ProjectGroup> projectGroups = projectGroupDao.getAllProjectGroupsWithProjects();
-
         if ( projectGroups.size() == 0 ) //if ContinuumInitializer is loaded by Spring at startup, size == 1
         {
             createDefaultProjectGroup();
-
             projectGroups = projectGroupDao.getAllProjectGroupsWithProjects();
         }
 
         assertEquals( 1, projectGroups.size() );
     }
 
-    @Override
-    protected void tearDown()
+    @After
+    public void wipeData()
         throws Exception
     {
         daoUtils.eraseDatabase();
-        super.tearDown();
     }
 
     protected void createDefaultProjectGroup()
@@ -139,9 +153,7 @@ public abstract class AbstractContinuumTest
 
         configurationService.setWorkingDirectory( getTestFile( "target/working-directory" ) );
 
-        configurationService.setReleaseOutputDirectory( getTestFile( "target/release-outpur" ) );
-
-        configurationService.setReleaseOutputDirectory( getTestFile( "target/release-outpur" ) );
+        configurationService.setReleaseOutputDirectory( getTestFile( "target/release-output" ) );
 
         configurationService.store();
     }
@@ -164,31 +176,15 @@ public abstract class AbstractContinuumTest
         // Set up the JDO factory
         // ----------------------------------------------------------------------
 
-        Object o = lookup( JdoFactory.ROLE, "continuum" );
+        MemoryJdoFactory jdoFactory = (MemoryJdoFactory) lookup( JdoFactory.class, "continuum" );
 
-        assertEquals( MemoryJdoFactory.class.getName(), o.getClass().getName() );
-
-        MemoryJdoFactory jdoFactory = (MemoryJdoFactory) o;
-
-//        jdoFactory.setPersistenceManagerFactoryClass( "org.jpox.PersistenceManagerFactoryImpl" );
-//
-//        jdoFactory.setDriverName( "org.hsqldb.jdbcDriver" );
+        assertEquals( MemoryJdoFactory.class.getName(), jdoFactory.getClass().getName() );
 
         String url = "jdbc:hsqldb:mem:" + getClass().getName() + "." + getName();
 
         jdoFactory.setUrl( url );
 
         jdoFactory.reconfigure();
-
-//        jdoFactory.setUserName( "sa" );
-//
-//        jdoFactory.setPassword( "" );
-//
-//        jdoFactory.setProperty( "org.jpox.transactionIsolation", "READ_UNCOMMITTED" );
-//
-//        jdoFactory.setProperty( "org.jpox.poid.transactionIsolation", "READ_UNCOMMITTED" );
-//
-//        jdoFactory.setProperty( "org.jpox.autoCreateTables", "true" );
 
         // ----------------------------------------------------------------------
         // Check the configuration
@@ -215,14 +211,15 @@ public abstract class AbstractContinuumTest
             System.setProperty( (String) entry.getKey(), (String) entry.getValue() );
         }
 
-        SchemaTool.createSchemaTables( new URL[]{getClass().getResource( "/package.jdo" )}, new URL[]{}, null,
-                                       false, null );
+        SchemaTool.createSchemaTables( new URL[] { getClass().getResource( "/package.jdo" ) }, new URL[] {}, null,
+                                       false,
+                                       null );
 
         // ----------------------------------------------------------------------
         //
         // ----------------------------------------------------------------------
-
-        daoUtils = (DaoUtils) lookup( DaoUtils.class.getName() );
+        daoUtils = lookup( DaoUtils.class );
+        daoUtils.rebuildStore();
     }
 
     protected ProjectDao getProjectDao()
@@ -259,6 +256,24 @@ public abstract class AbstractContinuumTest
             projectScmRootDao = (ProjectScmRootDao) lookup( ProjectScmRootDao.class.getName() );
         }
         return projectScmRootDao;
+    }
+
+    protected ProjectScmRootDao getProjectScmRootDao()
+    {
+        if ( projectScmRootDao == null )
+        {
+            projectScmRootDao = (ProjectScmRootDao) lookup( ProjectScmRootDao.class.getName() );
+        }
+        return projectScmRootDao;
+    }
+
+    public FileSystemManager getFileSystemManager()
+    {
+        if ( fsManager == null )
+        {
+            fsManager = (FileSystemManager) lookup( FileSystemManager.class );
+        }
+        return fsManager;
     }
 
     // ----------------------------------------------------------------------
@@ -406,8 +421,6 @@ public abstract class AbstractContinuumTest
     {
         assertEquals( "project.name", name, actual.getName() );
 
-//        assertEquals( "project.scmUrl", scmUrl, actual.getScmUrl() );
-
         if ( notifiers != null )
         {
             assertNotNull( "project.notifiers", actual.getNotifiers() );
@@ -422,9 +435,8 @@ public abstract class AbstractContinuumTest
 
                 assertEquals( "project.notifiers.notifier.type", notifier.getType(), actualNotifier.getType() );
 
-                assertEquals( "project.notifiers.notifier.configuration.address",
-                              notifier.getConfiguration().get( "address" ),
-                              actualNotifier.getConfiguration().get( "address" ) );
+                assertEquals( "project.notifiers.notifier.configuration.address", notifier.getConfiguration().get(
+                    "address" ), actualNotifier.getConfiguration().get( "address" ) );
             }
         }
 

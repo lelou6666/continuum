@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,272 +19,230 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-//import org.apache.continuum.web.test.parent.AbstractBuildQueueTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.apache.continuum.web.test.parent.AbstractBuildAgentsTest;
 
-@Test( groups = { "agent" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+import java.io.UnsupportedEncodingException;
+
+@Test( groups = {"agent"} )
 public class BuildAgentsTest
-    extends AbstractBuildAgentsTest
+    extends AbstractAdminTest
 {
-    public void testAddBuildAgent()
-    {
-        String BUILD_AGENT_NAME = getProperty( "BUILD_AGENT_NAME" );
-        String BUILD_AGENT_DESCRIPTION = getProperty( "BUILD_AGENT_DESCRIPTION" );
-        String BUILD_AGENT_NAME2 = getProperty( "BUILD_AGENT_NAME2" );
-        String BUILD_AGENT_DESCRIPTION2 = getProperty( "BUILD_AGENT_DESCRIPTION2" );
-        String BUILD_AGENT_NAME3 = getProperty( "BUILD_AGENT_NAME3" );
-        String BUILD_AGENT_DESCRIPTION3 = getProperty( "BUILD_AGENT_DESCRIPTION3" );
+    private String buildAgentGroup;
 
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgent();
-            addBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION, true, true, false );
-            goToAddBuildAgent();
-            addBuildAgent( BUILD_AGENT_NAME2, BUILD_AGENT_DESCRIPTION2, true, true, true );
-            goToAddBuildAgent();
-            addBuildAgent( BUILD_AGENT_NAME3, BUILD_AGENT_DESCRIPTION3, true, false, false );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+    private String buildAgentDescription;
+
+    private String badAgentUrl;
+
+    @BeforeMethod
+    public void setUp()
+    {
+        enableDistributedBuilds();
+
+        buildAgentGroup = getProperty( "BUILD_AGENT_GROUPNAME" );
+
+        buildAgentDescription = getProperty( "BUILD_AGENT_DESCRIPTION" );
+        badAgentUrl = "http://localhost:8585/bad-continuum-buildagent/xmlrpc";
     }
 
-    @Test( dependsOnMethods = { "testEditBuildAgent" } )
-    public void testAddAnExistingBuildAgent()
-    {
-        String BUILD_AGENT_NAME = getProperty( "BUILD_AGENT_NAME" );
-        String BUILD_AGENT_DESCRIPTION = getProperty( "BUILD_AGENT_DESCRIPTION" );
-
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgent();
-            addBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION, false, false, false ) ;
-            assertTextPresent( "Build agent already exists" );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
-    }
-
-    @Test( dependsOnMethods = { "testAddBuildAgent" } )
-    public void testEditBuildAgent()
-    {
-        String BUILD_AGENT_NAME = getProperty( "BUILD_AGENT_NAME" );
-        String BUILD_AGENT_DESCRIPTION = getProperty( "BUILD_AGENT_DESCRIPTION" );
-        String new_agentDescription = "new_agentDescription";
-
-        try
-        {
-            enableDistributedBuilds();
-            goToEditBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION );
-            addEditBuildAgent( BUILD_AGENT_NAME, new_agentDescription );
-            goToEditBuildAgent( BUILD_AGENT_NAME, new_agentDescription);
-            addEditBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
-    }
-
-    @Test( dependsOnMethods = { "testAddAnExistingBuildAgent" } )
-    public void testDeleteBuildAgent()
-    {
-        try
-        {
-            enableDistributedBuilds();
-            goToBuildAgentPage();
-            String BUILD_AGENT_NAME = getProperty( "BUILD_AGENT_NAME" );
-            removeBuildAgent( BUILD_AGENT_NAME );
-            assertTextNotPresent( BUILD_AGENT_NAME );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
-    }
-
-	@Test( dependsOnMethods = { "testDeleteBuildAgent" } )
-    public void testAddEmptyBuildAgent()
-    {
-    	String BUILD_AGENT_DESCRIPTION = getProperty( "BUILD_AGENT_DESCRIPTION" );
-
-    	try
-    	{
-    	    enableDistributedBuilds();
-    	    goToAddBuildAgent();
-    	    addBuildAgent( "", BUILD_AGENT_DESCRIPTION, false, false, false ) ;
-    	    assertTextPresent( "Build agent url is required." );
-    	}
-    	finally
-    	{
-    	    disableDistributedBuilds();
-    	}
-    }
-
-    @Test( dependsOnMethods = { "testDeleteBuildAgent" }, enabled=false )
-    public void testBuildSuccessWithDistributedBuildsAfterDisableEnableOfBuildAgent()
+    @AfterMethod
+    public void tearDown()
         throws Exception
     {
-        String BUILD_AGENT_NAME = getProperty( "BUILD_AGENT_NAME2" );
-        String BUILD_AGENT_DESCRIPTION = getProperty( "BUILD_AGENT_DESCRIPTION2" );
-        String M2_PROJ_GRP_NAME = getProperty( "M2_DELETE_PROJ_GRP_NAME" );
-        String M2_PROJ_GRP_ID = getProperty( "M2_DELETE_PROJ_GRP_ID" );
-        String M2_POM_URL = getProperty( "M2_DELETE_POM_URL" );
-        String M2_POM_USERNAME = getProperty( "M2_POM_USERNAME" );
-        String M2_POM_PASSWORD = getProperty( "M2_POM_PASSWORD" );
-        String M2_PROJ_GRP_DESCRIPTION = getProperty( "M2_DELETE_PROJ_GRP_DESCRIPTION" );
+        removeBuildAgentGroup( buildAgentGroup, false );
 
-        try
-        {
-            enableDistributedBuilds();
+        removeBuildAgent( buildAgentUrl, false );
+        removeBuildAgent( badAgentUrl, false );
 
-            addMavenTwoProject( M2_POM_URL, M2_POM_USERNAME, M2_POM_PASSWORD, null, true );
-            goToProjectGroupsSummaryPage();
-            assertLinkPresent( M2_PROJ_GRP_NAME );
-            
-            clickLinkWithText( M2_PROJ_GRP_NAME );
-
-            assertPage( "Continuum - Project Group" );
-
-            // disable then enable build agent
-            goToEditBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION );
-            enableDisableBuildAgent( BUILD_AGENT_NAME, false );
-            goToEditBuildAgent( BUILD_AGENT_NAME, BUILD_AGENT_DESCRIPTION );
-            enableDisableBuildAgent( BUILD_AGENT_NAME, true );
-
-            buildProjectGroup( M2_PROJ_GRP_NAME, M2_PROJ_GRP_ID, "", M2_PROJ_GRP_NAME );
-
-            removeProjectGroup( M2_PROJ_GRP_NAME );
-            assertLinkNotPresent( M2_PROJ_GRP_NAME );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        disableDistributedBuilds();
     }
 
-//TESTS FOR BUILD AGENT GROUPS
+    public void testAddBuildAgent()
+    {
+        goToAddBuildAgent();
+        addBuildAgent( buildAgentUrl, buildAgentDescription, true, true, true );
+    }
 
-    @Test( dependsOnMethods = { "testAddBuildAgent", "testDeleteBuildAgent" } )
+    public void testAddBuildAgentWithXSS()
+    {
+        String invalidUrl = "http://sampleagent/<script>alert('gotcha')</script>";
+        String invalidDescription = "blah blah <script>alert('gotcha')</script> blah blah";
+        goToAddBuildAgent();
+        addBuildAgent( invalidUrl, invalidDescription, false, true, false );
+
+        assertTextPresent( "Build agent url is invalid." );
+    }
+
+    public void testViewBuildAgentInstallationXSS()
+    {
+        String url = baseUrl +
+            "/security/viewBuildAgent.action?buildAgent.url=test%3Cscript%3Ealert%28%27xss%27%29%3C/script%3E";
+        getSelenium().open( url );
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "<script>alert('xss')</script>" );
+    }
+
+    public void testEditBuildAgentXSS()
+    {
+        String url = baseUrl +
+            "/security/editBuildAgent.action?buildAgent.url=test%3Cscript%3Ealert%28%27xss%27%29%3C/script%3E";
+        getSelenium().open( url );
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+    }
+
+    public void testAddAnExistingBuildAgent()
+    {
+        addBuildAgent( buildAgentUrl );
+
+        goToAddBuildAgent();
+        addBuildAgent( buildAgentUrl, buildAgentDescription, false, false, true );
+        assertTextPresent( "Build agent already exists" );
+    }
+
+    public void testEditBuildAgent()
+        throws Exception
+    {
+        // reset agent to expected state
+        addBuildAgent( buildAgentUrl, buildAgentDescription );
+
+        String new_agentDescription = "new_agentDescription";
+
+        goToEditBuildAgent( buildAgentUrl, buildAgentDescription );
+        addEditBuildAgent( buildAgentUrl, new_agentDescription );
+        goToEditBuildAgent( buildAgentUrl, new_agentDescription );
+        addEditBuildAgent( buildAgentUrl, buildAgentDescription );
+    }
+
+    public void testAddBadBuildAgent()
+        throws Exception
+    {
+        String description = "down agent";
+        goToAddBuildAgent();
+        addBuildAgent( badAgentUrl, description, true, true, false );
+
+        goToBuildAgentPage();
+        assertLinkNotPresent( badAgentUrl );
+    }
+
+    public void testEnableBadBuildAgent()
+        throws Exception
+    {
+        // Note: relying on behaviour of being able to add a disabled agent without a test, if that changes in future we
+        // might need to force its configuration
+        String description = "down agent";
+        goToAddBuildAgent();
+        addBuildAgent( badAgentUrl, description, true, false, true );
+
+        goToEditBuildAgent( badAgentUrl, description );
+        addBuildAgent( badAgentUrl, description, true, true, false );
+
+        goToBuildAgentPage();
+        assertLinkPresent( badAgentUrl );
+    }
+
+    public void testDeleteBuildAgent()
+        throws Exception
+    {
+        addBuildAgent( buildAgentUrl, buildAgentDescription );
+        removeBuildAgent( buildAgentUrl );
+        assertTextNotPresent( buildAgentUrl );
+    }
+
+    public void testAddEmptyBuildAgent()
+    {
+        goToAddBuildAgent();
+        addBuildAgent( "", buildAgentDescription, false, false, false );
+        assertTextPresent( "Build agent url is required." );
+    }
+
+    //TESTS FOR BUILD AGENT GROUPS
+
+    public void testAddBuildAgentGroupXSS()
+        throws Exception
+    {
+        addBuildAgent( buildAgentUrl );
+
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( "%3Cscript%3Ealert%28%27xss%27%29%3C/script%3E", new String[]{}, new String[]{},
+                                false );
+        assertTextPresent( "Build agent group name contains invalid characters" );
+    }
+
+    public void testEditBuildAgentGroupXSS()
+    {
+        String url = baseUrl +
+            "/security/editBuildAgentGroup.action?buildAgentGroup.name=test%3Cscript%3Ealert%28%27xss%27%29%3C/script%3E";
+        getSelenium().open( url );
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+    }
+
     public void testAddBuildAgentGroup()
         throws Exception
     {
-        String BUILD_AGENT_NAME2 = getProperty( "BUILD_AGENT_NAME2" );
-        String BUILD_AGENT_NAME3 = getProperty( "BUILD_AGENT_NAME3" );
-        String BUILD_AGENT_GROUPNAME = getProperty( "BUILD_AGENT_GROUPNAME" );
+        addBuildAgent( buildAgentUrl );
 
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgentGroup();
-            addEditBuildAgentGroup( BUILD_AGENT_GROUPNAME, new String[] { BUILD_AGENT_NAME2, BUILD_AGENT_NAME3 }, new String[] {}, true );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, true );
     }
 
-    @Test( dependsOnMethods = { "testAddBuildAgentGroup" } )
     public void testEditBuildAgentGroup()
         throws Exception
     {
-        String BUILD_AGENT_NAME2 = getProperty( "BUILD_AGENT_NAME2" );
-        String BUILD_AGENT_NAME3 = getProperty( "BUILD_AGENT_NAME3" );
-        String BUILD_AGENT_GROUPNAME = getProperty( "BUILD_AGENT_GROUPNAME" );
+        addBuildAgent( buildAgentUrl );
+
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, true );
 
         String newName = "new_agentgroupname";
-        try
-        {
-            enableDistributedBuilds();
-            goToEditBuildAgentGroup( BUILD_AGENT_GROUPNAME, new String[] { BUILD_AGENT_NAME2, BUILD_AGENT_NAME3 } );
-            addEditBuildAgentGroup( newName, new String[] {},
-                             new String[] { BUILD_AGENT_NAME3 }, true );
-            goToEditBuildAgentGroup( newName, new String[] { BUILD_AGENT_NAME2 } );
-            addEditBuildAgentGroup( BUILD_AGENT_GROUPNAME, new String[] { BUILD_AGENT_NAME3 },
-                             new String[] {}, true );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        goToEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl} );
+        addEditBuildAgentGroup( newName, new String[]{}, new String[]{buildAgentUrl}, true );
+        goToEditBuildAgentGroup( newName, new String[]{} );
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, true );
     }
 
-    @Test( dependsOnMethods = { "testEditBuildAgentGroup" } )
     public void testAddAnExistingBuildAgentGroup()
         throws Exception
     {
-        String BUILD_AGENT_NAME2 = getProperty( "BUILD_AGENT_NAME2" );
-        String BUILD_AGENT_NAME3 = getProperty( "BUILD_AGENT_NAME3" );
-        String BUILD_AGENT_GROUPNAME = getProperty( "BUILD_AGENT_GROUPNAME" );
+        addBuildAgent( buildAgentUrl );
 
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgentGroup();
-           	addEditBuildAgentGroup( BUILD_AGENT_GROUPNAME, new String[] { BUILD_AGENT_NAME2, BUILD_AGENT_NAME3 }, new String[] {}, false );
-           	assertTextPresent( "Build agent group already exists." );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, true );
+
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, false );
+        assertTextPresent( "Build agent group already exists." );
     }
 
-    @Test( dependsOnMethods = { "testAddAnExistingBuildAgentGroup" } )
     public void testAddEmptyBuildAgentGroupName()
         throws Exception
     {
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgentGroup();
-            addEditBuildAgentGroup( "", new String[] {}, new String[] {}, false );
-            assertTextPresent( "Build agent group name required." );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        addBuildAgent( buildAgentUrl );
+
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( "", new String[]{}, new String[]{}, false );
+        assertTextPresent( "Build agent group name is required." );
     }
 
-    @Test( dependsOnMethods = { "testAddEmptyBuildAgentGroupName" } )
     public void testDeleteBuildAgentGroup()
+        throws UnsupportedEncodingException
     {
-        String BUILD_AGENT_GROUPNAME = getProperty( "BUILD_AGENT_GROUPNAME" );
+        addBuildAgent( buildAgentUrl );
 
-        try
-        {
-            enableDistributedBuilds();
-            removeBuildAgentGroup( BUILD_AGENT_GROUPNAME );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{buildAgentUrl}, new String[]{}, true );
+
+        removeBuildAgentGroup( buildAgentGroup );
     }
 
-    @Test( dependsOnMethods = { "testDeleteBuildAgentGroup" } )
     public void testAddBuildAgentGroupWithEmptyBuildAgent()
         throws Exception
     {
-        String BUILD_AGENT_GROUPNAME = getProperty( "BUILD_AGENT_GROUPNAME" );
+        addBuildAgent( buildAgentUrl );
 
-        try
-        {
-            enableDistributedBuilds();
-            goToAddBuildAgentGroup();
-            addEditBuildAgentGroup( BUILD_AGENT_GROUPNAME, new String[] {}, new String[] {}, true );
-        }
-        finally
-        {
-            disableDistributedBuilds();
-        }
+        goToAddBuildAgentGroup();
+        addEditBuildAgentGroup( buildAgentGroup, new String[]{}, new String[]{}, true );
     }
 }

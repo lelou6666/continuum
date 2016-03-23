@@ -19,16 +19,13 @@ package org.apache.maven.continuum.build.settings;
  * under the License.
  */
 
-import java.text.ParseException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-
 import org.apache.continuum.dao.BuildDefinitionDao;
 import org.apache.continuum.dao.DirectoryPurgeConfigurationDao;
+import org.apache.continuum.dao.DistributedDirectoryPurgeConfigurationDao;
 import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.dao.ScheduleDao;
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.DistributedDirectoryPurgeConfiguration;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.model.project.BuildDefinition;
@@ -37,6 +34,8 @@ import org.apache.maven.continuum.scheduler.ContinuumBuildJob;
 import org.apache.maven.continuum.scheduler.ContinuumPurgeJob;
 import org.apache.maven.continuum.scheduler.ContinuumSchedulerConstants;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.scheduler.AbstractJob;
 import org.codehaus.plexus.scheduler.Scheduler;
 import org.codehaus.plexus.util.StringUtils;
@@ -47,39 +46,36 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.build.settings.SchedulesActivator"
  */
+@Component( role = org.apache.maven.continuum.build.settings.SchedulesActivator.class )
 public class DefaultSchedulesActivator
     implements SchedulesActivator
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultSchedulesActivator.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private DirectoryPurgeConfigurationDao directoryPurgeConfigurationDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
+    private DistributedDirectoryPurgeConfigurationDao distributedDirectoryPurgeConfigurationDao;
+
+    @Requirement
     private BuildDefinitionDao buildDefinitionDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ScheduleDao scheduleDao;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private Scheduler scheduler;
 
     // private int delay = 3600;
@@ -112,8 +108,8 @@ public class DefaultSchedulesActivator
                     }
                     catch ( ContinuumStoreException e1 )
                     {
-                        throw new SchedulesActivationException( "Can't desactivate schedule '" + schedule.getName()
-                            + "'", e );
+                        throw new SchedulesActivationException(
+                            "Can't desactivate schedule '" + schedule.getName() + "'", e );
                     }
                 }
             }
@@ -288,8 +284,11 @@ public class DefaultSchedulesActivator
             repositoryPurgeConfigurationDao.getEnableRepositoryPurgeConfigurationsBySchedule( schedule.getId() );
         List<DirectoryPurgeConfiguration> dirPurgeConfigs =
             directoryPurgeConfigurationDao.getEnableDirectoryPurgeConfigurationsBySchedule( schedule.getId() );
+        List<DistributedDirectoryPurgeConfiguration> distriDirPurgeConfigs =
+            distributedDirectoryPurgeConfigurationDao.getEnableDistributedDirectoryPurgeConfigurationsBySchedule(
+                schedule.getId() );
 
-        return repoPurgeConfigs.size() > 0 || dirPurgeConfigs.size() > 0;
+        return repoPurgeConfigs.size() > 0 || dirPurgeConfigs.size() > 0 || distriDirPurgeConfigs.size() > 0;
 
     }
 }

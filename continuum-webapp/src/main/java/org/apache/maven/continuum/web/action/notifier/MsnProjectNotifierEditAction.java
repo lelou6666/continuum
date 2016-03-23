@@ -19,22 +19,22 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Action that edits a {@link ProjectNotifier} of type 'MSN' from the
  * specified {@link Project}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="msnProjectNotifierEdit"
  * @since 1.1
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "msnProjectNotifierEdit", instantiationStrategy = "per-lookup" )
 public class MsnProjectNotifierEditAction
     extends AbstractProjectNotifierEditAction
 {

@@ -19,11 +19,7 @@ package org.apache.continuum.web.action.admin;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.opensymphony.xwork2.Preparable;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.continuum.purge.ContinuumPurgeManager;
@@ -35,111 +31,111 @@ import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumConfirmAction;
-import org.apache.struts2.ServletActionContext;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
 
-import com.opensymphony.xwork2.Preparable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="localRepository"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "localRepository", instantiationStrategy = "per-lookup" )
 public class LocalRepositoryAction
     extends ContinuumConfirmAction
     implements Preparable, SecureAction
 {
     private static final String LAYOUT_DEFAULT = "default";
-    
+
     private static final String LAYOUT_LEGACY = "legacy";
-    
+
     private boolean confirmed;
 
     private boolean defaultRepo;
-    
+
     private LocalRepository repository;
-    
+
     private List<LocalRepository> repositories;
-    
+
     private List<ProjectGroup> groups;
-    
+
     private List<String> layouts;
-    
+
     private Map<String, Boolean> defaultPurgeMap;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private RepositoryService repositoryService;
-    
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private PurgeConfigurationService purgeConfigService;
-    
+
     public void prepare()
         throws Exception
     {
         super.prepare();
-        
+
         layouts = new ArrayList<String>();
         layouts.add( LAYOUT_DEFAULT );
         layouts.add( LAYOUT_LEGACY );
     }
-    
+
     public String input()
         throws Exception
     {
         defaultRepo = false;
-        
+
         if ( repository != null && repository.getId() > 0 )
         {
             repository = repositoryService.getLocalRepository( repository.getId() );
-            
+
             if ( repository.getName().equals( "DEFAULT" ) )
             {
                 defaultRepo = true;
             }
         }
-        
+
         return INPUT;
     }
-    
+
     public String list()
         throws Exception
     {
         repositories = repositoryService.getAllLocalRepositories();
-        
+
         defaultPurgeMap = new HashMap<String, Boolean>();
-        
+
         for ( LocalRepository repo : repositories )
         {
             // get default purge config of repository
-            RepositoryPurgeConfiguration purgeConfig = purgeConfigService.getDefaultPurgeConfigurationForRepository( repo.getId() );
-            
+            RepositoryPurgeConfiguration purgeConfig = purgeConfigService.getDefaultPurgeConfigurationForRepository(
+                repo.getId() );
+
             if ( purgeConfig == null )
             {
-                defaultPurgeMap.put(  repo.getName(), Boolean.FALSE );
+                defaultPurgeMap.put( repo.getName(), Boolean.FALSE );
             }
             else
             {
-                defaultPurgeMap.put(  repo.getName(), Boolean.TRUE );
+                defaultPurgeMap.put( repo.getName(), Boolean.TRUE );
             }
         }
-        
+
         return SUCCESS;
     }
-    
+
     public String save()
         throws Exception
     {
         List<LocalRepository> allRepositories = repositoryService.getAllLocalRepositories();
-        
-        for( LocalRepository repo : allRepositories )
+
+        for ( LocalRepository repo : allRepositories )
         {
             if ( repository.getId() != repo.getId() )
             {
@@ -147,37 +143,37 @@ public class LocalRepositoryAction
                 {
                     addActionError( getText( "repository.error.name.unique" ) );
                 }
-                
+
                 if ( repository.getLocation().trim().equals( repo.getLocation() ) )
                 {
                     addActionError( getText( "repository.error.location.unique" ) );
                 }
             }
         }
-        
+
         if ( repository.getName().trim().equals( "" ) )
         {
             addActionError( getText( "repository.error.name.cannot.be.spaces" ) );
         }
-        
+
         if ( repository.getLocation().trim().equals( "" ) )
         {
             addActionError( getText( "repository.error.location.cannot.be.spaces" ) );
         }
-        
+
         if ( hasActionErrors() )
         {
             return INPUT;
         }
-        
+
         // trim repository name and location before saving
         repository.setName( repository.getName().trim() );
         repository.setLocation( repository.getLocation().trim() );
-        
+
         if ( repository.getId() == 0 )
         {
             repository = repositoryService.addLocalRepository( repository );
-            
+
             createDefaultPurgeConfiguration();
         }
         else
@@ -189,19 +185,19 @@ public class LocalRepositoryAction
                 addActionError( getText( "repository.error.save.in.use" ) );
                 return ERROR;
             }
-            
+
             LocalRepository retrievedRepo = repositoryService.getLocalRepository( repository.getId() );
-            
+
             retrievedRepo.setName( repository.getName() );
             retrievedRepo.setLocation( repository.getLocation() );
             retrievedRepo.setLayout( repository.getLayout() );
-            
+
             repositoryService.updateLocalRepository( retrievedRepo );
         }
-        
+
         return SUCCESS;
     }
-    
+
     public String remove()
         throws Exception
     {
@@ -211,29 +207,27 @@ public class LocalRepositoryAction
 
         if ( taskQueueManager.isRepositoryInUse( repository.getId() ) )
         {
-            addActionError( getText( "repository.error.remove.in.use", "Unable to remove local repository because it is in use" ) );
+            addActionError( getText( "repository.error.remove.in.use",
+                                     "Unable to remove local repository because it is in use" ) );
+            return ERROR;
         }
 
         if ( repository.getName().equals( "DEFAULT" ) )
         {
             addActionError( getText( "repository.error.remove.default", "Unable to remove default local repository" ) );
+            return ERROR;
         }
 
-        if ( !hasActionErrors() )
+        if ( !confirmed )
         {
-            if ( confirmed )
-            {
-                repositoryService.removeLocalRepository( repository.getId() );
-            }
-            else
-            {
-                return CONFIRM;
-            }
+            return CONFIRM;
         }
 
+        repositoryService.removeLocalRepository( repository.getId() );
+        addActionMessage( getText( "repository.remove.success" ) );
         return SUCCESS;
     }
-    
+
     public String doPurge()
         throws Exception
     {
@@ -243,87 +237,94 @@ public class LocalRepositoryAction
         // check if repository is in use
         if ( taskQueueManager.isRepositoryInUse( repository.getId() ) )
         {
-            addActionError( getText( "repository.error.purge.in.use", "Unable to purge repository because it is in use" ) );
+            addActionError( getText( "repository.error.purge.in.use",
+                                     "Unable to purge repository because it is in use" ) );
+            return ERROR;
         }
-     
-        if ( !hasActionErrors() )
-        {
-            // get default purge configuration for repository
-            RepositoryPurgeConfiguration purgeConfig = purgeConfigService.getDefaultPurgeConfigurationForRepository( repository.getId() );
-        
-            if ( purgeConfig != null )
-            {
-                purgeManager.purgeRepository( purgeConfig );
 
-                AuditLog event = new AuditLog( "Repository id=" + repository.getId(), AuditLogConstants.PURGE_LOCAL_REPOSITORY );
-                event.setCategory( AuditLogConstants.LOCAL_REPOSITORY );
-                event.setCurrentUser( getPrincipal() );
-                event.log();
-            }
+        // get default purge configuration for repository
+        RepositoryPurgeConfiguration purgeConfig = purgeConfigService.getDefaultPurgeConfigurationForRepository(
+            repository.getId() );
+
+        if ( purgeConfig != null )
+        {
+            purgeManager.purgeRepository( purgeConfig );
+
+            AuditLog event = new AuditLog( "Repository id=" + repository.getId(),
+                                           AuditLogConstants.PURGE_LOCAL_REPOSITORY );
+            event.setCategory( AuditLogConstants.LOCAL_REPOSITORY );
+            event.setCurrentUser( getPrincipal() );
+            event.log();
+
+            addActionMessage( getText( "repository.purge.success" ) );
+            return SUCCESS;
         }
-        return SUCCESS;
+
+        addActionError(
+            getText( "repository.error.not.found", new String[] { Integer.toString( repository.getId() ) } ) );
+        return ERROR;
     }
-    
+
     public LocalRepository getRepository()
     {
         return this.repository;
     }
-    
+
     public void setRepository( LocalRepository repository )
     {
         this.repository = repository;
     }
-    
+
     public List<LocalRepository> getRepositories()
     {
         return this.repositories;
     }
-    
+
     public void setRepositories( List<LocalRepository> repositories )
     {
         this.repositories = repositories;
     }
-    
+
     public List<ProjectGroup> getGroups()
     {
         return this.groups;
     }
-    
+
     public void setGroups( List<ProjectGroup> groups )
     {
         this.groups = groups;
     }
-    
+
     public boolean isConfirmed()
     {
         return this.confirmed;
     }
-    
+
     public void setConfirmed( boolean confirmed )
     {
         this.confirmed = confirmed;
     }
-    
+
     public boolean isDefaultRepo()
     {
         return this.defaultRepo;
     }
-    
+
     public void setDefaultRepo( boolean defaultRepo )
     {
         this.defaultRepo = defaultRepo;
     }
-    
+
     public List<String> getLayouts()
     {
         return this.layouts;
     }
-    
+
     public Map<String, Boolean> getDefaultPurgeMap()
     {
         return this.defaultPurgeMap;
     }
-    
+
     public void setDefaultPurgeMap( Map<String, Boolean> defaultPurgeMap )
     {
         this.defaultPurgeMap = defaultPurgeMap;
@@ -333,10 +334,10 @@ public class LocalRepositoryAction
         throws Exception
     {
         RepositoryPurgeConfiguration repoPurge = new RepositoryPurgeConfiguration();
-        
+
         repoPurge.setRepository( repository );
         repoPurge.setDefaultPurge( true );
-        
+
         purgeConfigService.addRepositoryPurgeConfiguration( repoPurge );
     }
 

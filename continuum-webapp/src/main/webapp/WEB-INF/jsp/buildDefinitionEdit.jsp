@@ -19,7 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -31,79 +30,72 @@
 
         <div class="axial">
           <s:form action="saveBuildDefinition" method="post">
-            <c:choose>
-            
-              <c:when test="${!empty actionErrors}">
+
+              <s:if test="hasActionErrors()">
                 <div class="errormessage">
-                  <s:iterator value="actionErrors">
-                    <p><s:property/></p>
-                  </s:iterator>
+                  <s:actionerror/>
                 </div>
                 <input type="button" value="Back" onClick="history.go(-1)">
-              </c:when>
-  
-              <c:when test="${empty actionErrors}">
+              </s:if>
+              <s:else>
                 <table>
                   <tbody>
-                    <s:if test="executor == 'ant'">
-                      <s:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildFile"  required="true"/>
+                    <s:if test="executor == 'ant' or buildDefinitionType == 'ant'">
+                      <s:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildFile"  requiredLabel="true" size="100"/>
                     </s:if>
-                    <s:elseif test="executor == 'shell'">
-                      <s:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildFile" required="true"/>
+                    <s:elseif test="executor == 'shell' or buildDefinitionType == 'shell'">
+                      <s:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildFile" requiredLabel="true" size="100"/>
                     </s:elseif>
                     <s:else>
-                      <s:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildFile" required="true"/>
+                      <s:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildFile" requiredLabel="true" size="100"/>
                     </s:else>
     
-                    <s:if test="executor == 'ant'">
-                      <s:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="goals"/>
+                    <s:if test="executor == 'ant' or buildDefinitionType == 'ant'">
+                      <s:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="goals" size="100"/>
                     </s:if>
-                    <s:elseif test="executor == 'shell'">
+                    <s:elseif test="executor == 'shell' or buildDefinitionType == 'shell'">
                     </s:elseif>
                     <s:else>
-                      <s:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="goals"/>
+                      <s:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="goals" requiredLabel="true" size="100"/>
                     </s:else>
     
-                    <s:textfield label="%{getText('buildDefinition.arguments.label')}" name="arguments"/>
-                    <s:checkbox label="%{getText('buildDefinition.buildFresh.label')}" name="buildFresh" value="buildFresh" fieldValue="true"/>
-                    <s:checkbox label="%{getText('buildDefinition.alwaysBuild.label')}" name="alwaysBuild" />
-                    <c:choose>
-                    <c:when test="${defaultBuildDefinition == true}">
+                    <s:textfield label="%{getText('buildDefinition.arguments.label')}" name="arguments" size="100"/>
+                    <s:checkbox label="%{getText('buildDefinition.buildFresh.label')}" id="buildFresh" name="buildFresh" value="buildFresh" fieldValue="true"/>
+                    <s:checkbox label="%{getText('buildDefinition.alwaysBuild.label')}" id="alwaysBuild" name="alwaysBuild" value="alwaysBuild" fieldValue="true"/>
+
+                    <s:if test="defaultBuildDefinition">
                       <s:label label="%{getText('buildDefinition.defaultForProject.label')}" value="true"/>
-                    </c:when>
-                    <c:otherwise>
-                      <s:checkbox label="%{getText('buildDefinition.defaultForProject.label')}"  name="defaultBuildDefinition" value="defaultBuildDefinition" fieldValue="true"/>
-                    </c:otherwise>
-                    </c:choose>
+                    </s:if>
+                    <s:else>
+                      <s:checkbox label="%{getText('buildDefinition.defaultForProject.label')}" name="defaultBuildDefinition" value="defaultBuildDefinition" fieldValue="true"/>
+                    </s:else>
+
                     <s:select label="%{getText('buildDefinition.schedule.label')}" name="scheduleId" list="schedules"/>
                     <s:select label="%{getText('buildDefinition.profile.label')}" name="profileId" list="profiles" listValue="name"
                                listKey="id" headerKey="-1" headerValue=""/>
                     <s:select label="%{getText('buildDefinition.type.label')}" name="buildDefinitionType" list="buildDefinitionTypes"/>
-                    <s:if test="executor != 'ant' || executor != 'shell'">
+                    <s:if test="executor != 'ant' && executor != 'shell'">
                         <s:select label="%{getText('buildDefinition.updatePolicy.label')}" name="updatePolicy" list="buildDefinitionUpdatePolicies"/>
                     </s:if>
-                    <s:textfield label="%{getText('buildDefinition.description.label')}" name="description" />
+                    <s:textfield label="%{getText('buildDefinition.description.label')}" name="description" size="100" />
                   </tbody>
                 </table>
                 <div class="functnbar3">
-                  <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+                  <s:submit value="%{getText('save')}" theme="simple"/>
+                  <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
                 </div>
 
                 <s:hidden name="buildDefinitionId"/>
                 <s:hidden name="projectId"/>
                 <s:hidden name="projectGroupId"/>
                 <s:hidden name="groupBuildDefinition"/>
-                <c:if test="${groupBuildView == true}">
+                <s:if test="groupBuildView">
                   <s:hidden name="groupBuildView" value="true"/>
-                </c:if>
-                <c:choose>
-                <c:when test="${defaultBuildDefinition == true}">
+                </s:if>
+                <s:if test="defaultBuildDefinition">
                   <s:hidden name="defaultBuildDefinition" value="true"/>
-                </c:when>
-                </c:choose>
-              </c:when>
-            
-            </c:choose>
+                </s:if>
+              </s:else>
           </s:form>
         </div>
       </div>

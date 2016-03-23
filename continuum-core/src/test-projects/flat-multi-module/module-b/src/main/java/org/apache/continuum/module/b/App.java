@@ -30,6 +30,7 @@ public class App
         System.out.println( "Hello World!" );
     }
 }
+<<<<<<< HEAD
 package org.apache.continuum.module.b;
 
 /**
@@ -43,3 +44,5 @@ public class App
         System.out.println( "Hello World!" );
     }
 }
+=======
+>>>>>>> refs/remotes/apache/trunk

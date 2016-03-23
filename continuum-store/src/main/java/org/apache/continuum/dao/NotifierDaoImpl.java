@@ -25,9 +25,8 @@ import org.springframework.stereotype.Repository;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
-@Repository("notifierDao")
+@Repository( "notifierDao" )
 public class NotifierDaoImpl
     extends AbstractDao
     implements NotifierDao

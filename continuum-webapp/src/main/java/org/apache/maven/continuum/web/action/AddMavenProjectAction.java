@@ -19,6 +19,24 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.config.ConfigurationManager;
+import com.opensymphony.xwork2.config.providers.XWorkConfigurationProvider;
+import com.opensymphony.xwork2.inject.Container;
+import com.opensymphony.xwork2.util.ValueStack;
+import com.opensymphony.xwork2.util.ValueStackFactory;
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.apache.struts2.interceptor.ServletRequestAware;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -27,25 +45,14 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
-import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
-import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
-import org.apache.struts2.interceptor.ServletRequestAware;
-import org.codehaus.plexus.util.StringUtils;
+import java.util.Map;
 
 /**
  * Action to add a Maven project to Continuum, either Maven 1 or Maven 2.
  *
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public abstract class AddMavenProjectAction
     extends ContinuumActionSupport
@@ -54,6 +61,11 @@ public abstract class AddMavenProjectAction
     private static final long serialVersionUID = -3965565189557706469L;
 
     private static final int DEFINED_BY_POM_GROUP_ID = -1;
+
+    @Requirement
+    private FileSystemManager fsManager;
+
+    private PomMethod pomMethod = PomMethod.HTTP;
 
     private String pomUrl;
 
@@ -85,6 +97,47 @@ public abstract class AddMavenProjectAction
 
     private HttpServletRequest httpServletRequest;
 
+    public enum PomMethod
+    {
+        HTTP( "add.maven.project.pomMethod.http" ),
+        FILE( "add.maven.project.pomMethod.file" );
+
+        private String textKey;
+
+        PomMethod( String textKey )
+        {
+            this.textKey = textKey;
+        }
+
+        public String getTextKey()
+        {
+            return textKey;
+        }
+    }
+
+    /**
+     * Generates locale-sensitive pom method options.
+     */
+    public Map<PomMethod, String> getPomMethodOptions()
+    {
+        Map<PomMethod, String> options = new LinkedHashMap<PomMethod, String>();
+        for ( PomMethod type : PomMethod.values() )
+        {
+            options.put( type, getText( type.getTextKey() ) );
+        }
+        return options;
+    }
+
+    public void setPomMethod( PomMethod pomMethod )
+    {
+        this.pomMethod = pomMethod;
+    }
+
+    public PomMethod getPomMethod()
+    {
+        return pomMethod;
+    }
+
     public String execute()
         throws ContinuumException, BuildDefinitionServiceException
     {
@@ -107,9 +160,21 @@ public abstract class AddMavenProjectAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        boolean checkProtocol = true;
+        // ctan: hack for WW-3161
+        if ( ActionContext.getContext() == null )
+        {
+            // This fix allow initialization of ActionContext.getContext() to avoid NPE
+            ConfigurationManager configurationManager = new ConfigurationManager();
+            configurationManager.addContainerProvider( new XWorkConfigurationProvider() );
+            com.opensymphony.xwork2.config.Configuration config = configurationManager.getConfiguration();
+            Container container = config.getContainer();
 
-        if ( !StringUtils.isEmpty( pomUrl ) )
+            ValueStack stack = container.getInstance( ValueStackFactory.class ).createValueStack();
+            stack.getContext().put( ActionContext.CONTAINER, container );
+            ActionContext.setContext( new ActionContext( stack.getContext() ) );
+        }
+
+        if ( pomMethod == PomMethod.HTTP && StringUtils.isNotEmpty( pomUrl ) )
         {
             try
             {
@@ -122,6 +187,7 @@ public abstract class AddMavenProjectAction
                         encoding = System.getProperty( "file.encoding" );
                     }
 
+                    // URL encode username and password so things like @ or : or / don't corrupt URL
                     String encodedUsername = URLEncoder.encode( scmUsername, encoding );
                     String encodedPassword = URLEncoder.encode( scmPassword, encoding );
 
@@ -134,6 +200,10 @@ public abstract class AddMavenProjectAction
                         urlBuffer.append( ":" ).append( url.getPort() );
                     }
                     urlBuffer.append( url.getPath() );
+                    if ( url.getQuery() != null )
+                    {
+                        urlBuffer.append( "?" + url.getQuery() );
+                    }
 
                     pom = urlBuffer.toString();
                 }
@@ -154,46 +224,43 @@ public abstract class AddMavenProjectAction
             }
 
         }
-        else
+        else if ( pomMethod == PomMethod.FILE && pomFile != null )
         {
-            if ( pomFile != null )
+            try
             {
-                try
-                {
-                    //pom = pomFile.toURL().toString();
-                    checkProtocol = false;
-                    // CONTINUUM-1897
-                    // File.c copyFile to tmp one
-                    File tmpPom = File.createTempFile( "continuum_tmp", "tmp" );
-                    FileUtils.copyFile( pomFile, tmpPom );
-                    pom = tmpPom.toURL().toString();
-                }
-                catch ( MalformedURLException e )
-                {
-                    // if local file can't be converted to url it's an internal error
-                    throw new RuntimeException( e );
-                }
-                catch ( IOException e )
-                {
-                    throw new RuntimeException( e );
-                }
+                // CONTINUUM-1897
+                // File.c copyFile to tmp one
+                File tmpPom = File.createTempFile( "continuum_tmp", "tmp" );
+                fsManager.copyFile( pomFile, tmpPom );
+                pom = tmpPom.toURL().toString();
             }
-            else
+            catch ( MalformedURLException e )
             {
-                // no url or file was filled
-                addActionError( getText( "add.project.field.required.error" ) );
-                return doDefault();
+                // if local file can't be converted to url it's an internal error
+                throw new RuntimeException( e );
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
             }
         }
+        else
+        {
+            // no url or file was filled
+            addActionError( getText( "add.project.field.required.error" ) );
+            return doDefault();
+        }
 
+        boolean checkProtocol = pomMethod == PomMethod.HTTP;
         ContinuumProjectBuildingResult result = doExecute( pom, selectedProjectGroup, checkProtocol, scmUseCache );
 
         if ( result.hasErrors() )
+
         {
             for ( String key : result.getErrors() )
             {
                 String cause = result.getErrorsWithCause().get( key );
-                String msg = getText( key, new String[]{cause} );
+                String msg = getText( key, new String[] { cause } );
 
                 // olamy : weird getText(key, String[]) must do that something like bla bla {0}
                 // here an ugly hack for CONTINUUM-1675
@@ -216,12 +283,18 @@ public abstract class AddMavenProjectAction
         }
 
         if ( this.getSelectedProjectGroup() > 0 )
+
         {
             this.setProjectGroupId( this.getSelectedProjectGroup() );
             return "projectGroupSummary";
         }
 
-        if ( result.getProjectGroups() != null && !result.getProjectGroups().isEmpty() )
+        if ( result.getProjectGroups() != null && !result.getProjectGroups().
+
+            isEmpty()
+
+            )
+
         {
             this.setProjectGroupId( ( result.getProjectGroups().get( 0 ) ).getId() );
             return "projectGroupSummary";

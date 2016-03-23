@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.action.admin;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,32 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.action.admin;
-
-import java.io.IOException;
 
 import org.apache.maven.continuum.web.action.component.AbstractFooterAction;
 import org.apache.maven.continuum.web.appareance.AppareanceConfiguration;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 9 nov. 07
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="configureFooter"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "configureFooter", instantiationStrategy = "per-lookup" )
 public class ConfigureFooterAction
     extends AbstractFooterAction
 {
 
-    /**
-     * @plexus.requirement
-     */    
+    @Requirement
     private AppareanceConfiguration appareanceConfiguration;
 
     public String saveFooter()
         throws IOException
     {
         appareanceConfiguration.saveFooter( getFooter() );
+        addActionMessage( getResourceBundle().getString( "appearance.footerContent.success" ) );
         return SUCCESS;
     }
 

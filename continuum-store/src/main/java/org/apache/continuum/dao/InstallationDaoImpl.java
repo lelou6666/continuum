@@ -19,34 +19,33 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import org.apache.maven.continuum.model.system.Installation;
+import org.apache.maven.continuum.model.system.Profile;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+import org.springframework.stereotype.Repository;
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-
-import org.apache.maven.continuum.model.system.Installation;
-import org.apache.maven.continuum.model.system.Profile;
-import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.codehaus.plexus.util.StringUtils;
-import org.springframework.stereotype.Repository;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.continuum.dao.InstallationDao"
  */
-@Repository("installationDao")
+@Repository( "installationDao" )
+@Component( role = org.apache.continuum.dao.InstallationDao.class )
 public class InstallationDaoImpl
     extends AbstractDao
     implements InstallationDao
 {
     public Installation addInstallation( Installation installation )
     {
-        return (Installation) addObject( installation );
+        return addObject( installation );
     }
 
     public List<Installation> getAllInstallations()
@@ -176,13 +175,53 @@ public class InstallationDaoImpl
 
             Query query = pm.newQuery( extent );
 
-            query.declareImports( "import java.lang.String" );
-
             query.declareParameters( "int installationId" );
 
             query.setFilter( "this.installationId == installationId" );
 
             Collection result = (Collection) query.execute( installationId );
+
+            if ( result.size() == 0 )
+            {
+                tx.commit();
+
+                return null;
+            }
+
+            Object object = pm.detachCopy( result.iterator().next() );
+
+            tx.commit();
+
+            return (Installation) object;
+        }
+        finally
+        {
+            rollback( tx );
+        }
+    }
+
+    public Installation getInstallation( String installationName )
+        throws ContinuumStoreException
+    {
+        PersistenceManager pm = getPersistenceManager();
+
+        Transaction tx = pm.currentTransaction();
+
+        try
+        {
+            tx.begin();
+
+            Extent extent = pm.getExtent( Installation.class, true );
+
+            Query query = pm.newQuery( extent );
+
+            query.declareImports( "import java.lang.String" );
+
+            query.declareParameters( "String name" );
+
+            query.setFilter( "this.name == name" );
+
+            Collection result = (Collection) query.execute( installationName );
 
             if ( result.size() == 0 )
             {

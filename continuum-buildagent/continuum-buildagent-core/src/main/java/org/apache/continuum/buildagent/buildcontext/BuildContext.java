@@ -19,12 +19,11 @@ package org.apache.continuum.buildagent.buildcontext;
  * under the License.
  */
 
-import java.util.Date;
-import java.util.Map;
-
-import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.scm.ScmResult;
+
+import java.util.Date;
+import java.util.Map;
 
 public class BuildContext
 {
@@ -59,7 +58,7 @@ public class BuildContext
     private String scmTag;
 
     private int trigger;
-    
+
     private String username;
 
     private boolean buildFresh;
@@ -255,7 +254,7 @@ public class BuildContext
         return actionContext;
     }
 
-    public void setActionContext( Map<String, Object> actionContext ) 
+    public void setActionContext( Map<String, Object> actionContext )
     {
         this.actionContext = actionContext;
     }
@@ -389,14 +388,14 @@ public class BuildContext
     {
         return buildDefinitionLabel;
     }
-    
+
     public void setUsername( String username )
     {
-         this.username = username;
+        this.username = username;
     }
-    
+
     public String getUsername()
     {
-         return username;
+        return username;
     }
 }

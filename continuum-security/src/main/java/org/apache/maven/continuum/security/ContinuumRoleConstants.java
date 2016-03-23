@@ -22,7 +22,6 @@ package org.apache.maven.continuum.security;
  * ContinuumRoleConstants:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
  */
 public class ContinuumRoleConstants
 {
@@ -127,4 +126,6 @@ public class ContinuumRoleConstants
     public static final String CONTINUUM_VIEW_RELEASE = "continuum-view-release";
 
     public static final String CONTINUUM_MANAGE_PARALLEL_BUILDS = "continuum-manage-parallel-builds";
+
+    public static final String CONTINUUM_VIEW_REPORT = "continuum-view-report";
 }

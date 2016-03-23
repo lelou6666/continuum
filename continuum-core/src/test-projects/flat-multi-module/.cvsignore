@@ -6,6 +6,7 @@ target
 *.ipr
 *.iws
 *.iml
+<<<<<<< HEAD
 target
 *~
 *.log
@@ -14,3 +15,5 @@ target
 *.ipr
 *.iws
 *.iml
+=======
+>>>>>>> refs/remotes/apache/trunk

@@ -19,27 +19,26 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import org.apache.maven.continuum.model.project.BuildQueue;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-
-import org.apache.maven.continuum.model.project.BuildQueue;
-import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Repository;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * 
  * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
- * @plexus.component role="org.apache.continuum.dao.BuildQueueDao"
  */
-@Repository("buildQueueDao")
+@Repository( "buildQueueDao" )
+@Component( role = org.apache.continuum.dao.BuildQueueDao.class )
 public class BuildQueueDaoImpl
     extends AbstractDao
     implements BuildQueueDao
@@ -49,7 +48,7 @@ public class BuildQueueDaoImpl
     public BuildQueue addBuildQueue( BuildQueue buildQueue )
         throws ContinuumStoreException
     {
-        return (BuildQueue) addObject( buildQueue );
+        return addObject( buildQueue );
     }
 
     public List<BuildQueue> getAllBuildQueues()
@@ -82,7 +81,7 @@ public class BuildQueueDaoImpl
     public BuildQueue getBuildQueue( int buildQueueId )
         throws ContinuumStoreException
     {
-        return (BuildQueue) getObjectById( BuildQueue.class, buildQueueId );
+        return getObjectById( BuildQueue.class, buildQueueId );
     }
 
     public BuildQueue getBuildQueueByName( String name )
@@ -126,7 +125,7 @@ public class BuildQueueDaoImpl
             rollback( tx );
         }
     }
-    
+
     public void removeBuildQueue( BuildQueue buildQueue )
         throws ContinuumStoreException
     {

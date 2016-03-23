@@ -21,6 +21,7 @@ package org.apache.continuum.buildagent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public interface ContinuumBuildAgentService
 {
@@ -42,7 +43,7 @@ public interface ContinuumBuildAgentService
     String generateWorkingCopyContent( int projectId, String userDirectory, String baseUrl, String imagesBaseUrl )
         throws ContinuumBuildAgentException;
 
-    String getProjectFileContent( int projectId, String directory, String filename )
+    Map<String, Object> getProjectFile( int projectId, String directory, String filename )
         throws ContinuumBuildAgentException;
 
     Map<String, Object> getReleasePluginParameters( int projectId, String pomFilename )
@@ -51,7 +52,7 @@ public interface ContinuumBuildAgentService
     List<Map<String, String>> processProject( int projectId, String pomFilename, boolean autoVersionSubmodules )
         throws ContinuumBuildAgentException;
 
-    String releasePrepare( Map project, Map properties, Map releaseVersion, Map developmentVersion,
+    String releasePrepare( Map project, Properties properties, Map releaseVersion, Map developmentVersion,
                            Map<String, String> environments, String username )
         throws ContinuumBuildAgentException;
 
@@ -67,7 +68,8 @@ public interface ContinuumBuildAgentService
     String getPreparedReleaseName( String releaseId )
         throws ContinuumBuildAgentException;
 
-    void releasePerform( String releaseId, String goals, String arguments, boolean useReleaseProfile, Map repository, String username )
+    void releasePerform( String releaseId, String goals, String arguments, boolean useReleaseProfile, Map repository,
+                         String username )
         throws ContinuumBuildAgentException;
 
     String releasePerformFromScm( String goals, String arguments, boolean useReleaseProfile, Map repository,
@@ -103,9 +105,17 @@ public interface ContinuumBuildAgentService
 
     boolean isProjectScmRootInQueue( int projectScmRootId, List<Integer> projectIds );
 
-    boolean isProjectCurrentlyBuilding( int projectId );
+    boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId );
 
-    boolean isProjectInBuildQueue( int projectId );
+    boolean isProjectInBuildQueue( int projectId, int buildDefinitionId );
+
+    boolean isProjectGroupInPrepareBuildQueue( int projectGroupId );
+
+    boolean isProjectGroupCurrentlyPreparingBuild( int projectGroupId );
+
+    boolean isProjectInPrepareBuildQueue( int projectId, int buildDefinitionId );
+
+    boolean isProjectCurrentlyPreparingBuild( int projectId, int buildDefinitionId );
 
     boolean removeFromPrepareBuildQueue( int projectGroupId, int scmRootId )
         throws ContinuumBuildAgentException;
@@ -119,5 +129,59 @@ public interface ContinuumBuildAgentService
     void removeFromBuildQueue( List<String> hashCodes )
         throws ContinuumBuildAgentException;
 
-    boolean ping();
+    boolean ping()
+        throws ContinuumBuildAgentException;
+
+    /**
+     * Get build agent's platform.
+     *
+     * @return The operating system name of the build agent
+     * @throws Exception
+     */
+    String getBuildAgentPlatform()
+        throws ContinuumBuildAgentException;
+
+    /**
+     * Determines if build agent is currently executing a build
+     *
+     * @return true if executing build; false otherwise
+     */
+    boolean isExecutingBuild();
+
+    /**
+     * Determines if build agent is currently executing a release
+     *
+     * @return true if executing release; false otherwise
+     * @throws ContinuumBuildAgentException if unable to determine if buildagent is executing a release
+     */
+    boolean isExecutingRelease()
+        throws ContinuumBuildAgentException;
+
+    /**
+     * Execute a directory purge on the build agent
+     *
+     * @param directoryType  valid types are <i>working</i> and <i>releases</i>
+     * @param daysOlder      days older
+     * @param retentionCount retention count
+     * @param deleteAll      delete all flag
+     * @return true if purge is successful; false otherwise
+     * @throws ContinuumBuildAgentException error that will occur during the purge
+     */
+    void executeDirectoryPurge( String directoryType, int daysOlder, int retentionCount, boolean deleteAll )
+        throws ContinuumBuildAgentException;
+
+    /**
+     * Execute a repository purge on the build agent
+     *
+     * @param repoName                used to determine location at the build agent
+     * @param daysOlder               age in days when file is eligible for purging
+     * @param retentionCount          number of artifact versions required to retain
+     * @param deleteAll               triggers full deletion
+     * @param deleteReleasedSnapshots whether to remove all snapshots matching a released artifact version
+     * @throws Exception
+     */
+    public void executeRepositoryPurge( String repoName, int daysOlder, int retentionCount, boolean deleteAll,
+                                        boolean deleteReleasedSnapshots )
+        throws ContinuumBuildAgentException;
+
 }

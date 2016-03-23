@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,36 +19,87 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-import org.apache.continuum.web.test.parent.AbstractContinuumTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
  * Based on AddShellProjectTestCase of Emmanuel Venisse.
  *
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "shellProject" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = {"shellProject"} )
 public class ShellProjectTest
-    extends AbstractContinuumTest
+    extends AbstractAdminTest
 {
+    private String projectGroupId;
+
+    private String projectGroupName;
+
+    private String projectGroupDescription;
+
+    private String scmPassword;
+
+    private String scmUsername;
+
+    private String scmUrl;
+
+    private String scmTag;
+
+    private String projectVersion;
+
+    private String projectDescription;
+
+    private String projectName;
+
+    @BeforeMethod
+    public void setUp()
+    {
+        projectGroupId = getProperty( "SHELL_PROJECT_GROUP_ID" );
+        projectGroupName = getProperty( "SHELL_PROJECT_GROUP_NAME" );
+        projectGroupDescription = getProperty( "SHELL_PROJECT_GROUP_DESCRIPTION" );
+        projectName = getProperty( "SHELL_NAME" );
+        projectDescription = getProperty( "SHELL_DESCRIPTION" );
+        projectVersion = getProperty( "SHELL_VERSION" );
+        scmUrl = getProperty( "SHELL_SCM_URL" );
+        scmUsername = getProperty( "SHELL_SCM_USERNAME" );
+        scmPassword = getProperty( "SHELL_SCM_PASSWORD" );
+        scmTag = getProperty( "SHELL_TAG" );
+
+        addProjectGroup( projectGroupName, projectGroupId, projectGroupDescription, true, false );
+    }
+
+    @AfterClass
+    public void cleanup()
+    {
+        removeProjectGroup( projectGroupName );
+    }
+
     public void testAddShellProject()
         throws Exception
     {
-        String SHELL_NAME = getProperty( "SHELL_NAME" );
-        String SHELL_DESCRIPTION = getProperty( "SHELL_DESCRIPTION" );
-        String SHELL_VERSION = getProperty( "SHELL_VERSION" );
-        String SHELL_TAG = getProperty( "SHELL_TAG" );
-        String SHELL_SCM_URL = getProperty( "SHELL_SCM_URL" );
-        String SHELL_SCM_USERNAME = getProperty( "SHELL_SCM_USERNAME" );
-        String SHELL_SCM_PASSWORD = getProperty( "SHELL_SCM_PASSWORD" );
-        String DEFAULT_PROJ_GRP_NAME = getProperty( "DEFAULT_PROJ_GRP_NAME" );
-        String DEFAULT_PROJ_GRP_ID = getProperty( "DEFAULT_PROJ_GRP_ID" );
-        String DEFAULT_PROJ_GRP_DESCRIPTION = getProperty( "DEFAULT_PROJ_GRP_DESCRIPTION" );
         goToAddShellProjectPage();
-        addProject( SHELL_NAME, SHELL_DESCRIPTION, SHELL_VERSION, SHELL_SCM_URL, SHELL_SCM_USERNAME,
-                    SHELL_SCM_PASSWORD, SHELL_TAG, false, DEFAULT_PROJ_GRP_NAME, null, true, "shell" );
-        assertProjectGroupSummaryPage( DEFAULT_PROJ_GRP_NAME, DEFAULT_PROJ_GRP_ID, DEFAULT_PROJ_GRP_DESCRIPTION );
+        addProject( projectName, projectDescription, projectVersion, scmUrl, scmUsername, scmPassword, scmTag,
+                    projectGroupName, true, "shell" );
+        assertProjectGroupSummaryPage( projectGroupName, projectGroupId, projectGroupDescription );
+    }
+
+    public void testAddShellProjectWithInvalidValues()
+        throws Exception
+    {
+        String projectName = "!@#$<>?etc";
+        String description = "![]<>'^&etc";
+        String version = "<>whitespaces!#etc";
+        String tag = "!<>*%etc";
+        String scmUrl = "!<>*%etc";
+        goToAddShellProjectPage();
+        addProject( projectName, description, version, scmUrl, scmUsername, scmPassword, tag, projectGroupName, false,
+                    "shell" );
+        assertTextPresent( "Name contains invalid characters." );
+        assertTextPresent( "Version contains invalid characters." );
+        assertTextPresent( "SCM Url contains invalid characters." );
+        assertTextPresent( "SCM Tag contains invalid characters." );
     }
 
     public void testSubmitEmptyForm()
@@ -61,20 +112,14 @@ public class ShellProjectTest
         assertTextPresent( "SCM Url is required and cannot contain null or spaces only" );
     }
 
-    @Test( dependsOnMethods = { "testAddShellProject" } )
+    @Test( dependsOnMethods = {"testAddShellProject"} )
     public void testAddDuplicateShellProject()
         throws Exception
     {
-        String SHELL_NAME = getProperty( "SHELL_NAME" );
-        String SHELL_DESCRIPTION = getProperty( "SHELL_DESCRIPTION" );
-        String SHELL_VERSION = getProperty( "SHELL_VERSION" );
-        String SHELL_TAG = getProperty( "SHELL_TAG" );
-        String SHELL_SCM_URL = getProperty( "SHELL_SCM_URL" );
-        String SHELL_SCM_USERNAME = getProperty( "SHELL_SCM_USERNAME" );
-        String SHELL_SCM_PASSWORD = getProperty( "SHELL_SCM_PASSWORD" );
         goToAddShellProjectPage();
-        addProject( SHELL_NAME, SHELL_DESCRIPTION, SHELL_VERSION, SHELL_SCM_URL, SHELL_SCM_USERNAME,
-                    SHELL_SCM_PASSWORD, SHELL_TAG, false, null, null, false, "shell" );
+        addProject( projectName, projectDescription, projectVersion, scmUrl, scmUsername, scmPassword, scmTag, null,
+                    false, "shell" );
         assertTextPresent( "Project name already exist" );
     }
+
 }

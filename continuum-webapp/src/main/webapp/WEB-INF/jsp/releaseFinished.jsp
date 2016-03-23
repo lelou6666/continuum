@@ -24,10 +24,9 @@
         <title><s:text name="releaseProject.page.title"/></title>
     </head>
     <body>
-      <h2><s:text name="releaseInProgress.section.title"/></h2>
-      <h3><s:property value="name"/></h3>
+      <h3><s:text name="releaseInProgress.section.title"/> - <s:property value="projectName"/></h3>
       <div class="axial">
-        <table width="100%">
+        <table class="releasePhases">
           <tr>
             <th><s:text name="releaseInProgress.status"/></th>
             <th width="100%"><s:text name="releaseInProgress.phase"/></th>
@@ -59,6 +58,7 @@
       <p>
         <s:url id="releaseViewResultUrl" action="releaseViewResult" namespace="/">
           <s:param name="releaseId" value="releaseId"/>
+          <s:param name="projectId" value="projectId"/>
         </s:url>
         <s:a href="%{releaseViewResultUrl}"><s:text name="releaseInProgress.viewOutput"/></s:a>
       </p>
@@ -70,14 +70,14 @@
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
               <s:hidden name="releaseGoal"/>
-              <s:submit value="%{getText('rollback')}"/>
+              <s:submit value="%{getText('rollback')}" theme="simple"/>
             </s:form>
           </td>
           <td>
             <s:form action="releaseCleanup" method="post">
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
-              <s:submit value="%{getText('done')}"/>
+              <s:submit value="%{getText('done')}" theme="simple"/>
             </s:form>
           </td>
         </tr>

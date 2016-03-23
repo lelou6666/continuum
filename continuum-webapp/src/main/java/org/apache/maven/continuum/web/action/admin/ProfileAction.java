@@ -19,10 +19,7 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import com.opensymphony.xwork2.Preparable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
 import org.apache.maven.continuum.installation.InstallationService;
@@ -33,7 +30,8 @@ import org.apache.maven.continuum.profile.ProfileException;
 import org.apache.maven.continuum.profile.ProfileService;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
-import org.apache.struts2.ServletActionContext;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
@@ -41,28 +39,25 @@ import org.codehaus.redback.integration.interceptor.SecureActionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.opensymphony.xwork2.Preparable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="profileAdministration"
  * @since 7 juin 07
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "profileAdministration", instantiationStrategy = "per-lookup" )
 public class ProfileAction
     extends ContinuumActionSupport
     implements Preparable, SecureAction
 {
     private static final Logger logger = LoggerFactory.getLogger( ProfileAction.class );
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private ProfileService profileService;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private InstallationService installationService;
 
     private List<Profile> profiles;
@@ -154,8 +149,8 @@ public class ProfileAction
                 profile = profileService.getProfile( profile.getId() );
                 // CONTINUUM-1746 we update the profile only if the name has changed 
                 // jancajas: added build agent group. updated profile if agent group is changed also.
-                if ( !StringUtils.equals( name, profile.getName() ) ||
-                    !StringUtils.equals( buildAgentGroup, profile.getBuildAgentGroup() ) )
+                if ( !StringUtils.equals( name, profile.getName() ) || !StringUtils.equals( buildAgentGroup,
+                                                                                            profile.getBuildAgentGroup() ) )
                 {
                     profile.setName( name );
                     profile.setBuildAgentGroup( buildAgentGroup );

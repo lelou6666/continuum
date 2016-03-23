@@ -19,14 +19,7 @@ package org.apache.continuum.builder.distributed.executor;
  * under the License.
  */
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.continuum.builder.utils.ContinuumBuildConstant;
 import org.apache.continuum.dao.BuildDefinitionDao;
 import org.apache.continuum.dao.BuildResultDao;
@@ -40,6 +33,7 @@ import org.apache.continuum.utils.ContinuumUtils;
 import org.apache.continuum.utils.ProjectSorter;
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
@@ -48,11 +42,20 @@ import org.apache.maven.continuum.model.scm.ChangeSet;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DistributedBuildProjectTaskExecutor
     implements DistributedBuildTaskExecutor
@@ -65,25 +68,23 @@ public class DistributedBuildProjectTaskExecutor
 
     private long endTime;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectScmRootDao projectScmRootDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionDao buildDefinitionDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildResultDao buildResultDao;
+
+    @Requirement
+    private ConfigurationService configurationService;
+
+    @Requirement
+    private DistributedBuildManager distributedBuildManager;
 
     public void setBuildAgentUrl( String buildAgentUrl )
     {
@@ -102,13 +103,13 @@ public class DistributedBuildProjectTaskExecutor
 
         try
         {
-            SlaveBuildAgentTransportClient client = new SlaveBuildAgentTransportClient( new URL( buildAgentUrl ) );
+            SlaveBuildAgentTransportClient client = new SlaveBuildAgentTransportClient( new URL( buildAgentUrl ), "",
+                                                                                        configurationService.getSharedSecretPassword() );
 
             log.info( "initializing buildContext for projectGroupId=" + prepareBuildTask.getProjectGroupId() );
-            List<Map<String, Object>> buildContext =
-                initializeBuildContext( prepareBuildTask.getProjectsBuildDefinitionsMap(),
-                		                prepareBuildTask.getBuildTrigger(), prepareBuildTask.getScmRootAddress(),
-                                        prepareBuildTask.getProjectScmRootId() );
+            List<Map<String, Object>> buildContext = initializeBuildContext(
+                prepareBuildTask.getProjectsBuildDefinitionsMap(), prepareBuildTask.getBuildTrigger(),
+                prepareBuildTask.getScmRootAddress(), prepareBuildTask.getProjectScmRootId() );
 
             startTime = System.currentTimeMillis();
             client.buildProjects( buildContext );
@@ -128,7 +129,8 @@ public class DistributedBuildProjectTaskExecutor
     }
 
     private List<Map<String, Object>> initializeBuildContext( Map<Integer, Integer> projectsAndBuildDefinitions,
-    		                                     BuildTrigger buildTrigger, String scmRootAddress, int scmRootId )
+                                                              BuildTrigger buildTrigger, String scmRootAddress,
+                                                              int scmRootId )
         throws ContinuumException
     {
         List<Map<String, Object>> buildContext = new ArrayList<Map<String, Object>>();
@@ -137,7 +139,8 @@ public class DistributedBuildProjectTaskExecutor
         {
             ProjectScmRoot scmRoot = projectScmRootDao.getProjectScmRoot( scmRootId );
 
-            List<Project> projects = projectDao.getProjectsWithDependenciesByGroupId( scmRoot.getProjectGroup().getId() );
+            List<Project> projects = projectDao.getProjectsWithDependenciesByGroupId(
+                scmRoot.getProjectGroup().getId() );
             List<Project> sortedProjects = ProjectSorter.getSortedProjects( projects, null );
 
             for ( Project project : sortedProjects )
@@ -166,16 +169,16 @@ public class DistributedBuildProjectTaskExecutor
                 context.put( ContinuumBuildConstant.KEY_PROJECT_STATE, project.getState() );
                 if ( buildResult != null )
                 {
-                    context.put( ContinuumBuildConstant.KEY_LATEST_UPDATE_DATE,
-                                 new Date( buildResult.getStartTime() ) );
+                    context.put( ContinuumBuildConstant.KEY_LATEST_UPDATE_DATE, new Date(
+                        buildResult.getStartTime() ) );
                 }
 
-                LocalRepository localRepo = project.getProjectGroup().getLocalRepository();                
+                LocalRepository localRepo = project.getProjectGroup().getLocalRepository();
 
                 if ( localRepo != null )
                 {
                     // CONTINUUM-2391
-                	context.put( ContinuumBuildConstant.KEY_LOCAL_REPOSITORY, localRepo.getName() );                	
+                    context.put( ContinuumBuildConstant.KEY_LOCAL_REPOSITORY, localRepo.getName() );
                 }
                 else
                 {
@@ -216,9 +219,17 @@ public class DistributedBuildProjectTaskExecutor
                     buildDefinitionLabel = buildDef.getGoals();
                 }
                 context.put( ContinuumBuildConstant.KEY_BUILD_DEFINITION_LABEL, buildDefinitionLabel );
-                
+
                 context.put( ContinuumBuildConstant.KEY_BUILD_FILE, buildDef.getBuildFile() );
-                context.put( ContinuumBuildConstant.KEY_GOALS, buildDef.getGoals() );
+
+                if ( buildDef.getGoals() == null )
+                {
+                    context.put( ContinuumBuildConstant.KEY_GOALS, "" );
+                }
+                else
+                {
+                    context.put( ContinuumBuildConstant.KEY_GOALS, buildDef.getGoals() );
+                }
 
                 if ( buildDef.getArguments() == null )
                 {
@@ -229,11 +240,27 @@ public class DistributedBuildProjectTaskExecutor
                     context.put( ContinuumBuildConstant.KEY_ARGUMENTS, buildDef.getArguments() );
                 }
                 context.put( ContinuumBuildConstant.KEY_TRIGGER, buildTrigger.getTrigger() );
-                context.put( ContinuumBuildConstant.KEY_USERNAME, buildTrigger.getUsername() );
+
+                if ( buildTrigger.getTrigger() == ContinuumProjectState.TRIGGER_FORCED )
+                {
+                    if ( buildTrigger.getTriggeredBy() == null )
+                    {
+                        context.put( ContinuumBuildConstant.KEY_USERNAME, "" );
+                    }
+                    else
+                    {
+                        context.put( ContinuumBuildConstant.KEY_USERNAME, buildTrigger.getTriggeredBy() );
+                    }
+                }
+                else
+                {
+                    context.put( ContinuumBuildConstant.KEY_USERNAME, buildDef.getSchedule().getName() );
+                }
+
                 context.put( ContinuumBuildConstant.KEY_BUILD_FRESH, buildDef.isBuildFresh() );
                 context.put( ContinuumBuildConstant.KEY_ALWAYS_BUILD, buildDef.isAlwaysBuild() );
-                context.put( ContinuumBuildConstant.KEY_OLD_SCM_CHANGES,
-                             getOldScmChanges( project.getId(), buildDefinitionId ) );
+                context.put( ContinuumBuildConstant.KEY_OLD_SCM_CHANGES, getOldScmChanges( project.getId(),
+                                                                                           buildDefinitionId ) );
                 context.put( ContinuumBuildConstant.KEY_BUILD_AGENT_URL, buildAgentUrl );
                 context.put( ContinuumBuildConstant.KEY_MAX_JOB_EXEC_TIME,
                              buildDef.getSchedule().getMaxJobExecutionTime() );
@@ -254,9 +281,8 @@ public class DistributedBuildProjectTaskExecutor
     {
         try
         {
-            ProjectScmRoot scmRoot =
-                projectScmRootDao.getProjectScmRootByProjectGroupAndScmRootAddress( task.getProjectGroupId(),
-                                                                                    task.getScmRootAddress() );
+            ProjectScmRoot scmRoot = projectScmRootDao.getProjectScmRootByProjectGroupAndScmRootAddress(
+                task.getProjectGroupId(), task.getScmRootAddress() );
 
             if ( scmRoot.getState() == ContinuumProjectState.UPDATING )
             {
@@ -267,13 +293,13 @@ public class DistributedBuildProjectTaskExecutor
             else
             {
                 Map<Integer, Integer> map = task.getProjectsBuildDefinitionsMap();
-                for ( Integer projectId : map.keySet() )
+                for ( Map.Entry<Integer, Integer> build : map.entrySet() )
                 {
-                    int buildDefinitionId = map.get( projectId );
+                    int projectId = build.getKey(), buildDefinitionId = build.getValue();
                     Project project = projectDao.getProject( projectId );
                     BuildDefinition buildDef = buildDefinitionDao.getBuildDefinition( buildDefinitionId );
-                    BuildResult latestBuildResult = buildResultDao.
-                        getLatestBuildResultForBuildDefinition( projectId, buildDefinitionId );
+                    BuildResult latestBuildResult = buildResultDao
+                        .getLatestBuildResultForBuildDefinition( projectId, buildDefinitionId );
                     if ( latestBuildResult == null ||
                         ( latestBuildResult.getStartTime() >= startTime && latestBuildResult.getEndTime() > 0 &&
                             latestBuildResult.getEndTime() < endTime ) || latestBuildResult.getStartTime() < startTime )
@@ -283,14 +309,12 @@ public class DistributedBuildProjectTaskExecutor
                         buildResult.setError( error );
                         buildResult.setState( ContinuumProjectState.ERROR );
                         buildResult.setTrigger( task.getBuildTrigger().getTrigger() );
-                        buildResult.setUsername( task.getBuildTrigger().getUsername() );
+                        buildResult.setUsername( task.getBuildTrigger().getTriggeredBy() );
                         buildResult.setStartTime( startTime );
                         buildResult.setEndTime( endTime );
-
                         buildResultDao.addBuildResult( project, buildResult );
                     }
                 }
-
             }
         }
         catch ( ContinuumStoreException e )
@@ -304,13 +328,13 @@ public class DistributedBuildProjectTaskExecutor
     {
         List<Map<String, Object>> scmChanges = new ArrayList<Map<String, Object>>();
 
-        BuildResult oldBuildResult =
-            buildResultDao.getLatestBuildResultForBuildDefinition( projectId, buildDefinitionId );
+        BuildResult oldBuildResult = buildResultDao.getLatestBuildResultForBuildDefinition( projectId,
+                                                                                            buildDefinitionId );
 
         if ( oldBuildResult != null )
         {
-            ScmResult scmResult =
-                getOldScmResults( projectId, oldBuildResult.getBuildNumber(), oldBuildResult.getEndTime() );
+            ScmResult scmResult = getOldScmResults( projectId, oldBuildResult.getBuildNumber(),
+                                                    oldBuildResult.getEndTime() );
 
             scmChanges = getScmChanges( scmResult );
         }

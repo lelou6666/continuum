@@ -19,13 +19,6 @@ package org.apache.maven.continuum.configuration;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Resource;
-
 import org.apache.continuum.buildqueue.BuildQueueService;
 import org.apache.continuum.buildqueue.BuildQueueServiceException;
 import org.apache.continuum.configuration.BuildAgentConfiguration;
@@ -35,18 +28,24 @@ import org.apache.continuum.configuration.ContinuumConfigurationException;
 import org.apache.continuum.configuration.GeneralConfiguration;
 import org.apache.continuum.dao.ScheduleDao;
 import org.apache.continuum.dao.SystemConfigurationDao;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class DefaultConfigurationService
     implements ConfigurationService
@@ -55,9 +54,7 @@ public class DefaultConfigurationService
 
     // when adding a requirement, the template in spring-context.xml must be updated CONTINUUM-1207
 
-    /**
-     * @plexus.configuration default-value="${plexus.home}"
-     */
+    @Configuration( "${plexus.home}" )
     private File applicationHome;
 
     @Resource
@@ -71,6 +68,9 @@ public class DefaultConfigurationService
 
     @Resource
     private ContinuumConfiguration configuration;
+
+    @Resource
+    private FileSystemManager fsManager;
 
     private GeneralConfiguration generalConfiguration;
 
@@ -144,12 +144,12 @@ public class DefaultConfigurationService
 
     public void setInitialized( boolean initialized )
     {
-        systemConf.setInitialized( initialized );
+        generalConfiguration.setInitialized( initialized );
     }
 
     public boolean isInitialized()
     {
-        return systemConf.isInitialized();
+        return systemConf.isInitialized() || generalConfiguration.isInitialized();
     }
 
     public String getUrl()
@@ -245,11 +245,11 @@ public class DefaultConfigurationService
         {
             if ( file.exists() )
             {
-                return FileUtils.fileRead( file.getAbsolutePath() );
+                return fsManager.fileContents( file );
             }
             else
             {
-                return "There are no output for this build.";
+                return "There is no output for this build.";
             }
         }
         catch ( IOException e )
@@ -299,6 +299,9 @@ public class DefaultConfigurationService
     public void addBuildAgent( BuildAgentConfiguration buildAgent )
         throws ConfigurationException
     {
+        // trim trailing space
+        buildAgent.setUrl( buildAgent.getUrl().trim() );
+
         List<BuildAgentConfiguration> buildAgents = generalConfiguration.getBuildAgents();
         if ( buildAgents == null )
         {
@@ -307,7 +310,7 @@ public class DefaultConfigurationService
 
         for ( BuildAgentConfiguration agent : buildAgents )
         {
-            if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+            if ( agent.getUrl().trim().equals( buildAgent.getUrl() ) )
             {
                 throw new ConfigurationException( "Unable to add build agent: build agent already exist" );
             }
@@ -336,15 +339,19 @@ public class DefaultConfigurationService
 
     public void updateBuildAgent( BuildAgentConfiguration buildAgent )
     {
+        // trim trailing space
+        buildAgent.setUrl( buildAgent.getUrl().trim() );
+
         List<BuildAgentConfiguration> buildAgents = getBuildAgents();
         if ( buildAgents != null )
         {
             for ( BuildAgentConfiguration agent : buildAgents )
             {
-                if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+                if ( agent.getUrl().trim().equals( buildAgent.getUrl() ) )
                 {
                     agent.setDescription( buildAgent.getDescription() );
                     agent.setEnabled( buildAgent.isEnabled() );
+                    agent.setUrl( buildAgent.getUrl() );
 
                     return;
                 }
@@ -354,12 +361,12 @@ public class DefaultConfigurationService
 
     public boolean isDistributedBuildEnabled()
     {
-        return systemConf.isDistributedBuildEnabled();
+        return generalConfiguration.isDistributedBuildEnabled();
     }
 
     public void setDistributedBuildEnabled( boolean distributedBuildEnabled )
     {
-        systemConf.setDistributedBuildEnabled( distributedBuildEnabled );
+        generalConfiguration.setDistributedBuildEnabled( distributedBuildEnabled );
     }
 
     public void addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
@@ -538,7 +545,6 @@ public class DefaultConfigurationService
     //
     // ----------------------------------------------------------------------
 
-
     public File getBuildOutputDirectory( int projectId )
     {
         File dir = new File( getBuildOutputDirectory(), Integer.toString( projectId ) );
@@ -557,11 +563,15 @@ public class DefaultConfigurationService
     public File getTestReportsDirectory( int buildId, int projectId )
         throws ConfigurationException
     {
-        File ouputDirectory = getBuildOutputDirectory( projectId );
-
-        return new File(
-            ouputDirectory.getPath() + File.separatorChar + buildId + File.separatorChar + "surefire-reports" );
-
+        File outputDirectory = getBuildOutputDirectory( projectId );
+        File testDir = new File( outputDirectory.getPath() + File.separator + buildId + File.separator +
+                                     "surefire-reports" );
+        if ( !testDir.exists() && !testDir.mkdirs() )
+        {
+            throw new ConfigurationException(
+                String.format( "Could not make the test reports directory: '%s'.", testDir.getAbsolutePath() ) );
+        }
+        return testDir;
     }
 
     public File getBuildOutputFile( int buildId, int projectId )
@@ -626,11 +636,11 @@ public class DefaultConfigurationService
         {
             if ( file.exists() )
             {
-                return FileUtils.fileRead( file.getAbsolutePath() );
+                return fsManager.fileContents( file );
             }
             else
             {
-                return "There are no output for this release.";
+                return "There is no output for this release.";
             }
         }
         catch ( IOException e )
@@ -648,6 +658,16 @@ public class DefaultConfigurationService
     public void setNumberOfBuildsInParallel( int num )
     {
         generalConfiguration.setNumberOfBuildsInParallel( num );
+    }
+
+    public String getSharedSecretPassword()
+    {
+        return generalConfiguration.getSharedSecretPassword();
+    }
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+        generalConfiguration.setSharedSecretPassword( sharedSecretPassword );
     }
 
     // ----------------------------------------------------------------------
@@ -696,7 +716,6 @@ public class DefaultConfigurationService
         return loaded;
     }
 
-
     private void loadData()
         throws ConfigurationLoadingException, ContinuumConfigurationException
     {
@@ -709,7 +728,6 @@ public class DefaultConfigurationService
             if ( systemConf == null )
             {
                 systemConf = new SystemConfiguration();
-
                 systemConf = getSystemConfigurationDao().addSystemConfiguration( systemConf );
             }
 
@@ -732,15 +750,8 @@ public class DefaultConfigurationService
         throws ConfigurationStoringException, ContinuumConfigurationException
     {
         configuration.setGeneralConfiguration( generalConfiguration );
+
         configuration.save();
-        try
-        {
-            getSystemConfigurationDao().updateSystemConfiguration( systemConf );
-        }
-        catch ( ContinuumStoreException e )
-        {
-            throw new ConfigurationStoringException( "Error writting configuration to database.", e );
-        }
     }
 
     public Schedule getDefaultSchedule()

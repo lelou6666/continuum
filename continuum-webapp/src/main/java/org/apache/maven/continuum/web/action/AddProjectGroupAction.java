@@ -19,10 +19,7 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import com.opensymphony.xwork2.Validateable;
-
-import java.util.List;
-
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.repository.RepositoryServiceException;
 import org.apache.continuum.web.util.AuditLog;
@@ -30,16 +27,18 @@ import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * @author Henry Isidro <hisidro@exist.com>
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="addProjectGroup"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "addProjectGroup", instantiationStrategy = "per-lookup" )
 public class AddProjectGroupAction
     extends ContinuumActionSupport
-    implements Validateable
 {
     private static final Logger logger = LoggerFactory.getLogger( AddProjectGroupAction.class );
 
@@ -61,53 +60,6 @@ public class AddProjectGroupAction
         repositories = getContinuum().getRepositoryService().getAllLocalRepositories();
     }
 
-    public void validate()
-    {
-        clearErrorsAndMessages();
-        if ( name != null && name.equals( "" ) )
-        {
-            addActionError( getText( "projectGroup.error.name.required" ) );
-        }
-        else if ( name != null && name.trim().equals( "" ) )
-        {
-            addActionError( getText( "projectGroup.error.name.cannot.be.spaces" ) );
-        }
-        else if ( name != null && !name.equals( "" ) )
-        {
-            for ( ProjectGroup projectGroup : getContinuum().getAllProjectGroups() )
-            {
-                if ( name.equals( projectGroup.getName() ) )
-                {
-                    addActionError( getText( "projectGroup.error.name.already.exists" ) );
-                    break;
-                }
-            }
-        }
-        if ( groupId != null && groupId.equals( "" ) )
-        {
-            addActionError( getText( "projectGroup.error.groupId.required" ) );
-        }
-        else if ( groupId != null && groupId.trim().equals( "" ) )
-        {
-            addActionError( getText( "projectGroup.error.groupId.cannot.be.spaces" ) );
-        }
-        else
-        {
-            try
-            {
-                if ( getContinuum().getProjectGroupByGroupId( groupId ) != null )
-                {
-                    addActionError( getText( "projectGroup.error.groupId.already.exists" ) );
-                }
-            }
-            catch ( ContinuumException e )
-            {
-                //since we want to add a new project group, we should be getting
-                //this exception
-            }
-        }
-    }
-
     public String execute()
     {
         try
@@ -120,13 +72,40 @@ public class AddProjectGroupAction
             return REQUIRES_AUTHORIZATION;
         }
 
+        for ( ProjectGroup projectGroup : getContinuum().getAllProjectGroups() )
+        {
+            if ( name.equals( projectGroup.getName() ) )
+            {
+                addActionError( getText( "projectGroup.error.name.already.exists" ) );
+                break;
+            }
+        }
+
+        try
+        {
+            if ( getContinuum().getProjectGroupByGroupId( groupId ) != null )
+            {
+                addActionError( getText( "projectGroup.error.groupId.already.exists" ) );
+            }
+        }
+        catch ( ContinuumException e )
+        {
+            //since we want to add a new project group, we should be getting
+            //this exception
+        }
+
+        if ( hasActionErrors() )
+        {
+            return INPUT;
+        }
+
         ProjectGroup projectGroup = new ProjectGroup();
 
-        projectGroup.setName( name );
+        projectGroup.setName( name.trim() );
 
-        projectGroup.setGroupId( groupId );
+        projectGroup.setGroupId( groupId.trim() );
 
-        projectGroup.setDescription( description );
+        projectGroup.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
 
         try
         {
@@ -153,8 +132,9 @@ public class AddProjectGroupAction
 
             return ERROR;
         }
-        
-        AuditLog event = new AuditLog( "Project Group id=" + projectGroup.getId(), AuditLogConstants.ADD_PROJECT_GROUP );
+
+        AuditLog event = new AuditLog( "Project Group id=" + projectGroup.getId(),
+                                       AuditLogConstants.ADD_PROJECT_GROUP );
         event.setCategory( AuditLogConstants.PROJECT );
         event.setCurrentUser( getPrincipal() );
         event.log();

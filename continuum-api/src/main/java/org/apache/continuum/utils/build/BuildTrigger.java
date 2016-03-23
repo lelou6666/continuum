@@ -21,49 +21,48 @@ package org.apache.continuum.utils.build;
 
 /**
  * @author Jevica Arianne B. Zurbano
- * @version $Id: BuildTrigger.java
  * @since 19 jun 09
  */
 public class BuildTrigger
 {
     private int trigger;
-    
-    private String username;
-    
+
+    private String triggeredBy;
+
     public BuildTrigger( int trigger )
     {
         this.trigger = trigger;
     }
-    
-    public BuildTrigger( String username )
+
+    public BuildTrigger( String triggeredBy )
     {
-        this.username = username;
+        this.triggeredBy = triggeredBy;
     }
-    
-    public BuildTrigger( int trigger, String username )
+
+    public BuildTrigger( int trigger, String triggeredBy )
     {
         this.trigger = trigger;
-        this.username = username;
+        this.triggeredBy = triggeredBy;
     }
-    
+
     public void setTrigger( int trigger )
     {
         this.trigger = trigger;
     }
-    
+
     public int getTrigger()
     {
         return this.trigger;
     }
-    
-    public void setUsername( String username )
+
+    public void setTriggeredBy( String triggeredBy )
     {
-        this.username = username;
+        this.triggeredBy = triggeredBy;
     }
-    
-    public String getUsername()
+
+    public String getTriggeredBy()
     {
-        return this.username;
+        return this.triggeredBy;
     }
 }
 

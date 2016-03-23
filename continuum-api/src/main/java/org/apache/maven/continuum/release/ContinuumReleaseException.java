@@ -21,14 +21,13 @@ package org.apache.maven.continuum.release;
 
 /**
  * @author Jason van Zyl
- * @version $Id$
  */
 public class ContinuumReleaseException
     extends Exception
 {
-	private static final long serialVersionUID = 2167029372282426809L;
+    private static final long serialVersionUID = 2167029372282426809L;
 
-	public ContinuumReleaseException( String id )
+    public ContinuumReleaseException( String id )
     {
         super( id );
     }

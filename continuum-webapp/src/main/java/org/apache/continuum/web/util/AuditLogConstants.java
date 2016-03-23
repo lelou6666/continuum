@@ -21,7 +21,6 @@ package org.apache.continuum.web.util;
 
 /**
  * @author Jevica Arianne B. Zurbano
- * @version $Id: AuditLogConstants.java
  * @since 09 apr 09
  */
 public class AuditLogConstants
@@ -43,6 +42,8 @@ public class AuditLogConstants
     public static final String BUILD_AGENT = "BUILD_AGENT";
 
     public static final String LOCAL_REPOSITORY = "LOCAL_REPOSITORY";
+
+    public static final String DIRECTORY = "DIRECTORY";
 
     // events
     public static final String FORCE_BUILD = "Forced Project Build";
@@ -102,6 +103,10 @@ public class AuditLogConstants
     public static final String REMOVE_BUILD_QUEUE = "Removed Build Queue";
 
     public static final String PURGE_LOCAL_REPOSITORY = "Purged Local Repository";
+
+    public static final String PURGE_DIRECTORY_RELEASES = "Purged Releases Directory";
+
+    public static final String PURGE_DIRECTORY_BUILDOUTPUT = "Purged Build Output Directory";
 
     public static final String ADD_BUILD_AGENT = "Added Build Agent";
 

@@ -17,19 +17,39 @@
   ~ under the License.
   -->
 
-<!DOCTYPE validators PUBLIC
-    "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
-    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+<!DOCTYPE validators PUBLIC 
+  "-//Apache Struts//XWork Validator 1.0.2//EN"
+  "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
 
 <validators>
   <field name="buildDefinition.buildFile">
     <field-validator type="requiredstring">
-      <message key="buildDefintion.buildFile.required"/>
+      <message key="buildDefinition.buildFile.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[A-Za-z0-9_.\-]*]]></param>
+      <message key="buildDefinition.buildFile.invalid"/>
     </field-validator>
   </field>
   <field name="buildDefinition.description">
     <field-validator type="requiredstring">
-      <message key="buildDefintion.description.required"/>
+      <message key="buildDefinition.description.required"/>
     </field-validator>
-  </field>  
+  </field>
+  <field name="buildDefinition.goals">
+    <field-validator type="fieldexpression">
+      <param name="expression">not isMavenBuildType(buildDefinition.type) or buildDefinition.goals.trim().length() > 0</param>
+      <message key="buildDefinition.goals.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[A-Za-z0-9_:\s\-]*]]></param>
+      <message key="buildDefinition.goals.invalid"/>
+    </field-validator>
+  </field>
+  <field name="buildDefinition.arguments">
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[!A-Za-z0-9_${}.\\/=,":\s\-]*]]></param>
+      <message key="buildDefinition.arguments.invalid"/>
+    </field-validator>
+  </field>
 </validators>

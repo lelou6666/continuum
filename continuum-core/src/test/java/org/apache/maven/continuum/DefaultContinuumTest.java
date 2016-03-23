@@ -19,19 +19,14 @@ package org.apache.maven.continuum;
  * under the License.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.continuum.buildmanager.BuildsManager;
 import org.apache.continuum.dao.BuildResultDao;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.continuum.model.release.ContinuumReleaseResult;
 import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
 import org.apache.continuum.repository.RepositoryService;
 import org.apache.continuum.taskqueue.manager.TaskQueueManager;
 import org.apache.continuum.utils.build.BuildTrigger;
@@ -44,23 +39,35 @@ import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.model.scm.ChangeSet;
+import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.integration.junit3.JUnit3Mockery;
+import org.apache.maven.shared.release.ReleaseResult;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class DefaultContinuumTest
     extends AbstractContinuumTest
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultContinuumTest.class );
-
-    private Mockery context;
 
     private TaskQueueManager taskQueueManager;
 
@@ -68,29 +75,27 @@ public class DefaultContinuumTest
 
     private BuildResultDao buildResultDao;
 
-    @Override
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        context = new JUnit3Mockery();
-
-        taskQueueManager = context.mock( TaskQueueManager.class );
-
-        projectDao = context.mock( ProjectDao.class );
+        taskQueueManager = mock( TaskQueueManager.class );
+        projectDao = mock( ProjectDao.class );
+        buildResultDao = mock( BuildResultDao.class );
     }
 
+    @Test
     public void testContinuumConfiguration()
         throws Exception
     {
         lookup( Continuum.ROLE );
     }
 
+    @Test
     public void testAddMavenTwoProjectSet()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         int projectCount = getProjectDao().getAllProjectsByName().size();
 
@@ -100,8 +105,13 @@ public class DefaultContinuumTest
 
         assertTrue( rootPom.exists() );
 
+<<<<<<< HEAD
         ContinuumProjectBuildingResult result =
         	continuum.addMavenTwoProject( rootPom.toURI().toURL().toExternalForm(), -1, true, false, true, -1, false );
+=======
+        ContinuumProjectBuildingResult result = continuum.addMavenTwoProject( rootPom.toURI().toURL().toExternalForm(),
+                                                                              -1, true, false, true, -1, false );
+>>>>>>> refs/remotes/apache/trunk
 
         assertNotNull( result );
 
@@ -127,8 +137,8 @@ public class DefaultContinuumTest
             projects.put( project.getName(), project );
 
             // validate project in project group
-            assertTrue( "project not in project group",
-                        getProjectGroupDao().getProjectGroupByProjectId( project.getId() ) != null );
+            assertTrue( "project not in project group", getProjectGroupDao().getProjectGroupByProjectId(
+                project.getId() ) != null );
         }
 
         assertTrue( "no irc notifier", projects.containsKey( "Continuum IRC Notifier" ) );
@@ -181,6 +191,7 @@ public class DefaultContinuumTest
 
         assertTrue( "no module-d", projectsMap.containsKey( "module-d" ) );
 
+<<<<<<< HEAD
         // check if the modules were checked out in the same directory as the parent
         ConfigurationService configurationService = ( ConfigurationService ) lookup( "configurationService" );
         
@@ -224,10 +235,13 @@ public class DefaultContinuumTest
                       getProjectDao().getProjectByName( "module-b" ).getState() );*/        
     }
         
+=======
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testUpdateMavenTwoProject()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         // ----------------------------------------------------------------------
         // Test projects with duplicate names
@@ -257,10 +271,11 @@ public class DefaultContinuumTest
         project = continuum.getProject( project.getId() );
     }
 
+    @Test
     public void testRemoveMavenTwoProject()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         Project project = makeStubProject( "test-project" );
 
@@ -272,13 +287,13 @@ public class DefaultContinuumTest
 
         project = getProjectDao().getProjectByName( "test-project" );
 
-        assertNotNull ( project );
+        assertNotNull( project );
 
         BuildResult buildResult = new BuildResult();
 
         getBuildResultDao().addBuildResult( project, buildResult );
 
-        Collection<BuildResult> brs = continuum.getBuildResultsForProject( project.getId() );
+        Collection<BuildResult> brs = continuum.getBuildResultsForProject( project.getId(), 0, 5 );
 
         assertEquals( "Build result of project was not added", 1, brs.size() );
 
@@ -293,16 +308,17 @@ public class DefaultContinuumTest
         }
         catch ( ContinuumException expected )
         {
-            brs = continuum.getBuildResultsForProject( project.getId() );
+            brs = continuum.getBuildResultsForProject( project.getId(), 0, 5 );
 
             assertEquals( "Build result of project was not removed", 0, brs.size() );
         }
     }
 
+    @Test
     public void testBuildDefinitions()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         String url = getTestFile( "src/test-projects/project1/pom.xml" ).toURL().toExternalForm();
 
@@ -343,9 +359,6 @@ public class DefaultContinuumTest
 
         assertTrue( "project group build definition is not default", pgbd.isDefaultForProject() );
 
-        assertTrue( "project group build definition not default for project",
-                    continuum.getDefaultBuildDefinition( project.getId() ).getId() == pgbd.getId() );
-
         BuildDefinition nbd = new BuildDefinition();
         nbd.setGoals( "clean" );
         nbd.setArguments( "" );
@@ -354,8 +367,8 @@ public class DefaultContinuumTest
 
         continuum.addBuildDefinitionToProject( project.getId(), nbd );
 
-        assertTrue( "project lvl build definition not default for project",
-                    continuum.getDefaultBuildDefinition( project.getId() ).getId() == nbd.getId() );
+        assertTrue( "project lvl build definition not default for project", continuum.getDefaultBuildDefinition(
+            project.getId() ).getId() == nbd.getId() );
 
         continuum.removeBuildDefinitionFromProject( project.getId(), nbd.getId() );
 
@@ -376,10 +389,11 @@ public class DefaultContinuumTest
     /**
      * todo add another project group to test
      */
+    @Test
     public void testProjectGroups()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         Collection projectGroupList = continuum.getAllProjectGroups();
 
@@ -434,10 +448,11 @@ public class DefaultContinuumTest
     /**
      * test the logic for notifiers
      */
+    @Test
     public void testProjectAndGroupNotifiers()
         throws Exception
     {
-        Continuum continuum = (Continuum) lookup( Continuum.ROLE );
+        Continuum continuum = lookup( Continuum.class );
 
         Collection projectGroupList = continuum.getAllProjectGroups();
 
@@ -472,10 +487,11 @@ public class DefaultContinuumTest
         }
     }
 
+    @Test
     public void testExecuteAction()
         throws Exception
     {
-        DefaultContinuum continuum = (DefaultContinuum) lookup( Continuum.ROLE );
+        DefaultContinuum continuum = (DefaultContinuum) lookup( Continuum.class );
 
         String exceptionName = ContinuumException.class.getName();
         try
@@ -487,12 +503,13 @@ public class DefaultContinuumTest
             //expected, check for twice wrapped exception
             if ( e.getCause() != null )
             {
-                assertFalse( exceptionName + " is wrapped in " + exceptionName,
-                             e.getCause().getClass().equals( ContinuumException.class ) );
+                assertFalse( exceptionName + " is wrapped in " + exceptionName, e.getCause().getClass().equals(
+                    ContinuumException.class ) );
             }
         }
     }
 
+    @Test
     public void testRemoveProjectFromCheckoutQueue()
         throws Exception
     {
@@ -516,8 +533,8 @@ public class DefaultContinuumTest
 
         parallelBuildsManager.removeProjectFromCheckoutQueue( project.getId() );
 
-        assertFalse( "project still exist on the checkout queue",
-                     parallelBuildsManager.isInAnyCheckoutQueue( project.getId() ) );
+        assertFalse( "project still exist on the checkout queue", parallelBuildsManager.isInAnyCheckoutQueue(
+            project.getId() ) );
     }
     
     /*public void testCreationOfProjectScmRootDuringInitialization()
@@ -565,27 +582,28 @@ public class DefaultContinuumTest
         assertEquals( "#scmRoots in the group", 1, scmRoots.size() );
     }    */
 
-    public void testAddAntProjectWithdefaultBuildDef()
+    @Test
+    public void testAddAntProjectWithDefaultBuildDef()
         throws Exception
     {
         Continuum continuum = getContinuum();
 
         Project project = new Project();
         project.setScmUrl( "scmUrl" );
-        ProjectGroup defaultProjectGroup =
-            continuum.getProjectGroupByGroupId( ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID );
+        ProjectGroup defaultProjectGroup = continuum.getProjectGroupByGroupId(
+            ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID );
         int projectId = continuum.addProject( project, ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR,
                                               defaultProjectGroup.getId() );
         assertEquals( 1, continuum.getProjectGroupWithProjects( defaultProjectGroup.getId() ).getProjects().size() );
         project = continuum.getProjectWithAllDetails( projectId );
         assertNotNull( project );
 
-        BuildDefinitionService service = (BuildDefinitionService) lookup( BuildDefinitionService.class );
+        BuildDefinitionService service = lookup( BuildDefinitionService.class );
         assertEquals( 4, service.getAllBuildDefinitionTemplate().size() );
         assertEquals( 5, service.getAllBuildDefinitions().size() );
 
         BuildDefinition buildDef =
-            (BuildDefinition) service.getDefaultAntBuildDefinitionTemplate().getBuildDefinitions().get( 0 );
+            service.getDefaultAntBuildDefinitionTemplate().getBuildDefinitions().get( 0 );
         buildDef = service.cloneBuildDefinition( buildDef );
         buildDef.setTemplate( false );
         continuum.addBuildDefinitionToProject( project.getId(), buildDef );
@@ -595,11 +613,12 @@ public class DefaultContinuumTest
         assertEquals( 6, service.getAllBuildDefinitions().size() );
     }
 
+    @Test
     public void testRemoveProjectGroupWithRepository()
         throws Exception
     {
         Continuum continuum = getContinuum();
-        RepositoryService service = (RepositoryService) lookup( RepositoryService.ROLE );
+        RepositoryService service = lookup( RepositoryService.class );
 
         LocalRepository repository = new LocalRepository();
         repository.setName( "defaultRepo" );
@@ -632,72 +651,69 @@ public class DefaultContinuumTest
         assertEquals( repository, retrievedRepository );
     }
 
+    @Test
     public void testContinuumReleaseResult()
         throws Exception
     {
         Continuum continuum = getContinuum();
 
-        ProjectGroup defaultProjectGroup =
-            continuum.getProjectGroupByGroupId( ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID );
-
+        Project project = makeStubProject( "test-project" );
+        ProjectGroup defaultGroup = getDefaultProjectGroup();
+        defaultGroup.addProject( project );
+        getProjectGroupDao().updateProjectGroup( defaultGroup );
+        project = getProjectDao().getProjectByName( "test-project" );
+        assertNotNull( project );
         assertEquals( 0, continuum.getAllContinuumReleaseResults().size() );
 
-        ContinuumReleaseResult releaseResult = new ContinuumReleaseResult();
-        releaseResult.setStartTime( System.currentTimeMillis() );
+        ReleaseResult result = new ReleaseResult();
+        result.setStartTime( System.currentTimeMillis() );
+        result.setEndTime( System.currentTimeMillis() );
+        result.setResultCode( 200 );
+        result.appendOutput( "Error in release" );
 
-        File logFile = continuum.getConfiguration().getReleaseOutputFile( defaultProjectGroup.getId(),
-                                                                          "releases-" + releaseResult.getStartTime() );
-        logFile.mkdirs();
+        ContinuumReleaseDescriptor descriptor = new ContinuumReleaseDescriptor();
+        descriptor.setPreparationGoals( "clean" );
+        descriptor.setReleaseBy( "admin" );
 
-        assertTrue( logFile.exists() );
+        continuum.getReleaseManager().getReleaseResults().put( "test-release-id", result );
+        continuum.getReleaseManager().getPreparedReleases().put( "test-release-id", descriptor );
 
-        releaseResult.setResultCode( 0 );
-        releaseResult.setEndTime( System.currentTimeMillis() );
-        releaseResult.setProjectGroup( defaultProjectGroup );
+        ContinuumReleaseResult releaseResult = continuum.addContinuumReleaseResult( project.getId(), "test-release-id",
+                                                                                    "prepare" );
 
         releaseResult = continuum.addContinuumReleaseResult( releaseResult );
 
-        List<ContinuumReleaseResult> releaseResults =
-            continuum.getContinuumReleaseResultsByProjectGroup( defaultProjectGroup.getId() );
+        List<ContinuumReleaseResult> releaseResults = continuum.getContinuumReleaseResultsByProjectGroup(
+            defaultGroup.getId() );
         assertEquals( 1, releaseResults.size() );
         assertEquals( releaseResult, releaseResults.get( 0 ) );
 
         continuum.removeContinuumReleaseResult( releaseResult.getId() );
         assertEquals( 0, continuum.getAllContinuumReleaseResults().size() );
-        assertFalse( logFile.exists() );
-        assertEquals( defaultProjectGroup,
-                      continuum.getProjectGroupByGroupId( ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID ) );
-
+        assertEquals( defaultGroup, continuum.getProjectGroupByGroupId(
+            ContinuumInitializer.DEFAULT_PROJECT_GROUP_GROUP_ID ) );
     }
 
+    @Test
     public void testBuildProjectWhileProjectIsInReleaseStage()
         throws Exception
     {
         DefaultContinuum continuum = (DefaultContinuum) getContinuum();
-
         continuum.setTaskQueueManager( taskQueueManager );
-
         continuum.setProjectDao( projectDao );
 
-        final Project project = new Project();
+        Project project = new Project();
         project.setId( 1 );
         project.setName( "Continuum Core" );
         project.setGroupId( "org.apache.continuum" );
         project.setArtifactId( "continuum-core" );
 
-        context.checking( new Expectations()
-        {
-            {
-                one( projectDao ).getProject( 1 );
-                will( returnValue( project ) );
-
-                one( taskQueueManager ).isProjectInReleaseStage( "org.apache.continuum:continuum-core" );
-                will( returnValue( true ) );
-            }} );
+        when( projectDao.getProject( 1 ) ).thenReturn( project );
+        when( taskQueueManager.isProjectInReleaseStage( "org.apache.continuum:continuum-core" ) ).thenReturn( true );
 
         try
         {
-        	continuum.buildProject( 1, "test-user" );
+            continuum.buildProject( 1, "test-user" );
             fail( "An exception should have been thrown." );
         }
         catch ( ContinuumException e )
@@ -706,24 +722,21 @@ public class DefaultContinuumTest
         }
     }
 
+    @Test
     public void testBuildProjectGroupWhileAtLeastOneProjectIsInReleaseStage()
         throws Exception
     {
         DefaultContinuum continuum = (DefaultContinuum) getContinuum();
-
         continuum.setTaskQueueManager( taskQueueManager );
-
         continuum.setProjectDao( projectDao );
 
-        final List<Project> projects = new ArrayList<Project>();
-
+        List<Project> projects = new ArrayList<Project>();
         Project project = new Project();
         project.setId( 1 );
         project.setName( "Continuum Core" );
         project.setGroupId( "org.apache.continuum" );
         project.setArtifactId( "continuum-core" );
         projects.add( project );
-
         project = new Project();
         project.setId( 2 );
         project.setName( "Continuum API" );
@@ -731,19 +744,12 @@ public class DefaultContinuumTest
         project.setArtifactId( "continuum-api" );
         projects.add( project );
 
-        context.checking( new Expectations()
-        {
-            {
-                one( projectDao ).getProjectsInGroup( 1 );
-                will( returnValue( projects ) );
-
-                one( taskQueueManager ).isProjectInReleaseStage( "org.apache.continuum:continuum-core" );
-                will( returnValue( true ) );
-            }} );
+        when( projectDao.getProjectsInGroup( 1 ) ).thenReturn( projects );
+        when( taskQueueManager.isProjectInReleaseStage( "org.apache.continuum:continuum-core" ) ).thenReturn( true );
 
         try
         {
-        	continuum.buildProjectGroup( 1, new BuildTrigger( 1, "test-user" ) );
+            continuum.buildProjectGroup( 1, new BuildTrigger( 1, "test-user" ) );
             fail( "An exception should have been thrown." );
         }
         catch ( ContinuumException e )
@@ -753,14 +759,102 @@ public class DefaultContinuumTest
         }
     }
 
-    private Continuum getContinuum()
+    @Test
+    public void testGetChangesSinceLastSuccessNoSuccess()
         throws Exception
     {
-        return (Continuum) lookup( Continuum.ROLE );
+        DefaultContinuum continuum = getContinuum();
+        continuum.setBuildResultDao( buildResultDao );
+
+        when( buildResultDao.getPreviousBuildResultInSuccess( anyInt(), anyInt() ) ).thenReturn( null );
+
+        List<ChangeSet> changes = continuum.getChangesSinceLastSuccess( 5, 5 );
+
+        assertEquals( "no prior success should return no changes", 0, changes.size() );
+    }
+
+    @Test
+    public void testGetChangesSinceLastSuccessNoInterveningFailures()
+        throws Exception
+    {
+        DefaultContinuum continuum = getContinuum();
+        continuum.setBuildResultDao( buildResultDao );
+
+        int projectId = 123, fromId = 789, toId = 1011;
+        BuildResult priorResult = new BuildResult();
+        priorResult.setId( fromId );
+
+        when( buildResultDao.getPreviousBuildResultInSuccess( projectId, toId ) ).thenReturn( priorResult );
+        when( buildResultDao.getBuildResultsForProjectWithDetails( projectId, fromId, toId ) ).thenReturn(
+            Collections.EMPTY_LIST );
+
+        List<ChangeSet> changes = continuum.getChangesSinceLastSuccess( projectId, toId );
+
+        assertEquals( "no intervening failures, should return no changes", 0, changes.size() );
+    }
+
+    @Test
+    public void testGetChangesSinceLastSuccessInterveningFailures()
+        throws Exception
+    {
+        DefaultContinuum continuum = getContinuum();
+        continuum.setBuildResultDao( buildResultDao );
+
+        int projectId = 123, fromId = 789, toId = 1011;
+        BuildResult priorResult = new BuildResult();
+        priorResult.setId( fromId );
+
+        BuildResult[] failures = { resultWithChanges( 1 ), resultWithChanges( 0 ), resultWithChanges( 0, 1 ),
+            resultWithChanges( 1, 0 ), resultWithChanges( 0, 1, 0 ), resultWithChanges( 1, 0, 1 ) };
+
+        when( buildResultDao.getPreviousBuildResultInSuccess( projectId, toId ) ).thenReturn( priorResult );
+        when( buildResultDao.getBuildResultsForProjectWithDetails( projectId, fromId, toId ) ).thenReturn(
+            Arrays.asList( failures ) );
+
+        List<ChangeSet> changes = continuum.getChangesSinceLastSuccess( projectId, toId );
+
+        assertEquals( "should return same number of changes as in failed results", 6, changes.size() );
+        assertOldestToNewest( changes );
+    }
+
+    private static int changeCounter = 1;
+
+    private BuildResult resultWithChanges( int... changeSetCounts )
+    {
+        BuildResult result = new BuildResult();
+        ScmResult scmResult = new ScmResult();
+        result.setScmResult( scmResult );
+        for ( Integer changeCount : changeSetCounts )
+        {
+            for ( int i = 0; i < changeCount; i++ )
+            {
+                ChangeSet change = new ChangeSet();
+                change.setId( String.format( "%011d", changeCounter++ ) );  // zero-padded for string comparison
+                scmResult.addChange( change );
+            }
+        }
+        return result;
+    }
+
+    private void assertOldestToNewest( List<ChangeSet> changes )
+    {
+        if ( changes == null || changes.isEmpty() || changes.size() == 1 )
+            return;
+        for ( int prior = 0, next = 1; next < changes.size(); prior++, next = prior + 1 )
+        {
+            String priorId = changes.get( prior ).getId(), nextId = changes.get( next ).getId();
+            assertTrue( "changes were not in ascending order", priorId.compareTo( nextId ) < 0 );
+        }
+    }
+
+    private DefaultContinuum getContinuum()
+        throws Exception
+    {
+        return (DefaultContinuum) lookup( Continuum.class );
     }
 
     private BuildResultDao getBuildResultDao()
     {
-        return (BuildResultDao) lookup( BuildResultDao.class.getName() );
+        return lookup( BuildResultDao.class );
     }
 }

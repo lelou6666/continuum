@@ -19,18 +19,17 @@ package org.apache.continuum.distributed.transport.master;
  * under the License.
  */
 
-import com.atlassian.xmlrpc.AuthenticationInfo;
 import com.atlassian.xmlrpc.Binder;
 import com.atlassian.xmlrpc.BindingException;
-import com.atlassian.xmlrpc.DefaultBinder;
-
-import java.net.URL;
-import java.util.Map;
-
+import com.atlassian.xmlrpc.ConnectionInfo;
+import org.apache.continuum.distributed.commons.utils.ContinuumDistributedUtil;
+import org.apache.continuum.distributed.commons.utils.ContinuumXmlRpcBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.continuum.distributed.commons.utils.ContinuumDistributedUtil;
+import java.net.URL;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * MasterBuildAgentTransportClient
@@ -42,6 +41,8 @@ public class MasterBuildAgentTransportClient
 
     MasterBuildAgentTransportService master;
 
+    private String masterServerUrl;
+
     public MasterBuildAgentTransportClient( URL serviceUrl )
         throws Exception
     {
@@ -51,25 +52,32 @@ public class MasterBuildAgentTransportClient
     public MasterBuildAgentTransportClient( URL serviceUrl, String login, String password )
         throws Exception
     {
-        Binder binder = new DefaultBinder();
-        AuthenticationInfo authnInfo = new AuthenticationInfo( login, password );
+        Binder binder = ContinuumXmlRpcBinder.getInstance();
+
+        ConnectionInfo connectionInfo = new ConnectionInfo();
+        connectionInfo.setUsername( login );
+        connectionInfo.setPassword( password );
+        connectionInfo.setTimeZone( TimeZone.getDefault() );
+
+        this.masterServerUrl = serviceUrl.toString();
 
         try
         {
-            master = binder.bind( MasterBuildAgentTransportService.class, serviceUrl, authnInfo );
+            master = binder.bind( MasterBuildAgentTransportService.class, serviceUrl, connectionInfo );
         }
         catch ( BindingException e )
         {
             log.error( "Can't bind service interface " + MasterBuildAgentTransportService.class.getName() + " to " +
-                serviceUrl.toExternalForm() + " using " + authnInfo.getUsername() + ", " + authnInfo.getPassword(), e );
+                           serviceUrl.toExternalForm() + " using " + connectionInfo.getUsername() + ", " +
+                           connectionInfo.getPassword(), e );
             throw new Exception(
                 "Can't bind service interface " + MasterBuildAgentTransportService.class.getName() + " to " +
-                    serviceUrl.toExternalForm() + " using " + authnInfo.getUsername() + ", " + authnInfo.getPassword(),
-                e );
+                    serviceUrl.toExternalForm() + " using " + connectionInfo.getUsername() + ", " +
+                    connectionInfo.getPassword(), e );
         }
     }
 
-    public Boolean returnBuildResult( Map<String, Object> buildResult )
+    public Boolean returnBuildResult( Map<String, Object> buildResult, String buildAgentUrl )
         throws Exception
     {
         Boolean result;
@@ -77,13 +85,18 @@ public class MasterBuildAgentTransportClient
 
         try
         {
-            result = master.returnBuildResult( buildResult );
-            log.info( "Returning the build result for project " + projectInfo + "." );
+            result = master.returnBuildResult( buildResult, buildAgentUrl );
+            log.info( "Build finished. Returning the build result for project {} to master {}", projectInfo,
+                      masterServerUrl );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to return the build result for project " + projectInfo + ".", e );
-            throw new Exception( "Failed to return the build result for project " + projectInfo + ".", e );
+            log.error(
+                "Failed to finish the build and return the build result for project " + projectInfo + " to master " +
+                    masterServerUrl, e );
+            throw new Exception(
+                "Failed to finish the build and return the build result for project " + projectInfo + " to master " +
+                    masterServerUrl, e );
         }
 
         return result;
@@ -97,18 +110,18 @@ public class MasterBuildAgentTransportClient
         try
         {
             result = master.ping();
-            log.info( "Ping " + ( result ? "ok" : "failed" ) );
+            log.debug( "Ping Master {} : {}", masterServerUrl, ( result ? "ok" : "failed" ) );
         }
         catch ( Exception e )
         {
-            log.info( "Ping error" );
-            throw new Exception( "Ping error", e );
+            log.error( "Ping Master " + masterServerUrl + " error", e );
+            throw new Exception( "Ping Master " + masterServerUrl + " error", e );
         }
 
         return result;
     }
 
-    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult )
+    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception
     {
         Boolean result;
@@ -116,38 +129,39 @@ public class MasterBuildAgentTransportClient
 
         try
         {
-            result = master.prepareBuildFinished( prepareBuildResult );
-            log.info( "Prepare build finished for project " + projectInfo + "." );
+            result = master.prepareBuildFinished( prepareBuildResult, buildAgentUrl );
+            log.info( "Prepare build finished for project '{}'", projectInfo );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to finish prepare build for project " + projectInfo + "." );
+            log.error( "Failed to finish prepare build for project {}", projectInfo );
             throw new Exception( "Failed to finish prepare build for project " + projectInfo + ".", e );
         }
 
         return result;
     }
 
-    public Boolean startProjectBuild( Integer projectId )
+    public Boolean startProjectBuild( Integer projectId, Integer buildDefinitionId, String buildAgentUrl )
         throws Exception
     {
         Boolean result;
 
         try
         {
-            result = master.startProjectBuild( projectId );
-            log.info( "Return project currently building, projectId=" + projectId );
+            result = master.startProjectBuild( projectId, buildDefinitionId, buildAgentUrl );
+            log.info( "Start project {}, buildDef {} build", projectId, buildDefinitionId );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to return project currently building, projectId=" + projectId, e );
-            throw new Exception( "Failed to return project currently building, projectId=" + projectId, e );
+            log.error( "Failed to start build of projectId=" + projectId + " to master " + masterServerUrl, e );
+            throw new Exception( "Failed to start build of projectId=" + projectId + " to master " + masterServerUrl,
+                                 e );
         }
 
         return result;
     }
 
-    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult )
+    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception
     {
         Boolean result;
@@ -155,12 +169,12 @@ public class MasterBuildAgentTransportClient
 
         try
         {
-            result = master.startPrepareBuild( prepareBuildResult );
-            log.info( "Start prepare build for project " + projectInfo );
+            result = master.startPrepareBuild( prepareBuildResult, buildAgentUrl );
+            log.info( "Start prepare build for project {}", projectInfo );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to start prepare build for project " + projectInfo, e );
+            log.error( "Failed to start prepare build for project {}", projectInfo, e );
             throw new Exception( "Failed to start prepare build for project " + projectInfo, e );
         }
 
@@ -174,14 +188,16 @@ public class MasterBuildAgentTransportClient
         try
         {
             result = master.getEnvironments( buildDefinitionId, installationType );
-            log.info( "Retrieved environments. buildDefinitionId=" + buildDefinitionId + ", installationType=" + installationType );
+            log.debug( "Retrieved environments. buildDefinitionId={}, installationType={} from master {}",
+                       new Object[]{buildDefinitionId, installationType, masterServerUrl} );
         }
         catch ( Exception e )
         {
             log.error( "Failed to retrieve environments. buildDefinitionId=" + buildDefinitionId +
-                       ", installationType=" + installationType, e );
+                           ", installationType=" + installationType + " from master " + masterServerUrl, e );
             throw new Exception( "Failed to retrieve environments. buildDefinitionId=" +
-                                  buildDefinitionId + ", installationType=" + installationType, e );
+                                     buildDefinitionId + ", installationType=" + installationType + " from master " +
+                                     masterServerUrl, e );
         }
 
         return result;
@@ -196,18 +212,18 @@ public class MasterBuildAgentTransportClient
         try
         {
             result = master.updateProject( project );
-            log.info( "Updating project " + projectInfo );
+            log.debug( "Updating project {} in master {}", projectInfo, masterServerUrl );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to update project " + projectInfo, e );
-            throw new Exception( "Failed to update project " + projectInfo, e );
+            log.error( "Failed to update project " + projectInfo + " in master " + masterServerUrl, e );
+            throw new Exception( "Failed to update project " + projectInfo + " in master " + masterServerUrl, e );
         }
 
         return result;
     }
 
-    public Boolean shouldBuild( Map<String, Object> context )
+    public Boolean shouldBuild( Map<String, Object> context, String buildAgentUrl )
         throws Exception
     {
         Boolean result;
@@ -215,13 +231,15 @@ public class MasterBuildAgentTransportClient
 
         try
         {
-            result = master.shouldBuild( context );
-            log.info( "Checking if project " + projectInfo + " should build" );
+            result = master.shouldBuild( context, buildAgentUrl );
+            log.debug( "Checking if project {} should build from master {}", projectInfo, masterServerUrl );
         }
         catch ( Exception e )
         {
-            log.error( "Failed to determine if project " + projectInfo + " should build", e );
-            throw new Exception( "Failed to determine if project " + projectInfo + " should build", e );
+            log.error( "Failed to determine if project " + projectInfo + " should build from master " + masterServerUrl,
+                       e );
+            throw new Exception(
+                "Failed to determine if project " + projectInfo + " should build from master " + masterServerUrl, e );
         }
 
         return result;

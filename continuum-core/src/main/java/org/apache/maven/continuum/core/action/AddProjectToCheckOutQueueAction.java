@@ -19,40 +19,34 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.continuum.buildmanager.BuildsManager;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="add-project-to-checkout-queue"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-project-to-checkout-queue" )
 public class AddProjectToCheckOutQueueAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement role-hint="parallel"
-     */
+    @Requirement( hint = "parallel" )
     private BuildsManager parallelBuildsManager;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     public void execute( Map context )
         throws Exception
     {
@@ -64,16 +58,17 @@ public class AddProjectToCheckOutQueueAction
 
         String scmUsername = project.getScmUsername();
         String scmPassword = project.getScmPassword();
-        
-        if( scmUsername == null || StringUtils.isEmpty( scmUsername ) )
+
+        if ( scmUsername == null || StringUtils.isEmpty( scmUsername ) )
         {
             scmUsername = CheckoutProjectContinuumAction.getScmUsername( context, null );
         }
-        
-        if( scmPassword == null || StringUtils.isEmpty( scmPassword ) )
+
+        if ( scmPassword == null || StringUtils.isEmpty( scmPassword ) )
         {
             scmPassword = CheckoutProjectContinuumAction.getScmPassword( context, null );
         }
+<<<<<<< HEAD
         
         String scmRootUrl = getProjectScmRootUrl( context, null );
         
@@ -81,6 +76,15 @@ public class AddProjectToCheckOutQueueAction
         parallelBuildsManager.checkoutProject( project.getId(), project.getName(),
                                                workingDirectoryService.getWorkingDirectory( project ),
                                                scmRootUrl, scmUsername, scmPassword, defaultBuildDefinition,
+=======
+
+        String scmRootUrl = getProjectScmRootUrl( context, null );
+
+        BuildDefinition defaultBuildDefinition = getBuildDefinition( context );
+        parallelBuildsManager.checkoutProject( project.getId(), project.getName(),
+                                               workingDirectoryService.getWorkingDirectory( project ), scmRootUrl,
+                                               scmUsername, scmPassword, defaultBuildDefinition,
+>>>>>>> refs/remotes/apache/trunk
                                                getListOfProjectsInGroupWithCommonScmRoot( context ) );
     }
 }

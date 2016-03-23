@@ -19,15 +19,8 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.execution.maven.m2.SettingsConfigurationException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
@@ -40,30 +33,39 @@ import org.apache.maven.continuum.utils.URLUserInfo;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Resolve the project url being passed in and gather authentication information
  * if the url is so configured, then create the projects
- * <p/>
  * Supports:
- * <p/>
  * - standard maven-scm url
  * - MungedUrl https://username:password@host
  * - maven settings based, server = host and scm info set to username and password
  *
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="create-projects-from-metadata"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "create-projects-from-metadata" )
 public class CreateProjectsFromMetadataAction
     extends AbstractContinuumAction
 {
     /**
      * Metadata url for adding projects.
+<<<<<<< HEAD
     */
+=======
+     */
+>>>>>>> refs/remotes/apache/trunk
     private static final String KEY_URL = "url";
     
 	private static final String KEY_PROJECT_BUILDER_ID = "builderId";
@@ -74,19 +76,19 @@ public class CreateProjectsFromMetadataAction
 
     public static final String KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY = "checkoutProjectsInSingleDirectory";
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
+=======
+    @Requirement
+>>>>>>> refs/remotes/apache/trunk
     private ContinuumProjectBuilderManager projectBuilderManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder mavenSettingsBuilder;
 
-    /**
-     * @plexus.requirement role-hint="continuumUrl"
-     */
+    @Requirement( hint = "continuumUrl" )
     private ContinuumUrlValidator urlValidator;
 
     public void execute( Map context )
@@ -97,6 +99,10 @@ public class CreateProjectsFromMetadataAction
         boolean loadRecursiveProjects = isLoadRecursiveProject( context );
     	        
         boolean checkoutProjectsInSingleDirectory = getBoolean( context, KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY );
+
+        boolean checkoutProjectsInSingleDirectory = getBoolean( context, KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY );
+
+        int projectGroupId = getProjectGroupId( context );
 
         String curl = getUrl( context );
         
@@ -118,27 +124,35 @@ public class CreateProjectsFromMetadataAction
                 url = new URL( curl );
 
                 result = projectBuilder.buildProjectsFromMetadata( url, null, null, loadRecursiveProjects,
+<<<<<<< HEAD
                 		 						buildDefinitionTemplate, checkoutProjectsInSingleDirectory );
+=======
+                                                                   buildDefinitionTemplate,
+                                                                   checkoutProjectsInSingleDirectory, projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
 
             }
             else
             {
                 url = new URL( curl );
+                String host = url.getHost();
                 String username = null;
                 String password = null;
 
                 try
                 {
+                    getLogger().info( "consulting settings for credentials to " + host );
                     Settings settings = getSettings();
-
-                    getLogger().info( "checking for settings auth setup" );
-                    if ( settings != null && settings.getServer( url.getHost() ) != null )
+                    Server server = settings.getServer( url.getHost() );
+                    if ( server != null )
                     {
-                        getLogger().info( "found setting based auth setup, using" );
-                        Server server = settings.getServer( url.getHost() );
-
                         username = server.getUsername();
                         password = server.getPassword();
+                        getLogger().info( "credentials found in settings, will fetch metadata as " + username );
+                    }
+                    else
+                    {
+                        getLogger().info( "credentials not found for server " + host );
                     }
                 }
                 catch ( SettingsConfigurationException se )
@@ -157,7 +171,13 @@ public class CreateProjectsFromMetadataAction
                 {
 
                     result = projectBuilder.buildProjectsFromMetadata( url, username, password, loadRecursiveProjects,
+<<<<<<< HEAD
                     											buildDefinitionTemplate, checkoutProjectsInSingleDirectory );
+=======
+                                                                       buildDefinitionTemplate,
+                                                                       checkoutProjectsInSingleDirectory,
+                                                                       projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
 
                 }
                 else
@@ -263,9 +283,8 @@ public class CreateProjectsFromMetadataAction
             int indexDiff = StringUtils.differenceAt( path1, path2 );
             String commonPath = path1.substring( 0, indexDiff );
 
-            if ( commonPath.lastIndexOf( '/' ) != commonPath.length() - 1 &&
-                 !( path1.contains( new String( commonPath + "/" ) ) || 
-                    path2.contains( new String( commonPath + "/" ) ) ) )
+            if ( commonPath.lastIndexOf( '/' ) != commonPath.length() - 1 && !( path1.contains( new String(
+                commonPath + "/" ) ) || path2.contains( new String( commonPath + "/" ) ) ) )
             {
                 while ( commonPath.lastIndexOf( '/' ) != commonPath.length() - 1 )
                 {
@@ -306,7 +325,11 @@ public class CreateProjectsFromMetadataAction
     {
         this.urlValidator = urlValidator;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public static String getUrl( Map<String, Object> context )
     {
         return getString( context, KEY_URL );
@@ -336,7 +359,11 @@ public class CreateProjectsFromMetadataAction
     {
         context.put( KEY_PROJECT_BUILDING_RESULT, result );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public static boolean isLoadRecursiveProject( Map<String, Object> context )
     {
         return getBoolean( context, KEY_LOAD_RECURSIVE_PROJECTS );
@@ -346,13 +373,23 @@ public class CreateProjectsFromMetadataAction
     {
         context.put( KEY_LOAD_RECURSIVE_PROJECTS, loadRecursiveProject );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public static boolean isCheckoutProjectsInSingleDirectory( Map<String, Object> context )
     {
         return getBoolean( context, KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY );
     }
+<<<<<<< HEAD
     
     public static void setCheckoutProjectsInSingleDirectory( Map<String, Object> context, boolean checkoutProjectsInSingleDirectory )
+=======
+
+    public static void setCheckoutProjectsInSingleDirectory( Map<String, Object> context,
+                                                             boolean checkoutProjectsInSingleDirectory )
+>>>>>>> refs/remotes/apache/trunk
     {
         context.put( KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, checkoutProjectsInSingleDirectory );
     }

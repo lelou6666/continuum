@@ -18,7 +18,6 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -30,7 +29,7 @@
         <div class="axial">
         <s:form action="removeProjectGroup" method="post">
           <s:hidden name="projectGroupId"/>
-          <s:hidden name="confirmed" value="true"/>
+          <s:token/>
           <s:actionerror/>
 
           <div class="warningmessage">
@@ -44,7 +43,8 @@
           </div>
 
           <div class="functnbar3">
-            <c1:submitcancel value="%{getText('delete')}" cancel="%{getText('cancel')}"/>
+            <s:submit value="%{getText('delete')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
           </div>
         </s:form>
         </div>

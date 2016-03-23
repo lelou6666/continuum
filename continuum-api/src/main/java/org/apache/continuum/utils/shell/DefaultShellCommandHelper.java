@@ -19,51 +19,54 @@ package org.apache.continuum.utils.shell;
  * under the License.
  */
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Writer;
-import java.util.Arrays;
-import java.util.Map;
-
 import org.apache.maven.shared.release.ReleaseResult;
 import org.apache.maven.shared.release.exec.MavenExecutorException;
 import org.apache.maven.shared.release.exec.TeeConsumer;
 import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.cli.Arg;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
-import org.codehaus.plexus.util.cli.WriterStreamConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
-@Service("shellCommandHelper")
+@Service( "shellCommandHelper" )
 public class DefaultShellCommandHelper
     implements ShellCommandHelper
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultShellCommandHelper.class );
 
+    private Set<Long> running = Collections.synchronizedSet( new HashSet<Long>() );
+
     // ----------------------------------------------------------------------
     // ShellCommandHelper Implementation
     // ----------------------------------------------------------------------
 
-    public ExecutionResult executeShellCommand( File workingDirectory, String executable, String arguments, File output,
-                                                long idCommand, Map<String, String> environments )
-        throws Exception
+    public Properties getSystemEnvVars()
     {
-        Commandline cl = new Commandline();
-
-        Commandline.Argument argument = cl.createArgument();
-
-        argument.setLine( arguments );
-
-        return executeShellCommand( workingDirectory, executable, argument.getParts(), output, idCommand,
-                                    environments );
+        try
+        {
+            return CommandLineUtils.getSystemEnvVars( false );
+        }
+        catch ( IOException e )
+        {
+            log.warn( "failed to get system environment", e );
+        }
+        return new Properties();
     }
 
     /**
@@ -100,61 +103,88 @@ public class DefaultShellCommandHelper
 
         cl.setExecutable( executable );
 
-        cl.setWorkingDirectory( workingDirectory.getAbsolutePath() );
+        if ( workingDirectory != null )
+        {
+            cl.setWorkingDirectory( workingDirectory.getAbsolutePath() );
+        }
 
         if ( arguments != null )
         {
             for ( String argument : arguments )
             {
-                cl.createArgument().setValue( argument );
+                cl.createArg().setValue( argument );
             }
         }
 
         return cl;
     }
 
+    public ExecutionResult executeShellCommand( File workingDirectory, String executable, String arguments, File output,
+                                                long idCommand, Map<String, String> environments )
+        throws Exception
+    {
+        Commandline cl = new Commandline();
+
+        Arg argument = cl.createArg();
+
+        argument.setLine( arguments );
+
+        return executeShellCommand( workingDirectory, executable, argument.getParts(), output, idCommand,
+                                    environments );
+    }
+
     public ExecutionResult executeShellCommand( File workingDirectory, String executable, String[] arguments,
                                                 File output, long idCommand, Map<String, String> environments )
         throws Exception
     {
+        FileOutputConsumer fileConsumer = new FileOutputConsumer( output );
+        try
+        {
+            return executeShellCommand( workingDirectory, executable, arguments, fileConsumer, idCommand,
+                                        environments );
+        }
+        finally
+        {
+            fileConsumer.close();
+        }
+    }
 
+    private static class IOConsumerWrapper
+        implements StreamConsumer
+    {
+        private OutputConsumer userConsumer;
+
+        public IOConsumerWrapper( OutputConsumer userConsumer )
+        {
+            this.userConsumer = userConsumer;
+        }
+
+        public void consumeLine( String line )
+        {
+            if ( userConsumer != null )
+            {
+                userConsumer.consume( line );
+            }
+        }
+    }
+
+    public ExecutionResult executeShellCommand( File workingDirectory, String executable, String[] arguments,
+                                                OutputConsumer io, long idCommand,
+                                                Map<String, String> environments )
+        throws Exception
+    {
         Commandline cl = createCommandline( workingDirectory, executable, arguments, idCommand, environments );
 
         log.info( "Executing: " + cl );
-        log.info( "Working directory: " + cl.getWorkingDirectory().getAbsolutePath() );
+        File clWorkDir = cl.getWorkingDirectory();
+        log.info( "Working directory: " + ( clWorkDir != null ? clWorkDir.getAbsolutePath() : "default" ) );
         log.debug( "EnvironmentVariables " + Arrays.asList( cl.getEnvironmentVariables() ) );
 
-        // ----------------------------------------------------------------------
-        //
-        // ----------------------------------------------------------------------
+        StreamConsumer consumer = new IOConsumerWrapper( io );
 
-        //CommandLineUtils.StringStreamConsumer consumer = new CommandLineUtils.StringStreamConsumer();
-
-        Writer writer = new FileWriter( output );
-
-        StreamConsumer consumer = new WriterStreamConsumer( writer );
-
-        int exitCode = CommandLineUtils.executeCommandLine( cl, consumer, consumer );
-
-        writer.flush();
-
-        writer.close();
-
-        // ----------------------------------------------------------------------
-        //
-        // ----------------------------------------------------------------------
+        int exitCode = runCommand( cl, consumer, consumer );
 
         return new ExecutionResult( exitCode );
-    }
-
-    public boolean isRunning( long idCommand )
-    {
-        return CommandLineUtils.isAlive( idCommand );
-    }
-
-    public void killProcess( long idCommand )
-    {
-        CommandLineUtils.killProcess( idCommand );
     }
 
     public void executeGoals( File workingDirectory, String executable, String goals, boolean interactive,
@@ -163,7 +193,7 @@ public class DefaultShellCommandHelper
     {
         Commandline cl = new Commandline();
 
-        Commandline.Argument argument = cl.createArgument();
+        Arg argument = cl.createArg();
 
         argument.setLine( arguments );
 
@@ -188,15 +218,15 @@ public class DefaultShellCommandHelper
 
             for ( String token : tokens )
             {
-                cl.createArgument().setValue( token );
+                cl.createArg().setValue( token );
             }
         }
 
-        cl.createArgument().setValue( "--no-plugin-updates" );
+        cl.createArg().setValue( "--no-plugin-updates" );
 
         if ( !interactive )
         {
-            cl.createArgument().setValue( "--batch-mode" );
+            cl.createArg().setValue( "--batch-mode" );
         }
 
         StreamConsumer stdOut = new TeeConsumer( System.out );
@@ -208,7 +238,7 @@ public class DefaultShellCommandHelper
             relResult.appendInfo( "Executing: " + cl.toString() );
             log.info( "Executing: " + cl.toString() );
 
-            int result = CommandLineUtils.executeCommandLine( cl, stdOut, stdErr );
+            int result = runCommand( cl, stdOut, stdErr );
 
             if ( result != 0 )
             {
@@ -223,6 +253,45 @@ public class DefaultShellCommandHelper
         finally
         {
             relResult.appendOutput( stdOut.toString() );
+        }
+    }
+
+    public boolean isRunning( long idCommand )
+    {
+        boolean isIdRunning = running.contains( idCommand );
+        log.debug( "process running for id {}? {}", idCommand, isIdRunning );
+        return isIdRunning;
+    }
+
+    public void killProcess( long idCommand )
+    {
+        log.warn( "unsupported attempt to kill process for id {}", idCommand );
+    }
+
+    /**
+     * Handles all command executions for the helper, allowing it to track which commands are running.
+     * The process tracking functionality done here attempts to mimick functionality lost with the move to
+     * plexus-utils 3.0.15. The utility of this method depends on two assumptions:
+     * * Command execution is synchronous (the thread is blocked while the command executes)
+     * * The scope of this object is appropriate (singleton or otherwise)
+     *
+     * @param cli       the command to run, will be tracked by abstract pid set
+     * @param systemOut the stream handler for stdout from command
+     * @param systemErr the stream handler for stderr from command
+     * @return the exit code from the process
+     */
+    private int runCommand( Commandline cli, StreamConsumer systemOut, StreamConsumer systemErr )
+        throws CommandLineException
+    {
+        Long pid = cli.getPid();
+        try
+        {
+            running.add( pid );
+            return CommandLineUtils.executeCommandLine( cli, systemOut, systemErr );
+        }
+        finally
+        {
+            running.remove( pid );
         }
     }
 }

@@ -19,9 +19,6 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
@@ -34,24 +31,39 @@ import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
+<<<<<<< HEAD
 import org.jmock.Mock;
 import org.jmock.MockObjectTestCase;
 import org.codehaus.plexus.spring.PlexusInSpringTestCase;
+=======
+import org.codehaus.plexus.spring.PlexusInSpringTestCase;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.junit.Before;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.*;
+>>>>>>> refs/remotes/apache/trunk
 
 public class CreateProjectsFromMetadataTest
-    extends MockObjectTestCase
 {
-
     private CreateProjectsFromMetadataAction action;
 
     private ContinuumProjectBuildingResult result;
 
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
         result = new ContinuumProjectBuildingResult();
         action = new CreateProjectsFromMetadataAction();
         action.enableLogging( new ConsoleLogger( Logger.LEVEL_DEBUG, "" ) );
+<<<<<<< HEAD
         
         recordBuildProjectFromHttp();
     }
@@ -73,6 +85,28 @@ public class CreateProjectsFromMetadataTest
             .will( returnValue( result ) );
         projectBuilder.expects( once() ).method( "getDefaultBuildDefinitionTemplate" )
             .will( returnValue( getDefaultBuildDefinitionTemplate() ) );        
+=======
+
+        result = new ContinuumProjectBuildingResult();
+        ContinuumProjectBuilderManager projectBuilderManagerMock = mock( ContinuumProjectBuilderManager.class );
+        action.setProjectBuilderManager( projectBuilderManagerMock );
+        action.setUrlValidator( new ContinuumUrlValidator() );
+
+        ContinuumProjectBuilder projectBuilder = mock( ContinuumProjectBuilder.class );
+        when( projectBuilderManagerMock.getProjectBuilder( anyString() ) ).thenReturn( projectBuilder );
+        when( projectBuilder.buildProjectsFromMetadata( any( URL.class ), anyString(), anyString(), anyBoolean(),
+                                                        any( BuildDefinitionTemplate.class ), anyBoolean(),
+                                                        anyInt() ) ).thenReturn( result );
+        when( projectBuilder.getDefaultBuildDefinitionTemplate() ).thenReturn( getDefaultBuildDefinitionTemplate() );
+    }
+
+    private void invokeBuildSettings()
+        throws IOException, XmlPullParserException
+    {
+        MavenSettingsBuilder mavenSettingsBuilderMock = mock( MavenSettingsBuilder.class );
+        action.setMavenSettingsBuilder( mavenSettingsBuilderMock );
+        when( mavenSettingsBuilderMock.buildSettings() ).thenReturn( new Settings() );
+>>>>>>> refs/remotes/apache/trunk
     }
     
     private void invokeBuildSettings()
@@ -102,12 +136,17 @@ public class CreateProjectsFromMetadataTest
         return bdt;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     public void testExecuteWithNonRecursiveMode()
         throws Exception
     {
+<<<<<<< HEAD
     	invokeBuildSettings();
     	
+=======
+        invokeBuildSettings();
+
+>>>>>>> refs/remotes/apache/trunk
         Map<String, Object> context = new HashMap<String, Object>();
         CreateProjectsFromMetadataAction.setUrl( context, "http://svn.apache.org/repos/asf/maven/continuum/trunk/pom.xml" );
         CreateProjectsFromMetadataAction.setProjectBuilderId( context, "id" );
@@ -126,13 +165,20 @@ public class CreateProjectsFromMetadataTest
     public void testExecuteWithRecursiveMode()
         throws Exception
     {
+<<<<<<< HEAD
     	invokeBuildSettings();
     	
+=======
+        invokeBuildSettings();
+
+>>>>>>> refs/remotes/apache/trunk
         Map<String, Object> context = new HashMap<String, Object>();
         CreateProjectsFromMetadataAction.setUrl( context, "http://svn.apache.org/repos/asf/maven/archiva/trunk/pom.xml" );
         CreateProjectsFromMetadataAction.setProjectBuilderId( context,  "id" );
         CreateProjectsFromMetadataAction.setLoadRecursiveProject( context, false );
         context.put( CreateProjectsFromMetadataAction.KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, false );
+<<<<<<< HEAD
+=======
 
         action.execute( context );
 
@@ -141,6 +187,60 @@ public class CreateProjectsFromMetadataTest
         assertFalse(
             "Should not have errors but had " + result.getErrorsAsString() + " (this test requires internet access)",
             result.hasErrors() );
+    }
+
+    public void testExecuteWithCheckoutProjectsInSingleDirectory()
+        throws Exception
+    {
+        Project project = new Project();
+        project.setGroupId( "org.apache.continuum" );
+        project.setArtifactId( "parent-project" );
+        project.setVersion( "1.0-SNAPSHOT" );
+        project.setId( 6 );
+        project.setName( "parent-project" );
+        project.setScmUrl( "scm:local:src/test-projects:flat-multi-module/parent-project" );
+
+        this.result.addProject( project );
+
+        project = new Project();
+        project.setGroupId( "org.apache.continuum" );
+        project.setArtifactId( "module-a" );
+        project.setVersion( "1.0-SNAPSHOT" );
+        project.setId( 7 );
+        project.setName( "module-a" );
+        project.setScmUrl( "scm:local:src/test-projects:flat-multi-module/module-a" );
+
+        this.result.addProject( project );
+
+        project = new Project();
+        project.setGroupId( "org.apache.continuum" );
+        project.setArtifactId( "module-b" );
+        project.setVersion( "1.0-SNAPSHOT" );
+        project.setId( 8 );
+        project.setName( "module-b" );
+        project.setScmUrl( "scm:local:src/test-projects:flat-multi-module/module-b" );
+
+        this.result.addProject( project );
+
+        // assert using scm url set in root!
+        Map<String, Object> context = new HashMap<String, Object>();
+        CreateProjectsFromMetadataAction.setUrl( context, "file://" + PlexusInSpringTestCase.getBasedir() +
+            "/src/test-projects/flat-multi-module/parent-project/pom.xml" );
+        CreateProjectsFromMetadataAction.setProjectBuilderId( context, "id" );
+        CreateProjectsFromMetadataAction.setLoadRecursiveProject( context, true );
+        context.put( CreateProjectsFromMetadataAction.KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, true );
+>>>>>>> refs/remotes/apache/trunk
+
+        action.execute( context );
+
+        ContinuumProjectBuildingResult result = CreateProjectsFromMetadataAction.getProjectBuildingResult( context );
+
+        assertFalse(
+            "Should not have errors but had " + result.getErrorsAsString() + " (this test requires internet access)",
+            result.hasErrors() );
+        assertEquals( "Incorrect SCM Root Url for flat multi-module project.",
+                      "scm:local:src/test-projects:flat-multi-module/", AbstractContinuumAction.getProjectScmRootUrl(
+                context, "" ) );
     }
     
             
@@ -199,8 +299,13 @@ public class CreateProjectsFromMetadataTest
     public void testExecuteFlatMultiModuleProjectThatStartsWithTheSameLetter()
         throws Exception
     {
+<<<<<<< HEAD
     	invokeBuildSettings();
     	
+=======
+        invokeBuildSettings();
+
+>>>>>>> refs/remotes/apache/trunk
         Project project = new Project();
         project.setGroupId( "com.example.flat" );
         project.setArtifactId( "flat-parent" );
@@ -236,7 +341,11 @@ public class CreateProjectsFromMetadataTest
                                                  "http://svn.apache.org/repos/asf/continuum/sandbox/flat-example/flat-parent/pom.xml" );
         CreateProjectsFromMetadataAction.setProjectBuilderId( context,  "id" );
         CreateProjectsFromMetadataAction.setLoadRecursiveProject( context, true );
+<<<<<<< HEAD
 	    context.put( CreateProjectsFromMetadataAction.KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, false );
+=======
+        context.put( CreateProjectsFromMetadataAction.KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, false );
+>>>>>>> refs/remotes/apache/trunk
 
         action.execute( context );
 
@@ -246,8 +355,14 @@ public class CreateProjectsFromMetadataTest
             "Should not have errors but had " + result.getErrorsAsString() + " (this test requires internet access)",
             result.hasErrors() );
 
+<<<<<<< HEAD
         assertEquals(
             "Wrong scm root url created", "scm:svn:http://svn.apache.org/repos/asf/continuum/sandbox/flat-example/",
             AbstractContinuumAction.getProjectScmRootUrl( context, null ) );
+=======
+        assertEquals( "Wrong scm root url created",
+                      "scm:svn:http://svn.apache.org/repos/asf/continuum/sandbox/flat-example/",
+                      AbstractContinuumAction.getProjectScmRootUrl( context, null ) );
+>>>>>>> refs/remotes/apache/trunk
     }
 }
