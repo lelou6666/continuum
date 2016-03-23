@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -34,9 +32,20 @@
           <s:param name="tabName" value="'BuildDefinitions'"/>
         </s:action>
 
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+
         <s:action name="groupBuildDefinitionSummary" executeResult="true" namespace="component">
-          <s:param name="projectGroupId">${projectGroupId}</s:param>
-          <s:param name="projectGroupName">${projectGroup.name}</s:param>
+          <s:param name="projectGroupId" value="projectGroupId"/>
+          <s:param name="projectGroupName" value="projectGroup.name"/>
         </s:action>
       </div>
     </body>

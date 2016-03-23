@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -29,16 +27,20 @@
     <body>
       <div id="h3">
         <h3><s:text name="releases.section.title"/></h3>
-        <c:if test="${!empty actionErrors}">
+        <s:if test="hasActionErrors()">
           <div class="errormessage">
-            <s:iterator value="actionErrors">
-              <p><s:text name="<s:property/>" /></p>
-            </s:iterator>
+            <s:actionerror/>
           </div>
-        </c:if>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
         <s:set name="releasesSummary" value="releasesSummary" scope="request"/>
         <ec:table items="releasesSummary"
                   var="releaseSummary"
+                  autoIncludeParameters="false"
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -47,11 +49,11 @@
           <ec:row>
             <ec:column property="releaseId" title="releaseSummary.table.releaseId">
               <s:url id="viewReleaseUrl" action="releaseInProgress">
-                <s:param name="releaseId">${pageScope.releaseSummary.releaseId}</s:param>
-                <s:param name="projectId">${pageScope.releaseSummary.projectId}</s:param>
-                <s:param name="releaseGoal">${pageScope.releaseSummary.releaseGoal}</s:param>
+                <s:param name="releaseId" value="#attr.releaseSummary.releaseId"/>
+                <s:param name="projectId" value="#attr.releaseSummary.projectId"/>
+                <s:param name="releaseGoal" value="#attr.releaseSummary.releaseGoal"/>
               </s:url>
-              <s:a href="%{viewReleaseUrl}">${pageScope.releaseSummary.releaseId}</s:a>
+              <s:a href="%{viewReleaseUrl}"><s:property value="#attr.releaseSummary.releaseId"/></s:a>
             </ec:column>
             <ec:column property="releaseGoal" title="releaseSummary.table.releaseGoal"/>
             <ec:column property="buildAgentUrl" title="releaseSummary.table.buildAgentUrl"/>

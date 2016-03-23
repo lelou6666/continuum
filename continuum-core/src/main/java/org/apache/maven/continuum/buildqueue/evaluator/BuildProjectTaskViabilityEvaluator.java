@@ -19,26 +19,25 @@ package org.apache.maven.continuum.buildqueue.evaluator;
  * under the License.
  */
 
+import org.apache.continuum.taskqueue.BuildProjectTask;
+import org.apache.maven.continuum.project.ContinuumProjectState;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.taskqueue.TaskViabilityEvaluator;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.continuum.taskqueue.BuildProjectTask;
-import org.apache.maven.continuum.project.ContinuumProjectState;
-import org.codehaus.plexus.taskqueue.TaskViabilityEvaluator;
-
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildProjectTaskViabilityEvaluator
     implements TaskViabilityEvaluator
 {
-    /**
-     * @plexus.configuration
-     */
+
+    @Configuration( "" )
     private long requiredBuildInterval;
 
     // ----------------------------------------------------------------------

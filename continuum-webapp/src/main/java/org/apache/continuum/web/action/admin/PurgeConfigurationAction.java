@@ -20,13 +20,7 @@ package org.apache.continuum.web.action.admin;
  */
 
 import com.opensymphony.xwork2.Preparable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.model.repository.AbstractPurgeConfiguration;
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
 import org.apache.continuum.model.repository.LocalRepository;
@@ -35,13 +29,23 @@ import org.apache.continuum.purge.ContinuumPurgeManager;
 import org.apache.continuum.purge.PurgeConfigurationService;
 import org.apache.continuum.repository.RepositoryService;
 import org.apache.continuum.taskqueue.manager.TaskQueueManager;
+<<<<<<< HEAD
 import org.apache.maven.continuum.build.settings.SchedulesActivationException;
+=======
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumConfirmAction;
+<<<<<<< HEAD
 import org.apache.maven.continuum.web.action.ScheduleAction;
 import org.apache.struts2.ServletActionContext;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
@@ -49,17 +53,25 @@ import org.codehaus.redback.integration.interceptor.SecureActionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author Maria Catherine Tan
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="purgeConfiguration"
  * @since 25 jul 07
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "purgeConfiguration", instantiationStrategy = "per-lookup" )
 public class PurgeConfigurationAction
     extends ContinuumConfirmAction
     implements Preparable, SecureAction
 {
+<<<<<<< HEAD
     private static final Logger logger = LoggerFactory.getLogger( PurgeConfigurationAction.class );
+=======
+>>>>>>> refs/remotes/apache/trunk
 
     private static final String PURGE_TYPE_REPOSITORY = "repository";
 
@@ -78,8 +90,6 @@ public class PurgeConfigurationAction
     private String directoryType;
 
     private String description;
-
-    private String message;
 
     private boolean deleteAll;
 
@@ -113,14 +123,10 @@ public class PurgeConfigurationAction
 
     private List<String> directoryTypes;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private PurgeConfigurationService purgeConfigService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private RepositoryService repositoryService;
 
     @Override
@@ -222,16 +228,8 @@ public class PurgeConfigurationAction
     public String list()
         throws Exception
     {
-        String errorMessage = ServletActionContext.getRequest().getParameter( "errorMessage" );
-
-        if ( errorMessage != null )
-        {
-            addActionError( getText( errorMessage ) );
-        }
-
         repoPurgeConfigs = purgeConfigService.getAllRepositoryPurgeConfigurations();
         dirPurgeConfigs = purgeConfigService.getAllDirectoryPurgeConfigurations();
-
         return SUCCESS;
     }
 
@@ -277,15 +275,12 @@ public class PurgeConfigurationAction
     public String remove()
         throws Exception
     {
-        if ( confirmed )
-        {
-            purgeConfigService.removePurgeConfiguration( purgeConfigId );
-        }
-        else
+        if ( !confirmed )
         {
             return CONFIRM;
         }
-
+        purgeConfigService.removePurgeConfiguration( purgeConfigId );
+        addActionMessage( getText( "purgeConfig.removeSuccess" ) );
         return SUCCESS;
     }
 
@@ -299,6 +294,8 @@ public class PurgeConfigurationAction
         {
             purgeConfig = purgeConfigService.getPurgeConfiguration( purgeConfigId );
 
+            AuditLog event;
+
             if ( purgeConfig instanceof RepositoryPurgeConfiguration )
             {
                 RepositoryPurgeConfiguration repoPurge = (RepositoryPurgeConfiguration) purgeConfig;
@@ -306,19 +303,41 @@ public class PurgeConfigurationAction
                 // check if repository is in use
                 if ( taskQueueManager.isRepositoryInUse( repoPurge.getRepository().getId() ) )
                 {
-                    message = "repository.error.purge.in.use";
+                    addActionError( getText( "repository.error.purge.in.use" ) );
                     return ERROR;
                 }
 
                 purgeManager.purgeRepository( repoPurge );
+
+                event = new AuditLog( repoPurge.getRepository().getName(), AuditLogConstants.PURGE_LOCAL_REPOSITORY );
+                event.setCategory( AuditLogConstants.LOCAL_REPOSITORY );
             }
-            else
+            else if ( purgeConfig instanceof DirectoryPurgeConfiguration )
             {
                 DirectoryPurgeConfiguration dirPurge = (DirectoryPurgeConfiguration) purgeConfig;
                 purgeManager.purgeDirectory( dirPurge );
-            }
-        }
 
+                if ( dirPurge.getDirectoryType().equals( PURGE_DIRECTORY_RELEASES ) )
+                {
+                    event = new AuditLog( dirPurge.getLocation(), AuditLogConstants.PURGE_DIRECTORY_RELEASES );
+                }
+                else
+                {
+                    event = new AuditLog( dirPurge.getLocation(), AuditLogConstants.PURGE_DIRECTORY_BUILDOUTPUT );
+                }
+
+                event.setCategory( AuditLogConstants.DIRECTORY );
+            }
+            else
+            {
+                addActionError( getText( "purgeConfig.unknownType" ) );
+                return ERROR;
+            }
+
+            addActionMessage( getText( "purgeConfig.purgeSuccess" ) );
+            event.setCurrentUser( getPrincipal() );
+            event.log();
+        }
         return SUCCESS;
     }
 
@@ -350,16 +369,6 @@ public class PurgeConfigurationAction
     public void setDescription( String description )
     {
         this.description = description;
-    }
-
-    public String getMessage()
-    {
-        return this.message;
-    }
-
-    public void setMessage( String message )
-    {
-        this.message = message;
     }
 
     public boolean isDeleteAll()
@@ -547,7 +556,8 @@ public class PurgeConfigurationAction
         repoPurge.setRetentionCount( this.retentionCount );
         repoPurge.setEnabled( this.enabled );
         repoPurge.setDefaultPurge( this.defaultPurgeConfiguration );
-        repoPurge.setDescription( this.description );
+        // escape xml to prevent xss attacks
+        repoPurge.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( this.description ) ) );
         repoPurge.setDefaultPurge( this.defaultPurgeConfiguration );
 
         if ( repositoryId != 0 )
@@ -573,7 +583,8 @@ public class PurgeConfigurationAction
         dirPurge.setEnabled( this.enabled );
         dirPurge.setDaysOlder( this.daysOlder );
         dirPurge.setRetentionCount( this.retentionCount );
-        dirPurge.setDescription( this.description );
+        // escape xml to prevent xss attacks
+        dirPurge.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( this.description ) ) );
         dirPurge.setDirectoryType( this.directoryType );
         dirPurge.setDefaultPurge( this.defaultPurgeConfiguration );
 
@@ -605,8 +616,8 @@ public class PurgeConfigurationAction
     {
         if ( purgeConfig instanceof RepositoryPurgeConfiguration )
         {
-            RepositoryPurgeConfiguration repoPurge =
-                purgeConfigService.getDefaultPurgeConfigurationForRepository( repositoryId );
+            RepositoryPurgeConfiguration repoPurge = purgeConfigService.getDefaultPurgeConfigurationForRepository(
+                repositoryId );
 
             if ( repoPurge != null && repoPurge.getId() != purgeConfig.getId() )
             {
@@ -616,8 +627,8 @@ public class PurgeConfigurationAction
         }
         else if ( purgeConfig instanceof DirectoryPurgeConfiguration )
         {
-            DirectoryPurgeConfiguration dirPurge =
-                purgeConfigService.getDefaultPurgeConfigurationForDirectoryType( directoryType );
+            DirectoryPurgeConfiguration dirPurge = purgeConfigService.getDefaultPurgeConfigurationForDirectoryType(
+                directoryType );
 
             if ( dirPurge != null && dirPurge.getId() != purgeConfig.getId() )
             {

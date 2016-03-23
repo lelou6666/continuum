@@ -19,12 +19,17 @@ package org.apache.continuum.distributed.transport.master;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.Map;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.builder.distributed.DistributedBuildService;
 import org.apache.continuum.distributed.commons.utils.ContinuumDistributedUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * MasterBuildAgentTransportServer
@@ -41,65 +46,106 @@ public class MasterBuildAgentTransportServer
         this.distributedBuildService = distributedBuildService;
     }
 
-    public Boolean returnBuildResult( Map<String, Object> buildResult )
+    public Boolean returnBuildResult( Map<String, Object> buildResult, String buildAgentUrl )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Build result returned for project " + ContinuumDistributedUtil.getProjectNameAndId( buildResult ) + "." );
         distributedBuildService.updateBuildResult( buildResult );
+=======
+        distributedBuildService.updateBuildResult( buildResult );
+        log.info( "Project {} build finished in build agent {}. Returned build result.",
+                  ContinuumDistributedUtil.getProjectNameAndId( buildResult ), buildAgentUrl );
+>>>>>>> refs/remotes/apache/trunk
         return Boolean.TRUE;
     }
 
     public Boolean ping()
         throws Exception
     {
-        log.info( "Ping ok" );
+        log.debug( "Ping master ok" );
 
         return Boolean.TRUE;
     }
 
-    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult )
+    public Boolean prepareBuildFinished( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Prepare build finished for project " + ContinuumDistributedUtil.getProjectNameAndId( prepareBuildResult ) + "." );
         distributedBuildService.prepareBuildFinished( prepareBuildResult );
+=======
+        distributedBuildService.prepareBuildFinished( prepareBuildResult );
+        log.info( "Prepare build finished for project {} in build agent {}",
+                  ContinuumDistributedUtil.getProjectNameAndId( prepareBuildResult ), buildAgentUrl );
+>>>>>>> refs/remotes/apache/trunk
         return Boolean.TRUE;
     }
 
-    public Boolean startProjectBuild( Integer projectId )
+    public Boolean startProjectBuild( Integer projectId, Integer buildDefinitionId, String buildAgentUrl )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Start project '" + projectId + "' build." );
         distributedBuildService.startProjectBuild( projectId );
+=======
+        distributedBuildService.startProjectBuild( projectId, buildDefinitionId );
+        log.info( "Start building project (projectId={}, buildDefId={}) in build agent {}.",
+                  new Object[] { projectId, buildDefinitionId, buildAgentUrl } );
+>>>>>>> refs/remotes/apache/trunk
         return Boolean.TRUE;
     }
 
-    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult )
+    public Boolean startPrepareBuild( Map<String, Object> prepareBuildResult, String buildAgentUrl )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Start prepare build of project " + ContinuumDistributedUtil.getProjectNameAndId( prepareBuildResult ) + "." );
         distributedBuildService.startPrepareBuild( prepareBuildResult );
+=======
+        distributedBuildService.startPrepareBuild( prepareBuildResult );
+        log.info( "Start preparing build of project {} in build agent {}", ContinuumDistributedUtil.getProjectNameAndId(
+            prepareBuildResult ), buildAgentUrl );
+>>>>>>> refs/remotes/apache/trunk
         return Boolean.TRUE;
     }
 
     public Map<String, String> getEnvironments( Integer buildDefinitionId, String installationType )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Retrieving environments. buildDefinitionId=" + buildDefinitionId + ", installationType=" + installationType );
         return distributedBuildService.getEnvironments( buildDefinitionId, installationType );
+=======
+        Map<String, String> envs = distributedBuildService.getEnvironments( buildDefinitionId, installationType );
+        log.debug( "Retrieving environments buildDefinitionId={}, installationType={}",
+                   new Object[] { buildDefinitionId, installationType } );
+        return envs;
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public Boolean updateProject( Map<String, Object> project )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Start updating project " + ContinuumDistributedUtil.getProjectNameAndId( project ) );
         distributedBuildService.updateProject( project );
+=======
+        distributedBuildService.updateProject( project );
+        log.debug( "Start updating project {}", ContinuumDistributedUtil.getProjectNameAndId( project ) );
+>>>>>>> refs/remotes/apache/trunk
         return Boolean.TRUE;
     }
 
-    public Boolean shouldBuild( Map<String, Object> context )
+    public Boolean shouldBuild( Map<String, Object> context, String buildAgentUrl )
         throws Exception
     {
+<<<<<<< HEAD
         log.info( "Checking if project " + ContinuumDistributedUtil.getProjectNameAndId( context ) + " should build" );
+=======
+        log.debug( "Checking if project {} should build in build agent {}",
+                   ContinuumDistributedUtil.getProjectNameAndId( context ), buildAgentUrl );
+>>>>>>> refs/remotes/apache/trunk
         return distributedBuildService.shouldBuild( context );
     }
 }

@@ -32,7 +32,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public interface ConfigurationService
 {
@@ -126,13 +125,17 @@ public interface ConfigurationService
     void removeBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
         throws ConfigurationException;
 
-    BuildAgentGroupConfiguration getBuildAgentGroup(String name);
+    BuildAgentGroupConfiguration getBuildAgentGroup( String name );
 
-    BuildAgentConfiguration getBuildAgent(String url);
+    BuildAgentConfiguration getBuildAgent( String url );
 
     List<BuildAgentGroupConfiguration> getBuildAgentGroups();
 
-    boolean containsBuildAgentUrl(String buildAgentUrl,  BuildAgentGroupConfiguration buildAgentGroup );
+    boolean containsBuildAgentUrl( String buildAgentUrl, BuildAgentGroupConfiguration buildAgentGroup );
+
+    void setSharedSecretPassword( String sharedSecretPassword );
+
+    String getSharedSecretPassword();
 
     // ----------------------------------------------------------------------
     //
@@ -153,5 +156,6 @@ public interface ConfigurationService
         throws ConfigurationStoringException, ContinuumConfigurationException;
 
     Schedule getDefaultSchedule()
-        throws ContinuumStoreException, ConfigurationLoadingException, ContinuumConfigurationException, BuildQueueServiceException;
+        throws ContinuumStoreException, ConfigurationLoadingException, ContinuumConfigurationException,
+        BuildQueueServiceException;
 }

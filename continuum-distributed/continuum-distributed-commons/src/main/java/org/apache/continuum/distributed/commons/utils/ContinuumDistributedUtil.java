@@ -27,7 +27,11 @@ import java.util.Map;
 public class ContinuumDistributedUtil
 {
     public static final String KEY_PROJECT_ID = "project-id";
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public static final String KEY_PROJECT_GROUP_ID = "project-group-id";
 
     public static final String KEY_PROJECT_NAME = "project-name";
@@ -53,11 +57,19 @@ public class ContinuumDistributedUtil
     {
         return getString( context, KEY_PROJECT_NAME );
     }
+<<<<<<< HEAD
     
     public static String getProjectNameAndId( Map<String, Object> context )
     {
         StringBuilder result = new StringBuilder();
         
+=======
+
+    public static String getProjectNameAndId( Map<String, Object> context )
+    {
+        StringBuilder result = new StringBuilder();
+
+>>>>>>> refs/remotes/apache/trunk
         if ( getProjectName( context ) != null )
         {
             result.append( getProjectName( context ) ).append( " " );
@@ -66,7 +78,11 @@ public class ContinuumDistributedUtil
         {
             result.append( getArtifactId( context ) ).append( " " );
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         if ( context.containsKey( KEY_PROJECT_ID ) )
         {
             result.append( "(projectId=" ).append( getProjectId( context ) ).append( ")" );
@@ -75,7 +91,11 @@ public class ContinuumDistributedUtil
         {
             result.append( "(projectGroupId=" ).append( getProjectGroupId( context ) ).append( ")" );
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         return result.toString();
     }
 

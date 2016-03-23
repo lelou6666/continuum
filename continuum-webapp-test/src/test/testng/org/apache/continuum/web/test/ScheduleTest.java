@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,16 +19,15 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-import org.apache.continuum.web.test.parent.AbstractScheduleTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
 import org.testng.annotations.Test;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "schedule" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = { "schedule" } )
 public class ScheduleTest
-    extends AbstractScheduleTest
+    extends AbstractAdminTest
 {
     public void testAddScheduleNoBuildQueueToBeUsed()
     {
@@ -47,7 +46,11 @@ public class ScheduleTest
         addEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
                          SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,
                          SCHEDULE_EXPR_YEAR, SCHEDULE_MAX_TIME, SCHEDULE_PERIOD, false, false );
+<<<<<<< HEAD
 	assertTextPresent( "Used Build Queues cannot be empty" );
+=======
+        assertTextPresent( "Used Build Queues cannot be empty" );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     @Test( dependsOnMethods = { "testAddScheduleNoBuildQueueToBeUsed" } )
@@ -64,10 +67,38 @@ public class ScheduleTest
         String SCHEDULE_EXPR_YEAR = getProperty( "SCHEDULE_EXPR_YEAR" );
         String SCHEDULE_MAX_TIME = getProperty( "SCHEDULE_MAX_TIME" );
         String SCHEDULE_PERIOD = getProperty( "SCHEDULE_PERIOD" );
+<<<<<<< HEAD
         goToAddSchedule();
         addEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
                          SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,
                          SCHEDULE_EXPR_YEAR, SCHEDULE_MAX_TIME, SCHEDULE_PERIOD, true, true );
+=======
+        goToAddSchedule();
+        addEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
+                         SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,
+                         SCHEDULE_EXPR_YEAR, SCHEDULE_MAX_TIME, SCHEDULE_PERIOD, true, true );
+    }
+
+    @Test( dependsOnMethods = { "testAddScheduleNoBuildQueueToBeUsed" } )
+    public void testAddScheduleWithInvalidValues()
+    {
+        String SCHEDULE_NAME = "!@#$<>?etc";
+        String SCHEDULE_DESCRIPTION = "![]<>'^&etc";
+        String SCHEDULE_EXPR_SECOND = getProperty( "SCHEDULE_EXPR_SECOND" );
+        String SCHEDULE_EXPR_MINUTE = getProperty( "SCHEDULE_EXPR_MINUTE" );
+        String SCHEDULE_EXPR_HOUR = getProperty( "SCHEDULE_EXPR_HOUR" );
+        String SCHEDULE_EXPR_DAY_MONTH = getProperty( "SCHEDULE_EXPR_DAY_MONTH" );
+        String SCHEDULE_EXPR_MONTH = getProperty( "SCHEDULE_EXPR_MONTH" );
+        String SCHEDULE_EXPR_DAY_WEEK = getProperty( "SCHEDULE_EXPR_DAY_WEEK" );
+        String SCHEDULE_EXPR_YEAR = getProperty( "SCHEDULE_EXPR_YEAR" );
+        String SCHEDULE_MAX_TIME = getProperty( "SCHEDULE_MAX_TIME" );
+        String SCHEDULE_PERIOD = getProperty( "SCHEDULE_PERIOD" );
+        goToAddSchedule();
+        addEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
+                         SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,
+                         SCHEDULE_EXPR_YEAR, SCHEDULE_MAX_TIME, SCHEDULE_PERIOD, true, false );
+        assertTextPresent( "Name contains invalid characters." );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void testAddInvalidSchedule()
@@ -128,7 +159,12 @@ public class ScheduleTest
         goToEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
                           SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,
                           SCHEDULE_EXPR_YEAR, SCHEDULE_MAX_TIME, SCHEDULE_PERIOD );
+<<<<<<< HEAD
         addEditSchedule( name, description, second, minute, hour, dayMonth, month, dayWeek, year, maxTime, period, false, true );
+=======
+        addEditSchedule( name, description, second, minute, hour, dayMonth, month, dayWeek, year, maxTime, period,
+                         false, true );
+>>>>>>> refs/remotes/apache/trunk
         goToEditSchedule( name, description, second, minute, hour, dayMonth, month, dayWeek, year, maxTime, period );
         addEditSchedule( SCHEDULE_NAME, SCHEDULE_DESCRIPTION, SCHEDULE_EXPR_SECOND, SCHEDULE_EXPR_MINUTE,
                          SCHEDULE_EXPR_HOUR, SCHEDULE_EXPR_DAY_MONTH, SCHEDULE_EXPR_MONTH, SCHEDULE_EXPR_DAY_WEEK,

@@ -1,42 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:util="http://www.springframework.org/schema/util"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
-		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+
+
 		http://www.springframework.org/schema/context 
         http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
-  <context:annotation-config />
+  <context:annotation-config/>
   <context:component-scan base-package="org.apache.continuum.buildagent"/>
 
   <bean name="continuumAgentBuildExecutor#maven2"
-         class="org.apache.continuum.buildagent.build.execution.maven.m2.MavenTwoBuildExecutor" autowire="byName">
+        class="org.apache.continuum.buildagent.build.execution.maven.m2.MavenTwoBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="mvn"/>
     <property name="buildAgentMavenBuilderHelper" ref="buildAgentMavenBuilderHelper"/>
     <property name="projectHelper" ref="mavenProjectHelper"/>
   </bean>
   <bean name="continuumAgentBuildExecutor#maven-1"
-         class="org.apache.continuum.buildagent.build.execution.maven.m1.MavenOneBuildExecutor" autowire="byName">
+        class="org.apache.continuum.buildagent.build.execution.maven.m1.MavenOneBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="maven"/>
   </bean>
   <bean name="continuumAgentBuildExecutor#ant"
-         class="org.apache.continuum.buildagent.build.execution.ant.AntBuildExecutor" autowire="byName">
+        class="org.apache.continuum.buildagent.build.execution.ant.AntBuildExecutor" autowire="byName">
     <property name="defaultExecutable" value="ant"/>
   </bean>
   <bean name="continuumAgentBuildExecutor#shell"
-         class="org.apache.continuum.buildagent.build.execution.shell.ShellBuildExecutor" autowire="byName">
+        class="org.apache.continuum.buildagent.build.execution.shell.ShellBuildExecutor" autowire="byName">
   </bean>
 
-  <bean id="buildAgentConfigurationService" class="org.apache.continuum.buildagent.configuration.DefaultBuildAgentConfigurationService"
+  <bean id="buildAgentConfigurationService"
+        class="org.apache.continuum.buildagent.configuration.DefaultBuildAgentConfigurationService"
         init-method="initialize"/>
+<<<<<<< HEAD
   
   <bean id="buildAgentConfiguration" class="org.apache.continuum.buildagent.configuration.DefaultBuildAgentConfiguration"
      init-method="initialize">
     <property name="configurationFile" value="file:${appserver.base}/conf/continuum-buildagent.xml" />
+=======
+
+  <bean id="buildAgentConfiguration"
+        class="org.apache.continuum.buildagent.configuration.DefaultBuildAgentConfiguration"
+        init-method="initialize">
+    <property name="configurationFile" value="file:${appserver.base}/conf/continuum-buildagent.xml"/>
+>>>>>>> refs/remotes/apache/trunk
   </bean>
 </beans>
 	

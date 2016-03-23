@@ -19,33 +19,38 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.web.action.AbstractActionTest;
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.model.project.Project;
-import org.jmock.Mock;
-import org.jmock.MockObjectTestCase;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
 /**
  * Test for {@link ReleasePrepareAction}
  *
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public class ReleasePrepareActionTest
-    extends MockObjectTestCase
+    extends AbstractActionTest
 {
-    private final ReleasePrepareAction action;
+    private ReleasePrepareAction action;
 
-    private final Mock continuumMock;
+    private Continuum continuum;
 
-    public ReleasePrepareActionTest()
+    @Before
+    public void setUp()
+        throws Exception
     {
         action = new ReleasePrepareAction();
-        continuumMock = new Mock( Continuum.class );
-        //securitySessionMock = new Mock( SecuritySession.class );
+        continuum = mock( Continuum.class );
+        //securitySessionMock = mock( SecuritySession.class );
         //Map map = new HashMap();
         //map.put( SecuritySystemConstants.SECURITY_SESSION_KEY, securitySessionMock );
         //action.setSession( map );
-        action.setContinuum( (Continuum) continuumMock.proxy() );
+        action.setContinuum( continuum );
     }
 
     /**
@@ -53,6 +58,7 @@ public class ReleasePrepareActionTest
      *
      * @throws Exception
      */
+    @Test
     public void testScmTagBaseSvn()
         throws Exception
     {
@@ -61,14 +67,13 @@ public class ReleasePrepareActionTest
         String svnUrl = "https://svn.apache.org/repos/asf/maven/continuum";
         String scmUrl = "scm:svn:" + svnUrl + "/trunk/";
         //ProjectGroup projectGroup = new ProjectGroup();
-        //continuumMock.expects( once() ).method( "getProjectGroupByProjectId" ).will( returnValue( projectGroup ) );
+        //continuum.expects( once() ).method( "getProjectGroupByProjectId" ).will( returnValue( projectGroup ) );
         Project project = new Project();
         project.setScmUrl( scmUrl );
         project.setWorkingDirectory( "." );
-        continuumMock.expects( once() ).method( "getProject" ).will( returnValue( project ) );
-        action.input();
+        when( continuum.getProject( anyInt() ) ).thenReturn( project );
+        action.input(); // expected result?
         assertEquals( svnUrl + "/tags", action.getScmTagBase() );
-        continuumMock.verify();
     }
 
     /**
@@ -76,6 +81,7 @@ public class ReleasePrepareActionTest
      *
      * @throws Exception
      */
+    @Test
     public void testScmTagBaseNonSvn()
         throws Exception
     {
@@ -84,9 +90,8 @@ public class ReleasePrepareActionTest
         Project project = new Project();
         project.setScmUrl( "scm:cvs:xxx" );
         project.setWorkingDirectory( "." );
-        continuumMock.expects( once() ).method( "getProject" ).will( returnValue( project ) );
-        action.input();
+        when( continuum.getProject( anyInt() ) ).thenReturn( project );
+        action.input(); // expected result?
         assertEquals( "", action.getScmTagBase() );
-        continuumMock.verify();
     }
 }

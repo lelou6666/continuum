@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -20,54 +20,81 @@ package org.apache.continuum.web.test;
  */
 
 import org.apache.continuum.web.test.parent.AbstractBuildDefinitionTemplateTest;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "buildDefinitionTemplate" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = {"buildDefinitionTemplate"} )
 public class BuildDefinitionTemplateTest
     extends AbstractBuildDefinitionTemplateTest
 {
+    private String templateName;
+
+    @BeforeClass
+    public void setUp()
+    {
+        templateName = getProperty( "TEMPLATE_NAME" );
+    }
+
     public void testAddTemplate()
         throws Exception
     {
+<<<<<<< HEAD
         String TEMPLATE_NAME = getProperty( "TEMPLATE_NAME" );
+=======
+>>>>>>> refs/remotes/apache/trunk
         goToAddTemplate();
-        addEditTemplate( TEMPLATE_NAME, new String[] { "Default Maven 2 Build Definition",
-            "Default Maven 1 Build Definition" }, new String[] {}, true );
+        addEditTemplate( templateName,
+                         new String[]{"Default Maven Build Definition", "Default Maven 1 Build Definition"},
+                         new String[]{}, true );
     }
 
     public void testAddInvalidTemplate()
         throws Exception
     {
         goToAddTemplate();
-        addEditTemplate( "", new String[] {}, new String[] {}, false );
+        addEditTemplate( "", new String[] { "Default Maven Build Definition" }, new String[] {}, false );
         assertTextPresent( "Name is required" );
     }
 
-    @Test( dependsOnMethods = { "testAddTemplate" } )
+    public void testAddTemplateWithXSS()
+        throws Exception
+    {
+        goToAddTemplate();
+        addEditTemplate( "Name <script>alert('gotcha')</script>", new String[]{ "Default Maven Build Definition" }, new String[]{}, false );
+        assertTextPresent( "Name contains invalid characters" );
+    }
+
+    @Test( dependsOnMethods = {"testAddTemplate"} )
     public void testEditTemplate()
         throws Exception
     {
+<<<<<<< HEAD
         String TEMPLATE_NAME = getProperty( "TEMPLATE_NAME" );
+=======
+>>>>>>> refs/remotes/apache/trunk
         String newName = "new_name";
-        goToEditTemplate( TEMPLATE_NAME, new String[] { "Default Maven 2 Build Definition",
-            "Default Maven 1 Build Definition" } );
-        addEditTemplate( newName, new String[] { "Default Shell Build Definition" },
-                         new String[] { "Default Maven 2 Build Definition" }, true );
-        goToEditTemplate( newName,
-                          new String[] { "Default Maven 1 Build Definition", "Default Shell Build Definition" } );
-        addEditTemplate( TEMPLATE_NAME, new String[] { "Default Maven 2 Build Definition" },
-                         new String[] { "Default Shell Build Definition" }, true );
+        goToEditTemplate( templateName,
+                          new String[]{"Default Maven Build Definition", "Default Maven 1 Build Definition"} );
+        addEditTemplate( newName, new String[]{"Default Shell Build Definition"},
+                         new String[]{"Default Maven Build Definition"}, true );
+        goToEditTemplate( newName, new String[]{"Default Maven 1 Build Definition", "Default Shell Build Definition"} );
+        addEditTemplate( templateName, new String[]{"Default Maven Build Definition"},
+                         new String[]{"Default Shell Build Definition"}, true );
     }
 
-    @Test( dependsOnMethods = { "testEditTemplate" } )
+    @Test( dependsOnMethods = {"testEditTemplate"} )
     public void testDeleteTemplate()
     {
+<<<<<<< HEAD
         String TEMPLATE_NAME = getProperty( "TEMPLATE_NAME" );
         removeTemplate( TEMPLATE_NAME );
+=======
+        removeTemplate( templateName );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void testAddBuildDefinitionTemplate()
@@ -88,10 +115,23 @@ public class BuildDefinitionTemplateTest
         goToAddBuildDefinitionTemplate();
         addEditBuildDefinitionTemplate( "", "", "", "", true, true, true, false );
         assertTextPresent( "BuildFile is required" );
+        assertTextPresent( "Goals are required" );
         assertTextPresent( "Description is required" );
     }
 
-    @Test( dependsOnMethods = { "testAddBuildDefinitionTemplate" } )
+    public void testAddBuildDefinitionTemplateWithXSS()
+        throws Exception
+    {
+        String invalidString = "<script>alert('gotcha')</script>";
+        goToAddBuildDefinitionTemplate();
+        addEditBuildDefinitionTemplate( invalidString, invalidString, invalidString, invalidString, true, true, true,
+                                        false );
+        assertTextPresent( "BuildFile contains invalid characters" );
+        assertTextPresent( "Goals contain invalid characters" );
+        assertTextPresent( "Arguments contain invalid characters" );
+    }
+
+    @Test( dependsOnMethods = {"testAddBuildDefinitionTemplate"} )
     public void testEditBuildDefinitionTemplate()
         throws Exception
     {
@@ -104,10 +144,23 @@ public class BuildDefinitionTemplateTest
                                         TEMPLATE_BUILD_DESCRIPTION, false, false, false, true );
     }
 
-    @Test( dependsOnMethods = { "testEditBuildDefinitionTemplate" } )
+    @Test( dependsOnMethods = {"testEditBuildDefinitionTemplate"} )
     public void testDeleteBuildDefinitionTemplate()
     {
         String TEMPLATE_BUILD_DESCRIPTION = getProperty( "TEMPLATE_BUILD_DESCRIPTION" );
         removeBuildDefinitionTemplate( TEMPLATE_BUILD_DESCRIPTION );
+    }
+
+    public void testAddTemplateWithEmptyBuildDefinitions()
+        throws Exception
+    {
+        goToAddTemplate();
+        addEditTemplate( templateName, new String[] {}, new String[] {}, false );
+    }
+
+    @AfterClass
+    public void tearDown()
+    {
+        removeTemplate( templateName, false );
     }
 }

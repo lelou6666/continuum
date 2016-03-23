@@ -19,52 +19,43 @@ package org.apache.continuum.distributed.transport.tests;
  * under the License.
  */
 
-import java.net.URL;
-import java.util.HashMap;
-
 import junit.framework.TestCase;
-
 import org.apache.continuum.distributed.transport.master.MasterBuildAgentTransportClient;
 import org.apache.continuum.distributed.transport.master.MasterBuildAgentTransportService;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.net.URL;
+import java.util.HashMap;
+
+import static org.junit.Assert.*;
 
 /**
  * MasterBuildAgentTransportServiceTest
  */
 public class MasterBuildAgentTransportServiceTest
-    extends TestCase
 {
     private MasterBuildAgentTransportService masterProxy;
-    
+
     private BeanFactory beanFactory = new XmlBeanFactory( new ClassPathResource( "applicationContext.xml" ) );
-    
-    protected void setUp()
+
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-        
-        masterProxy = new MasterBuildAgentTransportClient( new URL( "http://localhost:9191/master-xmlrpc"), null , null );
+        masterProxy = new MasterBuildAgentTransportClient( new URL( "http://localhost:9191/master-xmlrpc" ), null,
+                                                           null );
     }
-    
+
+    @Test
     public void testReturnBuildResult()
     {
         try
         {
-            masterProxy.returnBuildResult( new HashMap() );
-        }
-        catch ( Exception e )
-        {
-            fail( e.getMessage() );
-        }
-    }
-    
-    public void testReturnScmResult()
-    {
-        try
-        {
-            masterProxy.returnScmResult( new HashMap() );
+            masterProxy.returnBuildResult( new HashMap<String, Object>(), /* ??? */ null );
         }
         catch ( Exception e )
         {
@@ -72,6 +63,21 @@ public class MasterBuildAgentTransportServiceTest
         }
     }
 
+    /* this method apparently no longer exists in the interface
+    @Test
+    public void testReturnScmResult()
+    {
+        try
+        {
+            masterProxy.returnScmResult( new HashMap<String, Object>() );
+        }
+        catch ( Exception e )
+        {
+            fail( e.getMessage() );
+        }
+    } */
+
+    @Test
     public void testPing()
     {
         try

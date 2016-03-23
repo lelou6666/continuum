@@ -1,33 +1,38 @@
 <?xml version='1.0' encoding='UTF-8'?>
+
 <!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <artifactId>continuum</artifactId>
     <groupId>org.apache.continuum</groupId>
+<<<<<<< HEAD
     <version>1.4.1-SNAPSHOT</version>
+=======
+    <version>1.5-SNAPSHOT</version>
+>>>>>>> refs/remotes/apache/trunk
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-webapp</artifactId>
   <name>Continuum :: Web APP</name>
   <packaging>war</packaging>
-  <build> 
+  <build>
     <resources>
       <resource>
         <filtering>true</filtering>
@@ -52,12 +57,20 @@ under the License.
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+<<<<<<< HEAD
         <artifactId>maven-clean-plugin</artifactId>        
+=======
+        <artifactId>maven-clean-plugin</artifactId>
+>>>>>>> refs/remotes/apache/trunk
         <configuration>
           <filesets>
             <fileset>
               <directory>${basedir}/data</directory>
+<<<<<<< HEAD
             </fileset>            
+=======
+            </fileset>
+>>>>>>> refs/remotes/apache/trunk
           </filesets>
         </configuration>
       </plugin>
@@ -69,28 +82,20 @@ under the License.
                Specifically setting this to false to avoid accidental jar file creation. -->
           <archiveClasses>false</archiveClasses>
           <dependentWarExcludes>META-INF/**,WEB-INF/web.xml,WEB-INF/classes/xwork.xml,WEB-INF/lib/**</dependentWarExcludes>
+<<<<<<< HEAD
         </configuration>       
+=======
+        </configuration>
+>>>>>>> refs/remotes/apache/trunk
       </plugin>
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-maven-plugin</artifactId>
-        <configuration>
-          <roleDefaults>
-            <roleDefault>
-              <role>com.opensymphony.xwork2.Action</role>
-              <instantiation-strategy>per-lookup</instantiation-strategy>
-            </roleDefault>
-            <roleDefault>
-              <role>com.opensymphony.xwork2.validator.Validator</role>
-              <instantiation-strategy>per-lookup</instantiation-strategy>
-            </roleDefault>            
-          </roleDefaults>
-        </configuration>
+        <artifactId>plexus-component-metadata</artifactId>
         <executions>
           <execution>
             <id>generate</id>
             <goals>
-              <goal>descriptor</goal>
+              <goal>generate-metadata</goal>
             </goals>
           </execution>
         </executions>
@@ -105,7 +110,9 @@ under the License.
               <models>
                 <model>src/main/mdo/view-models.mdo</model>
               </models>
-              <version>1.0.0</version>
+<<<<<<< HEAD
+=======
+              <version>1.5.0</version>
             </configuration>
             <goals>
               <goal>java</goal>
@@ -117,6 +124,7 @@ under the License.
               <models>
                 <model>src/main/mdo/appearance-models.mdo</model>
               </models>
+>>>>>>> refs/remotes/apache/trunk
               <version>1.0.0</version>
             </configuration>
             <goals>
@@ -124,7 +132,44 @@ under the License.
               <goal>xpp3-reader</goal>
               <goal>xpp3-writer</goal>
             </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <useJava5>true</useJava5>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <executions>
+          <execution>
+<<<<<<< HEAD
+            <id>appearence model classes</id>
+            <configuration>
+              <models>
+                <model>src/main/mdo/appearance-models.mdo</model>
+              </models>
+              <version>1.0.0</version>
+            </configuration>
+=======
+            <phase>generate-sources</phase>
+>>>>>>> refs/remotes/apache/trunk
+            <goals>
+              <goal>replace</goal>
+            </goals>
+<<<<<<< HEAD
           </execution>    
+=======
+            <configuration>
+              <basedir>${basedir}</basedir>
+              <includes>
+                <include>target/generated-sources/**</include>
+              </includes>
+              <token>Generated by Modello.*</token>
+              <value>Generated by Modello</value>
+            </configuration>
+          </execution>
+>>>>>>> refs/remotes/apache/trunk
         </executions>
         <configuration>
           <useJava5>true</useJava5>
@@ -142,18 +187,23 @@ under the License.
           </execution>
         </executions>
         <configuration>
+          <source>1.5</source>
           <warSourceDirectory>${project.build.directory}/${project.build.finalName}/</warSourceDirectory>
           <injectString><![CDATA[<!-- [jspc-maven-plugin:post-compiled-jsps-as-servlets] -->]]></injectString>
-          <!-- 
+          <!--
             Uncomment outputWebXml if you want the generated web.xml to
             be placed in the working directory that the war:war mojo uses.
             -->
-          <!-- 
-          <outputWebXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</outputWebXml> 
+          <!--
+          <outputWebXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</outputWebXml>
           -->
         </configuration>
       </plugin>
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> refs/remotes/apache/trunk
       <!-- hack for jetty:run, continuum web config files are checked in /WEB-INF/ dir -->
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -168,9 +218,29 @@ under the License.
               <tasks>
                 <mkdir dir="${basedir}/target/continuum/WEB-INF/" />
                 <copy todir="${basedir}/target/continuum/WEB-INF/">
+<<<<<<< HEAD
                   <fileset dir="${basedir}/target" includes="classes/" excludes="**/struts.xml" />         
                 </copy>
               </tasks>              
+=======
+                  <fileset dir="${basedir}/target" includes="classes/" excludes="**/struts.xml" />
+                </copy>
+              </tasks>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-appserver-base</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <tasks>
+                <copy todir="${project.build.directory}/appserver-base">
+                  <fileset dir="src/appserver-base" />
+                </copy>
+              </tasks>
+>>>>>>> refs/remotes/apache/trunk
             </configuration>
           </execution>
         </executions>
@@ -181,6 +251,7 @@ under the License.
           <execution>
             <id>unpack-redback-war</id>
             <goals>
+<<<<<<< HEAD
              <goal>unpack</goal>
             </goals>
             <phase>compile</phase>
@@ -196,15 +267,33 @@ under the License.
                    <excludes>**/struts-security.xml</excludes>
                  </artifactItem>
                </artifactItems>
+=======
+              <goal>unpack</goal>
+            </goals>
+            <phase>compile</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.codehaus.redback</groupId>
+                  <artifactId>redback-struts2-content</artifactId>
+                  <version>${redback.version}</version>
+                  <type>war</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/redback</outputDirectory>
+                  <excludes>**/struts-security.xml</excludes>
+                </artifactItem>
+              </artifactItems>
+>>>>>>> refs/remotes/apache/trunk
             </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
         <groupId>org.mortbay.jetty</groupId>
-        <artifactId>maven-jetty-plugin</artifactId>
+        <artifactId>jetty-maven-plugin</artifactId>
         <configuration>
           <webAppConfig>
+<<<<<<< HEAD
 	        <contextPath>/</contextPath>	          
 	        <baseResource implementation="org.mortbay.resource.ResourceCollection">
 	          <resourcesAsCSV>src/main/webapp,target/continuum,target/redback</resourcesAsCSV>
@@ -212,8 +301,13 @@ under the License.
           </webAppConfig>
           <scanIntervalSeconds>10</scanIntervalSeconds>
           <jettyEnvXml>${basedir}/src/jetty-env.xml</jettyEnvXml>          
+=======
+            <contextPath>/</contextPath>
+            <jettyEnvXml>${basedir}/src/jetty-env.xml</jettyEnvXml>
+          </webAppConfig>
+>>>>>>> refs/remotes/apache/trunk
           <connectors>
-            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+            <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
               <port>9090</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
@@ -226,18 +320,24 @@ under the License.
             <systemProperty>
               <name>appserver.home</name>
               <value>${project.build.directory}/appserver-home</value>
-            </systemProperty>            
+            </systemProperty>
             <systemProperty>
               <name>derby.system.home</name>
               <value>${project.build.directory}/appserver-base/logs</value>
             </systemProperty>
+<<<<<<< HEAD
           </systemProperties>          
+=======
+          </systemProperties>
+          <stopKey>stopkey</stopKey>
+          <stopPort>9099</stopPort>
+>>>>>>> refs/remotes/apache/trunk
         </configuration>
         <dependencies>
           <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>10.1.3.1</version>
+            <version>10.11.1.1</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -252,7 +352,7 @@ under the License.
             <appserver.base>${project.build.directory}/appserver-base</appserver.base>
             <appserver.home>${project.build.directory}/appserver-home</appserver.home>
             <derby.system.home>${project.build.directory}/appserver-base/logs</derby.system.home>
-          </systemProperties>          
+          </systemProperties>
         </configuration>
         <dependencies>
           <dependency>
@@ -265,7 +365,7 @@ under the License.
             <artifactId>mail</artifactId>
             <version>1.4</version>
           </dependency>
-        </dependencies>        
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -279,28 +379,22 @@ under the License.
           </excludes>
         </configuration>
       </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <tasks>
-                <copy todir="${project.build.directory}/appserver-base">
-                  <fileset dir="src/appserver-base" />
-                </copy>
-                <copy todir="src/main/webapp/template">
-                  <fileset file="src/main/resources/template/default/validation.js" />
-                </copy>
-              </tasks>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>src/main/webapp/js/jquery-*</exclude>
+              <exclude>src/main/webapp/js/prototype.js</exclude>
+              <exclude>src/main/webapp/css/no-theme/jquery-*</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <dependencies>
     <dependency>
@@ -378,6 +472,10 @@ under the License.
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-component-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-component-annotations</artifactId>
+    </dependency>
     <dependency> <!-- added since depMgt doesn't override imported dependencies -->
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>
@@ -385,7 +483,7 @@ under the License.
     <dependency>
       <groupId>opensymphony</groupId>
       <artifactId>sitemesh</artifactId>
-      <version>2.2.1</version>
+      <version>2.4.2</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -471,7 +569,7 @@ under the License.
           <artifactId>plexus-container-default</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-notifier-irc</artifactId>
@@ -517,7 +615,7 @@ under the License.
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-distributed-master-server</artifactId>
       <scope>runtime</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.maven.wagon</groupId>
       <artifactId>wagon-file</artifactId>
@@ -546,7 +644,7 @@ under the License.
     </dependency>
     <dependency>
       <groupId>org.apache.maven.wagon</groupId>
-      <artifactId>wagon-webdav</artifactId>
+      <artifactId>wagon-webdav-jackrabbit</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -554,19 +652,13 @@ under the License.
       <artifactId>struts2-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.opensymphony</groupId>
-      <artifactId>xwork</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>    
-    <dependency>
       <groupId>org.apache.struts</groupId>
       <artifactId>struts2-spring-plugin</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.struts</groupId>
+      <artifactId>struts2-json-plugin</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -587,7 +679,7 @@ under the License.
       <groupId>org.codehaus.redback</groupId>
       <artifactId>redback-struts2-content</artifactId>
       <type>war</type>
-      <scope>runtime</scope> 
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.redback</groupId>
@@ -619,6 +711,16 @@ under the License.
       <artifactId>redback-rbac-model</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>redback-xmlrpc-services</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.redback</groupId>
+      <artifactId>redback-xmlrpc-security</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>net.sf.ehcache</groupId>
       <artifactId>ehcache</artifactId>
       <scope>runtime</scope>
@@ -628,7 +730,7 @@ under the License.
           <artifactId>commons-logging</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
@@ -638,7 +740,7 @@ under the License.
       <artifactId>commons-lang</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
+      <groupId>org.codehaus.redback</groupId>
       <artifactId>plexus-spring</artifactId>
       <exclusions>
         <exclusion>
@@ -646,7 +748,7 @@ under the License.
           <artifactId>xml-apis</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -654,16 +756,42 @@ under the License.
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
-      <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jpox</groupId>
+      <artifactId>jpox-ehcache</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ehcache</groupId>
+          <artifactId>ehcache</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <profiles>
@@ -686,7 +814,7 @@ under the License.
             </configuration>
           </plugin>
         </plugins>
-      </build>      
+      </build>
     </profile>
     <profile>
       <id>mysql</id>
@@ -726,7 +854,7 @@ under the License.
                 <configuration>
                   <tasks>
                     <copy overwrite="true" file="${basedir}/src/test/resources/log4j.xml" todir="${basedir}/src/main/webapp/WEB-INF/classes" />
-					          <copy overwrite="true" file="${basedir}/src/test/resources/log4j.xml" todir="${project.build.directory}/classes" />
+                    <copy overwrite="true" file="${basedir}/src/test/resources/log4j.xml" todir="${project.build.directory}/classes" />
                   </tasks>
                 </configuration>
               </execution>
@@ -753,8 +881,8 @@ under the License.
             </configuration>
           </plugin>
         </plugins>
-      </build>      
-    </profile>  
+      </build>
+    </profile>
     <profile>
       <!-- local dev settings use a file which is ignore in svn -->
       <id>local-tomcat-env</id>
@@ -773,7 +901,7 @@ under the License.
             </configuration>
           </plugin>
         </plugins>
-      </build>      
-    </profile>    
+      </build>
+    </profile>
   </profiles>
 </project>

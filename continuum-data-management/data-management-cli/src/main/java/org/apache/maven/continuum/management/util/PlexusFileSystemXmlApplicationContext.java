@@ -19,8 +19,11 @@ package org.apache.maven.continuum.management.util;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.IOException;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.spring.PlexusXmlBeanDefinitionReader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -30,6 +33,11 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
+<<<<<<< HEAD
+=======
+import java.io.IOException;
+
+>>>>>>> refs/remotes/apache/trunk
 public class PlexusFileSystemXmlApplicationContext
     extends FileSystemXmlApplicationContext
 {
@@ -75,11 +83,21 @@ public class PlexusFileSystemXmlApplicationContext
     /**
      * Copied from {@link AbstractXmlApplicationContext}
      * Loads the bean definitions via an XmlBeanDefinitionReader.
+<<<<<<< HEAD
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
      * @see #initBeanDefinitionReader
      * @see #loadBeanDefinitions
      */
+<<<<<<< HEAD
     protected void loadBeanDefinitions( DefaultListableBeanFactory beanFactory ) throws IOException {
+=======
+    protected void loadBeanDefinitions( DefaultListableBeanFactory beanFactory )
+        throws IOException
+    {
+>>>>>>> refs/remotes/apache/trunk
         // Create a new XmlBeanDefinitionReader for the given BeanFactory.
         XmlBeanDefinitionReader beanDefinitionReader = new PlexusXmlBeanDefinitionReader( beanFactory );
 

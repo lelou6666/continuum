@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface InstallationDao
 {
@@ -45,4 +44,6 @@ public interface InstallationDao
     Installation getInstallation( int installationId )
         throws ContinuumStoreException;
 
+    Installation getInstallation( String installationName )
+        throws ContinuumStoreException;
 }

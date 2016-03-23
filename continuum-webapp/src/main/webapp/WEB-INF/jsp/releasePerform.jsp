@@ -26,16 +26,25 @@
     <body>
       <h2><s:text name="releasePerform.section.title"/></h2>
       <s:form action="releasePerform" method="post" validate="true">
+        <tr><td>
         <h3><s:text name="releasePerform.parameters"/></h3>
+        </td></tr>
         <s:hidden name="projectId"/>
         <s:hidden name="releaseId"/>
+        <tr><td>
         <div class="axial">
           <table border="1" cellspacing="2" cellpadding="3" width="100%">
+<<<<<<< HEAD
             <s:textfield label="%{getText('releasePerformFromScm.goals.label')}" name="goals"/>
             <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments"/>
+=======
+            <s:textfield label="%{getText('releasePerformFromScm.goals.label')}" name="goals" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
             <s:checkbox label="%{getText('releasePerformFromScm.useReleaseProfile.label')}" name="useReleaseProfile"/>
           </table>
         </div>
+        </td></tr>
         <s:submit/>
       </s:form>
     </body>

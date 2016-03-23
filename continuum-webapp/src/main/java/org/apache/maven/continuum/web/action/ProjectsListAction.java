@@ -19,29 +19,38 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.buildagent.NoBuildAgentException;
 import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+<<<<<<< HEAD
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.dag.CycleDetectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="projects"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projects", instantiationStrategy = "per-lookup" )
 public class ProjectsListAction
     extends ContinuumActionSupport
 {
@@ -113,8 +122,13 @@ public class ProjectsListAction
                 catch ( ContinuumException e )
                 {
                     logger.error( "Error removing Project with id=" + projectId );
+<<<<<<< HEAD
                     addActionError( getText( "deleteProject.error", "Unable to delete project",
                                              new Integer( projectId ).toString() ) );
+=======
+                    addActionError( getText( "deleteProject.error", "Unable to delete project", new Integer(
+                        projectId ).toString() ) );
+>>>>>>> refs/remotes/apache/trunk
                 }
             }
         }
@@ -170,14 +184,27 @@ public class ProjectsListAction
             {
                 if ( this.getBuildDefinitionId() <= 0 )
                 {
+<<<<<<< HEAD
                     List<BuildDefinition> groupDefaultBDs =
                         getContinuum().getDefaultBuildDefinitionsForProjectGroup( projectGroupId );
+=======
+                    List<BuildDefinition> groupDefaultBDs = getContinuum().getDefaultBuildDefinitionsForProjectGroup(
+                        projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
                     getContinuum().buildProjectsWithBuildDefinition( sortedProjects, groupDefaultBDs );
                 }
                 else
                 {
                     getContinuum().buildProjectsWithBuildDefinition( sortedProjects, buildDefinitionId );
                 }
+<<<<<<< HEAD
+=======
+                addActionMessage( getText( "build.projects.success" ) );
+            }
+            catch ( BuildException be )
+            {
+                addActionError( be.getLocalizedMessage() );
+>>>>>>> refs/remotes/apache/trunk
             }
             catch ( NoBuildAgentException e )
             {

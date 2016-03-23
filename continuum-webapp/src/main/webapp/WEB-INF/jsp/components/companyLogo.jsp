@@ -18,6 +18,7 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
+<<<<<<< HEAD
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <s:set name="companyLogo" value="companyLogo"/>
 <c:if test="${!empty (companyLogo)}">
@@ -34,3 +35,21 @@
     </c:otherwise>
   </c:choose>
 </c:if>
+=======
+<s:if test="companyLogo.length() > 0">
+    <s:if test="companyUrl.length() > 0">
+      <a href="<s:property value="companyUrl"/>">
+        <img src="<s:property value="companyLogo"/>"
+             title="<s:property value="companyName"/>"
+             alt="<s:property value="companyName"/>"
+             border="0" />
+      </a>
+    </s:if>
+    <s:else>
+      <img src="<s:property value="companyLogo"/>"
+           title="<s:property value="companyName"/>"
+           alt="<s:property value="companyName"/>"
+           border="0"/>
+    </s:else>
+</s:if>
+>>>>>>> refs/remotes/apache/trunk

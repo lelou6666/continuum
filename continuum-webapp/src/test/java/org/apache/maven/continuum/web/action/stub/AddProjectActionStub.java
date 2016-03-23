@@ -43,12 +43,20 @@ public class AddProjectActionStub
     {
         return true;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     protected void checkAddProjectGroupAuthorization()
     {
         // skip authorization check
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     protected void checkAddProjectToGroupAuthorization( String projectGroupName )
     {
         // skip authorization check

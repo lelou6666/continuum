@@ -19,15 +19,10 @@ package org.apache.continuum.purge.repository.content;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.purge.repository.utils.FileTypes;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.archiva.common.utils.PathUtil;
 import org.apache.maven.archiva.common.utils.VersionUtil;
 import org.apache.maven.archiva.model.ArtifactReference;
@@ -38,14 +33,18 @@ import org.apache.maven.archiva.repository.content.ArtifactExtensionMapping;
 import org.apache.maven.archiva.repository.content.DefaultPathParser;
 import org.apache.maven.archiva.repository.content.PathParser;
 import org.apache.maven.archiva.repository.layout.LayoutException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Taken from Archiva's ManagedDefaultRepositoryContent and made some few changes.
- *
- * @plexus.component role="org.apache.continuum.purge.repository.content.RepositoryManagedContent"
- * role-hint="default"
- * instantiation-strategy="per-lookup"
  */
+@Component( role = RepositoryManagedContent.class, hint = "default", instantiationStrategy = "per-lookup" )
 public class ManagedDefaultRepositoryContent
     implements RepositoryManagedContent
 {
@@ -59,15 +58,17 @@ public class ManagedDefaultRepositoryContent
 
     private final PathParser defaultPathParser = new DefaultPathParser();
 
-    /**
-     * @plexus.requirement role-hint="file-types"
-     */
+    @Requirement( hint = "file-types" )
     private FileTypes filetypes;
+
+    @Requirement
+    private FileSystemManager fsManager;
 
     private LocalRepository repository;
 
     public void deleteVersion( VersionedReference reference )
         throws ContentNotFoundException
+
     {
         String path = toMetadataPath( reference );
         File projectPath = new File( getRepoRoot(), path );
@@ -77,7 +78,7 @@ public class ManagedDefaultRepositoryContent
         {
             try
             {
-                FileUtils.deleteDirectory( projectDir );
+                fsManager.removeDir( projectDir );
             }
             catch ( IOException e )
             {
@@ -264,7 +265,6 @@ public class ManagedDefaultRepositoryContent
         return foundVersions;
     }
 
-
     public String toMetadataPath( ProjectReference reference )
     {
         StringBuffer path = new StringBuffer();
@@ -336,7 +336,7 @@ public class ManagedDefaultRepositoryContent
      *
      * @param reference the reference to the versioned reference to search within
      * @return the ArtifactReference to the first artifact located within the versioned reference. or null if
-     *         no artifact was found within the versioned reference.
+     * no artifact was found within the versioned reference.
      * @throws IOException     if the versioned reference is invalid (example: doesn't exist, or isn't a directory)
      * @throws LayoutException if the path cannot be converted to an artifact reference.
      */
@@ -356,7 +356,7 @@ public class ManagedDefaultRepositoryContent
         if ( !repoDir.exists() )
         {
             throw new IOException( "Unable to gather the list of snapshot versions on a non-existant directory: " +
-                repoDir.getAbsolutePath() );
+                                       repoDir.getAbsolutePath() );
         }
 
         if ( !repoDir.isDirectory() )

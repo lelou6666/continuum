@@ -19,23 +19,23 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Action that edits a {@link ProjectNotifier} of type 'Mail' from the
  * specified {@link ProjectGroup}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="mailGroupNotifierEdit"
  * @since 1.1
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "mailGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class MailGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
@@ -57,9 +57,15 @@ public class MailGroupNotifierEditAction
             committers = Boolean.parseBoolean( configuration.get( AbstractContinuumNotifier.COMMITTER_FIELD ) );
         }
 
+<<<<<<< HEAD
         if (StringUtils.isNotEmpty(configuration.get(AbstractContinuumNotifier.DEVELOPER_FIELD)))
         {
             developers = Boolean.parseBoolean(configuration.get(AbstractContinuumNotifier.DEVELOPER_FIELD));
+=======
+        if ( StringUtils.isNotEmpty( configuration.get( AbstractContinuumNotifier.DEVELOPER_FIELD ) ) )
+        {
+            developers = Boolean.parseBoolean( configuration.get( AbstractContinuumNotifier.DEVELOPER_FIELD ) );
+>>>>>>> refs/remotes/apache/trunk
         }
     }
 
@@ -74,7 +80,11 @@ public class MailGroupNotifierEditAction
 
         configuration.put( AbstractContinuumNotifier.COMMITTER_FIELD, String.valueOf( committers ) );
 
+<<<<<<< HEAD
         configuration.put(AbstractContinuumNotifier.DEVELOPER_FIELD, String.valueOf(developers));
+=======
+        configuration.put( AbstractContinuumNotifier.DEVELOPER_FIELD, String.valueOf( developers ) );
+>>>>>>> refs/remotes/apache/trunk
 
         notifier.setConfiguration( configuration );
     }
@@ -104,7 +114,11 @@ public class MailGroupNotifierEditAction
         return developers;
     }
 
+<<<<<<< HEAD
     public void setDevelopers(boolean developers)
+=======
+    public void setDevelopers( boolean developers )
+>>>>>>> refs/remotes/apache/trunk
     {
         this.developers = developers;
     }

@@ -19,20 +19,21 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Action that edits a {@link ProjectNotifier} of type 'Wagon' from the
  * specified {@link ProjectGroup}.
  *
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="wagonGroupNotifierEdit"
  */
 
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "wagonGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class WagonGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {

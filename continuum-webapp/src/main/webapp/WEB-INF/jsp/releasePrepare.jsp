@@ -18,40 +18,47 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
       <title><s:text name="releaseProject.page.title"/></title>
     </head>
     <body>
-      <h2><s:text name="releasePrepare.section.title"/></h2>
-      <s:form action="releasePrepare" method="post">
-        <h3><s:text name="releasePrepare.parameters"/></h3>
-        <input type="hidden" name="projectId" value="<s:property value="projectId"/>"/>
-        <input type="hidden" name="autoVersionSubmodules" value="<s:property value="autoVersionSubmodules"/>"/>
+
+      <h3><s:text name="releasePrepare.section.title"/></h3>
+
+      <s:form action="releasePrepare">
+
+        <tr><td>
+          <s:hidden name="projectId" />
+          <s:hidden name="autoVersionSubmodules" />
+        </td></tr>
+
+        <tr><td>
         <div class="axial">
           <table border="1" cellspacing="2" cellpadding="3" width="100%">
-            <s:textfield label="%{getText('releasePrepare.scmUsername.label')}" name="scmUsername"/>
-            <s:password label="%{getText('releasePrepare.scmPassword.label')}" name="scmPassword"/>
-            <s:textfield label="%{getText('releasePrepare.scmTag.label')}" name="scmTag" required="true"/>
-            <c:if test="${!empty (scmTagBase)}">
-              <s:textfield label="%{getText('releasePrepare.scmTagBase.label')}" name="scmTagBase"/>
-            </c:if>
-            <s:textfield label="%{getText('releasePrepare.scmCommentPrefix.label')}" name="scmCommentPrefix"/>
-            <s:textfield label="%{getText('releasePrepare.prepareGoals.label')}" name="prepareGoals" required="true"/>
-            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments"/>
+            <s:textfield label="%{getText('releasePrepare.scmUsername.label')}" name="scmUsername" size="100"/>
+            <s:password label="%{getText('releasePrepare.scmPassword.label')}" name="scmPassword" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.scmTag.label')}" name="scmTag" requiredLabel="true" size="100"/>
+            <s:if test="scmTagBase.length() > 0">
+              <s:textfield label="%{getText('releasePrepare.scmTagBase.label')}" name="scmTagBase" size="100"/>
+            </s:if>
+            <s:textfield label="%{getText('releasePrepare.scmCommentPrefix.label')}" name="scmCommentPrefix" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.prepareGoals.label')}" name="prepareGoals" requiredLabel="true" size="100"/>
+            <s:textfield label="%{getText('releasePrepare.arguments.label')}" name="arguments" size="100"/>
             <s:select label="%{getText('releasePrepare.buildEnvironment.label')}" name="profileId" list="profiles" listValue="name"
                        listKey="id" headerKey="-1" headerValue=""/>
 			      <s:checkbox label="%{getText('releasePrepare.useEditMode.label')}" name="scmUseEditMode" fieldValue="false"/>
             <s:checkbox label="%{getText('releasePrepare.addSchema.label')}" name="addSchema" fieldValue="false"/>
-            <c:if test="${autoVersionSubmodules}">
+            <s:if test="autoVersionSubmodules">
               <s:checkbox label="%{getText('releasePrepare.autoVersionSubmodules.label')}" name="autoVersionSubmodules" disabled="true" fieldValue="false"/>
-            </c:if>
+            </s:if>
           </table>
         </div>
+        </td></tr>
 
         <s:iterator value="projects">
+          <tr><td>
           <h3><s:property value="name"/></h3>
           <input type="hidden" name="projectKeys" value="<s:property value="key"/>">
           <div class="axial">
@@ -72,6 +79,7 @@
               </tr>
              </table>
            </div>
+          </td></tr>
         </s:iterator>
 
         <s:submit value="%{getText('submit')}"/>

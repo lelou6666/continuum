@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
 <html>
@@ -33,9 +31,9 @@
     <meta http-equiv="refresh" content="30"/>
     <script type="text/javascript">
 
-      <c:url var="addM2ProjectUrl" value="/addMavenTwoProjectInput!input.action" />
-      <c:url var="addM1ProjectUrl" value="/addMavenOneProjectInput!input.action" />
-      <c:url var="addProjectUrl" value="/addProjectInput.action" />
+      <s:url var="addM2ProjectUrl" action="addMavenTwoProjectInput" />
+      <s:url var="addM1ProjectUrl" action="addMavenOneProjectInput" />
+      <s:url var="addProjectUrl" action="addProjectInput" />
 
       function goToAddProject()
       {
@@ -82,16 +80,43 @@
       <s:param name="tabName" value="'Summary'"/>
     </s:action>
 
-    <h3><s:text name="projectGroup.information.title"><s:param>${projectGroup.name}</s:param></s:text></h3>
+    <s:if test="hasActionErrors()">
+      <div class="errormessage">
+        <s:actionerror/>
+      </div>
+    </s:if>
+    <s:if test="hasActionMessages()">
+      <div class="warningmessage">
+        <s:actionmessage/>
+      </div>
+    </s:if>
+
+    <h3><s:text name="projectGroup.information.title"><s:param value="projectGroup.name"/></s:text></h3>
+
     <div class="axial">
       <table border="1" cellspacing="2" cellpadding="3" width="100%">
-        <c1:data label="%{getText('projectGroup.name.label')}" name="projectGroup.name"/>
-        <c1:data label="%{getText('projectGroup.groupId.label')}" name="projectGroup.groupId"/>
-        <c1:data label="%{getText('projectGroup.description.label')}" name="projectGroup.description"/>
-        <c1:data label="%{getText('projectGroup.repository.label')}" name="projectGroup.localRepository.name"/>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.name.label'/>:</label></th>
+          <td><s:property value="projectGroup.name"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.groupId.label'/>:</label></th>
+          <td><s:property value="projectGroup.groupId"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.description.label'/>:</label></th>
+          <td><s:property value="projectGroup.description"/></td>
+        </tr>
+        <tr class="b">
+          <th><label class="label"><s:text name='projectGroup.repository.label'/>:</label></th>
+          <td><s:property value="projectGroup.localRepository.name"/></td>
+        </tr>
         <s:if test="url != null">
             <s:url id="projectHomepageUrl" value="%{url}" includeContext="false" includeParams="none"/>
-        	<c1:data label="%{getText('projectGroup.url.label')}" name="url" valueLink="%{'${projectHomepageUrl}'}"/>  
+            <tr class="b">
+              <th><label class="label"><s:text name='projectGroup.url.label'/>:</label></th>
+              <td><a href="${projectHomepageUrl}"><s:property value="url"/></a></td>
+            </tr>
         </s:if>
       </table>
     </div>
@@ -99,6 +124,7 @@
     <h3><s:text name="projectGroup.scmRoot.title"/></h3>
     <ec:table items="projectScmRoots"
               var="projectScmRoot"
+              autoIncludeParameters="false"
               showExports="false"
               showPagination="false"
               showStatusBar="false"
@@ -113,43 +139,35 @@
     <redback:ifAnyAuthorized permissions="continuum-build-group,continuum-remove-group" resource="${projectGroup.name}">
       <h3><s:text name="projectGroup.actions.title"/></h3>
 
-      <c:if test="${!empty actionErrors}">
-        <div class="errormessage">
-          <s:iterator value="actionErrors">
-            <p><s:property/></p>
-          </s:iterator>
-        </div>
-      </c:if>
-
       <div class="functnbar3">
         <table>
           <tr>
             <td>
               <table>
                 <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
-                  <form action="buildProjectGroup.action" method="post">
-                    <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
+                  <s:form action="buildProjectGroup" theme="simple">
+                    <s:hidden name="projectGroupId" />
                     <s:select theme="simple" name="buildDefinitionId" list="buildDefinitions"
                                listKey="value" listValue="key" headerKey="-1" headerValue="%{getText('projectGroup.buildDefinition.label')}" />                    
                     <input type="submit" name="build" value="<s:text name="projectGroup.buildGroup"/>"/>
-                  </form>
+                  </s:form>
                 </redback:ifAuthorized>
               </table>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
-                <form action="editProjectGroup.action" method="post">
-                  <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
-                  <input type="submit" name="edit" value="<s:text name="edit"/>"/>
-                </form>
+                <s:form action="editProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="edit" value="%{getText('edit')}"/>
+                </s:form>
               </redback:ifAuthorized>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-build-group" resource="${projectGroup.name}">
-                <form action="releaseProjectGroup.action" method="post">
-                  <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
-                  <input type="submit" name="release" value="<s:text name="release"/>"/>
-                </form>
+                <s:form action="releaseProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="release" value="%{getText('release')}" />
+                </s:form>
               </redback:ifAuthorized>
             </td>
             <td>
@@ -169,18 +187,18 @@
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-remove-group" resource="${projectGroup.name}">
-                <form action="removeProjectGroup.action" method="post">
-                  <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
-                  <input type="submit" name="remove" value="<s:text name="projectGroup.deleteGroup"/>"/>
-                </form>
+                <s:form action="confirmRemoveProjectGroup" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="remove" value="%{getText('projectGroup.deleteGroup')}" />
+                </s:form>
               </redback:ifAuthorized>
             </td>
             <td>
               <redback:ifAuthorized permission="continuum-build-project-in-group" resource="${projectGroup.name}">
-                <form action="cancelGroupBuild.action" method="post">
-                  <input type="hidden" name="projectGroupId" value="<s:property value="projectGroupId"/>"/>
-                  <input type="submit" name="cancel" value="<s:text name="projectGroup.cancelGroupBuild"/>"/>
-                </form>
+                <s:form action="cancelGroupBuild" theme="simple">
+                  <s:hidden name="projectGroupId" />
+                  <s:submit name="cancel" value="%{getText('projectGroup.cancelGroupBuild')}" />
+                </s:form>
               </redback:ifAuthorized>
             </td>
           </tr>
@@ -189,8 +207,8 @@
     </redback:ifAnyAuthorized>
 
     <s:action name="projectSummary" executeResult="true" namespace="component">
-      <s:param name="projectGroupId">${projectGroupId}</s:param>
-      <s:param name="projectGroupName">${projectGroup.name}</s:param>
+      <s:param name="projectGroupId" value="projectGroupId" />
+      <s:param name="projectGroupName" value="projectGroup.name" />
     </s:action>
 
   </div>

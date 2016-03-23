@@ -19,11 +19,14 @@ package org.apache.maven.continuum;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.buildagent.NoBuildAgentException;
 import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
 import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
@@ -52,10 +55,15 @@ import org.apache.maven.continuum.profile.ProfileService;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface Continuum
 {
@@ -107,7 +115,6 @@ public interface Continuum
 
     void removeProject( int projectId )
         throws ContinuumException;
-
 
     /**
      * @param projectId
@@ -161,9 +168,12 @@ public interface Continuum
 
     void buildProjects( BuildTrigger buildTrigger )
         throws ContinuumException, NoBuildAgentException, NoBuildAgentInGroupException;
+<<<<<<< HEAD
 
     void buildProjects( BuildTrigger buildTrigger, int buildDefinitionId )
         throws ContinuumException, NoBuildAgentException, NoBuildAgentInGroupException;
+=======
+>>>>>>> refs/remotes/apache/trunk
 
     void buildProjects( Schedule schedule )
         throws ContinuumException;
@@ -183,7 +193,12 @@ public interface Continuum
     public void buildProjectGroup( int projectGroupId, BuildTrigger buildTrigger )
         throws ContinuumException, NoBuildAgentException, NoBuildAgentInGroupException;
 
+<<<<<<< HEAD
     public void buildProjectGroupWithBuildDefinition( int projectGroupId, int buildDefinitionId, BuildTrigger buildTrigger )
+=======
+    public void buildProjectGroupWithBuildDefinition( int projectGroupId, int buildDefinitionId,
+                                                      BuildTrigger buildTrigger )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException, NoBuildAgentException, NoBuildAgentInGroupException;
 
     // ----------------------------------------------------------------------
@@ -193,15 +208,12 @@ public interface Continuum
     BuildResult getBuildResult( int buildId )
         throws ContinuumException;
 
-    BuildResult getBuildResultByBuildNumber( int projectId, int buildNumber )
-        throws ContinuumException;
-
     String getBuildOutput( int projectId, int buildId )
         throws ContinuumException;
 
     long getNbBuildResultsForProject( int projectId );
 
-    Collection<BuildResult> getBuildResultsForProject( int projectId )
+    Collection<BuildResult> getBuildResultsForProject( int projectId, int offset, int length )
         throws ContinuumException;
 
     List<ChangeSet> getChangesSinceLastSuccess( int projectId, int buildResultId )
@@ -209,6 +221,9 @@ public interface Continuum
 
     void removeBuildResult( int buildId )
         throws ContinuumException;
+
+    List<BuildResult> getBuildResultsInRange( Collection<Integer> projectGroupId, Date fromDate, Date toDate, int state,
+                                              String triggeredBy, int offset, int length );
 
     // ----------------------------------------------------------------------
     // Projects
@@ -296,7 +311,6 @@ public interface Continuum
                                                        boolean useCredentialsCache )
         throws ContinuumException;
 
-
     /**
      * Add a Maven 2 project to the list of projects.
      *
@@ -316,12 +330,21 @@ public interface Continuum
     /**
      * Add a Maven 2 project to the list of projects.
      *
+<<<<<<< HEAD
      * @param metadataUrl              url of the pom.xml
      * @param projectGroupId           id of the project group to use
      * @param checkProtocol            check if the protocol is allowed, use false if the pom is uploaded
      * @param useCredentialsCache      whether to use cached scm account credentials or not
      * @param loadRecursiveProjects    if multi modules project record all projects (if false only root project added)
      * @param buildDefintionTemplateId buildDefintionTemplateId
+=======
+     * @param metadataUrl               url of the pom.xml
+     * @param projectGroupId            id of the project group to use
+     * @param checkProtocol             check if the protocol is allowed, use false if the pom is uploaded
+     * @param useCredentialsCache       whether to use cached scm account credentials or not
+     * @param loadRecursiveProjects     if multi modules project record all projects (if false only root project added)
+     * @param buildDefintionTemplateId  buildDefintionTemplateId
+>>>>>>> refs/remotes/apache/trunk
      * @param checkoutInSingleDirectory TODO
      * @return a holder with the projects, project groups and errors occurred during the project adding
      * @throws ContinuumException
@@ -329,7 +352,12 @@ public interface Continuum
     public ContinuumProjectBuildingResult addMavenTwoProject( String metadataUrl, int projectGroupId,
                                                               boolean checkProtocol, boolean useCredentialsCache,
                                                               boolean loadRecursiveProjects,
+<<<<<<< HEAD
                                                               int buildDefintionTemplateId, boolean checkoutInSingleDirectory )
+=======
+                                                              int buildDefintionTemplateId,
+                                                              boolean checkoutInSingleDirectory )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException;
 
     /**
@@ -452,7 +480,6 @@ public interface Continuum
 
     /**
      * returns the default build definition for the project
-     * <p/>
      * 1) if project has default build definition, return that
      * 2) otherwise return default build definition for parent project group
      *
@@ -615,6 +642,9 @@ public interface Continuum
         throws ContinuumException;
 
     public void startup()
+        throws ContinuumException;
+
+    ContinuumReleaseResult addContinuumReleaseResult( int projectId, String releaseId, String releaseType )
         throws ContinuumException;
 
     ContinuumReleaseResult addContinuumReleaseResult( ContinuumReleaseResult releaseResult )

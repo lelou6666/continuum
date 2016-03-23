@@ -24,9 +24,12 @@ import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
 import org.apache.continuum.release.distributed.DistributedReleaseUtil;
 import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
+import org.apache.continuum.release.utils.ReleaseHelper;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
 import org.apache.continuum.web.action.AbstractReleaseAction;
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.system.Profile;
@@ -34,25 +37,21 @@ import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.release.DefaultReleaseManagerListener;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
 import org.apache.maven.shared.release.ReleaseResult;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author Edwin Punzalan
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="releasePerform"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releasePerform", instantiationStrategy = "per-lookup" )
 public class ReleasePerformAction
     extends AbstractReleaseAction
 {
@@ -86,6 +85,12 @@ public class ReleasePerformAction
 
     private int profileId;
 
+    @Requirement
+    private ReleaseHelper releaseHelper;
+
+    @Requirement
+    private LocalRepositoryHelper localRepositoryHelper;
+
     private void init()
         throws Exception
     {
@@ -98,10 +103,12 @@ public class ReleasePerformAction
         else
         {
             Project project = getContinuum().getProject( projectId );
-    
+
             String workingDirectory = getContinuum().getWorkingDirectory( project.getId() ).getPath();
-    
-            getReleasePluginParameters( workingDirectory, "pom.xml" );
+
+            ArtifactRepository localRepo =
+                localRepositoryHelper.getLocalRepository( project.getProjectGroup().getLocalRepository() );
+            getReleasePluginParameters( localRepo, workingDirectory, "pom.xml" );
         }
     }
 
@@ -123,11 +130,11 @@ public class ReleasePerformAction
         }
         catch ( BuildAgentConfigurationException e )
         {
-            List<String> args = new ArrayList<String>();
+            List<Object> args = new ArrayList<Object>();
             args.add( e.getMessage() );
 
-            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) ) ;
-            return ERROR;
+            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) );
+            return RELEASE_ERROR;
         }
 
         populateFromProject();
@@ -157,65 +164,38 @@ public class ReleasePerformAction
         }
         catch ( BuildAgentConfigurationException e )
         {
-            List<String> args = new ArrayList<String>();
+            List<Object> args = new ArrayList<Object>();
             args.add( e.getMessage() );
 
-            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) ) ;
-            return ERROR;
+            addActionError( getText( "distributedBuild.releasePerform.input.error", args ) );
+            return RELEASE_ERROR;
         }
-
 
         return SUCCESS;
     }
 
     /**
      * FIXME olamy is it really the good place to do that ? should be moved to continuum-release
-     * TODO handle remoteTagging  
+     * TODO handle remoteTagging
      */
-    private void getReleasePluginParameters( String workingDirectory, String pomFilename )
+    private void getReleasePluginParameters( ArtifactRepository localRepo, String workingDirectory, String pomFilename )
         throws Exception
     {
-        //TODO: Use the model reader so we'll can get the plugin configuration from parent too
-        MavenXpp3Reader pomReader = new MavenXpp3Reader();
-        Model model = pomReader.read( new FileReader( new File( workingDirectory, pomFilename ) ) );
+        Map<String, Object> params = releaseHelper.extractPluginParameters( localRepo, workingDirectory, pomFilename );
 
-        if ( model.getBuild() != null && model.getBuild().getPlugins() != null )
+        if ( params.get( "use-release-profile" ) != null )
         {
-            for ( Plugin plugin : (List<Plugin>) model.getBuild().getPlugins() )
-            {
-                if ( plugin.getGroupId() != null && plugin.getGroupId().equals( "org.apache.maven.plugins" ) &&
-                    plugin.getArtifactId() != null && plugin.getArtifactId().equals( "maven-release-plugin" ) )
-                {
-                    Xpp3Dom dom = (Xpp3Dom) plugin.getConfiguration();
+            useReleaseProfile = (Boolean) params.get( "use-release-profile" );
+        }
 
-                    if ( dom != null )
-                    {
-                        Xpp3Dom configuration = dom.getChild( "useReleaseProfile" );
-                        if ( configuration != null )
-                        {
-                            useReleaseProfile = Boolean.valueOf( configuration.getValue() );
-                        }
+        if ( params.get( "perform-goals" ) != null )
+        {
+            goals = (String) params.get( "perform-goals" );
+        }
 
-                        configuration = dom.getChild( "goals" );
-                        if ( configuration != null )
-                        {
-                            goals = configuration.getValue();
-                            if ( model.getDistributionManagement() != null &&
-                                model.getDistributionManagement().getSite() != null )
-                            {
-                                goals += " site-deploy";
-                            }
-                        }
-
-                        configuration = dom.getChild( "arguments" );
-                        if ( configuration != null )
-                        {
-                            arguments = configuration.getValue();
-                        }
-
-                    }
-                }
-            }
+        if ( params.get( "arguments" ) != null )
+        {
+            arguments = (String) params.get( "arguments" );
         }
     }
 
@@ -237,29 +217,42 @@ public class ReleasePerformAction
         
         String username = getPrincipal();
 
+        String username = getPrincipal();
+
         if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
             DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
 
             try
             {
+<<<<<<< HEAD
                 releaseManager.releasePerform( projectId, releaseId, goals, arguments, useReleaseProfile, repository, username );
+=======
+                releaseManager.releasePerform( projectId, releaseId, goals, arguments, useReleaseProfile, repository,
+                                               username );
+>>>>>>> refs/remotes/apache/trunk
             }
             catch ( BuildAgentConfigurationException e )
             {
-                List<String> args = new ArrayList<String>();
+                List<Object> args = new ArrayList<Object>();
                 args.add( e.getMessage() );
 
                 addActionError( getText( "distributedBuild.releasePerform.release.error", args ) );
-                return ERROR;
+                return RELEASE_ERROR;
             }
         }
         else
         {
             listener = new DefaultReleaseManagerListener();
+<<<<<<< HEAD
             
             listener.setUsername( username );
     
+=======
+
+            listener.setUsername( username );
+
+>>>>>>> refs/remotes/apache/trunk
             ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
 
             //todo should be configurable
@@ -289,26 +282,38 @@ public class ReleasePerformAction
             LocalRepository repository = project.getProjectGroup().getLocalRepository();
 
             DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
-            Map<String, String> environments = new HashMap<String, String>();
-            
+
+            Profile profile = null;
             if ( profileId != -1 )
             {
+<<<<<<< HEAD
                 Profile profile = getContinuum().getProfileService().getProfile( profileId );
                 environments = getEnvironments( profile, releaseManager.getDefaultBuildagent( projectId ) );
+=======
+                profile = getContinuum().getProfileService().getProfile( profileId );
+>>>>>>> refs/remotes/apache/trunk
             }
+            Map<String, String> environments =
+                getEnvironments( profile, releaseManager.getDefaultBuildagent( projectId ) );
 
             try
             {
+<<<<<<< HEAD
                 releaseId = releaseManager.releasePerformFromScm( projectId, goals, arguments, useReleaseProfile, repository, scmUrl, 
                                                                   scmUsername, scmPassword, scmTag, scmTagBase, environments, getPrincipal() );
+=======
+                releaseId = releaseManager.releasePerformFromScm( projectId, goals, arguments, useReleaseProfile,
+                                                                  repository, scmUrl, scmUsername, scmPassword, scmTag,
+                                                                  scmTagBase, environments, getPrincipal() );
+>>>>>>> refs/remotes/apache/trunk
             }
             catch ( BuildAgentConfigurationException e )
             {
-                List<String> args = new ArrayList<String>();
+                List<Object> args = new ArrayList<Object>();
                 args.add( e.getMessage() );
 
                 addActionError( getText( "distributedBuild.releasePerform.release.error", args ) );
-                return ERROR;
+                return RELEASE_ERROR;
             }
 
             return SUCCESS;
@@ -316,28 +321,28 @@ public class ReleasePerformAction
         else
         {
             ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
-    
+
             ContinuumReleaseDescriptor descriptor = new ContinuumReleaseDescriptor();
             descriptor.setScmSourceUrl( scmUrl );
             descriptor.setScmUsername( scmUsername );
             descriptor.setScmPassword( scmPassword );
             descriptor.setScmReleaseLabel( scmTag );
             descriptor.setScmTagBase( scmTagBase );
-    
+
             if ( profileId != -1 )
             {
                 Profile profile = getContinuum().getProfileService().getProfile( profileId );
                 descriptor.setEnvironments( getEnvironments( profile, null ) );
             }
-    
+
             do
             {
                 releaseId = String.valueOf( System.currentTimeMillis() );
             }
             while ( releaseManager.getPreparedReleases().containsKey( releaseId ) );
-    
+
             releaseManager.getPreparedReleases().put( releaseId, descriptor );
-    
+
             return execute();
         }
     }
@@ -367,9 +372,15 @@ public class ReleasePerformAction
     {
         useReleaseProfile = DistributedReleaseUtil.getUseReleaseProfile( context, useReleaseProfile );
 
-        goals = DistributedReleaseUtil.getGoals( context, goals );
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getPerformGoals( context, goals ) ) )
+        {
+            goals = DistributedReleaseUtil.getPerformGoals( context, goals );
+        }
 
-        arguments = DistributedReleaseUtil.getArguments( context, "" );
+        if ( StringUtils.isNotEmpty( DistributedReleaseUtil.getArguments( context, "" ) ) )
+        {
+            arguments = DistributedReleaseUtil.getArguments( context, "" );
+        }
     }
 
     public String getReleaseId()

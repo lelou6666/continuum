@@ -1,25 +1,55 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
 
 <continuum-buildagent-configuration>
   <continuumServerUrl>http://localhost:8080/continuum/master-xmlrpc</continuumServerUrl>
   <buildOutputDirectory>data/build-output-directory</buildOutputDirectory>
   <workingDirectory>data/working-directory</workingDirectory>
+  <!-- This value must match the 'Shared Secret Password' configured for your continuum master. -->
+  <sharedSecretPassword></sharedSecretPassword>
+  <!--
+    Builds sent from a master specifying a local repository name will use localRepository configuration matching its
+    name *exactly*. If the named repository is not found, it will use the default user's settings. For example, with no
+    configured localRepositories:
+
+    master requests build using 'DEFAULT' or 'another'  ->  agent uses ${settings.localRepository}
+
+<<<<<<< HEAD
+<continuum-buildagent-configuration>
+  <continuumServerUrl>http://localhost:8080/continuum/master-xmlrpc</continuumServerUrl>
+  <buildOutputDirectory>data/build-output-directory</buildOutputDirectory>
+  <workingDirectory>data/working-directory</workingDirectory>
+=======
+    While building will default to user settings, purging is only supported for configured repositories. For example,
+    with no configured localRepositories:
+
+    master sends purge using 'DEFAULT'  ->  agent fails to purge anything
+
+    In contrast, if you configure the DEFAULT repository the purge will be attempted.
+   -->
+  <!--localRepositories>
+    <localRepository>
+      <name>DEFAULT</name>
+      <location>...</location>
+      <layout>default</layout>
+    </localRepository>
+  </localRepositories-->
+>>>>>>> refs/remotes/apache/trunk
 </continuum-buildagent-configuration>

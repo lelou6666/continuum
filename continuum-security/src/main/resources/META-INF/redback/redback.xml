@@ -18,6 +18,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <redback-role-model>
   <modelVersion>1.0.0</modelVersion>
   <applications>
@@ -29,7 +30,7 @@
           <id>continuum-manage-queues</id>
           <name>continuum-manage-queues</name>
           <description>Manage Continuum Queues</description>
-        </operation>    
+        </operation>
         <operation>
           <id>continuum-view-queues</id>
           <name>continuum-view-queues</name>
@@ -39,7 +40,7 @@
           <id>continuum-manage-build-templates</id>
           <name>continuum-manage-build-templates</name>
           <description>Manage Continuum Build Definition Templates</description>
-        </operation>    
+        </operation>
         <operation>
           <id>continuum-manage-schedules</id>
           <name>continuum-manage-schedules</name>
@@ -174,7 +175,7 @@
           <id>continuum-manage-profiles</id>
           <name>continuum-manage-profiles</name>
           <description>Continuum Manage Installations</description>
-        </operation>        
+        </operation>
         <operation>
           <id>continuum-manage-repositories</id>
           <name>continuum-manage-repositories</name>
@@ -199,6 +200,11 @@
           <id>continuum-manage-parallel-builds</id>
           <name>continuum-manage-parallel-builds</name>
           <description>Continuum Manage Parallel Builds</description>
+        </operation>
+        <operation>
+          <id>continuum-view-report</id>
+          <name>continuum-view-report</name>
+          <description>Continuum View Report</description>
         </operation>
       </operations>
       <roles>
@@ -249,6 +255,7 @@
             <childRole>continuum-manage-queues</childRole>
             <childRole>continuum-manage-repositories</childRole>
             <childRole>continuum-manage-purging</childRole>
+            <childRole>continuum-reporter</childRole>
           </childRoles>
         </role>
         <role>
@@ -263,7 +270,7 @@
               <permanent>true</permanent>
               <operation>continuum-manage-users</operation>
               <resource>global</resource>
-            </permission>        
+            </permission>
           </permissions>
           <parentRoles>
             <parentRole>user-administrator</parentRole>
@@ -281,14 +288,14 @@
               <permanent>true</permanent>
               <operation>continuum-add-group</operation>
               <resource>global</resource>
-            </permission> 
+            </permission>
             <permission>
               <id>continuum-manage-schedules</id>
               <name>Manage Continuum Schedules</name>
               <permanent>true</permanent>
               <operation>continuum-manage-schedules</operation>
               <resource>global</resource>
-            </permission>        
+            </permission>
           </permissions>
           <childRoles>
             <childRole>continuum-group-project-developer</childRole>
@@ -339,7 +346,7 @@
               <permanent>true</permanent>
               <operation>continuum-manage-installations</operation>
               <resource>global</resource>
-            </permission>        
+            </permission>
           </permissions>
         </role>
         <role>
@@ -354,9 +361,9 @@
               <permanent>true</permanent>
               <operation>continuum-manage-profiles</operation>
               <resource>global</resource>
-            </permission>        
+            </permission>
           </permissions>
-        </role> 
+        </role>
         <role>
           <id>continuum-manage-schedules</id>
           <name>Continuum Manage Scheduling</name>
@@ -365,12 +372,12 @@
           <permissions>
             <permission>
               <id>continuum-manage-schedules</id>
-              <name>Continuum Manage Scheduling</name>  
+              <name>Continuum Manage Scheduling</name>
               <permanent>true</permanent>
               <operation>continuum-manage-schedules</operation>
               <resource>global</resource>
             </permission>
-          </permissions>		
+          </permissions>
         </role>
         <role>
           <id>continuum-manage-build-templates</id>
@@ -384,9 +391,9 @@
               <permanent>true</permanent>
               <operation>continuum-manage-build-templates</operation>
               <resource>global</resource>
-            </permission>  
+            </permission>
           </permissions>
-        </role>    
+        </role>
         <role>
           <id>continuum-manage-queues</id>
           <name>Continuum Manage Queues</name>
@@ -400,15 +407,15 @@
               <operation>continuum-manage-queues</operation>
               <resource>global</resource>
             </permission>
-                      <permission>
-            <id>continuum-view-queues</id>
-            <name>Continuum View Queues</name>
-            <permanent>true</permanent>
-            <operation>continuum-view-queues</operation>
-            <resource>global</resource>
-          </permission>
+            <permission>
+              <id>continuum-view-queues</id>
+              <name>Continuum View Queues</name>
+              <permanent>true</permanent>
+              <operation>continuum-view-queues</operation>
+              <resource>global</resource>
+            </permission>
           </permissions>
-        </role>   
+        </role>
         <role>
           <id>continuum-manage-repositories</id>
           <name>Continuum Manage Local Repositories</name>
@@ -435,6 +442,35 @@
               <name>Manage Continuum Purging</name>
               <permanent>true</permanent>
               <operation>continuum-manage-purging</operation>
+              <resource>global</resource>
+            </permission>
+          </permissions>
+        </role>
+        <role>
+          <id>continuum-manage-distributed-builds</id>
+          <name>Continuum Manage Distributed Builds</name>
+          <assignable>true</assignable>
+          <permanent>true</permanent>
+          <permissions>
+            <permission>
+              <id>continuum-manage-distributed-builds</id>
+              <name>Manage Continuum Distributed Builds</name>
+              <permanent>true</permanent>
+              <operation>continuum-manage-distributed-builds</operation>
+              <resource>global</resource>
+            </permission>
+          </permissions>
+        </role>
+        <role>
+          <id>continuum-reporter</id>
+          <name>Continuum Reporter</name>
+          <assignable>true</assignable>
+          <permanent>true</permanent>
+          <permissions>
+            <permission>
+              <id>continuum-view-report</id>
+              <name>Continuum View Report</name>
+              <operation>continuum-view-report</operation>
               <resource>global</resource>
             </permission>
           </permissions>
@@ -616,7 +652,7 @@
               <operation>continuum-view-queues</operation>
               <resource>global</resource>
             </permission>
-          </permissions>  	  
+          </permissions>
           <parentRoles>
             <parentRole>continuum-group-project-user</parentRole>
           </parentRoles>

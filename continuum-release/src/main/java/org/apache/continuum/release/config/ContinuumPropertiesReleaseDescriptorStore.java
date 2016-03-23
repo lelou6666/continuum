@@ -19,6 +19,14 @@ package org.apache.continuum.release.config;
  * under the License.
  */
 
+import org.apache.maven.model.Scm;
+import org.apache.maven.shared.release.config.PropertiesReleaseDescriptorStore;
+import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.apache.maven.shared.release.config.ReleaseDescriptorStoreException;
+import org.apache.maven.shared.release.config.ReleaseUtils;
+import org.codehaus.plexus.util.IOUtil;
+import org.eclipse.jetty.util.security.Password;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,13 +40,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-
-import org.apache.maven.model.Scm;
-import org.apache.maven.shared.release.config.PropertiesReleaseDescriptorStore;
-import org.apache.maven.shared.release.config.ReleaseDescriptor;
-import org.apache.maven.shared.release.config.ReleaseDescriptorStoreException;
-import org.apache.maven.shared.release.config.ReleaseUtils;
-import org.codehaus.plexus.util.IOUtil;
 
 public class ContinuumPropertiesReleaseDescriptorStore
     extends PropertiesReleaseDescriptorStore
@@ -73,7 +74,16 @@ public class ContinuumPropertiesReleaseDescriptorStore
         releaseDescriptor.setCompletedPhase( properties.getProperty( "completedPhase" ) );
         releaseDescriptor.setScmSourceUrl( properties.getProperty( "scm.url" ) );
         releaseDescriptor.setScmUsername( properties.getProperty( "scm.username" ) );
-        releaseDescriptor.setScmPassword( properties.getProperty( "scm.password" ) );
+
+        String password = properties.getProperty( "scm.password" );
+        if ( password != null && password.startsWith( "OBF:" ) )
+        {
+            releaseDescriptor.setScmPassword( Password.deobfuscate( password ) );
+        }
+        else
+        {
+            releaseDescriptor.setScmPassword( password );
+        }
         releaseDescriptor.setScmPrivateKey( properties.getProperty( "scm.privateKey" ) );
         releaseDescriptor.setScmPrivateKeyPassPhrase( properties.getProperty( "scm.passphrase" ) );
         releaseDescriptor.setScmTagBase( properties.getProperty( "scm.tagBase" ) );
@@ -83,6 +93,10 @@ public class ContinuumPropertiesReleaseDescriptorStore
         releaseDescriptor.setPomFileName( properties.getProperty( "exec.pomFileName" ) );
         releaseDescriptor.setPreparationGoals( properties.getProperty( "preparationGoals" ) );
         releaseDescriptor.setExecutable( properties.getProperty( "build.executable" ) );
+<<<<<<< HEAD
+=======
+        releaseDescriptor.setReleaseBy( properties.getProperty( "release.by" ) );
+>>>>>>> refs/remotes/apache/trunk
 
         loadResolvedDependencies( properties, releaseDescriptor );
 
@@ -118,8 +132,8 @@ public class ContinuumPropertiesReleaseDescriptorStore
                         {
                             Scm scm = new Scm();
                             scm.setConnection( properties.getProperty( "project.scm." + key + ".connection" ) );
-                            scm.setDeveloperConnection(
-                                properties.getProperty( "project.scm." + key + ".developerConnection" ) );
+                            scm.setDeveloperConnection( properties.getProperty(
+                                "project.scm." + key + ".developerConnection" ) );
                             scm.setUrl( properties.getProperty( "project.scm." + key + ".url" ) );
                             scm.setTag( properties.getProperty( "project.scm." + key + ".tag" ) );
 
@@ -130,8 +144,8 @@ public class ContinuumPropertiesReleaseDescriptorStore
             }
             else if ( property.startsWith( "build.env." ) )
             {
-                releaseDescriptor.mapEnvironments( property.substring( "build.env.".length() ),
-                                                   properties.getProperty( property ) );
+                releaseDescriptor.mapEnvironments( property.substring( "build.env.".length() ), properties.getProperty(
+                    property ) );
             }
         }
 
@@ -157,7 +171,8 @@ public class ContinuumPropertiesReleaseDescriptorStore
         }
         if ( config.getScmPassword() != null )
         {
-            properties.setProperty( "scm.password", config.getScmPassword() );
+            // obfuscate password
+            properties.setProperty( "scm.password", Password.obfuscate( config.getScmPassword() ) );
         }
         if ( config.getScmPrivateKey() != null )
         {
@@ -254,6 +269,15 @@ public class ContinuumPropertiesReleaseDescriptorStore
             properties.setProperty( "build.executable", config.getExecutable() );
         }
 
+<<<<<<< HEAD
+=======
+        // release by
+        if ( config.getReleaseBy() != null )
+        {
+            properties.setProperty( "release.by", config.getReleaseBy() );
+        }
+
+>>>>>>> refs/remotes/apache/trunk
         OutputStream outStream = null;
         //noinspection OverlyBroadCatchBlock
         try
@@ -286,10 +310,10 @@ public class ContinuumPropertiesReleaseDescriptorStore
 
             Map versionMap = (Map) currentEntry.getValue();
 
-            prop.setProperty( "dependency." + currentEntry.getKey() + ".release",
-                              (String) versionMap.get( ReleaseDescriptor.RELEASE_KEY ) );
-            prop.setProperty( "dependency." + currentEntry.getKey() + ".development",
-                              (String) versionMap.get( ReleaseDescriptor.DEVELOPMENT_KEY ) );
+            prop.setProperty( "dependency." + currentEntry.getKey() + ".release", (String) versionMap.get(
+                ReleaseDescriptor.RELEASE_KEY ) );
+            prop.setProperty( "dependency." + currentEntry.getKey() + ".development", (String) versionMap.get(
+                ReleaseDescriptor.DEVELOPMENT_KEY ) );
         }
     }
 

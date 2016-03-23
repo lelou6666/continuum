@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,16 +19,16 @@ package org.apache.continuum.web.test;
  * under the License.
  */
 
-import org.apache.continuum.web.test.parent.AbstractConfigurationTest;
+import org.apache.continuum.web.test.parent.AbstractAdminTest;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "configuration" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = { "configuration" } )
 public class ConfigurationTest
-    extends AbstractConfigurationTest
+    extends AbstractAdminTest
 {
     private String WORKING_DIRECTORY;
 
@@ -83,5 +83,151 @@ public class ConfigurationTest
     {
         setMaxBuildQueue( 0 );
         assertTextPresent( "Number of Allowed Builds in Parallel must be greater than zero" );
+    }
+
+    public void testSetConfigurationWithXSS()
+    {
+        String invalidString = "<script>alert('gotcha')</script>";
+        goToConfigurationPage();
+        submitConfiguration( invalidString, invalidString, invalidString, invalidString, invalidString, invalidString,
+                             true, false );
+        assertTextPresent( "Working directory contains invalid characters." );
+        assertTextPresent( "Build output directory contains invalid characters." );
+        assertTextPresent( "Release output directory contains invalid characters." );
+        assertTextPresent( "Deployment repository directory contains invalid characters." );
+        assertTextPresent( "You must define a valid URL." );
+    }
+
+    public void testSetFooterXSS()
+    {
+        goToAppearancePage();
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=\"javascript:alert('XSS');\"> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=JaVaScRiPt:alert('XSS')> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=javascript:alert(&quot;XSS&quot;)> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        // unicode
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        // utf-8
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        // hex encoding
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=\"jav    ascript:alert('XSS');\"> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <IMG SRC=\"jav&#x09;ascript:alert('XSS');\"> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+
+        setFieldValue( "saveFooter_footer",
+                       "Copyright <STYLE>@import'http://ha.ckers.org/xss.css';</STYLE> 2005-2011&nbsp;The Apache Software Foundation" );
+        submit();
+        Assert.assertFalse( getSelenium().isAlertPresent() );
+        assertTextPresent( "Copyright 2005-2011 The Apache Software Foundation" );
+    }
+
+    void assertEditedConfigurationPage( String working, String buildOutput, String releaseOutput,
+                                        String deploymentRepository, String baseUrl, String numberBuildParallel )
+    {
+        assertPage( "Continuum - Configuration" );
+        assertTextPresent( "General Configuration " );
+        assertTextPresent( "Working Directory" );
+        assertElementNotPresent( "workingDirectory" );
+        assertTextPresent( working );
+        assertTextPresent( "Build Output Directory" );
+        assertElementNotPresent( "buildOutputDirectory" );
+        assertTextPresent( buildOutput );
+        assertTextPresent( "Release Output Directory" );
+        assertElementNotPresent( "releaseOutputDirectory" );
+        assertTextPresent( releaseOutput );
+        assertTextPresent( "Deployment Repository Directory" );
+        assertElementNotPresent( "deploymentRepositoryDirectory" );
+        assertTextPresent( deploymentRepository );
+        assertTextPresent( "Base URL" );
+        assertElementNotPresent( "baseUrl" );
+        assertTextPresent( baseUrl );
+        assertTextPresent( "Number of Allowed Builds in Parallel" );
+        assertElementNotPresent( "numberOfAllowedBuildsinParallel" );
+        assertTextPresent( numberBuildParallel );
+        assertTextPresent( "Enable Distributed Builds" );
+        assertElementNotPresent( "distributedBuildEnabled" );
+        assertButtonWithValuePresent( "Edit" );
+
+    }
+
+    protected void submitConfiguration( String working, String buildOutput, String releaseOutput,
+                                        String deploymentRepository, String baseUrl, String numberBuildParallel,
+                                        boolean distributed, boolean success )
+    {
+        setFieldValue( "workingDirectory", working );
+        setFieldValue( "buildOutputDirectory", buildOutput );
+        setFieldValue( "releaseOutputDirectory", releaseOutput );
+        setFieldValue( "deploymentRepositoryDirectory", deploymentRepository );
+        setFieldValue( "baseUrl", baseUrl );
+        setFieldValue( "numberOfAllowedBuildsinParallel", numberBuildParallel );
+        setFieldValue( "sharedSecretPassword", SHARED_SECRET );
+        if ( distributed )
+        {
+            checkField( "distributedBuildEnabled" );
+        }
+        else
+        {
+            uncheckField( "distributedBuildEnabled" );
+        }
+        submit();
+        if ( success )
+        {
+            assertEditedConfigurationPage( working, buildOutput, releaseOutput, deploymentRepository, baseUrl,
+                                           numberBuildParallel );
+        }
+        else
+        {
+            assertEditConfigurationPage();
+        }
     }
 }

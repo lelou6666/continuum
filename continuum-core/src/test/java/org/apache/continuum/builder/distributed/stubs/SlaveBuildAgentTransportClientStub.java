@@ -19,10 +19,18 @@ package org.apache.continuum.builder.distributed.stubs;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.Map;
 
 import org.apache.continuum.distributed.transport.slave.SlaveBuildAgentTransportService;
+=======
+import org.apache.continuum.distributed.transport.slave.SlaveBuildAgentTransportService;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+>>>>>>> refs/remotes/apache/trunk
 
 public class SlaveBuildAgentTransportClientStub
     implements SlaveBuildAgentTransportService
@@ -97,7 +105,11 @@ public class SlaveBuildAgentTransportClientStub
         return null;
     }
 
+<<<<<<< HEAD
     public String getProjectFileContent( int projectId, String directory, String filename )
+=======
+    public Map<String, Object> getProjectFile( int projectId, String directory, String filename )
+>>>>>>> refs/remotes/apache/trunk
         throws Exception
     {
         // TODO Auto-generated method stub
@@ -132,7 +144,11 @@ public class SlaveBuildAgentTransportClientStub
         return null;
     }
 
+<<<<<<< HEAD
     public Boolean isProjectCurrentlyBuilding( int projectId )
+=======
+    public Boolean isProjectCurrentlyBuilding( int projectId, int buildDefinitionId )
+>>>>>>> refs/remotes/apache/trunk
         throws Exception
     {
         // TODO Auto-generated method stub
@@ -151,7 +167,11 @@ public class SlaveBuildAgentTransportClientStub
         return true;
     }
 
+<<<<<<< HEAD
     public Boolean isProjectInBuildQueue( int projectId )
+=======
+    public Boolean isProjectInBuildQueue( int projectId, int buildDefinitionId )
+>>>>>>> refs/remotes/apache/trunk
         throws Exception
     {
         // TODO Auto-generated method stub
@@ -195,7 +215,11 @@ public class SlaveBuildAgentTransportClientStub
         return null;
     }
 
+<<<<<<< HEAD
     public String releasePrepare( Map project, Map properties, Map releaseVersion, Map developmentVersion,
+=======
+    public String releasePrepare( Map project, Properties properties, Map releaseVersion, Map developmentVersion,
+>>>>>>> refs/remotes/apache/trunk
                                   Map environments, String username )
         throws Exception
     {
@@ -259,4 +283,55 @@ public class SlaveBuildAgentTransportClientStub
         return null;
     }
 
+<<<<<<< HEAD
+=======
+    public Boolean isProjectGroupInPrepareBuildQueue( int projectGroupId )
+        throws Exception
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Boolean isProjectGroupCurrentlyPreparingBuild( int projectGroupId )
+        throws Exception
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String getBuildAgentPlatform()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Boolean isProjectCurrentlyPreparingBuild( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Boolean isProjectInPrepareBuildQueue( int projectId, int buildDefinitionId )
+        throws Exception
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void executeDirectoryPurge( String directoryType, int daysOlder, int retentionCount, boolean deleteAll )
+        throws Exception
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void executeRepositoryPurge( String repoName, int daysOlder, int retentionCount, boolean deleteAll,
+                                        boolean deleteReleasedSnapshots )
+        throws Exception
+    {
+
+    }
+
+>>>>>>> refs/remotes/apache/trunk
 }

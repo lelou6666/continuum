@@ -19,12 +19,6 @@ package org.apache.continuum.buildagent.build.execution.maven.m2;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
@@ -60,6 +54,8 @@ import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLifecycleException;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
@@ -73,33 +69,28 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @plexus.component role="org.apache.continuum.buildagent.build.execution.maven.m2.BuildAgentMavenBuilderHelper"
- * role-hint="default"
- */
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+@Component( role = org.apache.continuum.buildagent.build.execution.maven.m2.BuildAgentMavenBuilderHelper.class, hint = "default" )
 public class DefaultBuildAgentMavenBuilderHelper
     implements BuildAgentMavenBuilderHelper, Contextualizable, Initializable
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultBuildAgentMavenBuilderHelper.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenProjectBuilder projectBuilder;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder mavenSettingsBuilder;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ArtifactRepositoryFactory artifactRepositoryFactory;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ArtifactRepositoryLayout defaultRepositoryLayout;
 
     private PlexusContainer container;
@@ -172,8 +163,6 @@ public class DefaultBuildAgentMavenBuilderHelper
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").\n" + messages;
 
-            file.delete();
-
             log.error( msg );
 
             return null;
@@ -184,8 +173,6 @@ public class DefaultBuildAgentMavenBuilderHelper
             result.addError( ContinuumProjectBuildingResult.ERROR_PROJECT_BUILDING, e.getMessage() );
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").";
-
-            file.delete();
 
             log.error( msg );
 
@@ -214,8 +201,8 @@ public class DefaultBuildAgentMavenBuilderHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM_CONNECTION, getProjectName( project ) );
 
-            log.error(
-                "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) + " POM." );
+            log.error( "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) +
+                           " POM." );
 
             return null;
         }
@@ -723,5 +710,10 @@ public class DefaultBuildAgentMavenBuilderHelper
         {
             container.release( wagonManager );
         }
+    }
+
+    void setMavenSettingsBuilder( MavenSettingsBuilder mavenSettingsBuilder )
+    {
+        this.mavenSettingsBuilder = mavenSettingsBuilder;
     }
 }

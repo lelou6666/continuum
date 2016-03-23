@@ -19,6 +19,17 @@ package org.apache.continuum.builder.distributed.executor;
  * under the License.
  */
 
+import edu.emory.mathcs.backport.java.util.concurrent.CancellationException;
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.Future;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
+import org.apache.continuum.utils.ThreadNames;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Startable;
@@ -31,19 +42,11 @@ import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.emory.mathcs.backport.java.util.concurrent.CancellationException;
-import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
-import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
-import edu.emory.mathcs.backport.java.util.concurrent.Executors;
-import edu.emory.mathcs.backport.java.util.concurrent.Future;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
-
 /**
  * Codes were taken from Plexus' ThreadedTaskQueueExecutor
  */
 public class ThreadedDistributedBuildTaskQueueExecutor
-    implements DistributedBuildTaskQueueExecutor, Initializable, Startable
+    implements DistributedBuildTaskQueueExecutor, Initializable, Startable, Disposable
 {
     private static final int SHUTDOWN = 1;
 
@@ -51,19 +54,13 @@ public class ThreadedDistributedBuildTaskQueueExecutor
 
     private static final Logger log = LoggerFactory.getLogger( ThreadedDistributedBuildTaskQueueExecutor.class );
 
-    /**
-     * @requirement
-     */
+    @Requirement
     private TaskQueue queue;
 
-    /**
-     * @requirement
-     */
+    @Requirement
     private DistributedBuildTaskExecutor executor;
 
-    /**
-     * @configuration
-     */
+    @Configuration( "" )
     private String name;
 
     // ----------------------------------------------------------------------
@@ -83,6 +80,11 @@ public class ThreadedDistributedBuildTaskQueueExecutor
 
         private boolean done;
 
+        public ExecutorRunnable()
+        {
+            super( ThreadNames.formatNext( "%s-executor", name ) );
+        }
+
         public void run()
         {
             while ( command != SHUTDOWN )
@@ -97,8 +99,9 @@ public class ThreadedDistributedBuildTaskQueueExecutor
                 }
                 catch ( InterruptedException e )
                 {
-                    log.info( "Executor thread interrupted, command: " +
-                        ( command == SHUTDOWN ? "Shutdown" : command == CANCEL_TASK ? "Cancel task" : "Unknown" ) );
+                    log.info( "Executor thread interrupted, command: " + ( command == SHUTDOWN
+                        ? "Shutdown"
+                        : command == CANCEL_TASK ? "Cancel task" : "Unknown" ) );
                     continue;
                 }
 
@@ -331,6 +334,11 @@ public class ThreadedDistributedBuildTaskQueueExecutor
             // notify again, just in case.
             executorRunnable.shutdown();
         }
+    }
+
+    public void dispose()
+    {
+        executorRunnable.shutdown();
     }
 
     public Task getCurrentTask()

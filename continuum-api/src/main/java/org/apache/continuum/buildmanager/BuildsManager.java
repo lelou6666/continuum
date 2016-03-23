@@ -19,10 +19,6 @@ package org.apache.continuum.buildmanager;
  * under the License.
  */
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.continuum.taskqueue.CheckOutTask;
 import org.apache.continuum.taskqueue.PrepareBuildProjectsTask;
@@ -31,6 +27,10 @@ import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ScmResult;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /**
  * BuildsManager. All builds whether forced or triggered will go through (or have to be added through) a builds manager.
@@ -50,8 +50,13 @@ public interface BuildsManager
      * @param projectGroupId
      * @throws BuildManagerException
      */
+<<<<<<< HEAD
 	void buildProjects( List<Project> projects, Map<Integer, BuildDefinition> projectsBuildDefinitionsMap,
 			            BuildTrigger buildTrigger, Map<Integer, ScmResult> scmResultMap, int projectGroupId )
+=======
+    void buildProjects( List<Project> projects, Map<Integer, BuildDefinition> projectsBuildDefinitionsMap,
+                        BuildTrigger buildTrigger, Map<Integer, ScmResult> scmResultMap, int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     /**
@@ -67,7 +72,11 @@ public interface BuildsManager
      * @param projectGroupId
      * @throws BuildManagerException
      */
+<<<<<<< HEAD
 	void buildProject( int projectId, BuildDefinition buildDefinition, String projectName, BuildTrigger buildTrigger,
+=======
+    void buildProject( int projectId, BuildDefinition buildDefinition, String projectName, BuildTrigger buildTrigger,
+>>>>>>> refs/remotes/apache/trunk
                        ScmResult scmResult, int projectGroupId )
         throws BuildManagerException;
 
@@ -81,8 +90,13 @@ public interface BuildsManager
      * @param scmRootId
      * @throws BuildManagerException
      */
+<<<<<<< HEAD
 	void prepareBuildProjects( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger,
 			                   int projectGroupId, String projectGroupName, String scmRootAddress, int scmRootId )
+=======
+    void prepareBuildProjects( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger,
+                               int projectGroupId, String projectGroupName, String scmRootAddress, int scmRootId )
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     /**
@@ -92,6 +106,7 @@ public interface BuildsManager
      * @param projectId
      * @param projectName
      * @param workingDirectory
+<<<<<<< HEAD
      * @param scmRootUrl TODO
      * @param scmUsername
      * @param scmPassword
@@ -101,6 +116,18 @@ public interface BuildsManager
      */
 	void checkoutProject( int projectId, String projectName, File workingDirectory, String scmRootUrl,
 			                    String scmUsername, String scmPassword, BuildDefinition defaultBuildDefinition, List<Project> subProjects )
+=======
+     * @param scmRootUrl             TODO
+     * @param scmUsername
+     * @param scmPassword
+     * @param defaultBuildDefinition
+     * @param subProjects            TODO
+     * @throws BuildManagerException
+     */
+    void checkoutProject( int projectId, String projectName, File workingDirectory, String scmRootUrl,
+                          String scmUsername, String scmPassword, BuildDefinition defaultBuildDefinition,
+                          List<Project> subProjects )
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     /**
@@ -149,7 +176,31 @@ public interface BuildsManager
 
     // public boolean cancelPrepareBuild(int projectId) throws BuildManagerException;
 
+    /**
+     * Cancels all the prepare builds in all overall queues
+     */
     boolean cancelAllPrepareBuilds()
+        throws BuildManagerException;
+
+    /**
+     * Cancels the specified project group prepare build
+     *
+     * @param projectGroupId
+     * @param scmRootId
+     * @return
+     * @throws BuildManagerException
+     */
+    boolean cancelPrepareBuild( int projectGroupId, int scmRootId )
+        throws BuildManagerException;
+
+    /**
+     * Cancels the specified project prepare build
+     *
+     * @param projectId
+     * @return
+     * @throws BuildManagerException
+     */
+    boolean cancelPrepareBuild( int projectId )
         throws BuildManagerException;
 
     /**
@@ -172,10 +223,15 @@ public interface BuildsManager
      * @throws BuildManagerException
      */
     void removeProjectFromBuildQueue( int projectId, int buildDefinitionId, BuildTrigger buildTrigger,
+<<<<<<< HEAD
     		                          String projectName, int projectGroupId )
+=======
+                                      String projectName, int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     // TODO: should we throw an exception when one of the projects cannot be removed?
+
     /**
      * Removes the specified projects from their build queues.
      *
@@ -294,6 +350,17 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
         throws BuildManagerException;
 
     /**
+     * Checks where the project group is already in the prepare-build queue
+     *
+     * @param projectGroupId
+     * @param scmRootId
+     * @return
+     * @throws BuildManagerException
+     */
+    boolean isInPrepareBuildQueue( int projectGroupId, int scmRootId )
+        throws BuildManagerException;
+
+    /**
      * Checks whether the project is currently being built.
      *
      * @param projectId
@@ -301,6 +368,16 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
      * @throws BuildManagerException
      */
     boolean isProjectInAnyCurrentBuild( int projectId )
+        throws BuildManagerException;
+
+    /**
+     * Checks if at least one of the projects is currently preparing build
+     *
+     * @param projectIds
+     * @return
+     * @throws BuildManagerException
+     */
+    boolean isAnyProjectCurrentlyPreparingBuild( int[] projectIds )
         throws BuildManagerException;
 
     // needed in QueuesAction
@@ -350,6 +427,10 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
 
     /**
      * Checks if at least one of the projects is currently building.
+<<<<<<< HEAD
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param projectIds
      * @return
      * @throws BuildManagerException
@@ -359,7 +440,11 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
 
     /**
      * Checks whether project is currently being checked out.
+<<<<<<< HEAD
      * 
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param projectId
      * @return
      * @throws BuildManagerException
@@ -369,7 +454,11 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
 
     /**
      * Checks whether project is currently preparing build
+<<<<<<< HEAD
      * 
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param projectId
      * @return
      * @throws BuildManagerException
@@ -378,23 +467,55 @@ void removeProjectsFromPrepareBuildQueue( int[] projectIds ) throws BuildManager
         throws BuildManagerException;
 
     /**
+<<<<<<< HEAD
      * Return currently preparing build project.
      * @return
      * @throws BuildManagerException
      */
     PrepareBuildProjectsTask getCurrentProjectInPrepareBuild()
+=======
+     * Checks whether project group is currently preparing build
+     *
+     * @param projectGroupId
+     * @param scmRootId
+     * @return
+     * @throws BuildManagerException
+     */
+    boolean isProjectGroupCurrentlyPreparingBuild( int projectGroupId, int scmRootId )
+        throws BuildManagerException;
+
+    /**
+     * Return currently preparing build project.
+     *
+     * @return
+     * @throws BuildManagerException
+     */
+    Map<String, PrepareBuildProjectsTask> getCurrentProjectInPrepareBuild()
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     /**
      * Return all projects in prepare build queue.
+<<<<<<< HEAD
      * @return
      * @throws BuildManagerException
      */
     List<PrepareBuildProjectsTask> getProjectsInPrepareBuildQueue()
+=======
+     *
+     * @return
+     * @throws BuildManagerException
+     */
+    Map<String, List<PrepareBuildProjectsTask>> getProjectsInPrepareBuildQueue()
+>>>>>>> refs/remotes/apache/trunk
         throws BuildManagerException;
 
     /**
      * Remove a project from a prepare build queue.
+<<<<<<< HEAD
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param projectGroupId
      * @param scmRootId
      * @return

@@ -5,6 +5,26 @@
  ------
  2010-02-18
  ------
+<<<<<<< HEAD
+=======
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+>>>>>>> refs/remotes/apache/trunk
 
 Welcome to Apache Continuum
 
@@ -12,6 +32,7 @@ Welcome to Apache Continuum
   release management, role-based security and integration with popular build tools and source control management
   systems. Whether you have a centralized build team or want to put control of releases in the hands of developers,
   Continuum can help you improve quality and maintain a consistent build environment.
+<<<<<<< HEAD
 
 * Documentation
 
@@ -48,11 +69,43 @@ Welcome to Apache Continuum
       {{{http://cwiki.apache.org/confluence/display/CONTINUUM}Wiki}}
 
       {{{http://docs.codehaus.org/display/CONTINUUMUSER/Home}Old Wiki}}
+=======
+
+* Documentation
+
+  * {{{./release-notes.html} Release Notes}}
+
+  * {{{./getting-started.html} Getting Started}}
+
+  * {{{./installation/index.html}Installation and Upgrade Guide}}
+
+      * {{{./installation/standalone.html}Installing as a standalone service (Linux, Mac OSX, Solaris, Windows, others)}}
+
+      * {{{./installation/tomcat.html}Installing the Web Application under a Tomcat server}}
+
+      * {{{./installation/upgrade.html} How to upgrade from a previous version}}
+
+      []
+
+  * {{{./user_guides/index.html} User's Guide}}
+
+  * {{{./administrator_guides/index.html} Administrator's Guide}}
+
+  * {{{./developer_guides/building.html} Developer's Guide to building Continuum}}
+
+   This documentation is also available in {{{./apache-continuum.pdf}PDF}} format.
+>>>>>>> refs/remotes/apache/trunk
 
       {{{http://apache-continuum.blogspot.com/}Blog}}
 
+<<<<<<< HEAD
    []
 
    This documentation is also available in {{{./apache-continuum.pdf}PDF}} format.
+=======
+  * {{{http://continuum.apache.org/faqs.html}Frequently Asked Questions}}
+
+  * {{{http://cwiki.apache.org/confluence/display/CONTINUUM}Wiki}}
+>>>>>>> refs/remotes/apache/trunk
 
 

@@ -21,19 +21,29 @@ package org.apache.continuum.utils.build;
 
 /**
  * @author Jevica Arianne B. Zurbano
+<<<<<<< HEAD
  * @version $Id: BuildTrigger.java
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 19 jun 09
  */
 public class BuildTrigger
 {
     private int trigger;
+<<<<<<< HEAD
     
     private String username;
     
+=======
+
+    private String triggeredBy;
+
+>>>>>>> refs/remotes/apache/trunk
     public BuildTrigger( int trigger )
     {
         this.trigger = trigger;
     }
+<<<<<<< HEAD
     
     public BuildTrigger( String username )
     {
@@ -46,15 +56,34 @@ public class BuildTrigger
         this.username = username;
     }
     
+=======
+
+    public BuildTrigger( String triggeredBy )
+    {
+        this.triggeredBy = triggeredBy;
+    }
+
+    public BuildTrigger( int trigger, String triggeredBy )
+    {
+        this.trigger = trigger;
+        this.triggeredBy = triggeredBy;
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     public void setTrigger( int trigger )
     {
         this.trigger = trigger;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public int getTrigger()
     {
         return this.trigger;
     }
+<<<<<<< HEAD
     
     public void setUsername( String username )
     {
@@ -64,6 +93,17 @@ public class BuildTrigger
     public String getUsername()
     {
         return this.username;
+=======
+
+    public void setTriggeredBy( String triggeredBy )
+    {
+        this.triggeredBy = triggeredBy;
+    }
+
+    public String getTriggeredBy()
+    {
+        return this.triggeredBy;
+>>>>>>> refs/remotes/apache/trunk
     }
 }
 

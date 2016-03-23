@@ -19,12 +19,18 @@ package org.apache.continuum.buildagent.configuration;
  * under the License.
  */
 
-import java.io.File;
-import java.util.List;
-
 import org.apache.continuum.buildagent.model.Installation;
 import org.apache.continuum.buildagent.model.LocalRepository;
 
+import java.io.File;
+import java.util.List;
+
+<<<<<<< HEAD
+import org.apache.continuum.buildagent.model.Installation;
+import org.apache.continuum.buildagent.model.LocalRepository;
+
+=======
+>>>>>>> refs/remotes/apache/trunk
 public class GeneralBuildAgentConfiguration
 {
     private File workingDirectory;
@@ -36,6 +42,10 @@ public class GeneralBuildAgentConfiguration
     private List<Installation> installations;
     
     private List<LocalRepository> localRepositories;
+
+    private List<LocalRepository> localRepositories;
+
+    private String sharedSecretPassword;
 
     public File getWorkingDirectory()
     {
@@ -76,7 +86,11 @@ public class GeneralBuildAgentConfiguration
     {
         this.installations = installations;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public List<LocalRepository> getLocalRepositories()
     {
         return localRepositories;
@@ -86,4 +100,17 @@ public class GeneralBuildAgentConfiguration
     {
         this.localRepositories = localRepositories;
     }
+<<<<<<< HEAD
+=======
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+        this.sharedSecretPassword = sharedSecretPassword;
+    }
+
+    public String getSharedSecretPassword()
+    {
+        return sharedSecretPassword;
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

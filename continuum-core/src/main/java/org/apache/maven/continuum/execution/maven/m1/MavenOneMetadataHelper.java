@@ -26,14 +26,13 @@ import java.io.File;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface MavenOneMetadataHelper
 {
     String ROLE = MavenOneMetadataHelper.class.getName();
 
     /**
-     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult,File,Project)} instead
+     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult, File, Project, boolean)} instead
      */
     void mapMetadata( File metadata, Project project )
         throws MavenOneMetadataHelperException;
@@ -45,6 +44,10 @@ public interface MavenOneMetadataHelper
      * @throws MavenOneMetadataHelperException
      *
      */
+<<<<<<< HEAD
     void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project, boolean updateDefinition)
+=======
+    void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project, boolean updateDefinition )
+>>>>>>> refs/remotes/apache/trunk
         throws MavenOneMetadataHelperException;
 }

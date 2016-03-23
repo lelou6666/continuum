@@ -21,21 +21,21 @@ package org.apache.maven.continuum.web.validator;
 
 import com.opensymphony.xwork2.validator.ValidationException;
 import com.opensymphony.xwork2.validator.validators.ValidatorSupport;
-
 import org.apache.maven.continuum.execution.ExecutorConfigurator;
 import org.apache.maven.continuum.installation.InstallationException;
 import org.apache.maven.continuum.installation.InstallationService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.validator.Validator" role-hint="org.apache.maven.continuum.web.validator.InstallationValidator"
  * @since 19 juin 07
  */
+@Component( role = com.opensymphony.xwork2.validator.Validator.class,
+    hint = "org.apache.maven.continuum.web.validator.InstallationValidator", instantiationStrategy = "per-lookup" )
 public class InstallationValidator
     extends ValidatorSupport
 {
@@ -43,9 +43,7 @@ public class InstallationValidator
 
     private static final Logger logger = LoggerFactory.getLogger( InstallationValidator.class );
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private InstallationService installationService;
 
     /**
@@ -77,7 +75,7 @@ public class InstallationValidator
                 if ( executorConfigurator.getVersionArgument() != null )
                 {
                     // just try to get version infos to validate path is valid
-                    installationService.getExecutorConfiguratorVersion( varValue, executorConfigurator, null );
+                    installationService.getExecutorVersionInfo( varValue, executorConfigurator, null );
                 }
             }
         }

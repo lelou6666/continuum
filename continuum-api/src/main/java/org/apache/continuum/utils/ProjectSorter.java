@@ -19,12 +19,6 @@ package org.apache.continuum.utils;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.codehaus.plexus.util.dag.CycleDetectedException;
@@ -32,11 +26,20 @@ import org.codehaus.plexus.util.dag.DAG;
 import org.codehaus.plexus.util.dag.TopologicalSorter;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Sort projects by dependencies.
  *
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
+<<<<<<< HEAD:continuum-api/src/main/java/org/apache/continuum/utils/ProjectSorter.java
  * @version $Id: ProjectSorter.java 777411 2009-05-22 07:13:37Z ctan $
+=======
+>>>>>>> refs/remotes/apache/trunk:continuum-api/src/main/java/org/apache/continuum/utils/ProjectSorter.java
  */
 public class ProjectSorter
 {
@@ -80,6 +83,8 @@ public class ProjectSorter
         {
             String id = getProjectId( project );
             
+            String projectGroupId = "[" + project.getProjectGroup().getId() + "]";
+
             String projectGroupId = "[" + project.getProjectGroup().getId() + "]";
 
             // Dependencies
@@ -166,6 +171,11 @@ public class ProjectSorter
         
         String projectGroupId = "[" + project.getProjectGroup().getId() + "]";
 
+<<<<<<< HEAD:continuum-api/src/main/java/org/apache/continuum/utils/ProjectSorter.java
+=======
+        String projectGroupId = "[" + project.getProjectGroup().getId() + "]";
+
+>>>>>>> refs/remotes/apache/trunk:continuum-api/src/main/java/org/apache/continuum/utils/ProjectSorter.java
         return projectGroupId + ":" + groupId + ":" + artifactId + ":" + project.getVersion();
     }
 

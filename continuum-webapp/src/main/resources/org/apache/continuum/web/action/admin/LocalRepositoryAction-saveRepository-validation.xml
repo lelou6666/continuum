@@ -16,20 +16,28 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-  
-<!DOCTYPE validators PUBLIC
-    "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
-    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+
+<!DOCTYPE validators PUBLIC 
+  "-//Apache Struts//XWork Validator 1.0.2//EN"
+  "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
 
 <validators>
   <field name="repository.name">
     <field-validator type="requiredstring">
       <message key="repository.name.required"/>
     </field-validator>
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[A-Za-z0-9_.\s\-]*]]></param>
+      <message key="repository.name.invalid"/>
+    </field-validator>
   </field>
   <field name="repository.location">
     <field-validator type="requiredstring">
       <message key="repository.location.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[A-Za-z0-9_.:\\/\s\-]*]]></param>
+      <message key="repository.location.invalid"/>
     </field-validator>
   </field>
 </validators>

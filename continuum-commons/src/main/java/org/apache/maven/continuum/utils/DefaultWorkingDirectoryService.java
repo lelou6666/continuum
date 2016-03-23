@@ -26,14 +26,16 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.util.List;
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
-@Service("workingDirectoryService")
+@Service( "workingDirectoryService" )
 public class DefaultWorkingDirectoryService
     implements WorkingDirectoryService
 {
@@ -56,7 +58,11 @@ public class DefaultWorkingDirectoryService
 
     public File getWorkingDirectory( Project project )
     {
+<<<<<<< HEAD
     	return getWorkingDirectory( project, null, null );
+=======
+        return getWorkingDirectory( project, null, null );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public File getWorkingDirectory( Project project, boolean shouldSet )
@@ -65,10 +71,16 @@ public class DefaultWorkingDirectoryService
     }
 
     /**
+<<<<<<< HEAD
      * 
      * @param project
      * @param projectScmRoot
      * @param projects projects under the same projectScmRoot
+=======
+     * @param project
+     * @param projectScmRoot
+     * @param projects       projects under the same projectScmRoot
+>>>>>>> refs/remotes/apache/trunk
      * @return
      */
     public File getWorkingDirectory( Project project, String projectScmRoot, List<Project> projects )
@@ -77,10 +89,16 @@ public class DefaultWorkingDirectoryService
     }
 
     /**
+<<<<<<< HEAD
      * 
      * @param project
      * @param projectScmRoot
      * @param projects projects under the same projectScmRoot
+=======
+     * @param project
+     * @param projectScmRoot
+     * @param projects       projects under the same projectScmRoot
+>>>>>>> refs/remotes/apache/trunk
      * @param shouldSet
      * @return
      */
@@ -93,6 +111,7 @@ public class DefaultWorkingDirectoryService
 //                         project.getPath() );
 
         String workingDirectory = project.getWorkingDirectory();
+<<<<<<< HEAD
     	
         if ( project.getWorkingDirectory() == null || "".equals( project.getWorkingDirectory() ) )
         {   
@@ -138,12 +157,63 @@ public class DefaultWorkingDirectoryService
     	
         if ( shouldSet )
         {
+=======
+
+        if ( project.getWorkingDirectory() == null || "".equals( project.getWorkingDirectory() ) )
+        {
+            if ( project.isCheckedOutInSingleDirectory() && projectScmRoot != null && !"".equals( projectScmRoot ) )
+            {
+                Project rootProject = project;
+                if ( projects != null )
+                {
+                    // the root project should have the lowest id since it's always added first                    
+                    for ( Project projectUnderScmRoot : projects )
+                    {
+                        if ( projectUnderScmRoot.getId() < rootProject.getId() )
+                        {
+                            rootProject = projectUnderScmRoot;
+                        }
+                    }
+                }
+
+                // determine the path
+                String projectScmUrl = project.getScmUrl();
+                int indexDiff = StringUtils.differenceAt( projectScmUrl, projectScmRoot );
+
+                String pathToProject = "";
+                if ( indexDiff != -1 )
+                {
+                    pathToProject = projectScmUrl.substring( indexDiff );
+                }
+
+                if ( pathToProject.startsWith( "\\" ) || pathToProject.startsWith( "/" ) )
+                {
+                    workingDirectory = Integer.toString( rootProject.getId() ) + pathToProject;
+                }
+                else
+                {
+                    workingDirectory = Integer.toString( rootProject.getId() ) + File.separatorChar + pathToProject;
+                }
+            }
+            else
+            {
+                workingDirectory = Integer.toString( project.getId() );
+            }
+        }
+
+        if ( shouldSet )
+        {
+>>>>>>> refs/remotes/apache/trunk
             project.setWorkingDirectory( workingDirectory );
         }
 
         File workDir;
         File projectWorkingDirectory = new File( workingDirectory );
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         if ( projectWorkingDirectory.isAbsolute() )
         {
             // clean the project working directory path if it's a subdirectory of the global working directory
@@ -156,7 +226,11 @@ public class DefaultWorkingDirectoryService
                 {
                     pwd = pwd.substring( 1 );
                 }
+<<<<<<< HEAD
                
+=======
+
+>>>>>>> refs/remotes/apache/trunk
                 if ( shouldSet )
                 {
                     project.setWorkingDirectory( pwd );
@@ -167,11 +241,19 @@ public class DefaultWorkingDirectoryService
         }
         else
         {
+<<<<<<< HEAD
             File baseWorkingDir = getConfigurationService().getWorkingDirectory();            
         	            
             workDir = new File( baseWorkingDir, workingDirectory );
         }
         
+=======
+            File baseWorkingDir = getConfigurationService().getWorkingDirectory();
+
+            workDir = new File( baseWorkingDir, workingDirectory );
+        }
+
+>>>>>>> refs/remotes/apache/trunk
         return workDir;
     }
 }

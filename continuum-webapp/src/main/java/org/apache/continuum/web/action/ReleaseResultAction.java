@@ -19,30 +19,35 @@ package org.apache.continuum.web.action;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.continuum.model.release.ContinuumReleaseResult;
+import org.apache.continuum.utils.file.FileSystemManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.configuration.ConfigurationException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.action.ContinuumConfirmAction;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.shared.release.ReleaseResult;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="releaseResult"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releaseResult", instantiationStrategy = "per-lookup" )
 public class ReleaseResultAction
     extends ContinuumConfirmAction
 {
     private static final Logger logger = LoggerFactory.getLogger( ReleaseResultAction.class );
+
+    @Requirement
+    private FileSystemManager fsManager;
 
     private int projectGroupId;
 
@@ -62,6 +67,8 @@ public class ReleaseResultAction
 
     private String releaseGoal;
     
+    private String username;
+
     private String username;
 
     public String list()
@@ -150,12 +157,11 @@ public class ReleaseResultAction
         {
             File releaseOutputFile = getContinuum().getConfiguration().getReleaseOutputFile( projectGroupId,
                                                                                              "releases-" +
-                                                                                                 releaseResult.getStartTime() )
-                ;
+                                                                                                 releaseResult.getStartTime() );
 
             if ( releaseOutputFile.exists() )
             {
-                String str = StringEscapeUtils.escapeHtml( FileUtils.fileRead( releaseOutputFile ) );
+                String str = StringEscapeUtils.escapeHtml( fsManager.fileContents( releaseOutputFile ) );
                 result.appendOutput( str );
             }
         }
@@ -285,12 +291,20 @@ public class ReleaseResultAction
     {
         this.releaseGoal = releaseGoal;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setUsername( String username )
     {
         this.username = username;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public String getUsername()
     {
         return username;

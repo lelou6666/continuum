@@ -17,14 +17,22 @@
   ~ under the License.
   -->
 
-<!DOCTYPE validators PUBLIC
-    "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
-    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+<!DOCTYPE validators PUBLIC 
+  "-//Apache Struts//XWork Validator 1.0.2//EN"
+  "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
 
 <validators>
   <field name="buildDefinitionTemplate.name">
     <field-validator type="requiredstring">
-      <message key="buildDefintionTemplate.name.required"/>
+      <message key="buildDefinitionTemplate.name.required"/>
+    </field-validator>
+    <field-validator type="regex">
+      <param name="regex"><![CDATA[[A-Za-z0-9_.\s\-]*]]></param>
+      <message key="buildDefinitionTemplate.name.invalid"/>
     </field-validator>
   </field>
+  <validator type="expression">
+    <param name="expression">#selectedDefs = buildDefinitionsFromSelectedBuildDefinitions, #selectedDefs != null and #selectedDefs.size() > 0</param>
+    <message key="buildDefinitionTemplate.definition.empty" />
+  </validator>
 </validators>

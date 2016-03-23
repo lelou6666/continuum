@@ -21,7 +21,12 @@
 <project name="Apache Continuum">
   <body>
     <breadcrumbs>
+<<<<<<< HEAD
       <item name="${project.version}" href="/" />
+=======
+      <item name="Continuum" href="http://continuum.apache.org/" />
+      <item name="${project.version}" href="/"/>
+>>>>>>> refs/remotes/apache/trunk
     </breadcrumbs>
 
     <menu name="Documentation">
@@ -29,13 +34,19 @@
       <item name="Getting Started" href="getting-started.html"/>
 
       <item name="Installation/Upgrade Guides" href="installation/index.html" collapse="true">
+<<<<<<< HEAD
         <item name="System Requirements" href="installation/requirements.html"/>
         <item name="Installation" href="installation/installation.html" collapse="true">
           <item name="Standalone" href="installation/standalone.html"/>
           <item name="Tomcat" href="installation/tomcat.html"/>
         </item>
+=======
+        <item name="Installing Standalone" href="installation/standalone.html"/>
+        <item name="Installing in Tomcat" href="installation/tomcat.html"/>
+>>>>>>> refs/remotes/apache/trunk
         <item name="Release Notes" href="release-notes.html"/>
         <item name="Upgrade" href="installation/upgrade.html"/>
+        <item name="Installing a Build Agent" href="installation/build-agent.html"/>
       </item>
 
       <item name="User's Guides" collapse="true" href="user_guides/index.html">
@@ -44,18 +55,20 @@
           <item name="Edit a Project" href="user_guides/managing_project/editProject.html"/>
           <item name="Remove a Project" href="user_guides/managing_project/removeProject.html"/>
           <item name="Working Copy" href="user_guides/managing_project/workingCopy.html"/>
+<<<<<<< HEAD
           <!-- item name="SCM security hints"/ -->
         </item>
         <item name="Managing Build Definitions" href="user_guides/managing_builddef/index.html" collapse="true">
           <item name="Project Build Definition" href="user_guides/managing_builddef/builddefProject.html"/>
           <item name="Project Group Build Definition" href="user_guides/managing_builddef/builddefGroup.html"/>
+=======
+>>>>>>> refs/remotes/apache/trunk
         </item>
+        <item name="Managing Build Definitions" href="user_guides/managing_builddef/index.html"/>
         <item name="Managing Notification" href="user_guides/notification/index.html" collapse="true">
           <item name="Mail Notification" href="user_guides/notification/mail.html"/>
           <item name="IRC Notification" href="user_guides/notification/irc.html"/>
-          <item name="Jabber Notification" href="user_guides/notification/jabber.html">
-            <item name="Google Talk Notification" href="user_guides/notification/jabber.html#GTalk"/>
-          </item>
+          <item name="Jabber Notification" href="user_guides/notification/jabber.html"/>
           <item name="MSN Notification" href="user_guides/notification/msn.html"/>
           <item name="Wagon Notification" href="user_guides/notification/wagon.html"/>
         </item>
@@ -63,12 +76,14 @@
           <item name="Scheduled Build" href="user_guides/building_project/schedule_build.html"/>
           <item name="Forced Build" href="user_guides/building_project/forced_build.html"/>
           <item name="Build Results Management" href="user_guides/building_project/build_results.html"/>
+          <item name="Cancelling builds" href="user_guides/building_project/cancelling_build.html"/>
         </item>
         <item name="Release Management" href="user_guides/release/index.html" collapse="true">
           <item name="Prepare Project Release" href="user_guides/release/prepare.html"/>
           <item name="Perform Project Release" href="user_guides/release/perform.html"/>
           <item name="Release Results Management" href="user_guides/release/release_results.html"/>
         </item>
+        <item name="Project Builds Report" href="user_guides/report/index.html"/>
       </item>
 
       <item name="Administrator's Guides" href="administrator_guides/index.html" collapse="true">
@@ -77,36 +92,52 @@
           <item name="LDAP Configuration" href="administrator_guides/security/ldap.html"/>
         </item>
         <item name="Managing Project Groups" href="administrator_guides/projectgroup.html"/>
+<<<<<<< HEAD
         <item name="Managing Builders" href="administrator_guides/builder.html"/>
         <item name="Managing JDKs" href="administrator_guides/jdk.html"/>
+=======
+        <item name="Managing Installations" href="administrator_guides/builder.html"/>
+>>>>>>> refs/remotes/apache/trunk
         <item name="Managing Build Environments" href="administrator_guides/buildEnvironment.html"/>
         <item name="Managing Schedules" href="administrator_guides/schedules.html"/>
-        <item name="Managing General Configuration" href="administrator_guides/configuration.html"/> <!-- (configuration and appearance) -->
+        <item name="Managing General Configuration" href="administrator_guides/configuration.html"/>
         <item name="Managing Local Repositories" href="administrator_guides/localRepository.html"/>
         <item name="Managing Purge Configuration" href="administrator_guides/purgeConfiguration.html"/>
+<<<<<<< HEAD
         <item name="Managing Parallel Builds" href="administrator_guides/parallelBuilds.html">
         </item>
+=======
+        <item name="Managing Parallel Builds" href="administrator_guides/parallelBuilds.html"/>
+>>>>>>> refs/remotes/apache/trunk
         <item name="Managing Build Queues" href="administrator_guides/buildQueue.html"/>
         <item name="Managing Build Agents" href="administrator_guides/build-agents.html"/>
         <item name="Managing Build Agent Groups" href="administrator_guides/build-agent-groups.html"/>
         <item name="Managing Project Queues" href="administrator_guides/queues.html"/>
         <item name="External databases" href="administrator_guides/external-db.html"/>
+        <item name="Database Maintenance" href="administrator_guides/database-maintenance.html"/>
         <item name="Monitoring Continuum" href="administrator_guides/monitoring.html"/>
+<<<<<<< HEAD
         <item name="Log Files" href="administrator_guides/logging.html" collapse="true">
           <item name="Audit Logs" href="administrator_guides/audit-logs.html" />
           <item name="Continuum Logs" href="administrator_guides/continuum-logs.html" />
           <item name="Security Logs" href="administrator_guides/security-logs.html" />
+=======
+        <item name="Log Files" href="administrator_guides/logging/index.html" collapse="true">
+          <item name="Audit Logs" href="administrator_guides/logging/audit-logs.html"/>
+          <item name="Continuum Logs" href="administrator_guides/logging/continuum-logs.html"/>
+          <item name="Security Logs" href="administrator_guides/logging/security-logs.html"/>
+>>>>>>> refs/remotes/apache/trunk
         </item>
         <item name="Appearance Configuration" href="administrator_guides/appearance.html"/>
         <item name="Build Definition Template" href="administrator_guides/builddefTemplate.html"/>
         <item name="Shutdown Continuum" href="administrator_guides/shutdown.html"/>
         <item name="Understanding Distributed Builds" href="administrator_guides/distributed-builds.html"/>
+        <item name="WebDAV for Agent Working Copies" href="administrator_guides/webdav.html"/>
+        <!-- <item name="Running builds in a chroot jail" href="administrator_guides/chroot.html"/> -->
       </item>
 
       <item name="Developer's Guides" href="developer_guides/index.html" collapse="true">
-        <!-- item name="SVN repository structure" href="developer_guides/svn.html"/ -->
         <item name="Building Continuum" href="developer_guides/building.html"/>
-        <!-- item name="Design" href="developer_guides/design.html"/ -->
         <item name="XML-RPC" href="developer_guides/xmlrpc.html"/>
       </item>
 

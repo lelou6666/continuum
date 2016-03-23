@@ -19,16 +19,11 @@ package org.apache.continuum.buildagent.action;
  * under the License.
  */
 
-import java.io.File;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.buildagent.configuration.BuildAgentConfigurationService;
 import org.apache.continuum.buildagent.utils.ContinuumBuildAgentUtil;
 import org.apache.continuum.scm.ContinuumScm;
 import org.apache.continuum.scm.ContinuumScmConfiguration;
+import org.apache.continuum.scm.ContinuumScmUtils;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ChangeFile;
 import org.apache.maven.continuum.model.scm.ChangeSet;
@@ -39,21 +34,24 @@ import org.apache.maven.scm.command.update.UpdateScmResult;
 import org.apache.maven.scm.manager.NoSuchScmProviderException;
 import org.apache.maven.scm.repository.ScmRepositoryException;
 import org.codehaus.plexus.action.AbstractAction;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
-/**
- * @plexus.component role="org.codehaus.plexus.action.Action" role-hint="update-agent-working-directory"
- */
+import java.io.File;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "update-agent-working-directory" )
 public class UpdateWorkingDirectoryAction
     extends AbstractAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private BuildAgentConfigurationService buildAgentConfigurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ContinuumScm scm;
 
     public void execute( Map context )
@@ -64,7 +62,7 @@ public class UpdateWorkingDirectoryAction
         UpdateScmResult scmResult;
 
         ScmResult result;
-        
+
         try
         {
             File workingDirectory = buildAgentConfigurationService.getWorkingDirectory( project.getId() );
@@ -99,8 +97,8 @@ public class UpdateWorkingDirectoryAction
             result.setSuccess( false );
 
             result.setProviderMessage( e.getMessage() + ": " + getValidationMessages( e ) );
-            
-            getLogger().error( e.getMessage(), e);
+
+            getLogger().error( e.getMessage(), e );
         }
         catch ( NoSuchScmProviderException e )
         {
@@ -110,8 +108,8 @@ public class UpdateWorkingDirectoryAction
             result.setSuccess( false );
 
             result.setProviderMessage( e.getMessage() );
-            
-            getLogger().error( e.getMessage(), e);
+
+            getLogger().error( e.getMessage(), e );
         }
         catch ( ScmException e )
         {
@@ -120,20 +118,31 @@ public class UpdateWorkingDirectoryAction
             result.setSuccess( false );
 
             result.setException( ContinuumBuildAgentUtil.throwableMessagesToString( e ) );
-            
-            getLogger().error( e.getMessage(), e);
+
+            getLogger().error( e.getMessage(), e );
         }
 
         context.put( ContinuumBuildAgentUtil.KEY_UPDATE_SCM_RESULT, result );
-        context.put( ContinuumBuildAgentUtil.KEY_LATEST_UPDATE_DATE, getLatestUpdateDate( result ) );
+
+        Date latestUpdateDate = getLatestUpdateDate( result );
+
+        if ( latestUpdateDate == null )
+        {
+            latestUpdateDate = ContinuumBuildAgentUtil.getLatestUpdateDate( context );
+        }
+
+        context.put( ContinuumBuildAgentUtil.KEY_LATEST_UPDATE_DATE, latestUpdateDate );
     }
 
     private ContinuumScmConfiguration createScmConfiguration( Project project, File workingDirectory )
     {
         ContinuumScmConfiguration config = new ContinuumScmConfiguration();
         config.setUrl( project.getScmUrl() );
-        config.setUsername( project.getScmUsername() );
-        config.setPassword( project.getScmPassword() );
+
+        // CONTINUUM-2628
+        config = ContinuumScmUtils.setSCMCredentialsforSSH( config, project.getScmUrl(), project.getScmUsername(),
+                                                            project.getScmPassword() );
+
         config.setUseCredentialsCache( project.isScmUseCache() );
         config.setWorkingDirectory( workingDirectory );
         config.setTag( project.getScmTag() );
@@ -244,7 +253,7 @@ public class UpdateWorkingDirectoryAction
 
         return cmd;
     }
-    
+
     private String getValidationMessages( ScmRepositoryException ex )
     {
         List<String> messages = ex.getValidationMessages();

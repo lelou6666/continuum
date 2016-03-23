@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.action.component;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,22 +18,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.action.component;
 
+import org.codehaus.plexus.component.annotations.Component;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 8 nov. 07
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="bottom"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "bottom", instantiationStrategy = "per-lookup" )
 public class BottomAction
     extends AbstractFooterAction
 {
-   
+
     public String execute()
     {
         return SUCCESS;
     }
-    
+
 }

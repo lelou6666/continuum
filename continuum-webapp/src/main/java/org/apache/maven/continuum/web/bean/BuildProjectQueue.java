@@ -23,7 +23,10 @@ import org.apache.continuum.taskqueue.BuildProjectTask;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD:continuum-webapp/src/main/java/org/apache/maven/continuum/web/bean/BuildProjectQueue.java
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/bean/BuildProjectQueue.java
  */
 public class BuildProjectQueue
     extends Queue

@@ -44,7 +44,11 @@ public class ProjectGroupSummary
     {
         return projectGroupId;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setProjectGroupId( int projectGroupId )
     {
         this.projectGroupId = projectGroupId;

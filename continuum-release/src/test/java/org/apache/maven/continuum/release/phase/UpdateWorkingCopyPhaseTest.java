@@ -19,6 +19,7 @@ package org.apache.maven.continuum.release.phase;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,17 +104,118 @@ public class UpdateWorkingCopyPhaseTest
         assertTrue( workingDirectory.exists() );
     }
     
+=======
+import org.apache.continuum.release.config.ContinuumReleaseDescriptor;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.PlexusSpringTestCase;
+import org.apache.maven.settings.Settings;
+import org.apache.maven.shared.release.phase.ReleasePhase;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+
+import static org.junit.Assert.*;
+
+public class UpdateWorkingCopyPhaseTest
+    extends PlexusSpringTestCase
+{
+    private FileSystemManager fsManager;
+
+    private UpdateWorkingCopyPhase phase;
+
+    private ContinuumReleaseDescriptor releaseDescriptor;
+
+    private File workingDirectory;
+
+    @Before
+    public void setUp()
+        throws Exception
+    {
+        fsManager = lookup( FileSystemManager.class );
+
+        phase = (UpdateWorkingCopyPhase) lookup( ReleasePhase.class, "update-working-copy" );
+        assertNotNull( phase );
+
+        releaseDescriptor = createReleaseDescriptor();
+
+        workingDirectory = new File( releaseDescriptor.getWorkingDirectory() );
+
+        // Ensure every test method starts with no working dir
+        fsManager.removeDir( workingDirectory );
+        assertFalse( workingDirectory.exists() );
+
+        // set up project scm
+        File scmPathFile = new File( getBasedir(), "target/scm-src" ).getAbsoluteFile();
+        File scmTargetPathFile = new File( getBasedir(), "/target/scm-test" ).getAbsoluteFile();
+        fsManager.copyDir( scmPathFile, scmTargetPathFile );
+    }
+
+    @Test
+    public void testWorkingDirDoesNotExist()
+        throws Exception
+    {
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
+    }
+
+    @Test
+    public void testWorkingDirAlreadyExistsWithProjectCheckout()
+        throws Exception
+    {
+        // Run the update once, should checkout out the project into working dir
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
+
+        // Run again, to ensure nothing funny happened
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
+    }
+
+    @Test
+    public void testWorkingDirAlreadyExistsNoProjectCheckout()
+        throws Exception
+    {
+        workingDirectory.mkdirs();
+        assertEmptyWorkingDirectory();
+
+        phase.execute( releaseDescriptor, new Settings(), null );
+        assertPopulatedWorkingDirectory();
+    }
+
+    private void assertEmptyWorkingDirectory()
+    {
+        assertTrue( workingDirectory.exists() );
+        assertTrue( workingDirectory.listFiles().length == 0 );
+    }
+
+    private void assertPopulatedWorkingDirectory()
+    {
+        assertTrue( workingDirectory.exists() );
+        assertTrue( workingDirectory.listFiles().length > 0 );
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     private ContinuumReleaseDescriptor createReleaseDescriptor()
     {
         // project source and working directory paths
         String projectUrl = getBasedir() + "/target/scm-test/trunk";
         String workingDirPath = getBasedir() + "/target/test-classes/updateWorkingCopy_working-directory";
+<<<<<<< HEAD
         
         // create release descriptor
         ContinuumReleaseDescriptor releaseDescriptor = new ContinuumReleaseDescriptor();
         releaseDescriptor.setScmSourceUrl( "scm:svn:file://" + projectUrl );
         releaseDescriptor.setWorkingDirectory( workingDirPath );
         
+=======
+
+        // create release descriptor
+        ContinuumReleaseDescriptor releaseDescriptor = new ContinuumReleaseDescriptor();
+        releaseDescriptor.setScmSourceUrl( "scm:svn:file://localhost/" + projectUrl );
+        releaseDescriptor.setWorkingDirectory( workingDirPath );
+
+>>>>>>> refs/remotes/apache/trunk
         return releaseDescriptor;
     }
 }

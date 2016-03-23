@@ -18,8 +18,6 @@
   --%>
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -29,42 +27,43 @@
       <div id="axial" class="h3">
         <h3><s:text name="buildDefinition.template.section.title"/></h3>
 
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+          <input type="button" value="Back" onClick="history.go(-1)">
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+
         <div class="axial">
           <s:form action="saveBuildDefinitionAsTemplate" method="post" validate="true">
-            <c:choose>
-            
-              <c:when test="${!empty actionErrors}">
-                <div class="errormessage">
-                  <s:iterator value="actionErrors">
-                    <p><s:property/></p>
-                  </s:iterator>
-                </div>
-                <input type="button" value="Back" onClick="history.go(-1)">
-              </c:when>
-  
-              <c:when test="${empty actionErrors}">
+              <s:if test="!hasActionErrors()">
                 <table>
                   <tbody>
                     <s:if test="buildDefinition.type == 'ant'">
-                      <s:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildDefinition.buildFile"  required="true"/>
+                      <s:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildDefinition.buildFile"  requiredLabel="true" size="100"/>
                     </s:if>
                     <s:elseif test="buildDefinition.type == 'shell'">
-                      <s:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildDefinition.buildFile" required="true"/>
+                      <s:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildDefinition.buildFile" requiredLabel="true" size="100"/>
                     </s:elseif>
                     <s:else>
-                      <s:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildDefinition.buildFile" required="true"/>
+                      <s:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildDefinition.buildFile" requiredLabel="true" size="100"/>
                     </s:else>
     
                     <s:if test="buildDefinition.type == 'ant'">
-                      <s:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="buildDefinition.goals"/>
+                      <s:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="buildDefinition.goals" size="100"/>
                     </s:if>
                     <s:elseif test="buildDefinition.type == 'shell'">
                     </s:elseif>
                     <s:else>
-                      <s:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="buildDefinition.goals"/>
+                      <s:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="buildDefinition.goals" requiredLabel="true" size="100"/>
                     </s:else>
     
-                    <s:textfield label="%{getText('buildDefinition.arguments.label')}" name="buildDefinition.arguments"/>
+                    <s:textfield label="%{getText('buildDefinition.arguments.label')}" name="buildDefinition.arguments" size="100"/>
                     <s:checkbox label="%{getText('buildDefinition.buildFresh.label')}" name="buildDefinition.buildFresh"/>
                     <s:checkbox label="%{getText('buildDefinition.alwaysBuild.label')}" name="buildDefinition.alwaysBuild" />
                     <s:checkbox label="%{getText('buildDefinition.defaultForProject.label')}" name="buildDefinition.defaultForProject" />
@@ -82,18 +81,21 @@
                     <s:if test="buildDefinition.type != 'ant' || buildDefinition.type != 'shell'">
                         <s:select label="%{getText('buildDefinition.updatePolicy.label')}" name="buildDefinition.updatePolicy" list="buildDefinitionUpdatePolicies"/>
                     </s:if>
+<<<<<<< HEAD
                     <s:textfield label="%{getText('buildDefinition.description.label')}" name="buildDefinition.description" required="true"/>
+=======
+                    <s:textfield label="%{getText('buildDefinition.description.label')}" name="buildDefinition.description" requiredLabel="true" size="100"/>
+>>>>>>> refs/remotes/apache/trunk
                   </tbody>
                 </table>
                 <div class="functnbar3">
-                  <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+                  <s:submit value="%{getText('save')}" theme="simple"/>
+                  <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
                 </div>
 
                 <s:hidden name="buildDefinition.id"/>
                 <s:hidden name="buildDefinition.template" value="true"/>
-              </c:when>
-            
-            </c:choose>
+              </s:if>
           </s:form>
         </div>
       </div>

@@ -19,12 +19,6 @@ package org.apache.continuum.buildagent.configuration;
  * under the License.
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 import org.apache.continuum.buildagent.model.ContinuumBuildAgentConfigurationModel;
 import org.apache.continuum.buildagent.model.io.xpp3.ContinuumBuildAgentConfigurationModelXpp3Reader;
 import org.apache.continuum.buildagent.model.io.xpp3.ContinuumBuildAgentConfigurationModelXpp3Writer;
@@ -33,6 +27,12 @@ import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class DefaultBuildAgentConfiguration
     implements BuildAgentConfiguration
@@ -69,7 +69,6 @@ public class DefaultBuildAgentConfiguration
     }
 
     public GeneralBuildAgentConfiguration getContinuumBuildAgentConfiguration()
-        throws BuildAgentConfigurationException
     {
         return generalBuildAgentConfiguration;
     }
@@ -89,23 +88,33 @@ public class DefaultBuildAgentConfiguration
             fis = new FileInputStream( file );
             ContinuumBuildAgentConfigurationModelXpp3Reader configurationXpp3Reader =
                 new ContinuumBuildAgentConfigurationModelXpp3Reader();
+<<<<<<< HEAD
             ContinuumBuildAgentConfigurationModel configuration =
                 configurationXpp3Reader.read( new InputStreamReader( fis ) );
+=======
+            ContinuumBuildAgentConfigurationModel configuration = configurationXpp3Reader.read( new InputStreamReader(
+                fis ) );
+>>>>>>> refs/remotes/apache/trunk
 
             this.generalBuildAgentConfiguration = new GeneralBuildAgentConfiguration();
             if ( StringUtils.isNotEmpty( configuration.getBuildOutputDirectory() ) )
             {
-                this.generalBuildAgentConfiguration.setBuildOutputDirectory(
-                    new File( configuration.getBuildOutputDirectory() ) );
+                this.generalBuildAgentConfiguration.setBuildOutputDirectory( new File(
+                    configuration.getBuildOutputDirectory() ) );
             }
             if ( StringUtils.isNotEmpty( configuration.getWorkingDirectory() ) )
             {
-                this.generalBuildAgentConfiguration.setWorkingDirectory(
-                    new File( configuration.getWorkingDirectory() ) );
+                this.generalBuildAgentConfiguration.setWorkingDirectory( new File(
+                    configuration.getWorkingDirectory() ) );
             }
+
             this.generalBuildAgentConfiguration.setContinuumServerUrl( configuration.getContinuumServerUrl() );
             this.generalBuildAgentConfiguration.setInstallations( configuration.getInstallations() );
             this.generalBuildAgentConfiguration.setLocalRepositories( configuration.getLocalRepositories() );
+<<<<<<< HEAD
+=======
+            this.generalBuildAgentConfiguration.setSharedSecretPassword( configuration.getSharedSecretPassword() );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( IOException e )
         {
@@ -155,6 +164,10 @@ public class DefaultBuildAgentConfiguration
             configurationModel.setContinuumServerUrl( this.generalBuildAgentConfiguration.getContinuumServerUrl() );
             configurationModel.setInstallations( this.generalBuildAgentConfiguration.getInstallations() );
             configurationModel.setLocalRepositories( this.generalBuildAgentConfiguration.getLocalRepositories() );
+<<<<<<< HEAD
+=======
+            configurationModel.setSharedSecretPassword( this.generalBuildAgentConfiguration.getSharedSecretPassword() );
+>>>>>>> refs/remotes/apache/trunk
 
             ContinuumBuildAgentConfigurationModelXpp3Writer writer =
                 new ContinuumBuildAgentConfigurationModelXpp3Writer();
@@ -171,7 +184,6 @@ public class DefaultBuildAgentConfiguration
     }
 
     public void setContinuumBuildAgentConfiguration( GeneralBuildAgentConfiguration buildAgentConfiguration )
-        throws BuildAgentConfigurationException
     {
         this.generalBuildAgentConfiguration = buildAgentConfiguration;
     }

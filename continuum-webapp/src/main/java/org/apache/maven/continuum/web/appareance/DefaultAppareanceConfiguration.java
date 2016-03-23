@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.appareance;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,30 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.appareance;
+
+import org.apache.continuum.web.appearance.ContinuumAppearance;
+import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Reader;
+import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Writer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
+import org.codehaus.plexus.util.ReaderFactory;
+import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Calendar;
 
-import org.apache.continuum.web.appearance.ContinuumAppearance;
-import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Reader;
-import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Writer;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
-import org.codehaus.plexus.util.ReaderFactory;
-import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.web.appareance.AppareanceConfiguration" role-hint="default"
  * @since 10 nov. 07
  */
+@Component( role = org.apache.maven.continuum.web.appareance.AppareanceConfiguration.class, hint = "default" )
 public class DefaultAppareanceConfiguration
     implements AppareanceConfiguration, Initializable
 {
@@ -80,7 +83,7 @@ public class DefaultAppareanceConfiguration
             catch ( XmlPullParserException e )
             {
                 log.warn( "skip XmlPullParserException reading appearance file " + APPEARANCE_FILE_NAME + ", msg " +
-                    e.getMessage() );
+                              e.getMessage() );
             }
         }
         if ( StringUtils.isEmpty( this.footer ) )
@@ -104,7 +107,9 @@ public class DefaultAppareanceConfiguration
     public void saveFooter( String footerHtmlContent )
         throws IOException
     {
-        continuumAppearance.setFooter( footerHtmlContent );
+        String safeFooterHtmlContent = Jsoup.clean( footerHtmlContent, Whitelist.basic() );
+
+        continuumAppearance.setFooter( safeFooterHtmlContent );
         ContinuumAppearanceModelsXpp3Writer writer = new ContinuumAppearanceModelsXpp3Writer();
         File confFile = getAppearanceConfigurationFile();
         if ( !confFile.exists() )
@@ -114,9 +119,12 @@ public class DefaultAppareanceConfiguration
         FileWriter fileWriter = new FileWriter( confFile );
         writer.write( fileWriter, continuumAppearance );
         fileWriter.close();
+<<<<<<< HEAD
         this.footer = footerHtmlContent;
+=======
+        this.footer = safeFooterHtmlContent;
+>>>>>>> refs/remotes/apache/trunk
     }
-
 
     private String getDefaultFooter()
     {
@@ -131,10 +139,9 @@ public class DefaultAppareanceConfiguration
         return stringBuilder.toString();
     }
 
-
     private File getAppearanceConfigurationFile()
     {
-        return new File(
-            System.getProperty( "appserver.base" ) + File.separator + "conf" + File.separator + APPEARANCE_FILE_NAME );
+        return new File( System.getProperty( "appserver.base" ) + File.separator + "conf" + File.separator +
+                             APPEARANCE_FILE_NAME );
     }
 }

@@ -19,8 +19,6 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
-import org.apache.continuum.model.repository.LocalRepository;
-import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
 import org.apache.maven.project.MavenProject;
@@ -29,13 +27,17 @@ import java.io.File;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public interface MavenBuilderHelper
 {
     String ROLE = MavenBuilderHelper.class.getName();
 
+<<<<<<< HEAD
     void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project project, boolean updateDefinition);
+=======
+    void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project project,
+                               boolean updateDefinition );
+>>>>>>> refs/remotes/apache/trunk
 
     MavenProject getMavenProject( ContinuumProjectBuildingResult result, File file );
 
@@ -43,13 +45,17 @@ public interface MavenBuilderHelper
      * @param result
      * @param mavenProject
      * @param continuumProject
-     * @param groupPom         map this project as if it is being used to initialize a project group
+     * @param updateDefinition
      */
     void mapMavenProjectToContinuumProject( ContinuumProjectBuildingResult result, MavenProject mavenProject,
+<<<<<<< HEAD
                                             Project continuumProject, boolean updateDefinition);
 
     ArtifactRepository getLocalRepository()
         throws SettingsConfigurationException;
     
     void setLocalRepository( LocalRepository repository );
+=======
+                                            Project continuumProject, boolean updateDefinition );
+>>>>>>> refs/remotes/apache/trunk
 }

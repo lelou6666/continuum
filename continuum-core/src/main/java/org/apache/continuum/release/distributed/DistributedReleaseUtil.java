@@ -38,6 +38,8 @@ public class DistributedReleaseUtil
 
     public static final String KEY_PREPARE_GOALS = "preparation-goals";
 
+    public static final String KEY_PERFORM_GOALS = "perform-goals";
+
     public static final String KEY_SCM_COMMENT_PREFIX = "scm-comment-prefix";
 
     public static final String KEY_AUTO_VERSION_SUBMODULES = "auto-version-submodules";
@@ -102,6 +104,8 @@ public class DistributedReleaseUtil
     
     public static final String KEY_USERNAME = "username";
 
+    public static final String KEY_USERNAME = "username";
+
     public static String getScmTag( Map<String, Object> context, String defaultValue )
     {
         return getString( context, KEY_SCM_TAG, defaultValue );
@@ -120,6 +124,11 @@ public class DistributedReleaseUtil
     public static String getPrepareGoals( Map<String, Object> context, String defaultValue )
     {
         return getString( context, KEY_PREPARE_GOALS, defaultValue );
+    }
+
+    public static String getPerformGoals( Map<String, Object> context, String defaultValue )
+    {
+        return getString( context, KEY_PERFORM_GOALS, defaultValue );
     }
 
     public static String getScmCommentPrefix( Map<String, Object> context, String defaultValue )
@@ -212,6 +221,11 @@ public class DistributedReleaseUtil
         return getInteger( context, KEY_PROJECT_ID );
     }
     
+    public static String getUsername( Map<String, Object> context )
+    {
+        return getString( context, KEY_USERNAME, "" );
+    }
+
     public static String getUsername( Map<String, Object> context )
     {
         return getString( context, KEY_USERNAME, "" );

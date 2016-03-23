@@ -19,10 +19,15 @@ package org.apache.continuum.taskqueue;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.Map;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.codehaus.plexus.taskqueue.Task;
+
+import java.util.Map;
 
 public class PrepareBuildProjectsTask
     implements Task
@@ -39,8 +44,14 @@ public class PrepareBuildProjectsTask
 
     private final int projectScmRootId;
 
+<<<<<<< HEAD
     public PrepareBuildProjectsTask( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger, int projectGroupId,
                                      String projectGroupName, String scmRootAddress, int projectScmRootId )
+=======
+    public PrepareBuildProjectsTask( Map<Integer, Integer> projectsBuildDefinitionsMap, BuildTrigger buildTrigger,
+                                     int projectGroupId, String projectGroupName, String scmRootAddress,
+                                     int projectScmRootId )
+>>>>>>> refs/remotes/apache/trunk
     {
         this.projectsBuildDefinitionsMap = projectsBuildDefinitionsMap;
         this.buildTrigger = buildTrigger;
@@ -63,7 +74,11 @@ public class PrepareBuildProjectsTask
 
     public BuildTrigger getBuildTrigger()
     {
+<<<<<<< HEAD
     	return buildTrigger;
+=======
+        return buildTrigger;
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public int getHashCode()
@@ -93,6 +108,10 @@ public class PrepareBuildProjectsTask
 
     public int hashCode()
     {
+<<<<<<< HEAD
     	return this.projectGroupId + this.projectScmRootId + this.buildTrigger.getTrigger();
+=======
+        return this.projectGroupId + this.projectScmRootId + this.buildTrigger.getTrigger();
+>>>>>>> refs/remotes/apache/trunk
     }
 }

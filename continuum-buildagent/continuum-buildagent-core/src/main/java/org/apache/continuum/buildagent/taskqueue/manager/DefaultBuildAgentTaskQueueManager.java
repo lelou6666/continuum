@@ -19,8 +19,11 @@ package org.apache.continuum.buildagent.taskqueue.manager;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.continuum.buildagent.taskqueue.PrepareBuildProjectsTask;
 import org.apache.continuum.taskqueue.BuildProjectTask;
@@ -28,6 +31,8 @@ import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
 import org.apache.continuum.utils.build.BuildTrigger;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
@@ -39,22 +44,18 @@ import org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @plexus.component role="org.apache.continuum.buildagent.taskqueue.manager.BuildAgentTaskQueueManager" role-hint="default"
- */
+import java.util.List;
+
+@Component( role = org.apache.continuum.buildagent.taskqueue.manager.BuildAgentTaskQueueManager.class, hint = "default" )
 public class DefaultBuildAgentTaskQueueManager
     implements BuildAgentTaskQueueManager, Contextualizable
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultBuildAgentTaskQueueManager.class );
 
-    /**
-     * @plexus.requirement role-hint="build-agent"
-     */
+    @Requirement( hint = "build-agent" )
     private TaskQueue buildAgentBuildQueue;
 
-    /**
-     * @plexus.requirement role-hint="prepare-build-agent"
-     */
+    @Requirement( hint = "prepare-build-agent" )
     private TaskQueue buildAgentPrepareBuildQueue;
 
     private PlexusContainer container;
@@ -95,6 +96,7 @@ public class DefaultBuildAgentTaskQueueManager
         {
             if ( task instanceof BuildProjectTask )
             {
+                log.debug( "Current project building: {}", ( (BuildProjectTask) task ).getProjectName() );
                 return ( (BuildProjectTask) task ).getProjectId();
             }
         }
@@ -119,7 +121,11 @@ public class DefaultBuildAgentTaskQueueManager
                 {
                     if ( task != null )
                     {
+<<<<<<< HEAD
                         log.info( "remove project '" + task.getProjectName() + "' from build queue" );
+=======
+                        log.info( "remove project '{}' from build queue", task.getProjectName() );
+>>>>>>> refs/remotes/apache/trunk
                         buildAgentBuildQueue.remove( task );
                     }
                 }
@@ -191,7 +197,7 @@ public class DefaultBuildAgentTaskQueueManager
                 {
                     if ( task != null && task.getProjectId() == projectId )
                     {
-                        log.info( "project already in build queue" );
+                        log.debug( "project {} is in build queue", task.getProjectName() );
                         return true;
                     }
                 }
@@ -220,11 +226,17 @@ public class DefaultBuildAgentTaskQueueManager
             {
                 for ( PrepareBuildProjectsTask task : queues )
                 {
+<<<<<<< HEAD
                 	if ( task != null && task.getProjectGroupId() == projectGroupId && 
                              task.getBuildTrigger().getTrigger() == buildTrigger.getTrigger() &&
                              task.getScmRootAddress().equals( scmRootAddress ) )
+=======
+                    if ( task != null && task.getProjectGroupId() == projectGroupId &&
+                        task.getBuildTrigger().getTrigger() == buildTrigger.getTrigger() &&
+                        task.getScmRootAddress().equals( scmRootAddress ) )
+>>>>>>> refs/remotes/apache/trunk
                     {
-                        log.info( "projects already in build queue" );
+                        log.info( "project group {} in prepare build queue", task.getProjectGroupId() );
                         return true;
                     }
                 }
@@ -277,6 +289,11 @@ public class DefaultBuildAgentTaskQueueManager
 
         if ( task != null )
         {
+<<<<<<< HEAD
+=======
+            log.debug( "Current project group preparing build: {}",
+                       ( (PrepareBuildProjectsTask) task ).getProjectGroupId() );
+>>>>>>> refs/remotes/apache/trunk
             return (PrepareBuildProjectsTask) task;
         }
         return null;
@@ -289,6 +306,10 @@ public class DefaultBuildAgentTaskQueueManager
 
         if ( task != null )
         {
+<<<<<<< HEAD
+=======
+            log.debug( "Current project building: {}", ( (BuildProjectTask) task ).getProjectName() );
+>>>>>>> refs/remotes/apache/trunk
             return (BuildProjectTask) task;
         }
 
@@ -306,6 +327,10 @@ public class DefaultBuildAgentTaskQueueManager
             {
                 if ( task != null && task.getProjectGroupId() == projectGroupId && task.getScmRootId() == scmRootId )
                 {
+<<<<<<< HEAD
+=======
+                    log.debug( "Remove project group {} from prepare build queue", projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
                     return getPrepareBuildQueue().remove( task );
                 }
             }
@@ -325,6 +350,10 @@ public class DefaultBuildAgentTaskQueueManager
             {
                 if ( task != null && ArrayUtils.contains( hashCodes, task.getHashCode() ) )
                 {
+<<<<<<< HEAD
+=======
+                    log.debug( "Remove project group '{}' from prepare build queue", task.getProjectGroupId() );
+>>>>>>> refs/remotes/apache/trunk
                     getPrepareBuildQueue().remove( task );
                 }
             }
@@ -340,8 +369,16 @@ public class DefaultBuildAgentTaskQueueManager
         {
             for ( BuildProjectTask task : tasks )
             {
+<<<<<<< HEAD
                 if ( task != null && task.getProjectId() == projectId && task.getBuildDefinitionId() == buildDefinitionId )
                 {
+=======
+                if ( task != null && task.getProjectId() == projectId &&
+                    task.getBuildDefinitionId() == buildDefinitionId )
+                {
+                    log.debug( "Remove project {} with buildDefinition{} from build queue", task.getProjectName(),
+                               task.getBuildDefinitionId() );
+>>>>>>> refs/remotes/apache/trunk
                     return getBuildQueue().remove( task );
                 }
             }
@@ -361,6 +398,10 @@ public class DefaultBuildAgentTaskQueueManager
             {
                 if ( task != null && ArrayUtils.contains( hashCodes, task.getHashCode() ) )
                 {
+<<<<<<< HEAD
+=======
+                    log.debug( "Remove project '{}' from build queue", task.getProjectName() );
+>>>>>>> refs/remotes/apache/trunk
                     getBuildQueue().remove( task );
                 }
             }

@@ -141,12 +141,20 @@ public class BuildContext
 
     public BuildTrigger getBuildTrigger()
     {
+<<<<<<< HEAD
     	return buildTrigger;
+=======
+        return buildTrigger;
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void setBuildTrigger( BuildTrigger buildTrigger )
     {
+<<<<<<< HEAD
     	this.buildTrigger = buildTrigger;
+=======
+        this.buildTrigger = buildTrigger;
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public List<ProjectDependency> getModifiedDependencies()

@@ -19,11 +19,14 @@ package org.apache.maven.continuum.execution.ant;
  * under the License.
  */
 
+import org.apache.maven.continuum.configuration.ConfigurationException;
+import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.execution.AbstractBuildExecutor;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutionResult;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorException;
+import org.apache.maven.continuum.execution.shared.JUnitReportArchiver;
 import org.apache.maven.continuum.installation.InstallationService;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
@@ -33,15 +36,16 @@ import org.apache.maven.continuum.model.system.Profile;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class AntBuildExecutor
     extends AbstractBuildExecutor
@@ -57,6 +61,10 @@ public class AntBuildExecutor
 
     public static final String ID = ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR;
 
+    private ConfigurationService configurationService;
+
+    private JUnitReportArchiver testReportArchiver;
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
@@ -66,15 +74,26 @@ public class AntBuildExecutor
         super( ID, true );
     }
 
+    public void setConfigurationService( ConfigurationService configurationService )
+    {
+        this.configurationService = configurationService;
+    }
+
+    public void setTestReportArchiver( JUnitReportArchiver testReportArchiver )
+    {
+        this.testReportArchiver = testReportArchiver;
+    }
+
     // ----------------------------------------------------------------------
     // ContinuumBuilder Implementation
     // ----------------------------------------------------------------------
 
-    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput )
+    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput,
+                                                List<Project> projectsWithCommonScmRoot, String projectScmRootUrl )
         throws ContinuumBuildExecutorException
     {
-        String executable = getInstallationService().getExecutorConfigurator( InstallationService.ANT_TYPE )
-            .getExecutable();
+        String executable = getInstallationService().getExecutorConfigurator(
+            InstallationService.ANT_TYPE ).getExecutable();
 
         StringBuffer arguments = new StringBuffer();
 
@@ -105,7 +124,7 @@ public class AntBuildExecutor
             setResolveExecutable( false );
         }
 
-        return executeShellCommand( project, executable, arguments.toString(), buildOutput, environments );
+        return executeShellCommand( project, executable, arguments.toString(), buildOutput, environments, null, null );
     }
 
     protected Map<String, String> getEnvironments( BuildDefinition buildDefinition )
@@ -136,4 +155,27 @@ public class AntBuildExecutor
         throws ContinuumBuildExecutorException
     {
     }
+
+    @Override
+    public void backupTestFiles( Project project, int buildId, String projectScmRootUrl,
+                                 List<Project> projectsWithCommonScmRoot )
+    {
+        try
+        {
+            File backupDirectory = configurationService.getTestReportsDirectory( buildId, project.getId() );
+            testReportArchiver.archiveReports(
+                getWorkingDirectory( project, projectScmRootUrl, projectsWithCommonScmRoot ),
+                backupDirectory );
+        }
+        catch ( ConfigurationException e )
+        {
+            log.error( "failed to get backup directory", e );
+        }
+        catch ( IOException e )
+        {
+            log.warn( "failed to copy test results to backup directory", e );
+        }
+    }
+
 }
+

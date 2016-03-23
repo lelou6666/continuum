@@ -23,7 +23,10 @@ import org.apache.continuum.taskqueue.CheckOutTask;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD:continuum-webapp/src/main/java/org/apache/maven/continuum/web/bean/CheckoutQueue.java
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk:continuum-webapp/src/main/java/org/apache/maven/continuum/web/bean/CheckoutQueue.java
  */
 public class CheckoutQueue
     extends Queue

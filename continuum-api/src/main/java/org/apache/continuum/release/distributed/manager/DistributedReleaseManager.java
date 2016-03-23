@@ -19,15 +19,17 @@ package org.apache.continuum.release.distributed.manager;
  * under the License.
  */
 
+import org.apache.continuum.configuration.BuildAgentConfigurationException;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.release.model.PreparedRelease;
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.release.ContinuumReleaseException;
+import org.apache.maven.shared.release.ReleaseResult;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.continuum.configuration.BuildAgentConfigurationException;
-import org.apache.continuum.model.repository.LocalRepository;
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.release.ContinuumReleaseException;
-import org.apache.maven.shared.release.ReleaseResult;
 
 public interface DistributedReleaseManager
 {
@@ -37,27 +39,45 @@ public interface DistributedReleaseManager
     List<Map<String, String>> processProject( int projectId, String pomFilename, boolean autoVersionSubmodules )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
+<<<<<<< HEAD
     String releasePrepare( Project project, Properties releaseProperties, Map<String, String> releaseVersion, 
+=======
+    String releasePrepare( Project project, Properties releaseProperties, Map<String, String> releaseVersion,
+>>>>>>> refs/remotes/apache/trunk
                            Map<String, String> developmentVersion, Map<String, String> environments, String username )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
     ReleaseResult getReleaseResult( String releaseId )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
-    Map getListener( String releaseId )
+    Map<String, Object> getListener( String releaseId )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
     void removeListener( String releaseId )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
+    @Deprecated
     String getPreparedReleaseName( String releaseId )
         throws ContinuumReleaseException;
 
+<<<<<<< HEAD
     void releasePerform( int projectId, String releaseId, String goals, String arguments, boolean useReleaseProfile, LocalRepository repository, String username )
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
     String releasePerformFromScm( int projectId, String goals, String arguments, boolean useReleaseProfile, LocalRepository repository, 
                                   String scmUrl, String scmUsername, String scmPassword, String scmTag, String scmTagBase, Map environments, String username )
+=======
+    Map<String, String> getPreparedReleases( String groupId, String artifactId )
+        throws ContinuumReleaseException;
+
+    void releasePerform( int projectId, String releaseId, String goals, String arguments, boolean useReleaseProfile,
+                         LocalRepository repository, String username )
+        throws ContinuumReleaseException, BuildAgentConfigurationException;
+
+    String releasePerformFromScm( int projectId, String goals, String arguments, boolean useReleaseProfile,
+                                  LocalRepository repository, String scmUrl, String scmUsername, String scmPassword,
+                                  String scmTag, String scmTagBase, Map environments, String username )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumReleaseException, BuildAgentConfigurationException;
 
     void releaseRollback( String releaseId, int projectId )
@@ -68,6 +88,14 @@ public interface DistributedReleaseManager
 
     List<Map<String, Object>> getAllReleasesInProgress()
         throws ContinuumReleaseException, BuildAgentConfigurationException;
+<<<<<<< HEAD
     
     String getDefaultBuildagent( int projectId );
+=======
+
+    String getDefaultBuildagent( int projectId );
+
+    PreparedRelease getPreparedRelease( String releaseId, String releaseType )
+        throws ContinuumReleaseException;
+>>>>>>> refs/remotes/apache/trunk
 }

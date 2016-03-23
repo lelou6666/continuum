@@ -27,24 +27,28 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.TaskQueue;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class BuildQueueTest
     extends AbstractContinuumTest
 {
     private TaskQueue buildQueue;
 
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
-
-        buildQueue = (TaskQueue) lookup( TaskQueue.ROLE, "build-project" );
+        buildQueue = lookup( TaskQueue.class, "build-project" );
     }
 
+    @Test
     public void testTestTheQueueWithASingleProject()
         throws Exception
     {
@@ -70,6 +74,7 @@ public class BuildQueueTest
         assertNextBuildIsNull();
     }
 
+    @Test
     public void testTheQueueWithMultipleProjects()
         throws Exception
     {
@@ -99,6 +104,7 @@ public class BuildQueueTest
         assertNextBuildIsNull();
     }
 
+    @Test
     public void testTestTheQueueWithASingleProjectAndForcedBuilds()
         throws Exception
     {
@@ -134,7 +140,12 @@ public class BuildQueueTest
         throws Exception
     {
         ProjectGroup group = getDefaultProjectGroup();
+<<<<<<< HEAD
         buildQueue.put( new BuildProjectTask( projectId, 0, new BuildTrigger( trigger, "" ), null, null, null, group.getId() ) );
+=======
+        buildQueue.put( new BuildProjectTask( projectId, 0, new BuildTrigger( trigger, "" ), null, null, null,
+                                              group.getId() ) );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     private void assertNextBuildIs( int expectedProjectId )

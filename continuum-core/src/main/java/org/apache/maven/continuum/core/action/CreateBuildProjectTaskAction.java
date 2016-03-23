@@ -19,10 +19,6 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.buildmanager.BuildsManager;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.utils.build.BuildTrigger;
@@ -33,28 +29,33 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action" role-hint="create-build-project-task"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "create-build-project-task" )
 public class CreateBuildProjectTaskAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildExecutorManager executorManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement role-hint="parallel"
      */
+=======
+    @Requirement( hint = "parallel" )
+>>>>>>> refs/remotes/apache/trunk
     private BuildsManager parallelBuildsManager;
 
     public synchronized void execute( Map context )
@@ -75,7 +76,8 @@ public class CreateBuildProjectTaskAction
 
             if ( parallelBuildsManager.isInAnyBuildQueue( project.getId(), buildDefinition.getId() ) )
             {
-                return;
+                getLogger().info( "Project '" + project.getName() + "' is already in build queue." );
+                continue;
             }
 
             if ( parallelBuildsManager.isInAnyCheckoutQueue( project.getId() ) )
@@ -85,6 +87,17 @@ public class CreateBuildProjectTaskAction
 
             try
             {
+                /**
+                 * The following can (and probably should) be simplified to:
+                 *
+                 * If project is building in executor or its state is UPDATING:
+                 *   * Skip the project and log it
+                 *
+                 * If project state is not in { NEW, CHECKEDOUT, OK, FAILED, ERROR }:
+                 *   * Set the project's state to ERROR
+                 *
+                 * Lastly, record the project's original state and add it to the list of projects to build
+                 */
                 if ( project.getState() != ContinuumProjectState.NEW &&
                     project.getState() != ContinuumProjectState.CHECKEDOUT &&
                     project.getState() != ContinuumProjectState.OK &&
@@ -116,7 +129,6 @@ public class CreateBuildProjectTaskAction
             catch ( ContinuumStoreException e )
             {
                 getLogger().error( "Error while creating build object", e );
-                //throw new ContinuumException( "Error while creating build object.", e );
             }
         }
 

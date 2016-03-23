@@ -21,6 +21,7 @@ package org.apache.maven.continuum.management;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import edu.emory.mathcs.backport.java.util.concurrent.ThreadPoolExecutor;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -40,6 +41,10 @@ import org.apache.maven.artifact.resolver.DebugResolutionListener;
 import org.apache.maven.artifact.resolver.ResolutionListener;
 import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.ExcludesArtifactFilter;
+<<<<<<< HEAD
+=======
+import org.apache.maven.artifact.resolver.filter.TypeArtifactFilter;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.management.util.PlexusFileSystemXmlApplicationContext;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Mirror;
@@ -60,6 +65,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -73,7 +79,6 @@ import java.util.Properties;
 /**
  * An application for performing database upgrades from old Continuum and Redback versions. A suitable tool until it
  * is natively incorporated into Continuum itself.
- * @version $Id$
  */
 public class DataManagementCli
 {
@@ -183,6 +188,13 @@ public class DataManagementCli
             return;
         }
 
+        if ( command.settings != null && !command.settings.isFile() )
+        {
+            System.err.println( command.settings + " not exists or is not a file." );
+            Args.usage( command );
+            return;
+        }
+
         if ( command.buildsJdbcUrl != null )
         {
             LOGGER.info( "Processing Continuum database..." );
@@ -197,6 +209,27 @@ public class DataManagementCli
             processDatabase( databaseType, databaseFormat, mode, command.usersJdbcUrl, command.directory,
                              command.settings, databaseFormat.getRedbackToolRoleHint(), "data-management-redback-jdo",
                              "redback", command.strict );
+<<<<<<< HEAD
+=======
+        }
+
+        LOGGER.info( "Export complete. Shutting down..." );
+    }
+
+    private static void shutdownResolverThreadPool( PlexusContainerAdapter container )
+    {
+        try
+        {
+            ArtifactResolver resolver = (ArtifactResolver) container.lookup( ArtifactResolver.ROLE );
+            Field f = resolver.getClass().getDeclaredField( "resolveArtifactPool" );
+            f.setAccessible( true );
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) f.get( resolver );
+            executor.shutdownNow();
+        }
+        catch ( Exception e )
+        {
+            LOGGER.error( "failed to shutdown resolver thread pool", e );
+>>>>>>> refs/remotes/apache/trunk
         }
     }
 
@@ -212,6 +245,7 @@ public class DataManagementCli
         DatabaseParams params = new DatabaseParams( databaseType.defaultParams );
         params.setUrl( jdbcUrl );
 
+<<<<<<< HEAD
         PlexusClassPathXmlApplicationContext classPathApplicationContext = new PlexusClassPathXmlApplicationContext(
             new String[]{"classpath*:/META-INF/spring-context.xml", "classpath*:/META-INF/plexus/components.xml",
             		"classpath*:/META-INF/plexus/plexus.xml"} );
@@ -241,24 +275,67 @@ public class DataManagementCli
         {
             String urlEF = url.toExternalForm();
             if ( urlEF.endsWith( "target/classes/" ) )
+=======
+        PlexusClassPathXmlApplicationContext classPathApplicationContext = null;
+        PlexusFileSystemXmlApplicationContext fileSystemApplicationContext = null;
+        ClassLoader origContextClassLoader = Thread.currentThread().getContextClassLoader();
+        try
+        {
+            classPathApplicationContext = new PlexusClassPathXmlApplicationContext(
+                new String[] { "classpath*:/META-INF/spring-context.xml", "classpath*:/META-INF/plexus/components.xml",
+                    "classpath*:/META-INF/plexus/plexus.xml" } );
+
+            PlexusContainerAdapter container = new PlexusContainerAdapter();
+            container.setApplicationContext( classPathApplicationContext );
+
+            initializeWagon( container, setting );
+
+            List<Artifact> artifacts = new ArrayList<Artifact>();
+            try
             {
-                int idEndIdx = urlEF.length() - 16;
-                String id = urlEF.substring( urlEF.lastIndexOf( '/', idEndIdx - 1 ) + 1, idEndIdx );
-                // continuum-legacy included because the IDE doesn't do the proper assembly of enhanced classes and JDO metadata
-                if ( !"data-management-api".equals( id ) && !"data-management-cli".equals( id ) &&
-                    !"continuum-legacy".equals( id ) && !"continuum-model".equals( id ) &&
-                    !"redback-legacy".equals( id ) )
+                artifacts.addAll(
+                    downloadArtifact( container, params.getGroupId(), params.getArtifactId(), params.getVersion(),
+                                      setting ) );
+                artifacts.addAll(
+                    downloadArtifact( container, "org.apache.continuum", managementArtifactId, applicationVersion,
+                                      setting ) );
+                artifacts.addAll(
+                    downloadArtifact( container, "jpox", "jpox", databaseFormat.getJpoxVersion(), setting ) );
+            }
+            finally
+            {
+                shutdownResolverThreadPool( container );
+            }
+
+            // Filter the list so we only use jars
+            TypeArtifactFilter jarFilter = new TypeArtifactFilter( "jar" );
+            Iterator<Artifact> iter = artifacts.iterator();
+            while ( iter.hasNext() )
+>>>>>>> refs/remotes/apache/trunk
+            {
+                if ( !jarFilter.include( iter.next() ) )
                 {
+<<<<<<< HEAD
                     LOGGER.debug( "[IDE Help] Adding '" + id + "' as an exclusion and using one from classpath" );
                     exclusions.add( "org.apache.continuum:" + id );
                     jars.add( url.getPath() );
                     jarUrls.add( url );
+=======
+                    iter.remove();
+>>>>>>> refs/remotes/apache/trunk
                 }
             }
 
-            // Sometimes finds its way into the IDE. Make sure it is loaded in the extra classloader too
-            if ( urlEF.contains( "jpox-enhancer" ) )
+            List<String> jars = new ArrayList<String>();
+
+            // Little hack to make it work more nicely in the IDE
+            List<String> exclusions = new ArrayList<String>();
+            URLClassLoader cp = (URLClassLoader) DataManagementCli.class.getClassLoader();
+            List<URL> jarUrls = new ArrayList<URL>();
+
+            for ( URL url : cp.getURLs() )
             {
+<<<<<<< HEAD
                 LOGGER.debug( "[IDE Help] Adding 'jpox-enhancer' as an exclusion and using one from classpath" );
                 jars.add( url.getPath() );
                 jarUrls.add( url );
@@ -266,12 +343,49 @@ public class DataManagementCli
         }
 
         ArtifactFilter filter = new ExcludesArtifactFilter( exclusions );
+=======
+                String urlEF = url.toExternalForm();
+                if ( urlEF.endsWith( "target/classes/" ) )
+                {
+                    int idEndIdx = urlEF.length() - 16;
+                    String id = urlEF.substring( urlEF.lastIndexOf( '/', idEndIdx - 1 ) + 1, idEndIdx );
+                    // continuum-legacy included because the IDE doesn't do the proper assembly of enhanced classes and JDO metadata
+                    if ( !"data-management-api".equals( id ) && !"data-management-cli".equals( id ) &&
+                        !"continuum-legacy".equals( id ) && !"continuum-model".equals( id ) &&
+                        !"redback-legacy".equals( id ) )
+                    {
+                        LOGGER.debug( "[IDE Help] Adding '" + id + "' as an exclusion and using one from classpath" );
+                        exclusions.add( "org.apache.continuum:" + id );
+                        jars.add( url.getPath() );
+                        jarUrls.add( url );
+                    }
+                }
 
-        for ( Artifact a : artifacts )
-        {
-            if ( "jpox".equals( a.getGroupId() ) && "jpox".equals( a.getArtifactId() ) )
+                // Sometimes finds its way into the IDE. Make sure it is loaded in the extra classloader too
+                if ( urlEF.contains( "jpox-enhancer" ) )
+                {
+                    LOGGER.debug( "[IDE Help] Adding 'jpox-enhancer' as an exclusion and using one from classpath" );
+                    jars.add( url.getPath() );
+                    jarUrls.add( url );
+                }
+            }
+>>>>>>> refs/remotes/apache/trunk
+
+            ArtifactFilter filter = new ExcludesArtifactFilter( exclusions );
+
+            for ( Artifact a : artifacts )
             {
-                if ( a.getVersion().equals( databaseFormat.getJpoxVersion() ) )
+                if ( "jpox".equals( a.getGroupId() ) && "jpox".equals( a.getArtifactId() ) )
+                {
+                    if ( a.getVersion().equals( databaseFormat.getJpoxVersion() ) )
+                    {
+                        LOGGER.debug( "Adding artifact: " + a.getFile() );
+                        jars.add( JAR_FILE_PREFIX + a.getFile().getAbsolutePath() + SPRING_CONTEXT_LOC );
+                        jars.add( JAR_FILE_PREFIX + a.getFile().getAbsolutePath() + PLEXUS_XML_LOC );
+                        jarUrls.add( new URL( FILE_PREFIX + a.getFile().getAbsolutePath() ) );
+                    }
+                }
+                else if ( filter.include( a ) )
                 {
                     LOGGER.debug( "Adding artifact: " + a.getFile() );
                     jars.add( JAR_FILE_PREFIX + a.getFile().getAbsolutePath() + SPRING_CONTEXT_LOC );
@@ -279,6 +393,7 @@ public class DataManagementCli
                     jarUrls.add( new URL( FILE_PREFIX + a.getFile().getAbsolutePath() ) );
                 }
             }
+<<<<<<< HEAD
             else if ( filter.include( a ) )
             {
                 LOGGER.debug( "Adding artifact: " + a.getFile() );
@@ -307,11 +422,48 @@ public class DataManagementCli
         if ( mode == OperationMode.EXPORT )
         {
             manager.backupDatabase( directory );
+=======
+
+            URLClassLoader newClassLoader =
+                new URLClassLoader( (URL[]) jarUrls.toArray( new URL[jarUrls.size()] ), cp );
+            Thread.currentThread().setContextClassLoader( newClassLoader );
+            classPathApplicationContext.setClassLoader( newClassLoader );
+
+            fileSystemApplicationContext = new PlexusFileSystemXmlApplicationContext(
+                (String[]) jars.toArray( new String[jars.size()] ), classPathApplicationContext );
+            fileSystemApplicationContext.setClassLoader( newClassLoader );
+            container.setApplicationContext( fileSystemApplicationContext );
+
+            DatabaseFactoryConfigurator configurator = (DatabaseFactoryConfigurator) container.lookup(
+                DatabaseFactoryConfigurator.class.getName(), configRoleHint );
+            configurator.configure( params );
+
+            DataManagementTool manager = (DataManagementTool) container.lookup( DataManagementTool.class.getName(),
+                                                                                toolRoleHint );
+
+            if ( mode == OperationMode.EXPORT )
+            {
+                manager.backupDatabase( directory );
+            }
+            else if ( mode == OperationMode.IMPORT )
+            {
+                manager.eraseDatabase();
+                manager.restoreDatabase( directory, strict );
+            }
+>>>>>>> refs/remotes/apache/trunk
         }
-        else if ( mode == OperationMode.IMPORT )
+        finally
         {
+<<<<<<< HEAD
             manager.eraseDatabase();
             manager.restoreDatabase( directory, strict );
+=======
+            if ( fileSystemApplicationContext != null )
+                fileSystemApplicationContext.close();
+            if ( classPathApplicationContext != null )
+                classPathApplicationContext.close();
+            Thread.currentThread().setContextClassLoader( origContextClassLoader );
+>>>>>>> refs/remotes/apache/trunk
         }
     }
 
@@ -379,20 +531,29 @@ public class DataManagementCli
                                                           String version, File setting )
         throws ComponentLookupException, ArtifactNotFoundException, ArtifactResolutionException, IOException
     {
-        ArtifactRepositoryFactory factory =
-            (ArtifactRepositoryFactory) container.lookup( ArtifactRepositoryFactory.ROLE );
+        ArtifactRepositoryFactory factory = (ArtifactRepositoryFactory) container.lookup(
+            ArtifactRepositoryFactory.ROLE );
 
-        DefaultRepositoryLayout layout =
-            (DefaultRepositoryLayout) container.lookup( ArtifactRepositoryLayout.ROLE, "default" );
+        DefaultRepositoryLayout layout = (DefaultRepositoryLayout) container.lookup( ArtifactRepositoryLayout.ROLE,
+                                                                                     "default" );
 
+<<<<<<< HEAD
         ArtifactRepository localRepository =
             factory.createArtifactRepository( "local", getLocalRepositoryURL( container, setting ), layout, null, null );
+=======
+        ArtifactRepository localRepository = factory.createArtifactRepository( "local", getLocalRepositoryURL(
+            container, setting ), layout, null, null );
+>>>>>>> refs/remotes/apache/trunk
 
         List<ArtifactRepository> remoteRepositories = new ArrayList<ArtifactRepository>();
-        remoteRepositories.add(
-            factory.createArtifactRepository( "central", "http://repo1.maven.org/maven2", layout, null, null ) );
+        remoteRepositories.add( factory.createArtifactRepository( "central", "http://repo1.maven.org/maven2", layout,
+                                                                  null, null ) );
         //Load extra repositories from active profile
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         Settings settings = getSettings( container, setting );
         List<String> profileIds = settings.getActiveProfiles();
         Map<String, Profile> profilesAsMap = settings.getProfilesAsMap();
@@ -415,10 +576,10 @@ public class DataManagementCli
                 }
             }
         }
-        
+
         ArtifactFactory artifactFactory = (ArtifactFactory) container.lookup( ArtifactFactory.ROLE );
-        Artifact artifact =
-            artifactFactory.createArtifact( groupId, artifactId, version, Artifact.SCOPE_RUNTIME, "jar" );
+        Artifact artifact = artifactFactory.createArtifact( groupId, artifactId, version, Artifact.SCOPE_RUNTIME,
+                                                            "jar" );
         Artifact dummyArtifact = artifactFactory.createProjectArtifact( "dummy", "dummy", "1.0" );
 
         if ( artifact.isSnapshot() )
@@ -449,11 +610,12 @@ public class DataManagementCli
             listeners = Collections.emptyList();
         }
 
-        ArtifactMetadataSource source =
-            (ArtifactMetadataSource) container.lookup( ArtifactMetadataSource.ROLE, "maven" );
-        ArtifactResolutionResult result =
-            resolver.resolveTransitively( Collections.singleton( artifact ), dummyArtifact, Collections.emptyMap(),
-                                          localRepository, remoteRepositories, source, filter, listeners );
+        ArtifactMetadataSource source = (ArtifactMetadataSource) container.lookup( ArtifactMetadataSource.ROLE,
+                                                                                   "maven" );
+        ArtifactResolutionResult result = resolver.resolveTransitively( Collections.singleton( artifact ),
+                                                                        dummyArtifact, Collections.emptyMap(),
+                                                                        localRepository, remoteRepositories, source,
+                                                                        filter, listeners );
 
         return result.getArtifacts();
     }
@@ -483,8 +645,8 @@ public class DataManagementCli
     private static Settings getSettings( PlexusContainer container, File setting )
         throws ComponentLookupException, IOException
     {
-        MavenSettingsBuilder mavenSettingsBuilder =
-            (MavenSettingsBuilder) container.lookup( MavenSettingsBuilder.class.getName() );
+        MavenSettingsBuilder mavenSettingsBuilder = (MavenSettingsBuilder) container.lookup(
+            MavenSettingsBuilder.class.getName() );
         try
         {
             if ( setting != null )
@@ -515,25 +677,25 @@ public class DataManagementCli
     private static class Commands
     {
 
-        @Argument(description = "Display help information", value = "help", alias = "h")
+        @Argument( description = "Display help information", value = "help", alias = "h" )
         private boolean help;
 
-        @Argument(description = "Display version information", value = "version", alias = "v")
+        @Argument( description = "Display version information", value = "version", alias = "v" )
         private boolean version;
 
         @Argument(
             description = "The JDBC URL for the Continuum database that contains the data to convert, or to import the data into",
-            value = "buildsJdbcUrl")
+            value = "buildsJdbcUrl" )
         private String buildsJdbcUrl;
 
         @Argument(
             description = "The JDBC URL for the Redback database that contains the data to convert, or to import the data into",
-            value = "usersJdbcUrl")
+            value = "usersJdbcUrl" )
         private String usersJdbcUrl;
 
         // TODO: ability to use the enum directly would be nice
         @Argument(
-            description = "Format of the database. Valid values are CONTINUUM_103, CONTINUUM_109, CONTINUUM_11. Default is CONTINUUM_11.")
+            description = "Format of the database. Valid values are CONTINUUM_103, CONTINUUM_109, CONTINUUM_11. Default is CONTINUUM_11." )
         private String databaseFormat = DatabaseFormat.CONTINUUM_11.toString();
 
 /* TODO: not yet supported
@@ -544,53 +706,62 @@ public class DataManagementCli
 
         @Argument(
             description = "The directory to export the data to, or import the data from. Default is 'backups' in the current working directory.",
-            value = "directory")
+            value = "directory" )
         private File directory = new File( "backups" );
 
         @Argument(
             description = "Mode of operation. Valid values are IMPORT and EXPORT. Default is EXPORT.",
-            value = "mode")
+            value = "mode" )
         private String mode = OperationMode.EXPORT.toString();
 
         @Argument(
             description = "Whether to overwrite the designated directory if it already exists in export mode. Default is false.",
-            value = "overwrite")
+            value = "overwrite" )
         private boolean overwrite;
 
         @Argument(
             description = "The type of database to use. Currently supported values are DERBY_10_1. The default value is DERBY_10_1.",
-            value = "databaseType")
+            value = "databaseType" )
         private String databaseType = SupportedDatabase.DERBY_10_1.toString();
 
-        @Argument(description = "JDBC driver class", value = "driverClass", required = false)
+        @Argument( description = "JDBC driver class", value = "driverClass", required = false )
         private String driverClass;
 
-        @Argument(description = "JDBC driver groupId", value = "groupId", required = false)
+        @Argument( description = "JDBC driver groupId", value = "groupId", required = false )
         private String groupId;
 
-        @Argument(description = "JDBC driver artifactId", value = "artifactId", required = false)
+        @Argument( description = "JDBC driver artifactId", value = "artifactId", required = false )
         private String artifactId;
 
-        @Argument(description = "Artifact version of the JDBC driver class",
-                  value = "artifactVersion",
-                  required = false)
+        @Argument( description = "Artifact version of the JDBC driver class",
+                   value = "artifactVersion",
+                   required = false )
         private String artifactVersion;
 
-        @Argument(description = "Username", value = "username", required = false)
+        @Argument( description = "Username", value = "username", required = false )
         private String username;
 
-        @Argument(description = "Password", value = "password", required = false)
+        @Argument( description = "Password", value = "password", required = false )
         private String password;
 
         @Argument(
             description = "Turn on debugging information. Default is off.",
-            value = "debug")
+            value = "debug" )
         private boolean debug;
+<<<<<<< HEAD
         
         @Argument( description = "Alternate path for the user settings file", value = "settings", required = false, alias = "s" )
         private File settings;
 
         @Argument(description = "Run on strict mode. Default is false.", value="strict")
+=======
+
+        @Argument( description = "Alternate path for the user settings file", value = "settings", required = false,
+                   alias = "s" )
+        private File settings;
+
+        @Argument( description = "Run on strict mode. Default is false.", value = "strict" )
+>>>>>>> refs/remotes/apache/trunk
         private boolean strict;
     }
 

@@ -19,52 +19,56 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ChangeFile;
 import org.apache.maven.continuum.model.scm.ChangeSet;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author olamy
  * @since 1.2.3
- * @version $Id$
  */
 public class MavenTwoBuildExecutorTest
     extends AbstractContinuumTest
 {
-       
-    
     @Override
     protected String getSpringConfigLocation()
     {
         return "applicationContextSlf4jPlexusLogger.xml";
     }
 
+    @Test
     public void testShouldNotBuildNonRecursive()
         throws Exception
     {
-        MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) lookup( ContinuumBuildExecutor.class, "maven2" );
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-N" );
-        Project continuumProject = new Project(){
+        Project continuumProject = new Project()
+        {
             {
                 setVersion( "1.0.3" );
             }
         };
-        assertFalse( executor.shouldBuild( new ArrayList<ChangeSet>(), continuumProject, new File( "target/test-classes/projects/continuum" ),
-                                           buildDefinition ) );
+        assertFalse( executor.shouldBuild( new ArrayList<ChangeSet>(), continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
     }
-    
+
+    @Test
     public void testShouldNotBuildNonRecursiveChangeInAModule()
         throws Exception
     {
-        MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) lookup( ContinuumBuildExecutor.class, "maven2" );
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-N -Dfoo=bar" );
         Project continuumProject = new Project()
@@ -74,7 +78,7 @@ public class MavenTwoBuildExecutorTest
             }
         };
         final ChangeFile changeFile = new ChangeFile();
-        changeFile.setName( "continuum-notifiers/pom.xml");
+        changeFile.setName( "continuum-notifiers/pom.xml" );
         ChangeSet changeSet = new ChangeSet()
         {
             {
@@ -83,14 +87,15 @@ public class MavenTwoBuildExecutorTest
         };
         List<ChangeSet> changeSets = new ArrayList<ChangeSet>();
         changeSets.add( changeSet );
-        assertFalse( executor.shouldBuild(changeSets , continuumProject,
-                                           new File( "target/test-classes/projects/continuum" ), buildDefinition ) );
-    }    
-    
+        assertFalse( executor.shouldBuild( changeSets, continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
+    }
+
+    @Test
     public void testShouldBuildRecursiveChangeInAModule()
         throws Exception
     {
-        MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) lookup( ContinuumBuildExecutor.class, "maven2" );
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-Dfoo=bar" );
         Project continuumProject = new Project()
@@ -109,7 +114,7 @@ public class MavenTwoBuildExecutorTest
         };
         List<ChangeSet> changeSets = new ArrayList<ChangeSet>();
         changeSets.add( changeSet );
-        assertTrue( executor.shouldBuild( changeSets, continuumProject,
-                                          new File( "target/test-classes/projects/continuum" ), buildDefinition ) );
-    }       
+        assertTrue( executor.shouldBuild( changeSets, continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
+    }
 }

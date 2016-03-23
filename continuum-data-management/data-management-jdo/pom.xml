@@ -22,7 +22,11 @@
   <parent>
     <artifactId>continuum-data-management</artifactId>
     <groupId>org.apache.continuum</groupId>
+<<<<<<< HEAD
     <version>1.4.1-SNAPSHOT</version>
+=======
+    <version>1.5-SNAPSHOT</version>
+>>>>>>> refs/remotes/apache/trunk
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>data-management-jdo</artifactId>
@@ -43,6 +47,10 @@
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-component-annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>
     </dependency>
     <dependency>
@@ -50,7 +58,7 @@
       <artifactId>jdo2-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
+      <groupId>org.codehaus.redback</groupId>
       <artifactId>plexus-spring</artifactId>
       <scope>test</scope>
     </dependency>
@@ -74,6 +82,14 @@
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-commons</artifactId>
       <scope>test</scope>
+<<<<<<< HEAD
+=======
+    </dependency>
+    <dependency>
+      <groupId>org.apache.continuum</groupId>
+      <artifactId>continuum-test</artifactId>
+      <scope>test</scope>
+>>>>>>> refs/remotes/apache/trunk
     </dependency>
     <dependency>
       <groupId>stax</groupId>
@@ -105,8 +121,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>hsqldb</groupId>
+      <groupId>org.hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
+      <version>2.3.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -120,7 +137,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>jdom</groupId>
+      <groupId>org.jdom</groupId>
       <artifactId>jdom</artifactId>
       <scope>test</scope>
     </dependency>

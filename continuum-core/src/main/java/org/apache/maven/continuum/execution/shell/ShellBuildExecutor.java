@@ -35,11 +35,11 @@ import org.codehaus.plexus.util.StringUtils;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ShellBuildExecutor
     extends AbstractBuildExecutor
@@ -66,15 +66,16 @@ public class ShellBuildExecutor
     // ContinuumBuilder implementation
     // ----------------------------------------------------------------------
 
-    public synchronized ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition,
-                                                             File buildOutput )
+    public ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition,
+                                                             File buildOutput, List<Project> projectsWithCommonScmRoot,
+                                                             String projectScmRootUrl )
         throws ContinuumBuildExecutorException
     {
         // TODO: this should be validated earlier?
         String executable = getBuildFileForProject( project, buildDefinition );
 
-        return executeShellCommand( project, executable, buildDefinition.getArguments(), buildOutput,
-                                    getEnvironments( buildDefinition ) );
+        return executeShellCommand( project, executable, buildDefinition.getArguments(), buildOutput, getEnvironments(
+            buildDefinition ), null, null );
     }
 
     protected Map<String, String> getEnvironments( BuildDefinition buildDefinition )

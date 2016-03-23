@@ -31,4 +31,8 @@ Requirements
 
  In addition, we have the following requirements defined:
 
+<<<<<<< HEAD
  * {{{credentials.html}Credentials Handling}}
+=======
+ * {{{./credentials.html}Credentials Handling}}
+>>>>>>> refs/remotes/apache/trunk

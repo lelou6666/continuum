@@ -28,12 +28,15 @@ import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.profile.ProfileService;
 import org.codehaus.plexus.util.StringUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 13 juin 07
  */
 public class DefaultInstallationServiceTest
@@ -41,11 +44,11 @@ public class DefaultInstallationServiceTest
 {
     private static final String NEW_INSTALLATION_NAME = "newInstallation";
 
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-        DaoUtils daoUtils = (DaoUtils) lookup( DaoUtils.class.getName() );
+        DaoUtils daoUtils = lookup( DaoUtils.class );
         daoUtils.eraseDatabase();
     }
 
@@ -54,7 +57,7 @@ public class DefaultInstallationServiceTest
     {
         //Continuum continuum = (Continuum) lookup( Continuum.ROLE );
         //return continuum.getInstallationService();
-        return (InstallationService) lookup( InstallationService.ROLE );
+        return lookup( InstallationService.class );
     }
 
     private Installation addInstallation( String name, String varName, String varValue, String type )
@@ -69,6 +72,7 @@ public class DefaultInstallationServiceTest
         return getInstallationService().add( installation );
     }
 
+    @Test
     public void testAddInstallation()
         throws Exception
     {
@@ -78,8 +82,10 @@ public class DefaultInstallationServiceTest
         assertEquals( getInstallationService().getEnvVar( InstallationService.JDK_TYPE ), getted.getVarName() );
         assertEquals( "bar", getted.getVarValue() );
         assertEquals( 1, getInstallationService().getAllInstallations().size() );
+        assertNotNull( getInstallationService().getInstallation( NEW_INSTALLATION_NAME ) );
     }
 
+    @Test
     public void testAddDuplicateInstallation()
         throws Exception
     {
@@ -100,6 +106,7 @@ public class DefaultInstallationServiceTest
         assertEquals( 1, getInstallationService().getAllInstallations().size() );
     }
 
+    @Test
     public void testRemove()
         throws Exception
     {
@@ -113,6 +120,7 @@ public class DefaultInstallationServiceTest
 
     }
 
+    @Test
     public void testUpdate()
         throws Exception
     {
@@ -131,15 +139,17 @@ public class DefaultInstallationServiceTest
         assertEquals( "updatedbar", getted.getVarValue() );
     }
 
-    public void testgetDefaultJdkInformations()
+    @Test
+    public void testGetDefaultJavaVersionInfo()
         throws Exception
     {
         InstallationService installationService = (InstallationService) lookup( InstallationService.ROLE, "default" );
-        List<String> infos = installationService.getDefaultJdkInformations();
+        List<String> infos = installationService.getDefaultJavaVersionInfo();
         assertNotNull( infos );
     }
 
-    public void testgetJdkInformations()
+    @Test
+    public void testGetJavaVersionInfo()
         throws Exception
     {
         InstallationService installationService = (InstallationService) lookup( InstallationService.ROLE, "default" );
@@ -153,11 +163,12 @@ public class DefaultInstallationServiceTest
         installation.setType( InstallationService.JDK_TYPE );
         installation.setVarValue( javaHome );
 
-        List<String> infos = installationService.getJdkInformations( installation );
+        List<String> infos = installationService.getJavaVersionInfo( installation );
         assertNotNull( infos );
     }
 
-    public void testgetJdkInformationsWithCommonMethod()
+    @Test
+    public void testGetJavaVersionInfoWithCommonMethod()
         throws Exception
     {
         InstallationService installationService = (InstallationService) lookup( InstallationService.ROLE, "default" );
@@ -167,24 +178,26 @@ public class DefaultInstallationServiceTest
         {
             javaHome = System.getProperty( "java.home" );
         }
-        List<String> infos = installationService.getExecutorConfiguratorVersion( javaHome, java, null );
+        List<String> infos = installationService.getExecutorVersionInfo( javaHome, java, null );
         System.out.println( infos );
         assertNotNull( infos );
     }
 
+/* CONTINUUM-2559 - test may fail even in a valid environment
     public void testgetMvnVersionWithCommonMethod()
         throws Exception
     {
         InstallationService installationService = (InstallationService) lookup( InstallationService.ROLE, "default" );
         ExecutorConfigurator java = installationService.getExecutorConfigurator( InstallationService.MAVEN2_TYPE );
-        List<String> infos = installationService.getExecutorConfiguratorVersion( null, java, null );
+        List<String> infos = installationService.getExecutorVersionInfo( null, java, null );
         assertNotNull( infos );
     }
+*/
 
+    @Test
     public void testAddInstallationAutomaticProfile()
         throws Exception
     {
-
         Installation installation = new Installation();
         installation.setType( InstallationService.JDK_TYPE );
         installation.setName( "automaticJdk" );
@@ -201,6 +214,7 @@ public class DefaultInstallationServiceTest
         assertEquals( "automaticJdk", jdk.getName() );
     }
 
+    @Test
     public void testUpdateName()
         throws Exception
     {
@@ -216,7 +230,6 @@ public class DefaultInstallationServiceTest
 
         Installation getted = getInstallationService().getInstallation( installation.getInstallationId() );
         assertEquals( "new name here", getted.getName() );
-
 
     }
 }

@@ -19,11 +19,6 @@ package org.apache.maven.continuum.notification;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.continuum.model.project.ProjectScmRoot;
@@ -34,33 +29,32 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.manager.NotifierManager;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.notification.ContinuumNotificationDispatcher"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.notification.ContinuumNotificationDispatcher.class, hint = "default" )
 public class DefaultContinuumNotificationDispatcher
     implements ContinuumNotificationDispatcher
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultContinuumNotificationDispatcher.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private NotifierManager notifierManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectGroupDao projectGroupDao;
 
     // ----------------------------------------------------------------------
@@ -124,8 +118,8 @@ public class DefaultContinuumNotificationDispatcher
             //  - scm results are used to detect if scm failed
             project = projectDao.getProjectWithAllDetails( project.getId() );
 
-            ProjectGroup projectGroup =
-                projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( project.getProjectGroup().getId() );
+            ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+                project.getProjectGroup().getId() );
 
             Map<String, List<ProjectNotifier>> notifiersMap = new HashMap<String, List<ProjectNotifier>>();
 
@@ -241,7 +235,7 @@ public class DefaultContinuumNotificationDispatcher
                 if ( !projectNotifier.isEnabled() )
                 {
                     log.info( projectNotifier.getType() + " projectNotifier (id=" + projectNotifier.getId() +
-                        ") is disabled." );
+                                  ") is disabled." );
 
                     continue;
                 }

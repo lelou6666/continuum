@@ -4,11 +4,37 @@
  ------
  2010-02-22
  ------
+<<<<<<< HEAD
+=======
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+>>>>>>> refs/remotes/apache/trunk
 
 Installing and Configuring a Build Agent
 
+    Installing a build agent follows a very similar process to the Continuum master installation.
+
     First, {{{http://continuum.apache.org/download.html}download}} the Continuum Build Agent standalone
-    distribution or webapp.
+    distribution or web application.
+
+    <<Note>>: It is recommended to use Build Agents that come with the release of Continuum (Continuum Master) to be
+    used. While 1.3.x Build Agents can be used with 1.4.x Continuum (Continuum Master), using a later version of Build
+    Agent than the Continuum (Continuum Master) will not work.
 
     <<Note>>: It is recommended to use Build Agents that come with the release of Continuum (Continuum Master) to be used.
     While 1.3.x Build Agents can be used with 1.4.x Continuum (Continuum Master), using a later version of Build Agent than the
@@ -17,7 +43,11 @@ Installing and Configuring a Build Agent
 * Standalone
 
     The Build Agent is available as a separate standalone Jetty-bundled
+<<<<<<< HEAD
     webapp.  Installing it is as simple as extracting it to a preferred
+=======
+    application.  Installing it is as simple as extracting it to a preferred
+>>>>>>> refs/remotes/apache/trunk
     directory.
 
     The Build Agent runs on a specific port (defaulting to 8181), so it is possible
@@ -37,27 +67,49 @@ Installing and Configuring a Build Agent
   <continuumServerUrl>http://builds.example.com:8080/continuum/master-xmlrpc</continuumServerUrl>
   <installations>
     <installation>
+<<<<<<< HEAD
       <name>Maven 2 Home</name>
+=======
+      <name>Maven Home</name>
+>>>>>>> refs/remotes/apache/trunk
       <type>maven2</type>
       <varValue>/Applications/apache-maven-2.0.9</varValue>
     </installation>
   </installations>
   <localRepositories>
     <localRepository>
+<<<<<<< HEAD
       <name>default</name>
+=======
+      <name>DEFAULT</name>
+>>>>>>> refs/remotes/apache/trunk
       <location>/home/user/.m2/repository</location>
       <layout>default</layout>
     </localRepository>
   </localRepositories>
+<<<<<<< HEAD
 </continuum-buildagent-configuration>
 +----------------+
 
     A minimal configuration will have the following fields:
+=======
+  <sharedSecretPassword>PSK</sharedSecretPassword>
+</continuum-buildagent-configuration>
++----------------+
+>>>>>>> refs/remotes/apache/trunk
 
-    * <<<buildOutputDirectory>>> - similar to the build output directory of Continuum
+    The configuration will have the following fields:
 
-    * <<<workingDirectory>>> - similar to the working directory of Continuum
+      * <<<continuumServerUrl>>> - the URL pointing to the XML-RPC context of the Continuum Master
 
+      * <<<sharedSecretPassword>>> - the pre-shared key (PSK) between master and agent. Copy the PSK that was configured
+        in the Continuum Master configuration file <<<continuum.xml>>> (or corresponding web interface field).
+
+      * <<<buildOutputDirectory>>> - similar to the build output directory of Continuum.
+
+      * <<<workingDirectory>>> - similar to the working directory of Continuum
+
+<<<<<<< HEAD
     * <<<continuumServerUrl>>> - the URL pointing to the XML-RPC context of the Continuum Master
 
     * <<<installations>>> - a list of the installations available on the Build Agent, including Maven, Ant, JDK, etc.
@@ -69,6 +121,19 @@ Installing and Configuring a Build Agent
   Note that all of your agents need not be identical, as there is a way to control which agent Continuum chooses by using a
   {{{../administrator_guides/build-agent-groups.html}Build Agent Group}}. In addition, you need to {{{../administrator_guides/buildEnvironment.html} configure}}
   the Build Environment from the Master in order to specify which installation to use for the build.
+=======
+      * <<<installations>>> - an optional list of the installations available on the Build Agent, including Maven, Ant,
+        JDK, etc.
+    
+      * <<<localRepositories>>> - an optional list of the local repositories that will be used by the build agent when
+        building and releasing projects. The local repository <<<name>>> must match that of the local repository
+        configured in the Continuum Master. This configuration is only available in Continuum 1.4.0+.
+
+  Note that all of your agents need not be identical, as there is a way to control which agent Continuum chooses by
+  using a {{{../administrator_guides/build-agent-groups.html}Build Agent Group}}. In addition, you need to
+  {{{../administrator_guides/buildEnvironment.html} configure}} the Build Environment from the Master in order to
+  specify which installation to use for the build.
+>>>>>>> refs/remotes/apache/trunk
 
   Now start the Build Agent by executing the startup script available in
   <<<$CONTINUUM_BUILDAGENT_HOME/bin/>>>.  For example:
@@ -82,32 +147,71 @@ continuum-buildagent start
 +---+
 continuum-buildagent.bat console
 +---+
+<<<<<<< HEAD
 
   Next, enable the <<Distributed Builds>> option in the {{{../administrator_guides/configuration.html}General Configuration}},
   and {{{../administrator_guides/build-agents.html}add the agent}} to the Continuum Master server.
 
 ~~ TODO:  Does the Jetty bundle still want CONTINUUM_BUILDAGENT_HOME set?
+=======
 
-* Webapp
+  Next, {{{../administrator_guides/build-agents.html}add the agent}} to the Continuum Master server. 
 
+  Note that agent will be automatically disabled if the PSK is not configured properly or if the agent is unreachable by
+  the Continuum Master.
+
+  To conclude the installation, you should set it up as a service, following the same instructions as those shown for
+  Continuum for {{{./standalone.html#Installing_as_a_Windows_Service} Windows}} or
+  {{{./standalone.html#Installing_as_a_Linux_Service} Linux}}.
+
+* Web Application
+
+  The Build Agent is also available as a web application which you can install into your own container. Unlike Continuum
+  itself, you do not need to configure Mail and Databases, so the deployment is much simpler.
+
+  The Build Agent needs the following in order to function properly:
+>>>>>>> refs/remotes/apache/trunk
+
+    [[1]] a <<<appserver.base>>> system property
+
+<<<<<<< HEAD
   The Build Agent is also available as a web application which you can install into your own container.
 
   The Build Agent needs two things in order to function properly:  A <<<CONTINUUM_BUILDAGENT_HOME>>> environment variable,
   and a <<<continuum-buildagent.xml>>> configuration file in <<<$CONTINUUM_BUILDAGENT_HOME/conf>>>.
+=======
+    [[2]] a <<<continuum-buildagent.xml>>> configuration file in <<<$\{appserver.base\}/conf>>>
 
-  First, set the environment variable:
+    [[3]] a working area with <<<logs>>> and <<<temp>>> directories
+>>>>>>> refs/remotes/apache/trunk
 
+  Set the system property using the recommended method for your application server. An example for Tomcat is shown in
+  the {{{./tomcat.html#Configure_the_appserver.base_Java_system_property} same instructions as those shown for Continuum}}.
+
+<<<<<<< HEAD
 +---+
 export CONTINUUM_BUILDAGENT_HOME=/path/to/build/agent/home
 +---+
+=======
+  Next, create the <<<continuum-buildagent.xml>>> file as shown in the Standalone section above, and save it in
+  <<<$\{appserver.base\}/conf>>>. You will need to create these directories, as well as <<<$\{appserver.base\}/logs>>>
+  and <<<$\{appserver.base\}/temp>>>.
+>>>>>>> refs/remotes/apache/trunk
 
-  or
+  Finally, drop the web application into your container, and start it.
 
+<<<<<<< HEAD
 +---+
 set CONTINUUM_BUILDAGENT_HOME=c:\path\to\build\agent\home
 +---+
 
   Next, create the <<<continuum-buildagent.xml>>> file as shown above, and save it in <<<$CONTINUUM_BUILDAGENT_HOME/conf>>>.
   You will need to create these directories.
+=======
+* {Installing with Puppet}
 
-  Finally, drop the webapp into your container, and start it.
+  As with Continuum, if you use Puppet to manage your infrastructure, and wish to install the standalone build agent,
+  you can use a third-party Puppet module.
+>>>>>>> refs/remotes/apache/trunk
+
+  * {{{https://github.com/maestrodev/puppet-continuum} Puppet module for Apache Continuum and Continuum build agents}}

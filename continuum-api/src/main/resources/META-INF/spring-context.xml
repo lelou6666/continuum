@@ -18,6 +18,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
@@ -26,11 +27,9 @@
            http://www.springframework.org/schema/context 
            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
-  <context:annotation-config />
-  <context:component-scan 
-    base-package="org.apache.continuum.installation,org.apache.continuum.profile,
+  <context:annotation-config/>
+  <context:component-scan
+      base-package="org.apache.continuum.installation,org.apache.continuum.profile,
                   org.apache.maven.continuum.configuration,org.apache.maven.continuum.utils,
-                  org.apache.continuum.utils.shell"/>
-
-  <bean id="shellCommandHelper" class="org.apache.continuum.utils.shell.DefaultShellCommandHelper"/>
+                  org.apache.continuum.utils.m2,org.apache.continuum.utils.shell"/>
 </beans>

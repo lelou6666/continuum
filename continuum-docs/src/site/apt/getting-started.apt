@@ -7,9 +7,39 @@
  2010-02-18
  ------
 
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
 Getting Started
 
+    Getting started with Continuum's default configuration is very easy.
+
+    After unpacking the binary distribution, run the following command from the <<<bin>>> directory:
+
+----
+continuum console
+----
+
+    Continuum will be started from the command line and run until quit with Ctrl-C. For more instructions on installing
+    Continuum as a service or under an existing application server, refer to the {{{./installation/index.html}
+    Installation Guides}}.
+
     When you start Continuum for the first time (without an existing database), the first thing you will
+<<<<<<< HEAD
     do is create the admin account and perform the {{{./administrator_guides/configuration.html}General Configuration}}.
 
 [images/admin-account-creation.png] Admin account creation
@@ -20,3 +50,30 @@ Getting Started
 [images/configuration.png] General Configuration
 
     You may also create more users, {{{./user_guides/managing_project/addProject.html}add projects}}, etc.
+=======
+    do is create the administrator account and perform the {{{./administrator_guides/configuration.html}General
+    Configuration}}.
+
+[images/admin-account-creation.png] Admin account creation
+
+    After the administrator account has been created, you can log as the <<<admin>>> user with the password you selected.
+    The next thing you will see is the <<General Configuration>> page.
+
+[images/configuration.png] General Configuration
+
+    The defaults are usually sufficient, so you can save the configuration. You may later make changes to this page if
+    you are enabling Distributed Builds, for example.
+
+Next Steps
+
+    Once the server is running, you will likely want to do the following:
+
+    * Create more users via the <<Users>> menu item, so that you no longer need to use the administrator account for
+      daily tasks.
+
+    * {{{./user_guides/managing_project/addProject.html}Add Projects}} to build
+
+    * Configure Continuum to work with distributed builds if you intend to have multiple build slave machines
+
+    * Configure installed software packages and environment variables for project templates
+>>>>>>> refs/remotes/apache/trunk

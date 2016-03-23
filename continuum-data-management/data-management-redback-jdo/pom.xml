@@ -22,7 +22,11 @@
   <parent>
     <artifactId>continuum-data-management</artifactId>
     <groupId>org.apache.continuum</groupId>
+<<<<<<< HEAD
     <version>1.4.1-SNAPSHOT</version>
+=======
+    <version>1.5-SNAPSHOT</version>
+>>>>>>> refs/remotes/apache/trunk
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>data-management-redback-jdo</artifactId>
@@ -40,6 +44,10 @@
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-jdo2</artifactId>
     </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-component-annotations</artifactId>
+      </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>

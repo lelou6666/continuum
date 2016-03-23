@@ -19,6 +19,20 @@ package org.apache.maven.continuum.execution.maven.m1;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectDependency;
+import org.apache.maven.continuum.model.project.ProjectDeveloper;
+import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
+import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -27,25 +41,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectDependency;
-import org.apache.maven.continuum.model.project.ProjectDeveloper;
-import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
-import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
-import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper.class, hint = "default" )
 public class DefaultMavenOneMetadataHelper
     implements MavenOneMetadataHelper
 {
@@ -56,15 +55,21 @@ public class DefaultMavenOneMetadataHelper
     // ----------------------------------------------------------------------
 
     /**
-     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult,File,Project)} instead
+     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult, File, Project)} instead
      */
+    @Deprecated
     public void mapMetadata( File metadata, Project project )
         throws MavenOneMetadataHelperException
     {
         mapMetadata( new ContinuumProjectBuildingResult(), metadata, project, true );
     }
 
+<<<<<<< HEAD
     public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project, boolean updateDefinition )
+=======
+    public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project,
+                             boolean updateDefinition )
+>>>>>>> refs/remotes/apache/trunk
         throws MavenOneMetadataHelperException
     {
         Xpp3Dom mavenProject;
@@ -353,6 +358,13 @@ public class DefaultMavenOneMetadataHelper
         {
             project.setVersion( version );
 
+<<<<<<< HEAD
+=======
+        if ( updateDefinition )
+        {
+            project.setVersion( version );
+
+>>>>>>> refs/remotes/apache/trunk
             project.setName( name );
         }
 

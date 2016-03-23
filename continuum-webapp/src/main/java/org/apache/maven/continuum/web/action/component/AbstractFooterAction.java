@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.action.component;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,25 +18,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.action.component;
 
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.maven.continuum.web.appareance.AppareanceConfiguration;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 8 nov. 07
- * @version $Id$
  */
 public abstract class AbstractFooterAction
     extends ContinuumActionSupport
 {
-    
+
     private String footer;
-    
-    /**
-     * @plexus.requirement
-     */    
+
+    @Requirement
     private AppareanceConfiguration appareanceConfiguration;
 
     public String getContinuumFooter()
@@ -51,6 +50,4 @@ public abstract class AbstractFooterAction
     {
         this.footer = footer;
     }
-
-    
 }

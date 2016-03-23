@@ -23,7 +23,6 @@ import java.util.List;
 
 /**
  * @author Edwin Punzalan
- * @version $Id$
  */
 public interface ContinuumReleaseManagerListener
 {
@@ -40,8 +39,14 @@ public interface ContinuumReleaseManagerListener
     String getError();
 
     int getState();
+<<<<<<< HEAD
     
     String getUsername();
      
+=======
+
+    String getUsername();
+
+>>>>>>> refs/remotes/apache/trunk
     void setUsername( String username );
 }

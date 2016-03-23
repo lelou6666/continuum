@@ -23,15 +23,14 @@ import org.apache.maven.continuum.ContinuumException;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 15 juin 07
  */
 public class ProfileException
     extends ContinuumException
 {
-	private static final long serialVersionUID = 7775067763191224320L;
+    private static final long serialVersionUID = 7775067763191224320L;
 
-	public ProfileException( String message, Throwable throwable )
+    public ProfileException( String message, Throwable throwable )
     {
         super( message, throwable );
     }

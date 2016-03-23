@@ -19,27 +19,39 @@ package org.apache.continuum.utils;
  * under the License.
  */
 
+<<<<<<< HEAD:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
+=======
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectDependency;
+import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.junit.Test;
+
+>>>>>>> refs/remotes/apache/trunk:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+<<<<<<< HEAD:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 
 import junit.framework.TestCase;
+=======
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+>>>>>>> refs/remotes/apache/trunk:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
 
 /**
  * @author <a href="mailto:jmcconnell@apache.org">Jesse McConnell</a>
- * @version $Id:$
  */
 public class ProjectSorterTest
-    extends TestCase
 {
 
     /**
      * test basic three project tree (really a line in this case)
      */
+    @Test
     public void testBasicNestedProjectStructure()
         throws Exception
     {
@@ -104,6 +116,7 @@ public class ProjectSorterTest
         Project p4 = sortedList.get( 3 ); //ear1 project must be the latest
         assertEquals( ear1.getArtifactId(), p4.getArtifactId() );
     }
+<<<<<<< HEAD:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
     
     /**
      * test project build order
@@ -145,6 +158,60 @@ public class ProjectSorterTest
         expectedList.add( projectC );
         expectedList.add( projectE );
         
+        for ( int i = 0; i < sortedList.size(); i++ )
+        {
+            Project sorted = sortedList.get( i );
+            Project expected = expectedList.get( i );
+            assertEquals( sorted.getArtifactId(), expected.getArtifactId() );
+        }
+    }
+
+    /**
+     * test one of the child projects not having the artifactId or groupId empty and working off the
+     * name instead
+=======
+
+    /**
+     * test project build order
+     * build order: B -> A -> D -> C -> E
+     *
+     * @throws Exception
+>>>>>>> refs/remotes/apache/trunk:continuum-api/src/test/java/org/apache/continuum/utils/ProjectSorterTest.java
+     */
+    public void testProjectBuildOrder()
+        throws Exception
+    {
+        List<Project> list = new ArrayList<Project>();
+
+        Project projectA = getNewProject( "A" );
+        Project projectB = getNewProject( "B" );
+        Project projectC = getNewProject( "C" );
+        Project projectD = getNewProject( "D" );
+        Project projectE = getNewProject( "E" );
+
+        projectA.setParent( generateProjectDependency( projectB ) );
+        projectE.setParent( generateProjectDependency( projectB ) );
+        projectC.setParent( generateProjectDependency( projectA ) );
+        projectC.setDependencies( Collections.singletonList( generateProjectDependency( projectD ) ) );
+        projectD.setParent( generateProjectDependency( projectA ) );
+
+        list.add( projectA );
+        list.add( projectB );
+        list.add( projectC );
+        list.add( projectD );
+        list.add( projectE );
+
+        List<Project> sortedList = ProjectSorter.getSortedProjects( list, null );
+        assertNotNull( sortedList );
+
+        List<Project> expectedList = new ArrayList<Project>();
+
+        expectedList.add( projectB );
+        expectedList.add( projectA );
+        expectedList.add( projectD );
+        expectedList.add( projectC );
+        expectedList.add( projectE );
+
         for ( int i = 0; i < sortedList.size(); i++ )
         {
             Project sorted = sortedList.get( i );

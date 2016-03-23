@@ -28,7 +28,11 @@ public class SummaryActionStub
     {
         return "test-group";
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     protected void checkViewProjectGroupAuthorization( String resource )
     {
         // skip authorization check

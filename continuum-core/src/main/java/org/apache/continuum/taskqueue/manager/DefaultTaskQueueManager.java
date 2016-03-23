@@ -19,11 +19,6 @@ package org.apache.continuum.taskqueue.manager;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.continuum.buildmanager.BuildManagerException;
 import org.apache.continuum.buildmanager.BuildsManager;
@@ -40,6 +35,8 @@ import org.apache.maven.continuum.release.tasks.PrepareReleaseProjectTask;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
@@ -51,48 +48,39 @@ import org.codehaus.plexus.taskqueue.execution.TaskQueueExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
- * @plexus.component role="org.apache.continuum.taskqueue.manager.TaskQueueManager" role-hint="default"
  */
+@Component( role = org.apache.continuum.taskqueue.manager.TaskQueueManager.class, hint = "default" )
 public class DefaultTaskQueueManager
     implements TaskQueueManager, Contextualizable
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultTaskQueueManager.class );
 
-    /**
-     * @plexus.requirement role-hint="distributed-build-project"
-     */
+    @Requirement( hint = "distributed-build-project" )
     private TaskQueue distributedBuildQueue;
 
-    /**
-     * @plexus.requirement role-hint="purge"
-     */
+    @Requirement( hint = "purge" )
     private TaskQueue purgeQueue;
 
-    /**
-     * @plexus.requirement role-hint="prepare-release"
-     */
+    @Requirement( hint = "prepare-release" )
     private TaskQueue prepareReleaseQueue;
 
-    /**
-     * @plexus.requirement role-hint="perform-release"
-     */
+    @Requirement( hint = "perform-release" )
     private TaskQueue performReleaseQueue;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private PurgeConfigurationService purgeConfigurationService;
 
-    /**
-     * @plexus.requirement role-hint="parallel"
-     */
+    @Requirement( hint = "parallel" )
     private BuildsManager buildsManager;
 
     private PlexusContainer container;
@@ -131,8 +119,8 @@ public class DefaultTaskQueueManager
             {
                 if ( task != null )
                 {
-                    if ( task.getProjectGroupId() == projectGroupId &&
-                        task.getScmRootAddress().equals( scmRootAddress ) )
+                    if ( task.getProjectGroupId() == projectGroupId && task.getScmRootAddress().equals(
+                        scmRootAddress ) )
                     {
                         return true;
                     }

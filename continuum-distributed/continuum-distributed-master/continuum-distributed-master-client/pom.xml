@@ -21,7 +21,11 @@ under the License.
   <parent>
     <groupId>org.apache.continuum</groupId>
     <artifactId>continuum-distributed-master</artifactId>
+<<<<<<< HEAD
     <version>1.4.1-SNAPSHOT</version>
+=======
+    <version>1.5-SNAPSHOT</version>
+>>>>>>> refs/remotes/apache/trunk
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-distributed-master-client</artifactId>
@@ -35,7 +39,10 @@ under the License.
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-distributed-commons</artifactId>
+<<<<<<< HEAD
       <version>${project.version}</version>
+=======
+>>>>>>> refs/remotes/apache/trunk
     </dependency>
     <dependency>
       <groupId>com.atlassian.xmlrpc</groupId>
@@ -46,4 +53,28 @@ under the License.
       <artifactId>slf4j-api</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Dmyproperty=myvalue</argument>
+            <argument>-classpath</argument>
+            <!-- automatically creates the classpath using all project dependencies, also adding the project build directory -->
+            <classpath />
+            <argument>org.apache.continuum.distributed.transport.slave.SampleBuildAgentClient</argument>
+            <argument>${url}/xmlrpc</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <properties>
+    <url>http://localhost:${port}/continuum-buildagent</url>
+    <port>8181</port>
+  </properties>
 </project>

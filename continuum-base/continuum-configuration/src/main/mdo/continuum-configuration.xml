@@ -47,7 +47,7 @@
           <name>deploymentRepositoryDirectory</name>
           <version>1.1.0+</version>
           <type>String</type>
-        </field>   
+        </field>
         <field>
           <name>workingDirectory</name>
           <version>1.1.0+</version>
@@ -59,8 +59,8 @@
           <association>
             <type>ProxyConfiguration</type>
             <multiplicity>1</multiplicity>
-          </association>          
-        </field>     
+          </association>
+        </field>
         <field>
           <name>releaseOutputDirectory</name>
           <version>1.1.0+</version>
@@ -70,6 +70,16 @@
           <name>numberOfBuildsInParallel</name>
           <version>1.1.0+</version>
           <type>int</type>
+        </field>
+        <field>
+          <name>distributedBuildEnabled</name>
+          <version>1.4.1+</version>
+          <type>boolean</type>
+        </field>
+        <field>
+          <name>sharedSecretPassword</name>
+          <version>1.4.1+</version>
+          <type>String</type>
         </field>
         <field>
           <name>buildAgents</name>
@@ -86,6 +96,11 @@
             <type>BuildAgentGroupConfiguration</type>
             <multiplicity>*</multiplicity>
           </association>
+        </field>
+        <field>
+          <name>initialized</name>
+          <version>1.4.1+</version>
+          <type>boolean</type>
         </field>
       </fields>
     </class>
@@ -107,12 +122,12 @@
           <name>proxyUser</name>
           <version>1.1.0+</version>
           <type>String</type>
-        </field>   
+        </field>
         <field>
           <name>proxyPassword</name>
           <version>1.1.0+</version>
           <type>String</type>
-        </field>                     
+        </field>
       </fields>
     </class>
     <class xml.tagName="buildagent-configuration">
@@ -154,6 +169,6 @@
           </association>
         </field>
       </fields>
-    </class>    
+    </class>
   </classes>
 </model>

@@ -19,44 +19,53 @@ package org.apache.maven.continuum.web.view.buildresults;
  * under the License.
  */
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.PageContext;
-
+import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.web.util.StateGenerator;
+import org.apache.maven.continuum.web.util.UrlHelperFactory;
+import org.apache.struts2.ServletActionContext;
 import org.extremecomponents.table.bean.Column;
 import org.extremecomponents.table.cell.DisplayCell;
 import org.extremecomponents.table.core.TableModel;
+
+import java.util.HashMap;
 
 /**
  * Used in BuildResults
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  * @deprecated use of cells is discouraged due to lack of i18n and design in java code.
- *             Use jsp:include instead.
+ * Use jsp:include instead.
  */
 public class StateCell
     extends DisplayCell
 {
     protected String getCellValue( TableModel tableModel, Column column )
     {
-        PageContext pageContext = (PageContext) tableModel.getContext().getContextObject();
+        final Object rowObject = tableModel.getCurrentRowBean();
+        final Object colObject = column.getPropertyValue();
 
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        final String markedUpValue = iconifyResult( rowObject, colObject );
 
-        Object value = column.getPropertyValue();
+        column.setPropertyValue( markedUpValue );
 
-        int state = -1;
+        return markedUpValue;
+    }
 
-        if ( value instanceof Integer )
-        {
-            state = (Integer) value;
-        }
+    public static String iconifyResult( Object rowObject, Object colObject )
+    {
+        final int state = colObject instanceof Integer ? (Integer) colObject : -1;
+        final String img = StateGenerator.generate( state, ServletActionContext.getRequest().getContextPath() );
+        return rowObject instanceof BuildResult ? createActionLink( "buildResult", (BuildResult) rowObject, img ) : img;
+    }
 
-        value = StateGenerator.generate( state, request.getContextPath() );
-
-        column.setPropertyValue( value );
-
-        return value.toString();
+    private static String createActionLink( String action, BuildResult result, String linkText )
+    {
+        HashMap<String, Object> params = new HashMap<String, Object>();
+        params.put( "projectId", result.getProject().getId() );
+        params.put( "buildId", result.getId() );
+        String url = UrlHelperFactory.getInstance().buildUrl( "/" + action + ".action",
+                                                              ServletActionContext.getRequest(),
+                                                              ServletActionContext.getResponse(), params );
+        return String.format( "<a href='%s''>%s</a>", url, linkText );
     }
 }

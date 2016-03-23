@@ -6,16 +6,56 @@
  2010-02-18
  ------
 
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
 Installation/Upgrade Guides
 
     In this section, you'll find information about Continuum installations:
+<<<<<<< HEAD
 
     * {{{./requirements.html}System Requirements}}
 
     * {{{./installation.html}Installation in different environments (standalone, webapp, service)}}
+=======
 
-    * {{{../release-notes.html}Release Notes}}
+    * {{{./standalone.html}Installing as a standalone service (Linux, Mac OSX, Solaris, Windows, others)}}
 
+    * {{{./tomcat.html}Installing the Web Application under a Tomcat server}}
+
+    * {{{./upgrade.html}How to upgrade from a previous version?}}
+>>>>>>> refs/remotes/apache/trunk
+
+    * {{{./build-agent.html}Installation of Build Agent for Distributed Builds}}
+
+<<<<<<< HEAD
     * {{{./upgrade.html}How to upgrade from a previous version?}}
 
     * {{{./build-agent.html}Installation of Build Agent for Distributed Builds}}
+=======
+System Requirements
+
+*----------------------+--------------------------------------------------------------------------------------------------------------------------------+
+|  <<Java>>            | Java 5 (deploying WAR files) or Java 6 (when using the standalone version with Jetty 8)                                        |
+*----------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| <<Memory>>           | No minimum requirement                                                                                                         |
+*----------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| <<Disk>>             | The Continuum application package is less than 30MB but will use more disk space when it's checking out and building sources   |
+*----------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| <<Operating System>> | No minimum requirement. Tested on Windows XP, Debian, Fedora Core, Solaris and Mac OS X                                        |
+*----------------------+--------------------------------------------------------------------------------------------------------------------------------+
+>>>>>>> refs/remotes/apache/trunk

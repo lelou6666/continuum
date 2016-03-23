@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -24,9 +24,8 @@ import org.testng.annotations.Test;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "repository" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = {"repository"} )
 public class LocalRepositoriesTest
     extends AbstractLocalRepositoryTest
 {
@@ -46,7 +45,18 @@ public class LocalRepositoriesTest
         assertTextPresent( "You must define a local repository directory." );
     }
 
-    @Test( dependsOnMethods = { "testAddLocalRepository" } )
+    public void testAddLocalRepositoryWithXSS()
+    {
+        String invalidName = "Repo <script>alert('gotcha')</script> name";
+        String invalidLocation = "/Users/continuum/<script>alert('gotcha')</script>/dir";
+
+        goToAddLocalRepository();
+        addEditLocalRepository( invalidName, invalidLocation, false );
+        assertTextPresent( "Local repository name contains invalid characters." );
+        assertTextPresent( "Local repository location contains invalid characters." );
+    }
+
+    @Test( dependsOnMethods = {"testAddLocalRepository"} )
     public void testAddDuplicatedLocalRepository()
     {
         String LOCAL_REPOSITORY_NAME = getProperty( "LOCAL_REPOSITORY_NAME" );
@@ -56,8 +66,13 @@ public class LocalRepositoriesTest
         assertTextPresent( "Local repository name must be unique" );
         assertTextPresent( "Local repository location must be unique" );
     }
+<<<<<<< HEAD
     
     @Test( dependsOnMethods = { "testAddDuplicatedLocalRepository" } )
+=======
+
+    @Test( dependsOnMethods = {"testAddDuplicatedLocalRepository"} )
+>>>>>>> refs/remotes/apache/trunk
     public void testAddDuplicateLocalRepositoryWithTrailingWhitespaces()
     {
         String duplicateRepositoryName = addTrailingWhitespace( getProperty( "LOCAL_REPOSITORY_NAME" ) );
@@ -68,7 +83,11 @@ public class LocalRepositoriesTest
         assertTextPresent( "Local repository location must be unique" );
     }
 
+<<<<<<< HEAD
     @Test( dependsOnMethods = { "testAddDuplicateLocalRepositoryWithTrailingWhitespaces" } )
+=======
+    @Test( dependsOnMethods = {"testAddDuplicateLocalRepositoryWithTrailingWhitespaces"} )
+>>>>>>> refs/remotes/apache/trunk
     public void testEditLocalRepository()
     {
         String LOCAL_REPOSITORY_NAME = getProperty( "LOCAL_REPOSITORY_NAME" );
@@ -81,7 +100,7 @@ public class LocalRepositoriesTest
         addEditLocalRepository( LOCAL_REPOSITORY_NAME, LOCAL_REPOSITORY_LOCATION, true );
     }
 
-    @Test( dependsOnMethods = { "testEditLocalRepository" } )
+    @Test( dependsOnMethods = {"testEditLocalRepository"} )
     public void testDeleteLocalRepository()
     {
         String LOCAL_REPOSITORY_NAME = getProperty( "LOCAL_REPOSITORY_NAME" );

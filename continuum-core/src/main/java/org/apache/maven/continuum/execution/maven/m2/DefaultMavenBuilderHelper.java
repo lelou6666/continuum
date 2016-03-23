@@ -19,18 +19,11 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
+import org.apache.continuum.utils.m2.SettingsHelper;
 import org.apache.maven.artifact.manager.WagonManager;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.project.ProjectDeveloper;
@@ -53,7 +46,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.validation.ModelValidationResult;
-import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Server;
@@ -61,6 +53,8 @@ import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLifecycleException;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
@@ -70,55 +64,46 @@ import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper" role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper.class, hint = "default" )
 public class DefaultMavenBuilderHelper
     implements MavenBuilderHelper, Contextualizable, Initializable
 {
     private static final Logger log = LoggerFactory.getLogger( DefaultMavenBuilderHelper.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenProjectBuilder projectBuilder;
 
-    /**
-     * @plexus.requirement
-     */
-    private ArtifactRepositoryFactory artifactRepositoryFactory;
+    @Requirement
+    private SettingsHelper settingsHelper;
 
-    /**
-     * @plexus.requirement
-     */
-    private ArtifactRepositoryLayout repositoryLayout;
-
-    /**
-     * @plexus.requirement
-     */
-    private MavenSettingsBuilder mavenSettingsBuilder;
-
-    /**
-     * @plexus.configuration default-value="${plexus.home}/local-repository"
-     */
-    private String localRepository;
+    @Requirement
+    private LocalRepositoryHelper localRepoHelper;
 
     private PlexusContainer container;
-
-    private LocalRepository repository;
 
     // ----------------------------------------------------------------------
     // MavenBuilderHelper Implementation
     // ----------------------------------------------------------------------
 
+<<<<<<< HEAD
     public void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project continuumProject, boolean update )
+=======
+    public void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project continuumProject,
+                                      boolean update )
+>>>>>>> refs/remotes/apache/trunk
     {
         MavenProject mavenProject = getMavenProject( result, metadata );
 
@@ -129,11 +114,19 @@ public class DefaultMavenBuilderHelper
             return;
         }
 
+<<<<<<< HEAD
         mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, update);
     }
 
     public void mapMavenProjectToContinuumProject( ContinuumProjectBuildingResult result, MavenProject mavenProject,
                                                    Project continuumProject, boolean update)
+=======
+        mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, update );
+    }
+
+    public void mapMavenProjectToContinuumProject( ContinuumProjectBuildingResult result, MavenProject mavenProject,
+                                                   Project continuumProject, boolean update )
+>>>>>>> refs/remotes/apache/trunk
     {
         if ( mavenProject == null )
         {
@@ -141,6 +134,7 @@ public class DefaultMavenBuilderHelper
             return;
         }
 
+<<<<<<< HEAD
          if (update){
             // ----------------------------------------------------------------------
             // Name
@@ -154,13 +148,34 @@ public class DefaultMavenBuilderHelper
     
             continuumProject.setVersion( getVersion( mavenProject ) );
             
+=======
+        if ( update )
+        {
+            // ----------------------------------------------------------------------
+            // Name
+            // ----------------------------------------------------------------------
+
+            continuumProject.setName( getProjectName( mavenProject ) );
+
+            // ----------------------------------------------------------------------
+            // Version
+            // ----------------------------------------------------------------------
+
+            continuumProject.setVersion( getVersion( mavenProject ) );
+
+>>>>>>> refs/remotes/apache/trunk
             // ----------------------------------------------------------------------
             // Description
             // ----------------------------------------------------------------------
 
             continuumProject.setDescription( mavenProject.getDescription() );
+<<<<<<< HEAD
          }
          
+=======
+        }
+
+>>>>>>> refs/remotes/apache/trunk
         // ----------------------------------------------------------------------
         // SCM Url
         // ----------------------------------------------------------------------
@@ -380,7 +395,7 @@ public class DefaultMavenBuilderHelper
             //   TODO: This seems like code that is shared with DefaultMaven, so it should be moved to the project
             //   builder perhaps
 
-            Settings settings = getSettings();
+            Settings settings = settingsHelper.getSettings();
 
             if ( log.isDebugEnabled() )
             {
@@ -389,7 +404,11 @@ public class DefaultMavenBuilderHelper
 
             ProfileManager profileManager = new DefaultProfileManager( container, settings );
 
+<<<<<<< HEAD
             project = projectBuilder.build( file, getLocalRepository(), profileManager, true);
+=======
+            project = projectBuilder.build( file, localRepoHelper.getLocalRepository(), profileManager, true );
+>>>>>>> refs/remotes/apache/trunk
 
             if ( log.isDebugEnabled() )
             {
@@ -439,8 +458,6 @@ public class DefaultMavenBuilderHelper
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").\n" + messages;
 
-            file.delete();
-
             log.error( msg );
 
             return null;
@@ -451,8 +468,6 @@ public class DefaultMavenBuilderHelper
             result.addError( ContinuumProjectBuildingResult.ERROR_PROJECT_BUILDING, e.getMessage() );
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").";
-
-            file.delete();
 
             log.error( msg );
 
@@ -481,19 +496,13 @@ public class DefaultMavenBuilderHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM_CONNECTION, getProjectName( project ) );
 
-            log.error(
-                "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) + " POM." );
+            log.error( "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) +
+                           " POM." );
 
             return null;
         }
 
         return project;
-    }
-
-    public ArtifactRepository getLocalRepository()
-        throws SettingsConfigurationException
-    {
-        return getRepository( getSettings() );
     }
 
     // ----------------------------------------------------------------------
@@ -570,48 +579,6 @@ public class DefaultMavenBuilderHelper
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
-
-    private Settings getSettings()
-        throws SettingsConfigurationException
-    {
-        try
-        {
-            return mavenSettingsBuilder.buildSettings( false );
-        }
-        catch ( IOException e )
-        {
-            throw new SettingsConfigurationException( "Error reading settings file", e );
-        }
-        catch ( XmlPullParserException e )
-        {
-            throw new SettingsConfigurationException( e.getMessage(), e.getDetail(), e.getLineNumber(),
-                                                      e.getColumnNumber() );
-        }
-    }
-
-    private ArtifactRepository getRepository( Settings settings )
-    {
-        // ----------------------------------------------------------------------
-        // Set our configured location as the default but try to use the defaults
-        // as returned by the MavenSettings component.
-        // ----------------------------------------------------------------------
-
-        String localRepo = localRepository;
-
-        if ( repository != null )
-        {
-            return artifactRepositoryFactory.createArtifactRepository( repository.getName(),
-                                                                       "file://" + repository.getLocation(),
-                                                                       repositoryLayout, null, null );
-        }
-        else if ( !( StringUtils.isEmpty( settings.getLocalRepository() ) ) )
-        {
-            localRepo = settings.getLocalRepository();
-        }
-
-        return artifactRepositoryFactory.createArtifactRepository( "local", "file://" + localRepo, repositoryLayout,
-                                                                   null, null );
-    }
 
     private void writeSettings( Settings settings )
     {
@@ -772,7 +739,7 @@ public class DefaultMavenBuilderHelper
     {
         try
         {
-            Settings settings = getSettings();
+            Settings settings = settingsHelper.getSettings();
 
             resolveParameters( settings );
         }
@@ -780,10 +747,5 @@ public class DefaultMavenBuilderHelper
         {
             throw new InitializationException( "Can't initialize '" + getClass().getName() + "'", e );
         }
-    }
-
-    public void setLocalRepository( LocalRepository repository )
-    {
-        this.repository = repository;
     }
 }

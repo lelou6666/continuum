@@ -9,7 +9,7 @@ package org.apache.continuum.web.test;
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -24,9 +24,8 @@ import org.testng.annotations.Test;
 
 /**
  * @author José Morales Martínez
- * @version $Id$
  */
-@Test( groups = { "purge" }, dependsOnMethods = { "testWithCorrectUsernamePassword" } )
+@Test( groups = {"purge"} )
 public class PurgeTest
     extends AbstractPurgeTest
 {
@@ -47,7 +46,7 @@ public class PurgeTest
         assertTextPresent( "Retention Count must be greater than 0." );
     }
 
-    @Test( dependsOnMethods = { "testAddRepositoryPurge" } )
+    @Test( dependsOnMethods = {"testAddRepositoryPurge"} )
     public void testEditRepositoryPurge()
     {
         String PURGE_REPOSITORY_DESCRIPTION = getProperty( "PURGE_REPOSITORY_DESCRIPTION" );
@@ -62,7 +61,7 @@ public class PurgeTest
         addEditRepositoryPurge( PURGE_REPOSITORY_DAYS, PURGE_REPOSITORY_RETETION, PURGE_REPOSITORY_DESCRIPTION, true );
     }
 
-    @Test( dependsOnMethods = { "testEditRepositoryPurge" } )
+    @Test( dependsOnMethods = {"testEditRepositoryPurge"} )
     public void testDeleteRepositoryPurge()
     {
         String PURGE_REPOSITORY_DESCRIPTION = getProperty( "PURGE_REPOSITORY_DESCRIPTION" );
@@ -86,7 +85,7 @@ public class PurgeTest
         assertTextPresent( "Retention Count must be greater than 0." );
     }
 
-    @Test( dependsOnMethods = { "testAddDirectoryPurge" } )
+    @Test( dependsOnMethods = {"testAddDirectoryPurge"} )
     public void testEditDirectoryPurge()
     {
         String PURGE_DIRECTORY_DESCRIPTION = getProperty( "PURGE_DIRECTORY_DESCRIPTION" );
@@ -101,7 +100,7 @@ public class PurgeTest
         addEditDirectoryPurge( PURGE_DIRECTORY_DAYS, PURGE_DIRECTORY_RETETION, PURGE_DIRECTORY_DESCRIPTION, true );
     }
 
-    @Test( dependsOnMethods = { "testEditDirectoryPurge" } )
+    @Test( dependsOnMethods = {"testEditDirectoryPurge"} )
     public void testDeleteDirectoryPurge()
     {
         String PURGE_DIRECTORY_DESCRIPTION = getProperty( "PURGE_DIRECTORY_DESCRIPTION" );

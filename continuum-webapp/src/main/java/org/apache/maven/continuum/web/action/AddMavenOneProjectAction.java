@@ -19,21 +19,26 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.web.util.AuditLog;
 import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+import org.codehaus.plexus.component.annotations.Component;
+
+import java.io.File;
 
 /**
  * Add a Maven 1 project to Continuum.
  *
  * @author Nick Gonzalez
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="addMavenOneProject"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "addMavenOneProject", instantiationStrategy = "per-lookup"  )
 public class AddMavenOneProjectAction
     extends AddMavenProjectAction
 {
@@ -42,8 +47,14 @@ public class AddMavenOneProjectAction
                                                         boolean scmUseCache )
         throws ContinuumException
     {
+<<<<<<< HEAD
         ContinuumProjectBuildingResult result = getContinuum().addMavenOneProject( pomUrl, selectedProjectGroup, checkProtocol, scmUseCache,
                                                   this.getBuildDefinitionTemplateId() );
+=======
+        ContinuumProjectBuildingResult result = getContinuum().addMavenOneProject( pomUrl, selectedProjectGroup,
+                                                                                   checkProtocol, scmUseCache,
+                                                                                   this.getBuildDefinitionTemplateId() );
+>>>>>>> refs/remotes/apache/trunk
 
         AuditLog event = new AuditLog( hidePasswordInUrl( pomUrl ), AuditLogConstants.ADD_M1_PROJECT );
         event.setCategory( AuditLogConstants.PROJECT );

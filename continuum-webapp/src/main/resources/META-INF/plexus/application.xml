@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,6 +18,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <plexus>
   <components>
     <component>
@@ -33,11 +35,12 @@
           <properties fileName="${appserver.base}/conf/security.properties" config-optional="true"
                       config-at="org.codehaus.plexus.redback"/>
           <!-- Defaults -->
-          <properties fileName="org/apache/maven/continuum/security.properties" config-at="org.codehaus.plexus.redback"/>
+          <properties fileName="org/apache/maven/continuum/security.properties"
+                      config-at="org.codehaus.plexus.redback"/>
         </properties>
       </configuration>
     </component>
-  
+
 
     <!--
     | The mail notifier
@@ -70,7 +73,7 @@
           <role>org.apache.maven.continuum.reports.surefire.ReportTestSuiteGenerator</role>
           <field-name>reportTestSuiteGenerator</field-name>
           <role-hint>default</role-hint>
-        </requirement>        
+        </requirement>
       </requirements>
       <configuration>
         <from-mailbox></from-mailbox>
@@ -93,8 +96,16 @@
             "[continuum] BUILD ${state}: ${project.name}, Build Def - ${build.buildDefinition.description}" 
               results in "[continuum] BUILD SUCCESSFUL: Hello World, Build Def - Nightly Test Build"
          -->
+<<<<<<< HEAD
         <buildSubjectFormat>[continuum] BUILD ${state}: ${project.projectGroup.name} - ${project.name} - ${build.buildDefinition.description}</buildSubjectFormat>
         <prepareBuildSubjectFormat>[continuum] PREPARE BUILD ${state}: ${projectScmRoot.projectGroup.name}</prepareBuildSubjectFormat>
+=======
+        <buildSubjectFormat>[continuum] BUILD ${state}: ${project.projectGroup.name} - ${project.name} -
+          ${build.buildDefinition.description}
+        </buildSubjectFormat>
+        <prepareBuildSubjectFormat>[continuum] PREPARE BUILD ${state}: ${projectScmRoot.projectGroup.name}
+        </prepareBuildSubjectFormat>
+>>>>>>> refs/remotes/apache/trunk
         <includeBuildSummary>true</includeBuildSummary>
         <includeTestSummary>true</includeTestSummary>
         <includeBuildOutput>false</includeBuildOutput>
@@ -103,7 +114,7 @@
         Setting this propery will make Continuum send all emails to
         this address instead the address specified in the project
         configuration
-        -->        
+        -->
         <toOverride></toOverride>
       </configuration>
     </component>
@@ -205,12 +216,33 @@
             <name>org.jpox.rdbms.dateTimezone</name>
             <value>JDK_DEFAULT_TIMEZONE</value>
           </property>
-<!--
           <property>
-            <name>org.jpox.identifier.case</name>
-            <value>PreserveCase</value>
+            <name>org.jpox.cache.level2</name>
+            <value>true</value>
           </property>
--->
+          <property>
+            <name>org.jpox.cache.level2.type</name>
+            <value>ehcacheclassbased</value>
+          </property>
+          <property>
+            <name>org.jpox.cache.level2.configurationFile</name>
+            <value>/ehcache.xml</value>
+          </property>
+          <property>
+            <name>org.jpox.cache.level2.cacheName</name>
+            <value>default</value>
+          </property>
+          <!-- this is required for some MySQL versions and configurations, see CONTINUUM-1113 -->
+          <property>
+            <name>org.jpox.rdbms.stringDefaultLength</name>
+            <value>255</value>
+          </property>
+          <!--
+                    <property>
+                      <name>org.jpox.identifier.case</name>
+                      <value>PreserveCase</value>
+                    </property>
+          -->
         </otherProperties>
       </configuration>
     </component>
@@ -225,13 +257,16 @@
 
         <persistenceManagerFactoryClass>org.jpox.PersistenceManagerFactoryImpl</persistenceManagerFactoryClass>
 
+        <!-- START SNIPPET: mapping -->
         <otherProperties>
           <property>
             <name>javax.jdo.option.Mapping</name>
             <value>default</value>
-            <!-- change this property for mssql support - CONTINUUM-697 -->
+            <!-- change this property for SQL Server or Oracle support - CONTINUUM-697 -->
             <!-- value>mssql</value -->
+            <!-- value>oracle</value -->
           </property>
+          <!-- END SNIPPET: mapping -->
           <property>
             <name>org.jpox.autoCreateSchema</name>
             <value>true</value>
@@ -269,13 +304,13 @@
             <name>org.jpox.autoCreateColumns</name>
             <value>true</value>
           </property>
-			
-<!--
-          <property>
-            <name>org.jpox.identifier.case</name>
-            <value>PreserveCase</value>
-          </property>
--->
+
+          <!--
+                    <property>
+                      <name>org.jpox.identifier.case</name>
+                      <value>PreserveCase</value>
+                    </property>
+          -->
         </otherProperties>
       </configuration>
     </component>
@@ -288,7 +323,7 @@
         <properties>
           <property>
             <name>org.quartz.scheduler.instanceName</name>
-            <value>continuumScheduler</value>
+            <value>scheduler</value>
           </property>
           <property>
             <name>org.quartz.threadPool.class</name>
@@ -296,7 +331,7 @@
           </property>
           <property>
             <name>org.quartz.threadPool.threadCount</name>
-            <value>7</value>
+            <value>1</value>
           </property>
           <property>
             <name>org.quartz.threadPool.threadPriority</name>
@@ -365,30 +400,30 @@
         </requirement>
       </requirements>
     </component-->
-    
+
     <!-- 
-    
-    this component manages the mapping of attributes in ldap to user information in redback. To configure the mapping, you can add the following properties in your security.properties
 
-       ============================================================
-       ldap.config.mapper.attribute.email=mail
-       ldap.config.mapper.attribute.fullname=givenName
-       ldap.config.mapper.attribute.password=userPassword
-       ldap.config.mapper.attribute.user.id=cn
-       ldap.config.mapper.attribute.user.base.dn=
-       ldap.config.mapper.attribute.user.object.class=inetOrgPerson
-       ldap.config.mapper.attribute.user.filter=(attributeName=value)
-       ============================================================
+   this component manages the mapping of attributes in ldap to user information in redback. To configure the mapping, you can add the following properties in your security.properties
+
+      ============================================================
+      ldap.config.mapper.attribute.email=mail
+      ldap.config.mapper.attribute.fullname=givenName
+      ldap.config.mapper.attribute.password=userPassword
+      ldap.config.mapper.attribute.user.id=cn
+      ldap.config.mapper.attribute.user.base.dn=
+      ldap.config.mapper.attribute.user.object.class=inetOrgPerson
+      ldap.config.mapper.attribute.user.filter=(attributeName=value)
+      ============================================================
 
 
-     * email-attribute - The name of the attribute on a user that contains the email address
-     * full-name-attribute - The name of the attribute on a user that contains the users fullName
-     * password-attribute - The name of the attribute containing the users password, used for the authentiction using the user manager and not the ldap bind authenticator
-     * user-id-attribute - The name of the attribute containing the users userId, most commonly cn or sn.
-     * user-base-dn - The base dn that will be subtree searched for users.
-     * user-object-class - the objectClass used in the ldap server for indentifying users, most commonly inetOrgPerson.
-     -->
-    
+    * email-attribute - The name of the attribute on a user that contains the email address
+    * full-name-attribute - The name of the attribute on a user that contains the users fullName
+    * password-attribute - The name of the attribute containing the users password, used for the authentiction using the user manager and not the ldap bind authenticator
+    * user-id-attribute - The name of the attribute containing the users userId, most commonly cn or sn.
+    * user-base-dn - The base dn that will be subtree searched for users.
+    * user-object-class - the objectClass used in the ldap server for indentifying users, most commonly inetOrgPerson.
+    -->
+
     <!-- component>
       <role>org.codehaus.plexus.redback.common.ldap.UserMapper</role>
       <role-hint>ldap</role-hint>
@@ -407,14 +442,14 @@
         </requirement>
       </requirements>
     </component-->
-    
+
     <!--
      
     If caching is desired to improve performance then make uncomment this and make sure the following configuration parameter is in the security.properties
      
     user.manager.impl=cached
     -->
-     
+
     <!-- component>
       <role>org.codehaus.plexus.redback.users.UserManager</role>
       <role-hint>cached</role-hint>
@@ -433,7 +468,7 @@
         </requirement>
       </requirements>
     </component-->
-    
+
     <!-- 
     
     if using the user manager authenticator to authenticate the user and not the ldap bind authenticator make sure
@@ -445,7 +480,7 @@
     
     in the security.properties
     -->
-    
+
     <!-- component>
       <role>org.codehaus.plexus.redback.policy.UserSecurityPolicy</role>
       <role-hint>default</role-hint>

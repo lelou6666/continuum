@@ -19,8 +19,8 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
+
 <html>
   <s:i18n name="localization.Continuum">
     <head>
@@ -39,6 +39,7 @@
                 <s:param><s:property value="project.name"/></s:param>
             </s:text>
         </h3>
+<<<<<<< HEAD
         
         <c:if test="${!empty actionErrors}">
           <div class="errormessage">
@@ -49,11 +50,29 @@
         </c:if>
     
         <form id="buildResultsForm" action="removeBuildResults.action" method="post">
+=======
+
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+
+        <%@ include file="buildResultsPager.jspf" %>
+        <s:form id="buildResultsForm" action="removeBuildResults" theme="simple">
+          <s:token/>
+          <s:set name="buildResults" value="buildResults" scope="request"/>
+>>>>>>> refs/remotes/apache/trunk
           <s:hidden name="projectGroupId"/>
           <s:hidden name="projectId"/>
-          <s:set name="buildResults" value="buildResults" scope="request"/>
           <ec:table items="buildResults"
                     var="buildResult"
+                    autoIncludeParameters="false"
                     showExports="false"
                     showPagination="false"
                     showStatusBar="false"
@@ -66,36 +85,31 @@
                 </ec:column>
               </redback:ifAuthorized>
               <ec:column property="buildNumberIfNotZero" title="buildResults.buildNumber">
-                  <c:if test="${pageScope.buildResult.state == 2}">
-                    <c:out value="${pageScope.buildResult.buildNumber}"/>
-                  </c:if>
+                <s:property value="#attr.buildResult.buildNumber"/>
               </ec:column>
-              <ec:column property="startTime" title="buildResults.startTime" cell="date"/>
-              <ec:column property="endTime" title="buildResults.endTime" cell="date"/>
-              <ec:column property="duration" title="&nbsp;">
-                <c:choose>
-                  <c:when test="${buildResult.endTime gt 0}">
-                    <s:text name="buildResults.duration"/> : ${buildResult.durationTime}
-                  </c:when>
-                  <c:otherwise>
-                    <s:text name="buildResults.startedSince"/> : ${buildResult.elapsedTime}
-                  </c:otherwise>
-                </c:choose>
+              <ec:column property="state" headerStyle="text-align: center;" style="text-align: center;" title="buildResults.result" cell="org.apache.maven.continuum.web.view.buildresults.StateCell"/>
+              <ec:column property="trigger" title="buildResult.trigger">
+                  <s:if test="#attr.buildResult.trigger == 1">
+                    <s:text name="buildResult.trigger.1"/>
+                  </s:if>
+                  <s:else>
+                    <s:text name="buildResult.trigger.0"/>
+                  </s:else>
               </ec:column>
-              <ec:column property="state" title="buildResults.state" cell="org.apache.maven.continuum.web.view.buildresults.StateCell"/>
+              <ec:column property="duration" title="buildResults.duration">
+                  <s:if test="#attr.buildResult.endTime > 0">
+                    <s:property value="#attr.buildResult.durationTime"/>
+                  </s:if>
+                  <s:else>
+                    <s:text name="buildResults.startedSince"/> : <s:property value="#attr.buildResult.elapsedTime"/>
+                  </s:else>
+              </ec:column>
+              <ec:column property="startTime" title="buildResults.startTime" cell="date" format="yyyy-MM-dd HH:mm z"/>
+              <ec:column property="endTime" title="buildResults.endTime" cell="date" format="yyyy-MM-dd HH:mm z"/>
               <ec:column property="buildDefinition.description" title="buildResults.buildDefinition.description" />
-              <ec:column property="actions" title="&nbsp;">
-                <s:url id="buildResultUrl" action="buildResult">
-                  <s:param name="projectId">${projectId}</s:param>
-                  <s:param name="projectName">${projectName}</s:param>
-                  <s:param name="buildId">${buildResult.id}</s:param>
-                  <s:param name="projectGroupId">${projectGroupId}</s:param>
-                </s:url>
-                <s:a href="%{buildResultUrl}"><s:text name="buildResults.result"/></s:a>
-              </ec:column>
             </ec:row>
           </ec:table>
-          <c:if test="${not empty buildResults}">
+          <s:if test="buildResults.size() > 0">
             <div class="functnbar3">
               <table>
                 <tbody>
@@ -109,8 +123,9 @@
                 </tbody>
               </table>
             </div>
-          </c:if>
-        </form>
+          </s:if>
+        </s:form>
+        <%@ include file="buildResultsPager.jspf" %>
       </div>
     </body>
   </s:i18n>

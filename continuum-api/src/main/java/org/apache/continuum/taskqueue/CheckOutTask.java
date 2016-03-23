@@ -19,15 +19,20 @@ package org.apache.continuum.taskqueue;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.model.project.Project;
 import org.codehaus.plexus.taskqueue.Task;
 
+import java.io.File;
+import java.util.List;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class CheckOutTask
     implements Task
@@ -41,6 +46,7 @@ public class CheckOutTask
     private final String scmUserName;
 
     private final String scmPassword;
+<<<<<<< HEAD
     
     private final String scmRootUrl;
     
@@ -48,6 +54,15 @@ public class CheckOutTask
     
     public CheckOutTask( int projectId, File workingDirectory, String projectName, String scmUserName,
     			String scmPassword, String scmRootUrl, List<Project> projectsWithCommonScmRoot )
+=======
+
+    private final String scmRootUrl;
+
+    private final List<Project> projectsWithCommonScmRoot;
+
+    public CheckOutTask( int projectId, File workingDirectory, String projectName, String scmUserName,
+                         String scmPassword, String scmRootUrl, List<Project> projectsWithCommonScmRoot )
+>>>>>>> refs/remotes/apache/trunk
     {
         this.projectId = projectId;
 
@@ -60,7 +75,11 @@ public class CheckOutTask
         this.scmPassword = scmPassword;
 
         this.scmRootUrl = scmRootUrl;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         this.projectsWithCommonScmRoot = projectsWithCommonScmRoot;
     }
 
@@ -99,7 +118,11 @@ public class CheckOutTask
     {
         return this.hashCode();
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public String getScmRootUrl()
     {
         return scmRootUrl;
@@ -108,5 +131,9 @@ public class CheckOutTask
     public List<Project> getProjectsWithCommonScmRoot()
     {
         return projectsWithCommonScmRoot;
+<<<<<<< HEAD
     } 
+=======
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

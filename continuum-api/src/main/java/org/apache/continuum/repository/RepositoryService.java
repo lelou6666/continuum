@@ -19,26 +19,25 @@ package org.apache.continuum.repository;
  * under the License.
  */
 
-import java.util.List;
-
 import org.apache.continuum.model.repository.LocalRepository;
+
+import java.util.List;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public interface RepositoryService
 {
     String ROLE = RepositoryService.class.getName();
-    
+
     // ------------------------------------------------------
     //  LocalRepository
     // ------------------------------------------------------
-    
+
     /**
      * Add the local repository
-     * 
+     *
      * @param repository the local repository to add
      * @return LocalRepository the local repository
      * @throws RepositoryServiceException
@@ -48,7 +47,7 @@ public interface RepositoryService
 
     /**
      * Update the local repository
-     * 
+     *
      * @param repository the local repository to update
      * @throws RepositoryServiceException
      */
@@ -57,7 +56,7 @@ public interface RepositoryService
 
     /**
      * Remove the local repository
-     * 
+     *
      * @param repositoryId the id of the local repository to remove
      * @throws RepositoryServiceException
      */
@@ -66,36 +65,47 @@ public interface RepositoryService
 
     /**
      * Retrieve all local repositories
-     * 
+     *
      * @return list of all local repositories
      */
     List<LocalRepository> getAllLocalRepositories();
-    
+
     /**
      * Retrieve local repository
-     * 
+     *
      * @param location the system file path of the repository
      * @return LocalRepository the local repository
      * @throws RepositoryServiceException
      */
     LocalRepository getLocalRepositoryByLocation( String location )
         throws RepositoryServiceException;
-    
+
     /**
      * Retrieve list of local repositories with the specified layout
+     *
      * @param layout the layout of the repository. "default" or "legacy"
      * @return List of local repositories
      * @throws RepositoryServiceException
      */
     List<LocalRepository> getLocalRepositoriesByLayout( String layout );
-    
+
     /**
      * Retrieve local repository
-     * 
+     *
      * @param repositoryId the id of the local repository
      * @return LocalRepository the local repository
      * @throws RepositoryServiceException
      */
     LocalRepository getLocalRepository( int repositoryId )
+        throws RepositoryServiceException;
+
+    /**
+     * Retrieve local repository
+     *
+     * @param repositoryName
+     * @return
+     * @throws RepositoryServiceException
+     */
+    LocalRepository getLocalRepositoryByName( String repositoryName )
         throws RepositoryServiceException;
 }

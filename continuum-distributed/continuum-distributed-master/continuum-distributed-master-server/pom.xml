@@ -21,7 +21,11 @@ under the License.
   <parent>
     <groupId>org.apache.continuum</groupId>
     <artifactId>continuum-distributed-master</artifactId>
+<<<<<<< HEAD
     <version>1.4.1-SNAPSHOT</version>
+=======
+    <version>1.5-SNAPSHOT</version>
+>>>>>>> refs/remotes/apache/trunk
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>continuum-distributed-master-server</artifactId>
@@ -39,7 +43,10 @@ under the License.
     <dependency>
       <groupId>org.apache.continuum</groupId>
       <artifactId>continuum-distributed-commons</artifactId>
+<<<<<<< HEAD
       <version>${project.version}</version>
+=======
+>>>>>>> refs/remotes/apache/trunk
     </dependency>
     <dependency>
       <groupId>org.apache.continuum</groupId>

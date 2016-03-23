@@ -19,35 +19,37 @@ package org.apache.continuum.distributed.transport.tests;
  * under the License.
  */
 
-import java.net.URL;
-import java.util.Collections;
-
 import junit.framework.TestCase;
-
 import org.apache.continuum.distributed.transport.slave.SlaveBuildAgentTransportClient;
 import org.apache.continuum.distributed.transport.slave.SlaveBuildAgentTransportService;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.net.URL;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
 
 /**
  * SlaveBuildAgentTransportServiceTest
  */
 public class SlaveBuildAgentTransportServiceTest
-    extends TestCase
 {
     private SlaveBuildAgentTransportService slaveProxy;
-    
+
     private BeanFactory beanFactory = new XmlBeanFactory( new ClassPathResource( "applicationContext.xml" ) );
-    
+
+    @Before
     protected void setUp()
         throws Exception
     {
-        super.setUp();
-        
-        slaveProxy = new SlaveBuildAgentTransportClient( new URL( "http://localhost:9191/slave-xmlrpc"), null , null );
+        slaveProxy = new SlaveBuildAgentTransportClient( new URL( "http://localhost:9191/slave-xmlrpc" ), null, null );
     }
 
+    @Test
     public void testBuildProjects()
     {
         try
@@ -60,6 +62,7 @@ public class SlaveBuildAgentTransportServiceTest
         }
     }
 
+    @Test
     public void testGetAvailableInstallations()
     {
         try
@@ -72,6 +75,7 @@ public class SlaveBuildAgentTransportServiceTest
         }
     }
 
+    @Test
     public void testGetBuildResult()
     {
         try
@@ -84,6 +88,7 @@ public class SlaveBuildAgentTransportServiceTest
         }
     }
 
+    @Test
     public void testGetProjectCurrentlyBuilding()
     {
         try
@@ -96,11 +101,25 @@ public class SlaveBuildAgentTransportServiceTest
         }
     }
 
+    @Test
     public void testPing()
     {
         try
         {
             slaveProxy.ping();
+        }
+        catch ( Exception e )
+        {
+            fail( e.getMessage() );
+        }
+    }
+
+    @Test
+    public void testExecuteDirectoryPurge()
+    {
+        try
+        {
+            slaveProxy.executeDirectoryPurge( "releases", 1, 2, false );
         }
         catch ( Exception e )
         {

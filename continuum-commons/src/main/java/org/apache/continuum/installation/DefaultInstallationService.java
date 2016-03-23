@@ -19,18 +19,11 @@ package org.apache.continuum.installation;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Resource;
-
 import org.apache.continuum.dao.InstallationDao;
+import org.apache.continuum.utils.shell.ExecutionResult;
+import org.apache.continuum.utils.shell.ListOutputConsumer;
+import org.apache.continuum.utils.shell.OutputConsumer;
+import org.apache.continuum.utils.shell.ShellCommandHelper;
 import org.apache.maven.continuum.execution.ExecutorConfigurator;
 import org.apache.maven.continuum.installation.AlreadyExistsInstallationException;
 import org.apache.maven.continuum.installation.InstallationException;
@@ -44,21 +37,25 @@ import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import javax.annotation.Resource;
+
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  *          TODO use some cache mechanism to prevent always reading from store ?
  * @since 13 juin 07
  */
-@Service("installationService")
+@Service( "installationService" )
 public class DefaultInstallationService
     implements InstallationService, Initializable
 {
@@ -70,6 +67,9 @@ public class DefaultInstallationService
     @Resource
     private ProfileService profileService;
 
+    @Resource
+    private ShellCommandHelper shellCommandHelper;
+
     private Map<String, ExecutorConfigurator> typesValues;
 
     // ---------------------------------------------
@@ -80,16 +80,16 @@ public class DefaultInstallationService
         throws InitializationException
     {
         this.typesValues = new HashMap<String, ExecutorConfigurator>();
-        this.typesValues.put( InstallationService.ANT_TYPE,
-                              new ExecutorConfigurator( "ant", "bin", "ANT_HOME", "-version" ) );
+        this.typesValues.put( InstallationService.ANT_TYPE, new ExecutorConfigurator( "ant", "bin", "ANT_HOME",
+                                                                                      "-version" ) );
 
         this.typesValues.put( InstallationService.ENVVAR_TYPE, null );
-        this.typesValues.put( InstallationService.JDK_TYPE,
-                              new ExecutorConfigurator( "java", "bin", "JAVA_HOME", "-version" ) );
-        this.typesValues.put( InstallationService.MAVEN1_TYPE,
-                              new ExecutorConfigurator( "maven", "bin", "MAVEN_HOME", "-v" ) );
-        this.typesValues.put( InstallationService.MAVEN2_TYPE,
-                              new ExecutorConfigurator( "mvn", "bin", "M2_HOME", "-v" ) );
+        this.typesValues.put( InstallationService.JDK_TYPE, new ExecutorConfigurator( "java", "bin", "JAVA_HOME",
+                                                                                      "-version" ) );
+        this.typesValues.put( InstallationService.MAVEN1_TYPE, new ExecutorConfigurator( "maven", "bin", "MAVEN_HOME",
+                                                                                         "-v" ) );
+        this.typesValues.put( InstallationService.MAVEN2_TYPE, new ExecutorConfigurator( "mvn", "bin", "M2_HOME",
+                                                                                         "-v" ) );
     }
 
     /**
@@ -170,7 +170,7 @@ public class DefaultInstallationService
     /**
      * @see org.apache.maven.continuum.installation.InstallationService#getAllInstallations()
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     public List<Installation> getAllInstallations()
         throws InstallationException
     {
@@ -194,6 +194,22 @@ public class DefaultInstallationService
         try
         {
             return installationDao.getInstallation( installationId );
+        }
+        catch ( ContinuumStoreException e )
+        {
+            throw new InstallationException( e.getMessage(), e );
+        }
+    }
+
+    /**
+     * @see org.apache.maven.continuum.installation.InstallationService#getInstallation(String)
+     */
+    public Installation getInstallation( String installationName )
+        throws InstallationException
+    {
+        try
+        {
+            return installationDao.getInstallation( installationName );
         }
         catch ( ContinuumStoreException e )
         {
@@ -264,96 +280,78 @@ public class DefaultInstallationService
     // -------------------------------------------------------------
 
     /**
-     * TODO replace with calling getExecutorConfiguratorVersion
+     * TODO replace with calling getExecutorVersionInfo
      *
-     * @see org.apache.maven.continuum.installation.InstallationService#getDefaultJdkInformations()
+     * @see org.apache.maven.continuum.installation.InstallationService#getDefaultJavaVersionInfo()
      */
-    public List<String> getDefaultJdkInformations()
+    public List<String> getDefaultJavaVersionInfo()
         throws InstallationException
     {
         try
         {
-            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars( false );
-
+            Properties systemEnvVars = shellCommandHelper.getSystemEnvVars();
             String javaHome = (String) systemEnvVars.get( "JAVA_HOME" );
-            // olamy : JAVA_HOME can not exists with a mac user
+            // olamy : JAVA_HOME may not exist for mac users
             if ( StringUtils.isEmpty( javaHome ) )
             {
-                return getJavaHomeInformations( System.getProperty( "java.home" ) );
+                return getJavaVersionInfo( System.getProperty( "java.home" ) );
             }
-            return getJavaHomeInformations( javaHome );
+            return getJavaVersionInfo( javaHome );
 
         }
-        catch ( IOException e )
-        {
-            throw new InstallationException( e.getMessage(), e );
-        }
-        catch ( CommandLineException e )
+        catch ( Exception e )
         {
             throw new InstallationException( e.getMessage(), e );
         }
     }
 
     /**
-     * TODO replace with calling getExecutorConfiguratorVersion
+     * TODO replace with calling getExecutorVersionInfo
      *
-     * @see org.apache.maven.continuum.installation.InstallationService#getJdkInformations(org.apache.maven.continuum.model.system.Installation)
+     * @see org.apache.maven.continuum.installation.InstallationService#getJavaVersionInfo(org.apache.maven.continuum.model.system.Installation)
      */
-    public List<String> getJdkInformations( Installation installation )
+    public List<String> getJavaVersionInfo( Installation installation )
         throws InstallationException
     {
         if ( installation == null )
         {
-            return getDefaultJdkInformations();
+            return getDefaultJavaVersionInfo();
         }
         if ( StringUtils.isEmpty( installation.getVarValue() ) )
         {
-            return getDefaultJdkInformations();
+            return getDefaultJavaVersionInfo();
         }
         try
         {
-            return getJavaHomeInformations( installation.getVarValue() );
+            return getJavaVersionInfo( installation.getVarValue() );
         }
-        catch ( CommandLineException e )
+        catch ( Exception e )
         {
             throw new InstallationException( e.getMessage(), e );
         }
     }
 
     /**
-     * @param javaHome
+     * @param homePath
      * @return
-     * @throws CommandLineException
+     * @throws Exception
      */
-    private List<String> getJavaHomeInformations( String javaHome )
-        throws CommandLineException
+    private List<String> getJavaVersionInfo( String homePath )
+        throws Exception
     {
-        Commandline commandline = new Commandline();
 
-        String executable = javaHome + File.separator + "bin" + File.separator + "java";
-
-        commandline.setExecutable( executable );
-        commandline.addArguments( new String[]{"-version"} );
-        final List<String> cliOutput = new ArrayList<String>();
-        //TODO ShellCommandHelper ?
-        int result = CommandLineUtils.executeCommandLine( commandline, new StreamConsumer()
+        String executable = homePath + File.separator + "bin" + File.separator + "java";
+        ListOutputConsumer outputConsumer = new ListOutputConsumer();
+        ExecutionResult result = shellCommandHelper.executeShellCommand( null, executable, new String[] { "-version" },
+                                                                         outputConsumer, -1, null );
+        int exitCode = result.getExitCode();
+        if ( exitCode != 0 )
         {
-            public void consumeLine( String line )
-            {
-                cliOutput.add( line );
-            }
-        }, new StreamConsumer()
-        {
-            public void consumeLine( String line )
-            {
-                cliOutput.add( line );
-            }
-        } );
-        if ( result != 0 )
-        {
-            throw new CommandLineException( "cli to get JAVA_HOME informations return code " + result );
+            throw new Exception(
+                String.format( "failed to get java version information, %s returned exit code %s", executable,
+                               exitCode ) );
         }
-        return cliOutput;
+        return outputConsumer.getList();
     }
 
     private Map<String, String> getEnvVars( Profile profile )
@@ -382,70 +380,53 @@ public class DefaultInstallationService
     }
 
     /**
-     * @see org.apache.maven.continuum.installation.InstallationService#getExecutorConfiguratorVersion(java.lang.String,org.apache.maven.continuum.execution.ExecutorConfigurator,Profile)
+     * @see org.apache.maven.continuum.installation.InstallationService#getExecutorVersionInfo(java.lang.String, org.apache.maven.continuum.execution.ExecutorConfigurator, Profile)
      */
-    @SuppressWarnings("unchecked")
-    public List<String> getExecutorConfiguratorVersion( String path, ExecutorConfigurator executorConfigurator,
-                                                        Profile profile )
+    public List<String> getExecutorVersionInfo( String path, ExecutorConfigurator executorConfigurator,
+                                                Profile profile )
         throws InstallationException
     {
+        if ( executorConfigurator == null || executorConfigurator.getExecutable() == null )
+        {
+            return Collections.EMPTY_LIST;
+        }
 
-        if ( executorConfigurator == null )
-        {
-            return Collections.EMPTY_LIST;
-        }
-        if ( executorConfigurator.getExecutable() == null )
-        {
-            return Collections.EMPTY_LIST;
-        }
         StringBuilder executable = new StringBuilder();
+
+        Map<String, String> env = new HashMap<String, String>();
+
+        if ( StringUtils.isNotEmpty( path ) )
+        {
+            executable.append( path ).append( File.separator );
+            executable.append( executorConfigurator.getRelativePath() ).append( File.separator );
+            env.put( executorConfigurator.getEnvVar(), path );
+        }
+        executable = executable.append( executorConfigurator.getExecutable() );
+
+        env.putAll( getEnvVars( profile ) );
+
+        ListOutputConsumer outputConsumer = new ListOutputConsumer();
+        ExecutionResult result;
         try
         {
-            Commandline commandline = new Commandline();
-            if ( StringUtils.isNotEmpty( path ) )
-            {
-                executable.append( path ).append( File.separator );
-                executable.append( executorConfigurator.getRelativePath() ).append( File.separator );
-                commandline.addEnvironment( executorConfigurator.getEnvVar(), path );
-            }
-            //Installations are env var they must be add if exists
-            Map<String, String> environments = getEnvVars( profile );
-            // no null check we use a private method just here
-            for ( String key : environments.keySet() )
-            {
-                String value = environments.get( key );
-                commandline.addEnvironment( key, value );
-            }
-
-            executable = executable.append( executorConfigurator.getExecutable() );
-            commandline.setExecutable( executable.toString() );
-            commandline.addArguments( new String[]{executorConfigurator.getVersionArgument()} );
-            final List<String> cliOutput = new ArrayList<String>();
-            //TODO ShellCommandHelper ?
-            int result = CommandLineUtils.executeCommandLine( commandline, new StreamConsumer()
-            {
-                public void consumeLine( String line )
-                {
-                    cliOutput.add( line );
-                }
-            }, new StreamConsumer()
-            {
-                public void consumeLine( String line )
-                {
-                    cliOutput.add( line );
-                }
-            } );
-            if ( result != 0 )
-            {
-                throw new InstallationException( "cli to get " + executable + " version return code " + result );
-            }
-            return cliOutput;
+            result = shellCommandHelper.executeShellCommand( null, executable.toString(),
+                                                             new String[] { executorConfigurator.getVersionArgument() },
+                                                             outputConsumer, -1, null );
         }
-        catch ( CommandLineException e )
+        catch ( Exception e )
         {
-            log.error( "fail to execute " + executable + " with arg " + executorConfigurator.getVersionArgument() );
+            log.error( "failed to get executor version info", e );
             throw new InstallationException( e.getMessage(), e );
         }
+        int exitCode = result.getExitCode();
+        if ( exitCode != 0 )
+        {
+
+            throw new InstallationException(
+                String.format( "failed to get executor version info, %s returned exit code %s", executable,
+                               exitCode ) );
+        }
+        return outputConsumer.getList();
     }
 
     private boolean alreadyExistInstallationName( Installation installation )

@@ -19,16 +19,16 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.continuum.builder.distributed.executor.DistributedBuildTaskQueueExecutor;
-import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.continuum.buildmanager.BuildManagerException;
-import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.continuum.taskqueue.BuildProjectTask;
 import org.apache.continuum.taskqueue.CheckOutTask;
 import org.apache.continuum.taskqueue.PrepareBuildProjectsTask;
@@ -43,20 +43,29 @@ import org.apache.maven.continuum.web.exception.AuthenticationRequiredException;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.DistributedBuildSummary;
 import org.apache.maven.continuum.web.model.PrepareBuildSummary;
+<<<<<<< HEAD
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.plexus.util.StringUtils;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.redback.rbac.Resource;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="queues"
  * @since 24 sept. 07
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "queues", instantiationStrategy = "per-lookup" )
 public class QueuesAction
     extends ContinuumActionSupport
     implements SecureAction
@@ -80,6 +89,7 @@ public class QueuesAction
     private String projectName;
 
     private List<BuildProjectQueue> currentBuildProjectTasks = new ArrayList<BuildProjectQueue>();
+<<<<<<< HEAD
 
     private List<CheckoutQueue> currentCheckoutTasks = new ArrayList<CheckoutQueue>();
 
@@ -95,6 +105,23 @@ public class QueuesAction
 
     private List<PrepareBuildSummary> distributedPrepareBuildQueues = new ArrayList<PrepareBuildSummary>();
 
+=======
+
+    private List<CheckoutQueue> currentCheckoutTasks = new ArrayList<CheckoutQueue>();
+
+    private List<BuildProjectQueue> buildsInQueue = new ArrayList<BuildProjectQueue>();
+
+    private List<CheckoutQueue> checkoutsInQueue = new ArrayList<CheckoutQueue>();
+
+    private List<PrepareBuildSummary> currentPrepareBuilds = new ArrayList<PrepareBuildSummary>();
+
+    private List<PrepareBuildSummary> prepareBuildQueues = new ArrayList<PrepareBuildSummary>();
+
+    private List<PrepareBuildSummary> currentDistributedPrepareBuilds = new ArrayList<PrepareBuildSummary>();
+
+    private List<PrepareBuildSummary> distributedPrepareBuildQueues = new ArrayList<PrepareBuildSummary>();
+
+>>>>>>> refs/remotes/apache/trunk
     private List<DistributedBuildSummary> currentDistributedBuilds = new ArrayList<DistributedBuildSummary>();
 
     private List<DistributedBuildSummary> distributedBuildQueues = new ArrayList<DistributedBuildSummary>();
@@ -206,8 +233,14 @@ public class QueuesAction
     {
         if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
+<<<<<<< HEAD
 	        // current prepare build task
             Map<String, PrepareBuildProjectsTask> currentPrepareBuildMap = getContinuum().getDistributedBuildManager().getProjectsCurrentlyPreparingBuild();
+=======
+            // current prepare build task
+            Map<String, PrepareBuildProjectsTask> currentPrepareBuildMap =
+                getContinuum().getDistributedBuildManager().getProjectsCurrentlyPreparingBuild();
+>>>>>>> refs/remotes/apache/trunk
 
             for ( String url : currentPrepareBuildMap.keySet() )
             {
@@ -226,12 +259,22 @@ public class QueuesAction
             }
 
             // current builds
+<<<<<<< HEAD
             Map<String, BuildProjectTask> currentBuildMap = getContinuum().getDistributedBuildManager().getProjectsCurrentlyBuilding();
 
             for ( String url : currentBuildMap.keySet() )
             {
                 BuildProjectTask task = currentBuildMap.get( url );
 
+=======
+            Map<String, BuildProjectTask> currentBuildMap =
+                getContinuum().getDistributedBuildManager().getProjectsCurrentlyBuilding();
+
+            for ( String url : currentBuildMap.keySet() )
+            {
+                BuildProjectTask task = currentBuildMap.get( url );
+
+>>>>>>> refs/remotes/apache/trunk
                 Project project = getContinuum().getProject( task.getProjectId() );
 
                 DistributedBuildSummary summary = new DistributedBuildSummary();
@@ -242,12 +285,23 @@ public class QueuesAction
                 summary.setBuildDefinitionLabel( task.getBuildDefinitionLabel() );
                 summary.setHashCode( task.getHashCode() );
                 summary.setBuildAgentUrl( url );
+<<<<<<< HEAD
 
                 currentDistributedBuilds.add( summary );
             }
             
             // prepare build queues
             Map<String, List<PrepareBuildProjectsTask>> prepareBuildMap = getContinuum().getDistributedBuildManager().getProjectsInPrepareBuildQueue();
+=======
+                summary.setTriggeredBy( task.getBuildTrigger().getTriggeredBy() );
+
+                currentDistributedBuilds.add( summary );
+            }
+
+            // prepare build queues
+            Map<String, List<PrepareBuildProjectsTask>> prepareBuildMap =
+                getContinuum().getDistributedBuildManager().getProjectsInPrepareBuildQueue();
+>>>>>>> refs/remotes/apache/trunk
 
             for ( String url : prepareBuildMap.keySet() )
             {
@@ -268,7 +322,12 @@ public class QueuesAction
             }
 
             // build queues
+<<<<<<< HEAD
             Map<String, List<BuildProjectTask>> buildMap = getContinuum().getDistributedBuildManager().getProjectsInBuildQueue();
+=======
+            Map<String, List<BuildProjectTask>> buildMap =
+                getContinuum().getDistributedBuildManager().getProjectsInBuildQueue();
+>>>>>>> refs/remotes/apache/trunk
 
             for ( String url : buildMap.keySet() )
             {
@@ -285,6 +344,10 @@ public class QueuesAction
                     summary.setBuildDefinitionLabel( task.getBuildDefinitionLabel() );
                     summary.setHashCode( task.getHashCode() );
                     summary.setBuildAgentUrl( url );
+<<<<<<< HEAD
+=======
+                    summary.setTriggeredBy( task.getBuildTrigger().getTriggeredBy() );
+>>>>>>> refs/remotes/apache/trunk
 
                     distributedBuildQueues.add( summary );
                 }
@@ -297,6 +360,7 @@ public class QueuesAction
             try
             {
                 // current prepare builds
+<<<<<<< HEAD
                 PrepareBuildProjectsTask currentPrepareBuildTask = getContinuum().getBuildsManager().getCurrentProjectInPrepareBuild();
 
                 if ( currentPrepareBuildTask != null )
@@ -307,6 +371,22 @@ public class QueuesAction
                     s.setProjectGroupName( currentPrepareBuildTask.getProjectGroupName() );
                     s.setScmRootId( currentPrepareBuildTask.getProjectScmRootId() );
                     s.setScmRootAddress( currentPrepareBuildTask.getScmRootAddress() );
+=======
+                Map<String, PrepareBuildProjectsTask> currentPrepareBuildTasks =
+                    getContinuum().getBuildsManager().getCurrentProjectInPrepareBuild();
+
+                Set<String> keySet = currentPrepareBuildTasks.keySet();
+                for ( String key : keySet )
+                {
+                    PrepareBuildProjectsTask prepareBuildTask = currentPrepareBuildTasks.get( key );
+
+                    PrepareBuildSummary s = new PrepareBuildSummary();
+                    s.setProjectGroupId( prepareBuildTask.getProjectGroupId() );
+                    s.setProjectGroupName( prepareBuildTask.getProjectGroupName() );
+                    s.setScmRootId( prepareBuildTask.getProjectScmRootId() );
+                    s.setScmRootAddress( prepareBuildTask.getScmRootAddress() );
+                    s.setQueueName( key );
+>>>>>>> refs/remotes/apache/trunk
                     currentPrepareBuilds.add( s );
                 }
             }
@@ -339,6 +419,7 @@ public class QueuesAction
             try
             {
                 // queued prepare builds
+<<<<<<< HEAD
                 List<PrepareBuildProjectsTask> prepareBuilds = 
                     getContinuum().getBuildsManager().getProjectsInPrepareBuildQueue();
                 for ( PrepareBuildProjectsTask task : prepareBuilds )
@@ -351,6 +432,26 @@ public class QueuesAction
                     summary.setHashCode( task.getHashCode() );
 
                     prepareBuildQueues.add( summary );
+=======
+                Map<String, List<PrepareBuildProjectsTask>> prepareBuilds =
+                    getContinuum().getBuildsManager().getProjectsInPrepareBuildQueue();
+
+                Set<String> keySet = prepareBuilds.keySet();
+                for ( String key : keySet )
+                {
+                    for ( PrepareBuildProjectsTask task : prepareBuilds.get( key ) )
+                    {
+                        PrepareBuildSummary summary = new PrepareBuildSummary();
+                        summary.setProjectGroupId( task.getProjectGroupId() );
+                        summary.setProjectGroupName( task.getProjectGroupName() );
+                        summary.setScmRootId( task.getProjectScmRootId() );
+                        summary.setScmRootAddress( task.getScmRootAddress() );
+                        summary.setHashCode( task.getHashCode() );
+                        summary.setQueueName( key );
+
+                        prepareBuildQueues.add( summary );
+                    }
+>>>>>>> refs/remotes/apache/trunk
                 }
             }
             catch ( BuildManagerException e )
@@ -447,8 +548,13 @@ public class QueuesAction
             return REQUIRES_AUTHENTICATION;
         }
 
+<<<<<<< HEAD
         getContinuum().getBuildsManager().removeProjectFromBuildQueue( projectId, buildDefinitionId,
         		                                     new BuildTrigger( trigger, "" ), projectName, projectGroupId );
+=======
+        getContinuum().getBuildsManager().removeProjectFromBuildQueue( projectId, buildDefinitionId, new BuildTrigger(
+            trigger, "" ), projectName, projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
         Project project = getContinuum().getProject( projectId );
         project.setState( project.getOldState() );
         getContinuum().updateProject( project );
@@ -474,8 +580,8 @@ public class QueuesAction
             return REQUIRES_AUTHENTICATION;
         }
 
-        getContinuum().getBuildsManager().removeProjectsFromBuildQueueWithHashcodes(
-            listToIntArray( this.getSelectedBuildTaskHashCodes() ) );
+        getContinuum().getBuildsManager().removeProjectsFromBuildQueueWithHashcodes( listToIntArray(
+            this.getSelectedBuildTaskHashCodes() ) );
         return SUCCESS;
     }
 
@@ -497,8 +603,53 @@ public class QueuesAction
             return REQUIRES_AUTHENTICATION;
         }
 
-        getContinuum().getBuildsManager().removeProjectsFromCheckoutQueueWithHashcodes(
-            listToIntArray( this.getSelectedCheckOutTaskHashCodes() ) );
+        getContinuum().getBuildsManager().removeProjectsFromCheckoutQueueWithHashcodes( listToIntArray(
+            this.getSelectedCheckOutTaskHashCodes() ) );
+        return SUCCESS;
+    }
+
+    public String removePrepareBuildEntry()
+        throws Exception
+    {
+        try
+        {
+            checkManageQueuesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
+        getContinuum().getBuildsManager().removeProjectFromPrepareBuildQueue( projectGroupId, scmRootId );
+        return SUCCESS;
+    }
+
+    public String removePrepareBuildEntries()
+        throws Exception
+    {
+        try
+        {
+            checkManageQueuesAuthorization();
+        }
+        catch ( AuthorizationRequiredException authzE )
+        {
+            addActionError( authzE.getMessage() );
+            return REQUIRES_AUTHORIZATION;
+        }
+        catch ( AuthenticationRequiredException e )
+        {
+            addActionError( e.getMessage() );
+            return REQUIRES_AUTHENTICATION;
+        }
+
+        getContinuum().getBuildsManager().removeProjectsFromPrepareBuildQueueWithHashCodes( listToIntArray(
+            this.selectedPrepareBuildTaskHashCodes ) );
         return SUCCESS;
     }
 
@@ -588,7 +739,12 @@ public class QueuesAction
             return REQUIRES_AUTHENTICATION;
         }
 
+<<<<<<< HEAD
         getContinuum().getDistributedBuildManager().removeFromPrepareBuildQueue( buildAgentUrl, projectGroupId, scmRootId );
+=======
+        getContinuum().getDistributedBuildManager().removeFromPrepareBuildQueue( buildAgentUrl, projectGroupId,
+                                                                                 scmRootId );
+>>>>>>> refs/remotes/apache/trunk
 
         return SUCCESS;
     }
@@ -611,7 +767,12 @@ public class QueuesAction
             return REQUIRES_AUTHENTICATION;
         }
 
+<<<<<<< HEAD
         getContinuum().getDistributedBuildManager().removeFromPrepareBuildQueue(  this.getSelectedPrepareBuildTaskHashCodes() );
+=======
+        getContinuum().getDistributedBuildManager().removeFromPrepareBuildQueue(
+            this.getSelectedPrepareBuildTaskHashCodes() );
+>>>>>>> refs/remotes/apache/trunk
 
         return SUCCESS;
     }

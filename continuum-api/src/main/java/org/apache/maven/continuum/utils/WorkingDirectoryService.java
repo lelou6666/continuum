@@ -26,7 +26,6 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface WorkingDirectoryService
 {
@@ -35,8 +34,14 @@ public interface WorkingDirectoryService
     File getWorkingDirectory( Project project );
 
     File getWorkingDirectory( Project project, boolean shouldSet );
+<<<<<<< HEAD
     
     File getWorkingDirectory( Project project, String projectScmRootUrl, List<Project> projects );
     
+=======
+
+    File getWorkingDirectory( Project project, String projectScmRootUrl, List<Project> projects );
+
+>>>>>>> refs/remotes/apache/trunk
     File getWorkingDirectory( Project project, String projectScmRootUrl, List<Project> projects, boolean shouldSet );
 }

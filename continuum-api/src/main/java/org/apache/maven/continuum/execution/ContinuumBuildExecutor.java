@@ -31,14 +31,14 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public interface ContinuumBuildExecutor
 {
     String ROLE = ContinuumBuildExecutor.class.getName();
 
     // TODO: stream the build output
-    ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput )
+    ContinuumBuildExecutionResult build( Project project, BuildDefinition buildDefinition, File buildOutput,
+                                         List<Project> projectsWithCommonScmRoot, String projectScmRootUrl )
         throws ContinuumBuildExecutorException;
 
     // TODO: rename to be clearer
@@ -55,7 +55,12 @@ public interface ContinuumBuildExecutor
         throws ContinuumBuildExecutorException;
 
     //TODO: Move as a plugin
+<<<<<<< HEAD
     void backupTestFiles( Project project, int buildId, String projectScmRootUrl, List<Project> projectsWithCommonScmRoot );
+=======
+    void backupTestFiles( Project project, int buildId, String projectScmRootUrl,
+                          List<Project> projectsWithCommonScmRoot );
+>>>>>>> refs/remotes/apache/trunk
 
     boolean shouldBuild( List<ChangeSet> changes, Project continuumProject, File workingDirectory,
                          BuildDefinition buildDefinition )

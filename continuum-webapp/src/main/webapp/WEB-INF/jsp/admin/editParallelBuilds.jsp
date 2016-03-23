@@ -16,10 +16,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
-
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
@@ -34,20 +31,25 @@
   <div id="axial" class="h3">
     <h3><s:text name="parallel.build.queue.section.title"/></h3>
 
-    <c:if test="${!empty actionErrors}">
+    <s:if test="hasActionErrors()">
       <div class="errormessage">
-        <p><s:actionerror/></p>
+        <s:actionerror/>
       </div>
-    </c:if>
+    </s:if>
     
     <div class="axial">
       <s:form action="saveBuildQueue" method="post" validate="true">
+        <tr><td>
           <table>
-            <s:textfield label="%{getText('parallel.build.queue.name')}" name="name" required="true" />
+            <s:textfield label="%{getText('parallel.build.queue.name')}" name="name" requiredLabel="true" size="100" />
           </table>
+        </td></tr>
+        <tr><td>
           <div class="functnbar3">
-            <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
           </div>
+        </td></tr>
       </s:form>
     </div>
   </div>

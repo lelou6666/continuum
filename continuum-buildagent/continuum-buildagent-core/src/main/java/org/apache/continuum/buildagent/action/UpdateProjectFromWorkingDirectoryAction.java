@@ -18,9 +18,12 @@ package org.apache.continuum.buildagent.action;
  * specific language governing permissions and limitations
  * under the License.
  */
+<<<<<<< HEAD
 
 import java.io.File;
 import java.util.Map;
+=======
+>>>>>>> refs/remotes/apache/trunk
 
 import org.apache.continuum.buildagent.build.execution.ContinuumAgentBuildExecutor;
 import org.apache.continuum.buildagent.build.execution.manager.BuildAgentBuildExecutorManager;
@@ -29,26 +32,24 @@ import org.apache.continuum.buildagent.utils.ContinuumBuildAgentUtil;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.codehaus.plexus.action.AbstractAction;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="update-project-from-agent-working-directory"
- */
+import java.io.File;
+import java.util.Map;
+
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "update-project-from-agent-working-directory" )
 public class UpdateProjectFromWorkingDirectoryAction
     extends AbstractAction
 {
     private static final Logger logger = LoggerFactory.getLogger( UpdateProjectFromWorkingDirectoryAction.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentBuildExecutorManager buildAgentBuildExecutorManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildAgentConfigurationService buildAgentConfigurationService;
 
     public void execute( Map context )
@@ -62,8 +63,8 @@ public class UpdateProjectFromWorkingDirectoryAction
 
         File workingDirectory = buildAgentConfigurationService.getWorkingDirectory( project.getId() );
 
-        ContinuumAgentBuildExecutor buildExecutor =
-            buildAgentBuildExecutorManager.getBuildExecutor( project.getExecutorId() );
+        ContinuumAgentBuildExecutor buildExecutor = buildAgentBuildExecutorManager.getBuildExecutor(
+            project.getExecutorId() );
 
         buildExecutor.updateProjectFromWorkingDirectory( workingDirectory, project, buildDefinition );
     }

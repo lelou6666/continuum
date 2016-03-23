@@ -19,22 +19,20 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author olamy
- * @version $Id$
  * @since 1.2.3
  */
 public class EasyX509TrustManager
@@ -62,7 +60,7 @@ public class EasyX509TrustManager
     }
 
     /**
-     * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[],String authType)
+     * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[], String authType)
      */
     public void checkClientTrusted( X509Certificate[] certificates, String authType )
         throws CertificateException
@@ -71,7 +69,7 @@ public class EasyX509TrustManager
     }
 
     /**
-     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
+     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[], String authType)
      */
     public void checkServerTrusted( X509Certificate[] certificates, String authType )
         throws CertificateException

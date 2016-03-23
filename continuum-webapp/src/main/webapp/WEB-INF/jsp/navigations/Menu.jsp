@@ -39,7 +39,6 @@
           <s:text name="menu.continuum.showProjectGroups"/>
         </s:a>
       </div>
- 
     </div>
   </div>
 
@@ -50,14 +49,14 @@
       </div>
       <div>
         <div class="body">
-          <s:url id="addMavenTwoProjectUrl" action="addMavenTwoProjectInput" method="input" namespace="/"
+          <s:url id="addMavenTwoProjectUrl" action="addMavenTwoProjectInput" namespace="/"
                   includeParams="none"/>
           <s:a href="%{addMavenTwoProjectUrl}">
             <s:text name="menu.add.m2Project"/>
           </s:a>
         </div>
         <div class="body">
-          <s:url id="addMavenOneProjectUrl" action="addMavenOneProjectInput" method="input" namespace="/"
+          <s:url id="addMavenOneProjectUrl" action="addMavenOneProjectInput" namespace="/"
                   includeParams="none"/>
           <s:a href="%{addMavenOneProjectUrl}">
             <s:text name="menu.add.m1Project"/>
@@ -84,7 +83,7 @@
   </redback:ifAuthorized>
 
 
-  <redback:ifAnyAuthorized permissions="continuum-manage-build-templates,continuum-manage-schedules,continuum-manage-configuration,continuum-manage-users,continuum-manage-installations,continuum-manage-profiles,continuum-view-queues,continuum-manage-repositories,continuum-manage-purging">
+  <redback:ifAnyAuthorized permissions="continuum-manage-build-templates,continuum-manage-schedules,continuum-manage-configuration,continuum-manage-users,continuum-manage-installations,continuum-manage-profiles,continuum-manage-queues,continuum-manage-repositories,continuum-manage-purging">
     <div id="projectmenu" class="toolgroup">
       <div class="label">
         <s:text name="menu.administration"/>
@@ -99,7 +98,7 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-purging">
-          <s:url id="purgeConfigListUrl" action="purgeConfigList" namespace="/admin" includeParams="none"/>
+          <s:url id="purgeConfigListUrl" action="displayPurge" namespace="/admin" includeParams="none"/>
           <div class="body">
             <s:a href="%{purgeConfigListUrl}">
               <s:text name="menu.administration.purge"/>
@@ -115,7 +114,7 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-installations">
-          <s:url id="configurationUrl" action="installationsList" namespace="/admin" method="list" includeParams="none"/>
+          <s:url id="configurationUrl" action="installationsList" namespace="/admin" includeParams="none"/>
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.installations"/>
@@ -123,15 +122,15 @@
           </div>
         </redback:ifAuthorized>
         <redback:ifAuthorized permission="continuum-manage-profiles">
-          <s:url id="configurationUrl" action="buildEnvList" namespace="/admin" method="list" includeParams="none"/>
+          <s:url id="configurationUrl" action="buildEnvList" namespace="/admin" includeParams="none"/>
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.profile"/>
             </s:a>
-          </div> 
-        </redback:ifAuthorized> 
-        <redback:ifAuthorized permission="continuum-view-queues">
-          <s:url id="queueUrls" action="displayQueues" namespace="/admin" method="display" includeParams="none"/>
+          </div>
+        </redback:ifAuthorized>
+        <redback:ifAuthorized permission="continuum-manage-queues">
+          <s:url id="queueUrls" action="displayQueues" namespace="/admin" includeParams="none"/>
           <div class="body">
             <s:a href="%{queueUrls}">
               <s:text name="menu.administration.queues"/>
@@ -147,7 +146,7 @@
           </div> 
         </redback:ifAuthorized>        
         <redback:ifAuthorized permission="continuum-manage-configuration">               
-          <s:url id="configurationUrl" action="configuration" namespace="/admin" method="input" includeParams="none"/>
+          <s:url id="configurationUrl" action="configuration" namespace="/admin" includeParams="none"/>
           <div class="body">
             <s:a href="%{configurationUrl}">
               <s:text name="menu.administration.configuration"/>
@@ -177,6 +176,22 @@
       </div>
     </div>
   </redback:ifAnyAuthorized>
+
+  <redback:ifAuthorized permission="continuum-view-report">
+    <div id="projectmenu" class="toolgroup">
+      <div class="label">
+        <s:text name="menu.reports"/>
+      </div>
+      <div>
+        <div class="body">
+          <s:url id="viewProjectBuildsReportUrl" action="viewProjectBuildsReport" namespace="/" includeParams="none"/>
+          <s:a href="%{viewProjectBuildsReportUrl}">
+            <s:text name="menu.reports.projectBuilds"/>
+          </s:a> 
+        </div>
+      </div>
+    </div>
+  </redback:ifAuthorized>
 
   <c1:ifBuildTypeEnabled buildType="distributed">
     <redback:ifAnyAuthorized permissions="continuum-manage-distributed-builds,continuum-view-release">
@@ -239,7 +254,8 @@
       <div id="litem10" class="body"><s:text name="legend.release"/></div>
       <div id="litem11" class="body"><s:text name="legend.buildInSuccess"/></div>
       <div id="litem12" class="body"><s:text name="legend.buildInFailure"/></div>
-      <div id="litem13" class="body"><s:text name="legend.buildInError"/></div>
+      <div id="litem13" class="body"><s:text name="legend.buildInUnknown"/></div>
+      <div id="litem14" class="body"><s:text name="legend.buildInError"/></div>
     </div>
   </div>
 </div>

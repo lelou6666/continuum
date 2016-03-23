@@ -19,30 +19,37 @@ package org.apache.maven.continuum.configuration;
  * under the License.
  */
 
-import java.io.File;
-
 import org.apache.continuum.configuration.BuildAgentConfiguration;
 import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
-import org.codehaus.plexus.spring.PlexusInSpringTestCase;
-import org.codehaus.plexus.util.FileUtils;
+import org.apache.continuum.utils.file.DefaultFileSystemManager;
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.PlexusSpringTestCase;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class ConfigurationServiceTest
-    extends PlexusInSpringTestCase
+    extends PlexusSpringTestCase
 {
     private static final Logger log = LoggerFactory.getLogger( ConfigurationServiceTest.class );
 
     private static final String confFile = "target/test-classes/conf/continuum.xml";
 
+    private FileSystemManager fsManager;
+
     @Override
-    protected void setUp()
-        throws Exception
+    protected void preContextStart()
+        throws IOException
     {
+        fsManager = new DefaultFileSystemManager();  // can't lookup, before setup
         File originalConf = new File( getBasedir(), "src/test/resources/conf/continuum.xml" );
 
         File confUsed = new File( getBasedir(), confFile );
@@ -50,10 +57,10 @@ public class ConfigurationServiceTest
         {
             confUsed.delete();
         }
-        FileUtils.copyFile( originalConf, confUsed );
-        super.setUp();
+        fsManager.copyFile( originalConf, confUsed );
     }
 
+    @Test
     public void testLoad()
         throws Exception
     {
@@ -69,6 +76,7 @@ public class ConfigurationServiceTest
                       service.getBuildOutputDirectory().getAbsolutePath() );
     }
 
+    @Test
     public void testConfigurationService()
         throws Exception
     {
@@ -82,14 +90,6 @@ public class ConfigurationServiceTest
 
         assertNotNull( service );
 
-//        service.load();
-
-//        assertEquals( "http://test", service.getUrl() );
-
-//        assertEquals( "build-output-directory", service.getBuildOutputDirectory().getName() );
-
-//        assertEquals( "working-directory", service.getWorkingDirectory().getName() );
-
         assertEquals( "check # build agents", 1, service.getBuildAgents().size() );
 
         service.setUrl( "http://test/zloug" );
@@ -99,10 +99,7 @@ public class ConfigurationServiceTest
         service.addBuildAgent( buildAgent );
 
         service.store();
-
-        String contents = FileUtils.fileRead( conf );
-        //assertTrue( contents.indexOf( "http://test/zloug" ) > 0 );
-
+        fsManager.fileContents( conf );
         service.reload();
 
         assertEquals( "http://test/zloug", service.getUrl() );
@@ -143,8 +140,8 @@ public class ConfigurationServiceTest
         assertEquals( "check # build agent groups", 2, service.getBuildAgentGroups().get( 0 ).getBuildAgents().size() );
         assertEquals( "group-1", service.getBuildAgentGroups().get( 0 ).getName() );
         assertEquals( "windows", service.getBuildAgentGroups().get( 0 ).getBuildAgents().get( 0 ).getDescription() );
-        assertEquals( "http://machine-1/xmlrpc",
-                      service.getBuildAgentGroups().get( 0 ).getBuildAgents().get( 1 ).getUrl() );
+        assertEquals( "http://machine-1/xmlrpc", service.getBuildAgentGroups().get( 0 ).getBuildAgents().get(
+            1 ).getUrl() );
         assertEquals( "node-1", service.getBuildAgentGroups().get( 0 ).getBuildAgents().get( 1 ).getDescription() );
         assertEquals( true, service.getBuildAgentGroups().get( 0 ).getBuildAgents().get( 1 ).isEnabled() );
 
@@ -155,5 +152,44 @@ public class ConfigurationServiceTest
         assertEquals( "check # build agent groups", 1, service.getBuildAgentGroups().size() );
         assertEquals( "group-1", service.getBuildAgentGroups().get( 0 ).getName() );
         assertEquals( "windows", service.getBuildAgentGroups().get( 0 ).getBuildAgents().get( 0 ).getDescription() );
+        assertNull( service.getSharedSecretPassword() );
+
+        service.setSharedSecretPassword( "password" );
+        service.store();
+        service.reload();
+
+        assertEquals( "password", service.getSharedSecretPassword() );
+    }
+
+    @Test
+    public void testAddDuplicateBuildAgentUrl()
+        throws Exception
+    {
+        ConfigurationService service = (ConfigurationService) lookup( "configurationService" );
+
+        assertNotNull( service );
+
+        BuildAgentConfiguration buildAgent = new BuildAgentConfiguration( "http://agent1/xmlrpc ", "windows", false );
+        service.addBuildAgent( buildAgent );
+        service.store();
+        service.reload();
+
+        assertEquals( "check # build agents", 2, service.getBuildAgents().size() );
+        assertNotNull( service.getBuildAgent( "http://agent1/xmlrpc" ) );
+
+        BuildAgentConfiguration buildAgent2 = new BuildAgentConfiguration( "http://agent1/xmlrpc", "windows", false );
+
+        try
+        {
+            service.addBuildAgent( buildAgent2 );
+            fail( "Should have thrown an exception because of duplicate agent url" );
+        }
+        catch ( ConfigurationException e )
+        {
+            assertEquals( "Unable to add build agent: build agent already exist", e.getMessage() );
+        }
+
+        service.removeBuildAgent( buildAgent );
+        service.store();
     }
 }

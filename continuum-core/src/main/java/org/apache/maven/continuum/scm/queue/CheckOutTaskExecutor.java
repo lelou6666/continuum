@@ -19,9 +19,6 @@ package org.apache.maven.continuum.scm.queue;
  * under the License.
  */
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.continuum.taskqueue.CheckOutTask;
 import org.apache.maven.continuum.core.action.AbstractContinuumAction;
@@ -29,31 +26,31 @@ import org.apache.maven.continuum.core.action.CheckoutProjectContinuumAction;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.action.ActionManager;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.taskqueue.Task;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutionException;
 import org.codehaus.plexus.taskqueue.execution.TaskExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.taskqueue.execution.TaskExecutor"
- * role-hint="check-out-project" instantiation-strategy="per-lookup"
  */
+@Component( role = org.codehaus.plexus.taskqueue.execution.TaskExecutor.class, hint = "check-out-project",
+    instantiationStrategy = "per-lookup" )
 public class CheckOutTaskExecutor
     implements TaskExecutor
 {
     private static final Logger log = LoggerFactory.getLogger( CheckOutTaskExecutor.class );
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ActionManager actionManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
     // ----------------------------------------------------------------------
@@ -87,6 +84,7 @@ public class CheckOutTaskExecutor
         Map<String, Object> context = new HashMap<String, Object>();
 
         AbstractContinuumAction.setProjectId( context, projectId );
+<<<<<<< HEAD
 
         AbstractContinuumAction.setProject( context, project );
 
@@ -100,6 +98,21 @@ public class CheckOutTaskExecutor
         
         context.put( AbstractContinuumAction.KEY_PROJECTS_IN_GROUP_WITH_COMMON_SCM_ROOT,
                              task.getProjectsWithCommonScmRoot() );
+=======
+
+        AbstractContinuumAction.setProject( context, project );
+
+        AbstractContinuumAction.setWorkingDirectory( context, workingDirectory );
+
+        CheckoutProjectContinuumAction.setScmUsername( context, task.getScmUserName() );
+
+        CheckoutProjectContinuumAction.setScmPassword( context, task.getScmPassword() );
+
+        AbstractContinuumAction.setProjectScmRootUrl( context, task.getScmRootUrl() );
+
+        AbstractContinuumAction.setListOfProjectsInGroupWithCommonScmRoot( context,
+                                                                           task.getProjectsWithCommonScmRoot() );
+>>>>>>> refs/remotes/apache/trunk
 
         try
         {
