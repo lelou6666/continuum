@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
 <html>
@@ -41,10 +39,11 @@
       -->
     </div>
 
-    <h3><s:text name="projectGroup.members.section.title"><s:param>${projectGroup.name}</s:param></s:text></h3>
+    <h3><s:text name="projectGroup.members.section.title"><s:param value="#attr['projectGroup'].name"/></s:text></h3>
 
     <ec:table items="groupProjects"
               var="project"
+              autoIncludeParameters="false"
               showExports="false"
               showPagination="false"
               showStatusBar="false"
@@ -53,28 +52,25 @@
       <ec:row highlightRow="true">
         <ec:column property="name" title="summary.projectTable.name" width="48%">
           <s:url id="projectViewUrl" action="projectView">
-            <s:param name="projectId">${pageScope.project.id}</s:param>
+            <s:param name="projectId" value="#attr['project'].id"/>
           </s:url>
-          <s:a href="%{projectViewUrl}">${pageScope.project.name}</s:a>
+          <s:a href="%{projectViewUrl}"><s:property value="#attr['project'].name"/></s:a>
         </ec:column>
         <ec:column property="editAction" title="&nbsp;" width="1%" sortable="false">
           <center>
             <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
-            <c:choose>
-              <c:when
-                  test="${pageScope.project.state == 1 || pageScope.project.state == 10 || pageScope.project.state == 2 || pageScope.project.state == 3 || pageScope.project.state == 4}">
+              <s:if test="#attr['project'].state in {10, 2, 3, 4}">
                 <s:url id="editProjectUrl" action="projectEdit">
-                  <s:param name="projectId">${pageScope.project.id}</s:param>
-                  <s:param name="projectName">${project.name}</s:param>
+                  <s:param name="projectId" value="#attr['project'].id"/>
+                  <s:param name="projectName" value="#attr['project'].name"/>
                 </s:url>
                 <s:a href="%{editProjectUrl}">
                   <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
                 </s:a>
-              </c:when>
-              <c:otherwise>
+              </s:if>
+              <s:else>
                 <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
-              </c:otherwise>
-            </c:choose>
+              </s:else>
             </redback:ifAuthorized>
             <redback:elseAuthorized>
                 <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name="edit"/>" title="<s:text name="edit"/>" border="0">
@@ -84,21 +80,24 @@
         <ec:column property="deleteAction" title="&nbsp;" width="1%" sortable="false">
           <center>
             <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
-            <c:choose>
-              <c:when
-                  test="${pageScope.project.state == 1 || pageScope.project.state == 10 || pageScope.project.state == 2 || pageScope.project.state == 3 || pageScope.project.state == 4}">
-                <s:url id="removeProjectUrl" action="deleteProject!default.action">
-                  <s:param name="projectId">${pageScope.project.id}</s:param>
-                  <s:param name="projectName">${pageScope.project.name}</s:param>
+              <%-- NEW, OK, FAILED, ERROR, CHECKEDOUT --%>
+              <s:if test="#attr['project'].state in {1, 10, 2, 3, 4}">
+                <s:set var="tname" value="'remProjectToken' + #attr['project'].id" scope="page" />
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removeProjectUrl" action="deleteProject_default.action">
+                  <s:param name="projectId" value="#attr['project'].id"/>
+                  <s:param name="projectName" value="#attr['project'].name"/>
+                  <s:param name="struts.token.name" value="#attr['tname']"/>
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
                 </s:url>
                 <s:a href="%{removeProjectUrl}">
                   <img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
                 </s:a>
-              </c:when>
-              <c:otherwise>
+              </s:if>
+              <%-- BUILDING, CHECKING_OUT, UPDATING, WARNING, UPDATED, CANCELLED --%>
+              <s:else>
                 <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
-              </c:otherwise>
-            </c:choose>
+              </s:else>
             </redback:ifAuthorized>
             <redback:elseAuthorized>
                 <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name="delete"/>" title="<s:text name="delete"/>" border="0">
@@ -111,7 +110,7 @@
   <redback:ifAuthorized permission="continuum-manage-users">
   <h3><s:text name="projectGroup.members.users.title"/></h3>
     
-  <s:form action="projectGroupMembers" theme="xhtml" method="post">
+  <s:form action="projectGroupMembers" method="post">
     <s:hidden name="ascending" />
     <s:hidden name="projectGroupId" />
     <tr>
@@ -125,13 +124,11 @@
       </td>               
       <td>
         <table cellpadding="0" cellspacing="0">
-          <s:textfield name="filterKey" />
+          <s:textfield name="filterKey" size="100" />
         </table>
       </td>  
       <td colspan="2" align="right">
-        <table cellpadding="0" cellspacing="0">
-          <s:submit value="%{getText('projectGroup.members.users.search.button')}"/>
-        </table>
+        <s:submit value="%{getText('projectGroup.members.users.search.button')}" theme="simple"/>
       </td>
     </tr>             
   </s:form>
@@ -142,17 +139,18 @@
     <thead>
       <tr>
         <th nowrap="true">
-          <s:form id="sortlist" name="sortlist" action="projectGroupMembers" theme="xhtml" method="post">
+          <s:form id="sortlist" name="sortlist" action="projectGroupMembers" method="post">
             <s:if test="ascending">
               <s:a href="javascript:document.forms['sortlist'].submit()"><img src="<s:url value='/images/icon_sortdown.gif' includeParams="none"/>" title="<s:text name='sort.descending'/>" border="0"></s:a> <s:text name="user.username.label"/>
             </s:if>
             <s:else>
               <s:a href="javascript:document.forms['sortlist'].submit()"><img src="<s:url value='/images/icon_sortup.gif' includeParams="none"/>" title="<s:text name='sort.ascending'/>" border="0"></s:a> <s:text name="user.username.label"/>
             </s:else>
-            <s:hidden name="ascending">${!ascending}</s:hidden>
+            <s:hidden name="ascending" value="%{!ascending}"/>
             <s:hidden name="projectGroupId" />
-            <s:hidden name="filterProperty" />
-            <s:hidden name="filterKey" />
+            <s:hidden name="sorterProperty" value="username"/>
+            <s:hidden name="filterKey" value="%{filterKey}"/>
+            <s:hidden name="filterProperty" value="%{filterProperty}"/>
           </s:form>
         </th>   
         <th><s:text name="user.fullName.label"/></th>

@@ -47,6 +47,8 @@ import org.apache.maven.continuum.reports.surefire.ReportTestResult;
 import org.apache.maven.continuum.reports.surefire.ReportTestSuiteGenerator;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.velocity.VelocityComponent;
@@ -54,12 +56,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -68,90 +64,68 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class MailContinuumNotifier
     extends AbstractContinuumNotifier
     implements Initializable
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( MailContinuumNotifier.class );
 
     // ----------------------------------------------------------------------
     // Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private VelocityComponent velocity;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private Continuum continuum;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private JavaMailSender javaMailSender;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ReportTestSuiteGenerator reportTestSuiteGenerator;
 
     // ----------------------------------------------------------------------
     // Configuration
     // ----------------------------------------------------------------------
-    /**
-     * @plexus.configuration
-     */
+
+    @Configuration( "" )
     private String fromMailbox;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromName;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String toOverride;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String timestampFormat;
 
-    /**
-     * @plexus.configuration
-     */
-    private boolean includeBuildResult = true;
-
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private boolean includeBuildSummary = true;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private boolean includeTestSummary = true;
 
-    /**
-     * @plexus.configuration
-     */
-    private boolean includeOutput = false;
+    @Configuration( "" )
+    private boolean includeBuildOutput = false;
 
     /**
      * Customizable mail subject.  Use any combination of literal text, project or build attributes.
@@ -160,10 +134,16 @@ public class MailContinuumNotifier
      * "[continuum] BUILD ${state}: ${project.name} ${project.scmTag}" results in "[continuum] BUILD SUCCESSFUL: Hello World Branch001"
      * "[continuum] BUILD ${state}: ${project.name} ${build.durationTime}" results in "[continuum] BUILD SUCCESSFUL: Hello World 2 sec"
      * "[continuum] BUILD ${state}: ${project.name}, Build Def - ${build.buildDefinition.description}" results in "[continuum] BUILD SUCCESSFUL: Hello World, Build Def - Nightly Test Build"
-     *
-     * @plexus.configuration
      */
-    private String subjectFormat = "[continuum] BUILD ${state}: ${project.groupId} ${project.name}";
+    @Configuration( "" )
+    private String buildSubjectFormat = "[continuum] BUILD ${state}: ${project.groupId} ${project.name}";
+
+    /**
+     * Customizable mail subject
+     */
+    @Configuration( "" )
+    private String prepareBuildSubjectFormat =
+        "[continuum] PREPARE BUILD ${state]: ${projectScmRoot.projectGroup.name}";
 
     // ----------------------------------------------------------------------
     //
@@ -247,18 +227,28 @@ public class MailContinuumNotifier
         Project project = context.getProject();
         List<ProjectNotifier> notifiers = context.getNotifiers();
         BuildResult build = context.getBuildResult();
-        String buildOutput = getBuildOutput( project, build );
+
+        if ( build != null )
+        {
+            log.error( "br state=" + build.getState() );
+        }
+
+        if ( project != null )
+        {
+            log.error( "project state=" + project.getState() );
+        }
+
         BuildDefinition buildDefinition = context.getBuildDefinition();
         ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
-        
-        boolean isPrepareBuildComplete =
-            messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
-        
+
+        boolean isPrepareBuildComplete = messageId.equals(
+            ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+
         if ( projectScmRoot == null && isPrepareBuildComplete )
         {
             return;
         }
-        
+
         // ----------------------------------------------------------------------
         // If there wasn't any building done, don't notify
         // ----------------------------------------------------------------------
@@ -274,7 +264,7 @@ public class MailContinuumNotifier
 
         if ( messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_BUILD_COMPLETE ) )
         {
-            buildComplete( project, notifiers, build, buildOutput, messageId, context, buildDefinition );
+            buildComplete( project, notifiers, build, messageId, context, buildDefinition );
         }
         else if ( isPrepareBuildComplete )
         {
@@ -282,8 +272,8 @@ public class MailContinuumNotifier
         }
     }
 
-    private void buildComplete( Project project, List<ProjectNotifier> notifiers, BuildResult build, String buildOutput,
-                                String messageId, MessageContext context, BuildDefinition buildDefinition )
+    private void buildComplete( Project project, List<ProjectNotifier> notifiers, BuildResult build, String messageId,
+                                MessageContext context, BuildDefinition buildDefinition )
         throws NotificationException
     {
         BuildResult previousBuild = getPreviousBuild( project, buildDefinition, build );
@@ -300,12 +290,12 @@ public class MailContinuumNotifier
                 notifiersList.add( notifier );
             }
         }
-        buildComplete( project, notifiersList, build, previousBuild, buildOutput, messageId, context, buildDefinition );
+        buildComplete( project, notifiersList, build, previousBuild, messageId, context, buildDefinition );
     }
 
     private void buildComplete( Project project, List<ProjectNotifier> notifiers, BuildResult build,
-                                BuildResult previousBuild, String buildOutput, String messageId,
-                                MessageContext messageContext, BuildDefinition buildDefinition )
+                                BuildResult previousBuild, String messageId, MessageContext messageContext,
+                                BuildDefinition buildDefinition )
         throws NotificationException
     {
         // ----------------------------------------------------------------------
@@ -326,25 +316,26 @@ public class MailContinuumNotifier
 
             context.put( "includeTestSummary", includeTestSummary );
 
-            context.put( "includeOutput", includeOutput );
+            context.put( "includeOutput", includeBuildOutput );
 
-            if ( includeBuildResult )
+            if ( includeBuildOutput )
             {
-                context.put( "buildOutput", buildOutput );
+                context.put( "buildOutput", getBuildOutput( project, build ) );
             }
 
             if ( includeBuildSummary )
             {
                 context.put( "build", build );
 
-                ReportTestResult reportTestResult =
-                    reportTestSuiteGenerator.generateReportTestResult( build.getId(), project.getId() );
+                ReportTestResult reportTestResult = reportTestSuiteGenerator.generateReportTestResult( build.getId(),
+                                                                                                       project.getId() );
 
                 context.put( "testResult", reportTestResult );
 
                 context.put( "project", project );
 
-                context.put( "changesSinceLastUpdate", continuum.getChangesSinceLastUpdate( project.getId() ) );
+                context.put( "changesSinceLastSuccess", continuum.getChangesSinceLastSuccess( project.getId(),
+                                                                                              build.getId() ) );
 
                 context.put( "previousBuild", previousBuild );
 
@@ -369,8 +360,8 @@ public class MailContinuumNotifier
 
                 context.put( "osName", osName );
 
-                context.put( "javaVersion",
-                             System.getProperty( "java.version" ) + "(" + System.getProperty( "java.vendor" ) + ")" );
+                context.put( "javaVersion", System.getProperty( "java.version" ) + "(" + System.getProperty(
+                    "java.vendor" ) + ")" );
 
                 // TODO only in case of a java project ?
                 context.put( "javaHomeInformations", getJavaHomeInformations( buildDefinition ) );
@@ -422,8 +413,8 @@ public class MailContinuumNotifier
         sendMessage( project, notifiers, subject, content, messageContext );
     }
 
-    private void prepareBuildComplete( ProjectScmRoot projectScmRoot, List<ProjectNotifier> notifiers, 
-                                       String messageId, MessageContext messageContext )
+    private void prepareBuildComplete( ProjectScmRoot projectScmRoot, List<ProjectNotifier> notifiers, String messageId,
+                                       MessageContext messageContext )
         throws NotificationException
     {
         // ----------------------------------------------------------------------
@@ -432,7 +423,7 @@ public class MailContinuumNotifier
 
         String packageName = getClass().getPackage().getName().replace( '.', '/' );
 
-        String templateName = packageName + "/templates/"  + messageId + ".vm";
+        String templateName = packageName + "/templates/" + messageId + ".vm";
 
         StringWriter writer = new StringWriter();
 
@@ -441,18 +432,16 @@ public class MailContinuumNotifier
         try
         {
             VelocityContext context = new VelocityContext();
-            
+
             // ----------------------------------------------------------------------
             // Data objects
             // ----------------------------------------------------------------------
 
-            context.put( "reportUrl", getReportUrl( projectScmRoot.getProjectGroup(), 
-                                                    projectScmRoot, configurationService ) );
-
-            context.put( "projectGroup", projectScmRoot.getProjectGroup() );
+            context.put( "reportUrl", getReportUrl( projectScmRoot.getProjectGroup(), projectScmRoot,
+                                                    configurationService ) );
 
             context.put( "projectScmRoot", projectScmRoot );
-            
+
             // TODO put other profile env var could be a security if they provide passwords ?
 
             // ----------------------------------------------------------------------
@@ -473,7 +462,7 @@ public class MailContinuumNotifier
         {
             throw new NotificationException( "Error while generating mail contents.", e );
         }
-        
+
         // ----------------------------------------------------------------------
         // Send the mail
         // ----------------------------------------------------------------------
@@ -490,7 +479,7 @@ public class MailContinuumNotifier
 
         sendMessage( projectScmRoot, notifiers, subject, content, messageContext );
     }
-    
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
@@ -500,14 +489,14 @@ public class MailContinuumNotifier
     {
         if ( buildDefinition == null )
         {
-            return continuum.getInstallationService().getDefaultJdkInformations();
+            return continuum.getInstallationService().getDefaultJavaVersionInfo();
         }
         Profile profile = buildDefinition.getProfile();
         if ( profile == null )
         {
-            return continuum.getInstallationService().getDefaultJdkInformations();
+            return continuum.getInstallationService().getDefaultJavaVersionInfo();
         }
-        return continuum.getInstallationService().getJdkInformations( profile.getJdk() );
+        return continuum.getInstallationService().getJavaVersionInfo( profile.getJdk() );
     }
 
     private List<String> getBuilderVersion( BuildDefinition buildDefinition, Project project )
@@ -533,18 +522,18 @@ public class MailContinuumNotifier
             // depends on ExecutorId
             if ( MavenTwoBuildExecutor.ID.equals( project.getExecutorId() ) )
             {
-                executorConfigurator = continuum.getInstallationService()
-                    .getExecutorConfigurator( InstallationService.MAVEN2_TYPE );
+                executorConfigurator = continuum.getInstallationService().getExecutorConfigurator(
+                    InstallationService.MAVEN2_TYPE );
             }
             else if ( MavenOneBuildExecutor.ID.equals( project.getExecutorId() ) )
             {
-                executorConfigurator = continuum.getInstallationService()
-                    .getExecutorConfigurator( InstallationService.MAVEN1_TYPE );
+                executorConfigurator = continuum.getInstallationService().getExecutorConfigurator(
+                    InstallationService.MAVEN1_TYPE );
             }
             else if ( AntBuildExecutor.ID.equals( project.getExecutorId() ) )
             {
-                executorConfigurator = continuum.getInstallationService()
-                    .getExecutorConfigurator( InstallationService.ANT_TYPE );
+                executorConfigurator = continuum.getInstallationService().getExecutorConfigurator(
+                    InstallationService.ANT_TYPE );
             }
             else
             {
@@ -552,8 +541,8 @@ public class MailContinuumNotifier
             }
         }
 
-        return continuum.getInstallationService().getExecutorConfiguratorVersion( builder == null ? null : builder
-            .getVarValue(), executorConfigurator, profile );
+        return continuum.getInstallationService().getExecutorVersionInfo(
+            builder == null ? null : builder.getVarValue(), executorConfigurator, profile );
     }
 
     private String generateSubject( Project project, BuildResult build )
@@ -568,25 +557,25 @@ public class MailContinuumNotifier
 
         StringWriter writer = new StringWriter();
 
-        boolean velocityResults = velocity.getEngine().evaluate( context, writer, "subjectPattern", subjectFormat );
+        boolean velocityRes = velocity.getEngine().evaluate( context, writer, "subjectPattern", buildSubjectFormat );
 
         return writer.toString();
     }
-    
+
     private String generateSubject( ProjectScmRoot projectScmRoot )
         throws Exception
     {
         String state = getState( projectScmRoot );
-        subjectFormat = "[continuum] PREPARE BUILD ${state}: ${projectScmRoot.scmRootAddress}";
-        
+
         VelocityContext context = new VelocityContext();
         context.put( "projectScmRoot", projectScmRoot );
         context.put( "state", state );
-    
+
         StringWriter writer = new StringWriter();
-    
-        boolean velocityResults = velocity.getEngine().evaluate( context, writer, "subjectPattern", subjectFormat );
-    
+
+        boolean velocityResults = velocity.getEngine().evaluate( context, writer, "subjectPattern",
+                                                                 prepareBuildSubjectFormat );
+
         return writer.toString();
     }
 
@@ -618,7 +607,7 @@ public class MailContinuumNotifier
             return "ERROR: Unknown build state " + state;
         }
     }
-    
+
     private String getState( ProjectScmRoot projectScmRoot )
     {
         int state = projectScmRoot.getState();
@@ -633,13 +622,14 @@ public class MailContinuumNotifier
         }
         else
         {
-            log.warn( "Unknown prepare build state " + state + " for SCM Root URL " + projectScmRoot.getScmRootAddress() +
-                      " in projectGroup " + projectScmRoot.getProjectGroup().getId() );
+            log.warn(
+                "Unknown prepare build state " + state + " for SCM Root URL " + projectScmRoot.getScmRootAddress() +
+                    " in projectGroup " + projectScmRoot.getProjectGroup().getId() );
 
             return "ERROR: Unknown build state " + state;
         }
     }
-    
+
     private void sendMessage( Project project, List<ProjectNotifier> notifiers, String subject, String content,
                               MessageContext context )
         throws NotificationException
@@ -658,9 +648,8 @@ public class MailContinuumNotifier
 
         if ( fromMailbox == null )
         {
-            log
-                .warn( project.getName() +
-                    ": Project is missing nag email and global from mailbox is missing, not sending mail." );
+            log.warn( project.getName() +
+                          ": Project is missing nag email and global from mailbox is missing, not sending mail." );
 
             return;
         }
@@ -690,6 +679,7 @@ public class MailContinuumNotifier
 
             if ( StringUtils.isEmpty( toOverride ) )
             {
+                Set<String> listRecipents = new HashSet<String>();
                 for ( ProjectNotifier notifier : notifiers )
                 {
                     Map<String, String> conf = notifier.getConfiguration();
@@ -702,21 +692,50 @@ public class MailContinuumNotifier
                             String[] addresses = StringUtils.split( addressField, "," );
                             for ( String address : addresses )
                             {
-                                // TODO: set a proper name
-                                InternetAddress to = new InternetAddress( address.trim() );
+                                if ( !listRecipents.contains( address.trim() ) )
+                                {
+                                    // [CONTINUUM-2281] Dont repeat addesss in recipents.
+                                    // TODO: set a proper name
+                                    InternetAddress to = new InternetAddress( address.trim() );
 
-                                log.info( "Recipient: To '" + to + "'." );
-                                message.addRecipient( Message.RecipientType.TO, to );
+                                    log.info( "Recipient: To '" + to + "'." );
+                                    message.addRecipient( Message.RecipientType.TO, to );
+                                    listRecipents.add( address.trim() );
+                                }
                             }
-                            
+
                         }
 
-                        String committerField = (String) notifier.getConfiguration().get( COMMITTER_FIELD );
-                        if ( StringUtils.isNotEmpty( committerField ) && context.getBuildResult() != null )
+                        if ( context.getBuildResult() != null )
                         {
-                            if ( Boolean.parseBoolean( committerField ) )
+                            String committerField = (String) notifier.getConfiguration().get( COMMITTER_FIELD );
+                            String developerField = (String) notifier.getConfiguration().get( DEVELOPER_FIELD );
+                            // Developers constains committers.
+                            if ( StringUtils.isNotEmpty( developerField ) && Boolean.parseBoolean( developerField ) )
                             {
-                                ScmResult scmResult = context.getProject().getScmResult();
+                                List<ProjectDeveloper> developers = project.getDevelopers();
+                                if ( developers == null || developers.isEmpty() )
+                                {
+                                    log.warn(
+                                        "No developers have been configured...notifcation email will not be sent" );
+                                    return;
+                                }
+                                Map<String, String> developerToEmailMap = mapDevelopersToRecipients( developers );
+                                for ( String email : developerToEmailMap.values() )
+                                {
+                                    if ( !listRecipents.contains( email.trim() ) )
+                                    {
+                                        InternetAddress to = new InternetAddress( email.trim() );
+                                        log.info( "Recipient: To '" + to + "'." );
+                                        message.addRecipient( Message.RecipientType.TO, to );
+                                        listRecipents.add( email.trim() );
+                                    }
+                                }
+                            }
+                            else if ( StringUtils.isNotEmpty( committerField ) && Boolean.parseBoolean(
+                                committerField ) )
+                            {
+                                ScmResult scmResult = context.getBuildResult().getScmResult();
                                 if ( scmResult != null && scmResult.getChanges() != null &&
                                     !scmResult.getChanges().isEmpty() )
                                 {
@@ -724,7 +743,7 @@ public class MailContinuumNotifier
                                     if ( developers == null || developers.isEmpty() )
                                     {
                                         log.warn( "No developers have been configured...notifcation email " +
-                                            "will not be sent" );
+                                                      "will not be sent" );
                                         return;
                                     }
 
@@ -741,16 +760,19 @@ public class MailContinuumNotifier
                                             if ( StringUtils.isEmpty( email ) )
                                             {
                                                 //TODO: Add a default domain so mail address won't be required
-                                                log.warn( "no email address is defined in developers list for '" +
-                                                    scmId + "' scm id." );
+                                                log.warn(
+                                                    "no email address is defined in developers list for '" + scmId +
+                                                        "' scm id." );
                                             }
-                                            else
+                                            else if ( !listRecipents.contains( email.trim() ) )
                                             {
+                                                // [CONTINUUM-2281] Dont repeat addesss in recipents.)
                                                 // TODO: set a proper name
                                                 InternetAddress to = new InternetAddress( email.trim() );
                                                 log.info( "Recipient: To '" + to + "'." );
 
                                                 message.addRecipient( Message.RecipientType.TO, to );
+                                                listRecipents.add( email.trim() );
                                             }
                                         }
                                     }
@@ -772,7 +794,11 @@ public class MailContinuumNotifier
 
             message.setSentDate( new Date() );
 
+<<<<<<< HEAD
             if ( message.getAllRecipients() != null && ( (Address[]) message.getAllRecipients() ).length > 0 )
+=======
+            if ( message.getAllRecipients() != null && ( message.getAllRecipients() ).length > 0 )
+>>>>>>> refs/remotes/apache/trunk
             {
                 javaMailSender.send( message );
             }
@@ -791,12 +817,12 @@ public class MailContinuumNotifier
         }
     }
 
-    private void sendMessage( ProjectScmRoot projectScmRoot, List<ProjectNotifier> notifiers, 
-                              String subject, String content, MessageContext context )
+    private void sendMessage( ProjectScmRoot projectScmRoot, List<ProjectNotifier> notifiers, String subject,
+                              String content, MessageContext context )
         throws NotificationException
     {
         ProjectGroup projectGroup = projectScmRoot.getProjectGroup();
-        
+
         if ( notifiers.size() == 0 )
         {
             // This is a useful message for the users when debugging why they don't
@@ -811,15 +837,14 @@ public class MailContinuumNotifier
 
         if ( fromMailbox == null )
         {
-            log
-                .warn( projectGroup.getName() +
-                    ": ProjectGroup is missing nag email and global from mailbox is missing, not sending mail." );
+            log.warn( projectGroup.getName() +
+                          ": ProjectGroup is missing nag email and global from mailbox is missing, not sending mail." );
 
             return;
         }
 
         MimeMessage message = javaMailSender.createMimeMessage();
-        
+
         try
         {
             message.setSubject( subject );
@@ -833,7 +858,7 @@ public class MailContinuumNotifier
             message.setFrom( from );
 
             log.info( "Sending message: From '" + from + "'." );
-            
+
             if ( StringUtils.isEmpty( toOverride ) )
             {
                 for ( ProjectNotifier notifier : notifiers )
@@ -842,7 +867,7 @@ public class MailContinuumNotifier
                     {
                         continue;
                     }
-                    
+
                     Map<String, String> conf = notifier.getConfiguration();
                     if ( conf != null )
                     {
@@ -876,7 +901,11 @@ public class MailContinuumNotifier
 
             message.setSentDate( new Date() );
 
+<<<<<<< HEAD
             if ( message.getAllRecipients() != null && ( (Address[]) message.getAllRecipients() ).length > 0 )
+=======
+            if ( message.getAllRecipients() != null && ( message.getAllRecipients() ).length > 0 )
+>>>>>>> refs/remotes/apache/trunk
             {
                 javaMailSender.send( message );
             }
@@ -934,7 +963,7 @@ public class MailContinuumNotifier
             return FALLBACK_FROM_MAILBOX;
         }
         // olamy : CONTINUUM-860 if address contains commas we use only the first one
-        if ( address.contains( "," ) )
+        if ( address != null && address.contains( "," ) )
         {
             String[] addresses = StringUtils.split( address, "," );
             return addresses[0];

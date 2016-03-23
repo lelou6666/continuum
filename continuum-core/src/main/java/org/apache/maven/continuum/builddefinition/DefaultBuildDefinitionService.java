@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.builddefinition;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.builddefinition;
 
 import org.apache.continuum.buildqueue.BuildQueueServiceException;
 import org.apache.continuum.configuration.ContinuumConfigurationException;
@@ -34,80 +35,70 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.builddefinition.BuildDefinitionService"
  * @TODO some cache mechanism ?
  * @since 15 sept. 07
  */
+@Component( role = org.apache.maven.continuum.builddefinition.BuildDefinitionService.class )
 public class DefaultBuildDefinitionService
     implements BuildDefinitionService, Initializable
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( DefaultBuildDefinitionService.class );
 
     /**
      * @plexus.configuration default-value=""
      */
+=======
+    private static final Logger log = LoggerFactory.getLogger( DefaultBuildDefinitionService.class );
+
+    @Configuration( "" )
+>>>>>>> refs/remotes/apache/trunk
     private String defaultAntGoals;
 
-    /**
-     * @plexus.configuration default-value=""
-     */
+    @Configuration( "" )
     private String defaultAntArguments;
 
-    /**
-     * @plexus.configuration default-value="clean:clean jar:install"
-     */
+    @Configuration( "clean:clean jar:install" )
     private String defaultM1Goals;
 
-    /**
-     * @plexus.configuration default-value=""
-     */
+    @Configuration( "" )
     private String defaultM1Arguments;
 
-    /**
-     * @plexus.configuration default-value="clean install"
-     */
+    @Configuration( "clean install" )
     private String defaultM2Goals;
 
-    /**
-     * @plexus.configuration default-value="--batch-mode --non-recursive"
-     */
+    @Configuration( "--batch-mode --non-recursive" )
     private String defaultM2Arguments;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionDao buildDefinitionDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionTemplateDao buildDefinitionTemplateDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectGroupDao projectGroupDao;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private ConfigurationService configurationService;
 
     // -----------------------------------------------
@@ -166,7 +157,6 @@ public class DefaultBuildDefinitionService
         }
     }
 
-
     public void removeBuildDefinition( BuildDefinition buildDefinition )
         throws BuildDefinitionServiceException
     {
@@ -196,6 +186,7 @@ public class DefaultBuildDefinitionService
             storedBuildDefinition.setProfile( buildDefinition.getProfile() );
             storedBuildDefinition.setSchedule( buildDefinition.getSchedule() );
             storedBuildDefinition.setType( buildDefinition.getType() );
+            storedBuildDefinition.setUpdatePolicy( buildDefinition.getUpdatePolicy() );
             buildDefinitionDao.storeBuildDefinition( storedBuildDefinition );
         }
         catch ( ContinuumStoreException e )
@@ -217,7 +208,6 @@ public class DefaultBuildDefinitionService
             throw new BuildDefinitionServiceException( e.getMessage(), e );
         }
     }
-
 
     public List<BuildDefinition> getAllTemplates()
         throws BuildDefinitionServiceException
@@ -249,9 +239,35 @@ public class DefaultBuildDefinitionService
         cloned.setSchedule( buildDefinition.getSchedule() );
         cloned.setType( buildDefinition.getType() );
         cloned.setTemplate( buildDefinition.isTemplate() );
+        cloned.setUpdatePolicy( buildDefinition.getUpdatePolicy() );
         return cloned;
     }
 
+    public boolean isBuildDefinitionInUse( BuildDefinition buildDefinition )
+        throws BuildDefinitionServiceException
+    {
+        boolean inUse = false;
+        List<BuildDefinitionTemplate> buildDefinitionTemplates = getAllBuildDefinitionTemplate();
+
+        for ( BuildDefinitionTemplate template : buildDefinitionTemplates )
+        {
+            for ( BuildDefinition definition : (List<BuildDefinition>) template.getBuildDefinitions() )
+            {
+                if ( buildDefinition.getId() == definition.getId() )
+                {
+                    inUse = true;
+                    break;
+                }
+            }
+
+            if ( inUse )
+            {
+                break;
+            }
+        }
+
+        return inUse;
+    }
 
     public BuildDefinitionTemplate getContinuumDefaultWithType( String type )
         throws BuildDefinitionServiceException
@@ -269,8 +285,8 @@ public class DefaultBuildDefinitionService
     public BuildDefinitionTemplate getDefaultAntBuildDefinitionTemplate()
         throws BuildDefinitionServiceException
     {
-        BuildDefinitionTemplate template =
-            getContinuumDefaultWithType( ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR );
+        BuildDefinitionTemplate template = getContinuumDefaultWithType(
+            ContinuumBuildExecutorConstants.ANT_BUILD_EXECUTOR );
         if ( template != null )
         {
             return template;
@@ -306,8 +322,8 @@ public class DefaultBuildDefinitionService
     public BuildDefinitionTemplate getDefaultMavenOneBuildDefinitionTemplate()
         throws BuildDefinitionServiceException
     {
-        BuildDefinitionTemplate template =
-            getContinuumDefaultWithType( ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR );
+        BuildDefinitionTemplate template = getContinuumDefaultWithType(
+            ContinuumBuildExecutorConstants.MAVEN_ONE_BUILD_EXECUTOR );
         if ( template != null )
         {
             log.debug( "found default maven template " + template.getType() );
@@ -345,8 +361,8 @@ public class DefaultBuildDefinitionService
     public BuildDefinitionTemplate getDefaultMavenTwoBuildDefinitionTemplate()
         throws BuildDefinitionServiceException
     {
-        BuildDefinitionTemplate template =
-            getContinuumDefaultWithType( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
+        BuildDefinitionTemplate template = getContinuumDefaultWithType(
+            ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
         if ( template != null )
         {
             return template;
@@ -354,7 +370,7 @@ public class DefaultBuildDefinitionService
         log.info( "create default MavenTwoBuildDefinitionTemplate" );
         template = new BuildDefinitionTemplate();
         template.setContinuumDefault( true );
-        template.setName( "Default Maven 2 Template" );
+        template.setName( "Default Maven Template" );
         template.setType( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
 
         template = addBuildDefinitionTemplate( template );
@@ -373,7 +389,7 @@ public class DefaultBuildDefinitionService
 
         bd.setType( ContinuumBuildExecutorConstants.MAVEN_TWO_BUILD_EXECUTOR );
 
-        bd.setDescription( "Default Maven 2 Build Definition" );
+        bd.setDescription( "Default Maven Build Definition" );
 
         bd.setTemplate( true );
 
@@ -383,8 +399,8 @@ public class DefaultBuildDefinitionService
     public BuildDefinitionTemplate getDefaultShellBuildDefinitionTemplate()
         throws BuildDefinitionServiceException
     {
-        BuildDefinitionTemplate template =
-            getContinuumDefaultWithType( ContinuumBuildExecutorConstants.SHELL_BUILD_EXECUTOR );
+        BuildDefinitionTemplate template = getContinuumDefaultWithType(
+            ContinuumBuildExecutorConstants.SHELL_BUILD_EXECUTOR );
         if ( template != null )
         {
             return template;
@@ -475,8 +491,8 @@ public class DefaultBuildDefinitionService
             // first remove links to buildDefs
             // TODO in the same db transaction ?
             buildDefinitionTemplate.setBuildDefinitions( null );
-            buildDefinitionTemplate =
-                buildDefinitionTemplateDao.updateBuildDefinitionTemplate( buildDefinitionTemplate );
+            buildDefinitionTemplate = buildDefinitionTemplateDao.updateBuildDefinitionTemplate(
+                buildDefinitionTemplate );
             buildDefinitionTemplateDao.removeBuildDefinitionTemplate( buildDefinitionTemplate );
         }
         catch ( ContinuumStoreException e )
@@ -490,15 +506,20 @@ public class DefaultBuildDefinitionService
     {
         try
         {
-            BuildDefinitionTemplate stored = getBuildDefinitionTemplate( buildDefinitionTemplate.getId() );
-            stored.setName( buildDefinitionTemplate.getName() );
-            stored.setBuildDefinitions( buildDefinitionTemplate.getBuildDefinitions() );
-            return buildDefinitionTemplateDao.updateBuildDefinitionTemplate( stored );
+            if ( !hasDuplicateTemplateName( buildDefinitionTemplate ) )
+            {
+                BuildDefinitionTemplate stored = getBuildDefinitionTemplate( buildDefinitionTemplate.getId() );
+                stored.setName( buildDefinitionTemplate.getName() );
+                stored.setBuildDefinitions( buildDefinitionTemplate.getBuildDefinitions() );
+                return buildDefinitionTemplateDao.updateBuildDefinitionTemplate( stored );
+            }
         }
         catch ( ContinuumStoreException e )
         {
             throw new BuildDefinitionServiceException( e.getMessage(), e );
         }
+
+        return null;
     }
 
     public BuildDefinitionTemplate addBuildDefinitionTemplate( BuildDefinitionTemplate buildDefinitionTemplate )
@@ -506,12 +527,17 @@ public class DefaultBuildDefinitionService
     {
         try
         {
-            return buildDefinitionTemplateDao.addBuildDefinitionTemplate( buildDefinitionTemplate );
+            if ( !hasDuplicateTemplateName( buildDefinitionTemplate ) )
+            {
+                return buildDefinitionTemplateDao.addBuildDefinitionTemplate( buildDefinitionTemplate );
+            }
         }
         catch ( ContinuumStoreException e )
         {
             throw new BuildDefinitionServiceException( e.getMessage(), e );
         }
+
+        return null;
     }
 
     public BuildDefinitionTemplate addBuildDefinitionInTemplate( BuildDefinitionTemplate buildDefinitionTemplate,
@@ -576,10 +602,9 @@ public class DefaultBuildDefinitionService
                 return;
             }
             project = projectDao.getProjectWithBuildDetails( project.getId() );
-            List<BuildDefinition> buildDefs = new ArrayList<BuildDefinition>();
-            for ( Iterator<BuildDefinition> iterator = template.getBuildDefinitions().iterator(); iterator.hasNext(); )
+
+            for ( BuildDefinition bd : (List<BuildDefinition>) template.getBuildDefinitions() )
             {
-                BuildDefinition bd = iterator.next();
                 bd = cloneBuildDefinition( bd );
                 bd.setTemplate( false );
                 bd = buildDefinitionDao.addBuildDefinition( bd );
@@ -599,16 +624,16 @@ public class DefaultBuildDefinitionService
     {
         try
         {
-            ProjectGroup projectGroup =
-                projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+            ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId(
+                projectGroupId );
             if ( template.getBuildDefinitions().isEmpty() )
             {
                 return null;
             }
-            List<BuildDefinition> buildDefs = new ArrayList<BuildDefinition>();
-            for ( Iterator<BuildDefinition> iterator = template.getBuildDefinitions().iterator(); iterator.hasNext(); )
+
+            for ( BuildDefinition bd : (List<BuildDefinition>) template.getBuildDefinitions() )
             {
-                BuildDefinition bd = iterator.next();
+                bd.setTemplate( false );
                 bd = buildDefinitionDao.addBuildDefinition( cloneBuildDefinition( bd ) );
                 projectGroup.addBuildDefinition( bd );
             }
@@ -647,4 +672,23 @@ public class DefaultBuildDefinitionService
             throw new BuildDefinitionServiceException( e.getMessage(), e );
         }
     }
+
+    private boolean hasDuplicateTemplateName( BuildDefinitionTemplate buildDefinitionTemplate )
+        throws BuildDefinitionServiceException
+    {
+        boolean isDuplicate = false;
+        List<BuildDefinitionTemplate> allBuildDefinitionTemplate = this.getAllBuildDefinitionTemplate();
+
+        for ( BuildDefinitionTemplate template : allBuildDefinitionTemplate )
+        {
+            String name = buildDefinitionTemplate.getName();
+            if ( ( template.getId() != buildDefinitionTemplate.getId() ) && ( template.getName().equals( name ) ) )
+            {
+                isDuplicate = true;
+                break;
+            }
+        }
+        return isDuplicate;
+    }
+
 }

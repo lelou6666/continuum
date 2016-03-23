@@ -19,6 +19,7 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 
 import org.apache.continuum.buildmanager.BuildManagerException;
@@ -34,6 +35,28 @@ import com.opensymphony.xwork2.Preparable;
 public class BuildQueueAction
     extends ContinuumActionSupport
     implements Preparable
+=======
+import com.opensymphony.xwork2.Preparable;
+import org.apache.continuum.buildmanager.BuildManagerException;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.model.project.BuildQueue;
+import org.apache.maven.continuum.security.ContinuumRoleConstants;
+import org.apache.maven.continuum.web.action.ContinuumConfirmAction;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.redback.rbac.Resource;
+import org.codehaus.redback.integration.interceptor.SecureAction;
+import org.codehaus.redback.integration.interceptor.SecureActionBundle;
+import org.codehaus.redback.integration.interceptor.SecureActionException;
+
+import java.util.List;
+
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "buildQueueAction", instantiationStrategy = "per-lookup" )
+public class BuildQueueAction
+    extends ContinuumConfirmAction
+    implements Preparable, SecureAction
+>>>>>>> refs/remotes/apache/trunk
 {
     private String name;
 
@@ -42,9 +65,17 @@ public class BuildQueueAction
     private List<BuildQueue> buildQueueList;
 
     private BuildQueue buildQueue;
+<<<<<<< HEAD
     
     private String message;
 
+=======
+
+    private String message;
+
+    private boolean confirmed;
+
+>>>>>>> refs/remotes/apache/trunk
     public void prepare()
         throws ContinuumException
     {
@@ -89,8 +120,19 @@ public class BuildQueueAction
                     BuildQueue buildQueue = new BuildQueue();
                     buildQueue.setName( name );
                     BuildQueue addedBuildQueue = getContinuum().addBuildQueue( buildQueue );
+<<<<<<< HEAD
     
                     getContinuum().getBuildsManager().addOverallBuildQueue( addedBuildQueue );
+=======
+
+                    getContinuum().getBuildsManager().addOverallBuildQueue( addedBuildQueue );
+
+                    AuditLog event = new AuditLog( "Build Queue id=" + addedBuildQueue.getId(),
+                                                   AuditLogConstants.ADD_BUILD_QUEUE );
+                    event.setCategory( AuditLogConstants.BUILD_QUEUE );
+                    event.setCurrentUser( getPrincipal() );
+                    event.log();
+>>>>>>> refs/remotes/apache/trunk
                 }
                 else
                 {
@@ -130,6 +172,7 @@ public class BuildQueueAction
 
     public String delete()
         throws Exception
+<<<<<<< HEAD
     {        
         BuildQueue buildQueueToBeDeleted = getContinuum().getBuildQueue( this.buildQueue.getId() );
         getContinuum().getBuildsManager().removeOverallBuildQueue( buildQueueToBeDeleted.getId() );
@@ -139,6 +182,41 @@ public class BuildQueueAction
         return SUCCESS;
     }
 
+=======
+    {
+        if ( confirmed )
+        {
+            BuildQueue buildQueueToBeDeleted = getContinuum().getBuildQueue( this.buildQueue.getId() );
+            getContinuum().getBuildsManager().removeOverallBuildQueue( buildQueueToBeDeleted.getId() );
+            getContinuum().removeBuildQueue( buildQueueToBeDeleted );
+
+            this.buildQueueList = getContinuum().getAllBuildQueues();
+
+            AuditLog event = new AuditLog( "Build Queue id=" + buildQueue.getId(),
+                                           AuditLogConstants.REMOVE_BUILD_QUEUE );
+            event.setCategory( AuditLogConstants.BUILD_QUEUE );
+            event.setCurrentUser( getPrincipal() );
+            event.log();
+        }
+        else
+        {
+            return CONFIRM;
+        }
+
+        return SUCCESS;
+    }
+
+    public SecureActionBundle getSecureActionBundle()
+        throws SecureActionException
+    {
+        SecureActionBundle bundle = new SecureActionBundle();
+        bundle.setRequiresAuthentication( true );
+        bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_PARALLEL_BUILDS, Resource.GLOBAL );
+
+        return bundle;
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     public String getName()
     {
         return name;
@@ -188,14 +266,24 @@ public class BuildQueueAction
     {
         this.message = message;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     private boolean isDuplicate( String queueName )
         throws ContinuumException
     {
         boolean isExisting = false;
+<<<<<<< HEAD
         
         List<BuildQueue> buildQueues = getContinuum().getAllBuildQueues();
         
+=======
+
+        List<BuildQueue> buildQueues = getContinuum().getAllBuildQueues();
+
+>>>>>>> refs/remotes/apache/trunk
         for ( BuildQueue bq : buildQueues )
         {
             if ( queueName.equals( bq.getName() ) )
@@ -204,7 +292,23 @@ public class BuildQueueAction
                 break;
             }
         }
+<<<<<<< HEAD
         
         return isExisting;
     }
+=======
+
+        return isExisting;
+    }
+
+    public boolean isConfirmed()
+    {
+        return confirmed;
+    }
+
+    public void setConfirmed( boolean confirmed )
+    {
+        this.confirmed = confirmed;
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

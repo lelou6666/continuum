@@ -24,29 +24,28 @@
         <title><s:text name="releaseProject.page.title"/></title>
     </head>
     <body>
-      <h2><s:text name="releaseInProgress.section.title"/></h2>
-      <h3><s:property value="name"/></h3>
+      <h3><s:text name="releaseInProgress.section.title"/> - <s:property value="projectName"/></h3>
       <div class="axial">
-        <table width="100%">
+        <table class="releasePhases">
           <tr>
             <th><s:text name="releaseInProgress.status"/></th>
             <th width="100%"><s:text name="releaseInProgress.phase"/></th>
           </tr>
-          <s:iterator value="listener.phases">
+          <s:iterator value="listenerSummary.phases">
             <tr>
               <td>
-              <s:if test="listener.completedPhases.contains( top )">
+              <s:if test="listenerSummary.completedPhases.contains( top )">
                 <img src="<s:url value='/images/icon_success_sml.gif' includeParams="none"/>"
-                     alt="Done" title="Done" border="0">
+                     alt="<s:text name="done"/>" title="<s:text name="done"/>" border="0">
               </s:if>
-              <s:elseif test="listener.inProgress.equals( top )">
-                <s:if test="listener.error == null">
+              <s:elseif test="listenerSummary.inProgress.equals( top )">
+                <s:if test="listenerSummary.error == null">
                   <img src="<s:url value='/images/building.gif' includeParams="none"/>"
-                       alt="In Progress" title="In Progress" border="0">
+                       alt="<s:text name="in.progress"/>" title="<s:text name="in.progress"/>" border="0">
                 </s:if>
                 <s:else>
                   <img src="<s:url value='/images/icon_error_sml.gif' includeParams="none"/>"
-                       alt="Error" title="Error" border="0">
+                       alt="<s:text name="error"/>" title="<s:text name="error"/>" border="0">
                 </s:else>
               </s:elseif>
               </td>
@@ -59,6 +58,7 @@
       <p>
         <s:url id="releaseViewResultUrl" action="releaseViewResult" namespace="/">
           <s:param name="releaseId" value="releaseId"/>
+          <s:param name="projectId" value="projectId"/>
         </s:url>
         <s:a href="%{releaseViewResultUrl}"><s:text name="releaseInProgress.viewOutput"/></s:a>
       </p>
@@ -70,14 +70,14 @@
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
               <s:hidden name="releaseGoal"/>
-              <s:submit value="Rollback Changes"/>
+              <s:submit value="%{getText('rollback')}" theme="simple"/>
             </s:form>
           </td>
           <td>
             <s:form action="releaseCleanup" method="post">
               <s:hidden name="projectId"/>
               <s:hidden name="releaseId"/>
-              <s:submit value="Done"/>
+              <s:submit value="%{getText('done')}" theme="simple"/>
             </s:form>
           </td>
         </tr>

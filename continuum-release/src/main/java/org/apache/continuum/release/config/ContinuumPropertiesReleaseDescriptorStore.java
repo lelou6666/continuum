@@ -19,6 +19,14 @@ package org.apache.continuum.release.config;
  * under the License.
  */
 
+import org.apache.maven.model.Scm;
+import org.apache.maven.shared.release.config.PropertiesReleaseDescriptorStore;
+import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.apache.maven.shared.release.config.ReleaseDescriptorStoreException;
+import org.apache.maven.shared.release.config.ReleaseUtils;
+import org.codehaus.plexus.util.IOUtil;
+import org.eclipse.jetty.util.security.Password;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,16 +37,9 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
-
-import org.apache.maven.model.Scm;
-import org.apache.maven.shared.release.config.PropertiesReleaseDescriptorStore;
-import org.apache.maven.shared.release.config.ReleaseDescriptor;
-import org.apache.maven.shared.release.config.ReleaseDescriptorStoreException;
-import org.apache.maven.shared.release.config.ReleaseUtils;
-import org.codehaus.plexus.util.IOUtil;
 
 public class ContinuumPropertiesReleaseDescriptorStore
     extends PropertiesReleaseDescriptorStore
@@ -47,12 +48,12 @@ public class ContinuumPropertiesReleaseDescriptorStore
         throws ReleaseDescriptorStoreException
     {
         Properties properties = new Properties();
-    
+
         InputStream inStream = null;
         try
         {
             inStream = new FileInputStream( file );
-    
+
             properties.load( inStream );
         }
         catch ( FileNotFoundException e )
@@ -68,12 +69,21 @@ public class ContinuumPropertiesReleaseDescriptorStore
         {
             IOUtil.close( inStream );
         }
-    
+
         ContinuumReleaseDescriptor releaseDescriptor = new ContinuumReleaseDescriptor();
         releaseDescriptor.setCompletedPhase( properties.getProperty( "completedPhase" ) );
         releaseDescriptor.setScmSourceUrl( properties.getProperty( "scm.url" ) );
         releaseDescriptor.setScmUsername( properties.getProperty( "scm.username" ) );
-        releaseDescriptor.setScmPassword( properties.getProperty( "scm.password" ) );
+
+        String password = properties.getProperty( "scm.password" );
+        if ( password != null && password.startsWith( "OBF:" ) )
+        {
+            releaseDescriptor.setScmPassword( Password.deobfuscate( password ) );
+        }
+        else
+        {
+            releaseDescriptor.setScmPassword( password );
+        }
         releaseDescriptor.setScmPrivateKey( properties.getProperty( "scm.privateKey" ) );
         releaseDescriptor.setScmPrivateKeyPassPhrase( properties.getProperty( "scm.passphrase" ) );
         releaseDescriptor.setScmTagBase( properties.getProperty( "scm.tagBase" ) );
@@ -82,14 +92,16 @@ public class ContinuumPropertiesReleaseDescriptorStore
         releaseDescriptor.setAdditionalArguments( properties.getProperty( "exec.additionalArguments" ) );
         releaseDescriptor.setPomFileName( properties.getProperty( "exec.pomFileName" ) );
         releaseDescriptor.setPreparationGoals( properties.getProperty( "preparationGoals" ) );
-    
+        releaseDescriptor.setExecutable( properties.getProperty( "build.executable" ) );
+        releaseDescriptor.setReleaseBy( properties.getProperty( "release.by" ) );
+
         loadResolvedDependencies( properties, releaseDescriptor );
-    
+
         // boolean properties are not written to the properties file because the value from the caller is always used
-    
-        for ( Iterator i = properties.keySet().iterator(); i.hasNext(); )
+
+        for ( Object o : properties.keySet() )
         {
-            String property = (String) i.next();
+            String property = (String) o;
             if ( property.startsWith( "project.rel." ) )
             {
                 releaseDescriptor.mapReleaseVersion( property.substring( "project.rel.".length() ),
@@ -106,7 +118,7 @@ public class ContinuumPropertiesReleaseDescriptorStore
                 if ( index > "project.scm.".length() )
                 {
                     String key = property.substring( "project.scm.".length(), index );
-    
+
                     if ( !releaseDescriptor.getOriginalScmInfo().containsKey( key ) )
                     {
                         if ( properties.getProperty( "project.scm." + key + ".empty" ) != null )
@@ -117,11 +129,11 @@ public class ContinuumPropertiesReleaseDescriptorStore
                         {
                             Scm scm = new Scm();
                             scm.setConnection( properties.getProperty( "project.scm." + key + ".connection" ) );
-                            scm.setDeveloperConnection(
-                                properties.getProperty( "project.scm." + key + ".developerConnection" ) );
+                            scm.setDeveloperConnection( properties.getProperty(
+                                "project.scm." + key + ".developerConnection" ) );
                             scm.setUrl( properties.getProperty( "project.scm." + key + ".url" ) );
                             scm.setTag( properties.getProperty( "project.scm." + key + ".tag" ) );
-    
+
                             releaseDescriptor.mapOriginalScmInfo( key, scm );
                         }
                     }
@@ -129,17 +141,17 @@ public class ContinuumPropertiesReleaseDescriptorStore
             }
             else if ( property.startsWith( "build.env." ) )
             {
-                releaseDescriptor.mapEnvironments( property.substring( "build.env.".length() ),
-                                                   properties.getProperty( property ) );
+                releaseDescriptor.mapEnvironments( property.substring( "build.env.".length() ), properties.getProperty(
+                    property ) );
             }
         }
-    
+
         if ( mergeDescriptor != null )
         {
             releaseDescriptor = (ContinuumReleaseDescriptor) ReleaseUtils.merge( releaseDescriptor, mergeDescriptor );
-            releaseDescriptor.setEnvironments( ( (ContinuumReleaseDescriptor)mergeDescriptor ).getEnvironments() );
+            releaseDescriptor.setEnvironments( ( (ContinuumReleaseDescriptor) mergeDescriptor ).getEnvironments() );
         }
-    
+
         return releaseDescriptor;
     }
 
@@ -156,7 +168,8 @@ public class ContinuumPropertiesReleaseDescriptorStore
         }
         if ( config.getScmPassword() != null )
         {
-            properties.setProperty( "scm.password", config.getScmPassword() );
+            // obfuscate password
+            properties.setProperty( "scm.password", Password.obfuscate( config.getScmPassword() ) );
         }
         if ( config.getScmPrivateKey() != null )
         {
@@ -190,24 +203,24 @@ public class ContinuumPropertiesReleaseDescriptorStore
         {
             properties.setProperty( "preparationGoals", config.getPreparationGoals() );
         }
-    
+
         // boolean properties are not written to the properties file because the value from the caller is always used
-    
-        for ( Iterator i = config.getReleaseVersions().entrySet().iterator(); i.hasNext(); )
+
+        for ( Object o : config.getReleaseVersions().entrySet() )
         {
-            Map.Entry entry = (Map.Entry) i.next();
+            Entry entry = (Entry) o;
             properties.setProperty( "project.rel." + entry.getKey(), (String) entry.getValue() );
         }
-    
-        for ( Iterator i = config.getDevelopmentVersions().entrySet().iterator(); i.hasNext(); )
+
+        for ( Object o : config.getDevelopmentVersions().entrySet() )
         {
-            Map.Entry entry = (Map.Entry) i.next();
+            Entry entry = (Entry) o;
             properties.setProperty( "project.dev." + entry.getKey(), (String) entry.getValue() );
         }
-    
-        for ( Iterator i = config.getOriginalScmInfo().entrySet().iterator(); i.hasNext(); )
+
+        for ( Object o : config.getOriginalScmInfo().entrySet() )
         {
-            Map.Entry entry = (Map.Entry) i.next();
+            Entry entry = (Entry) o;
             Scm scm = (Scm) entry.getValue();
             String prefix = "project.scm." + entry.getKey();
             if ( scm != null )
@@ -235,24 +248,36 @@ public class ContinuumPropertiesReleaseDescriptorStore
             }
         }
 
-        for ( Iterator i = config.getEnvironments().entrySet().iterator(); i.hasNext(); )
+        for ( Object o : config.getEnvironments().entrySet() )
         {
-            Map.Entry entry = (Map.Entry) i.next();
+            Entry entry = (Entry) o;
             properties.setProperty( "build.env." + entry.getKey(), (String) entry.getValue() );
         }
-    
+
         if ( ( config.getResolvedSnapshotDependencies() != null ) &&
             ( config.getResolvedSnapshotDependencies().size() > 0 ) )
         {
             processResolvedDependencies( properties, config.getResolvedSnapshotDependencies() );
         }
-    
+
+        // executables
+        if ( config.getExecutable() != null )
+        {
+            properties.setProperty( "build.executable", config.getExecutable() );
+        }
+
+        // release by
+        if ( config.getReleaseBy() != null )
+        {
+            properties.setProperty( "release.by", config.getReleaseBy() );
+        }
+
         OutputStream outStream = null;
         //noinspection OverlyBroadCatchBlock
         try
         {
             outStream = new FileOutputStream( file );
-    
+
             properties.store( outStream, "release configuration" );
         }
         catch ( IOException e )
@@ -264,58 +289,52 @@ public class ContinuumPropertiesReleaseDescriptorStore
         {
             IOUtil.close( outStream );
         }
-    
+
     }
-    
+
     private void processResolvedDependencies( Properties prop, Map resolvedDependencies )
     {
         Set entries = resolvedDependencies.entrySet();
         Iterator iterator = entries.iterator();
         Entry currentEntry;
-    
+
         while ( iterator.hasNext() )
         {
             currentEntry = (Entry) iterator.next();
-    
+
             Map versionMap = (Map) currentEntry.getValue();
-    
-            prop.setProperty( "dependency." + currentEntry.getKey() + ".release",
-                              (String) versionMap.get( ReleaseDescriptor.RELEASE_KEY ) );
-            prop.setProperty( "dependency." + currentEntry.getKey() + ".development",
-                              (String) versionMap.get( ReleaseDescriptor.DEVELOPMENT_KEY ) );
+
+            prop.setProperty( "dependency." + currentEntry.getKey() + ".release", (String) versionMap.get(
+                ReleaseDescriptor.RELEASE_KEY ) );
+            prop.setProperty( "dependency." + currentEntry.getKey() + ".development", (String) versionMap.get(
+                ReleaseDescriptor.DEVELOPMENT_KEY ) );
         }
     }
-    
-    private static File getDefaultReleasePropertiesFile( ReleaseDescriptor mergeDescriptor )
-    {
-        return new File( mergeDescriptor.getWorkingDirectory(), "release.properties" );
-    }
-    
+
     private void loadResolvedDependencies( Properties prop, ReleaseDescriptor descriptor )
     {
-        Map resolvedDependencies = new HashMap();
-    
+        Map<String, Map<String, Object>> resolvedDependencies = new HashMap<String, Map<String, Object>>();
+
         Set entries = prop.entrySet();
         Iterator iterator = entries.iterator();
         String propertyName;
         Entry currentEntry;
-    
+
         while ( iterator.hasNext() )
         {
             currentEntry = (Entry) iterator.next();
             propertyName = (String) currentEntry.getKey();
-    
+
             if ( propertyName.startsWith( "dependency." ) )
             {
-                Map versionMap;
+                Map<String, Object> versionMap;
                 String artifactVersionlessKey;
                 int startIndex;
                 int endIndex;
                 String versionType;
-    
-                versionMap = new HashMap();
+
                 startIndex = propertyName.lastIndexOf( "dependency." );
-    
+
                 if ( propertyName.indexOf( ".development" ) != -1 )
                 {
                     endIndex = propertyName.indexOf( ".development" );
@@ -326,23 +345,23 @@ public class ContinuumPropertiesReleaseDescriptorStore
                     endIndex = propertyName.indexOf( ".release" );
                     versionType = ReleaseDescriptor.RELEASE_KEY;
                 }
-    
+
                 artifactVersionlessKey = propertyName.substring( startIndex, endIndex );
-    
+
                 if ( resolvedDependencies.containsKey( artifactVersionlessKey ) )
                 {
-                    versionMap = (Map) resolvedDependencies.get( artifactVersionlessKey );
+                    versionMap = resolvedDependencies.get( artifactVersionlessKey );
                 }
                 else
                 {
-                    versionMap = new HashMap();
+                    versionMap = new HashMap<String, Object>();
                     resolvedDependencies.put( artifactVersionlessKey, versionMap );
                 }
-    
+
                 versionMap.put( versionType, currentEntry.getValue() );
             }
         }
-    
+
         descriptor.setResolvedSnapshotDependencies( resolvedDependencies );
     }
 }

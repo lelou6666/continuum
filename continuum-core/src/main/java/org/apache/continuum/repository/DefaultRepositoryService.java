@@ -29,6 +29,11 @@ import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,33 +43,32 @@ import java.util.List;
  * DefaultRepositoryService
  *
  * @author Maria Catherine Tan
- * @version $Id$
- * @plexus.component role="org.apache.continuum.repository.RepositoryService" role-hint="default"
  * @since 25 jul 07
  */
+@Component( role = org.apache.continuum.repository.RepositoryService.class, hint = "default" )
 public class DefaultRepositoryService
     implements RepositoryService
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( DefaultRepositoryService.class );
 
     /**
      * @plexus.requirement
      */
+=======
+    private static final Logger log = LoggerFactory.getLogger( DefaultRepositoryService.class );
+
+    @Requirement
+>>>>>>> refs/remotes/apache/trunk
     private LocalRepositoryDao localRepositoryDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectGroupDao projectGroupDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private TaskQueueManager taskQueueManager;
 
     public LocalRepository addLocalRepository( LocalRepository localRepository )
@@ -81,7 +85,7 @@ public class DefaultRepositoryService
                 {
                     throw new RepositoryServiceException( "Local repository name must be unique" );
                 }
-                
+
                 if ( repo.getLocation().equals( localRepository.getLocation() ) )
                 {
                     throw new RepositoryServiceException( "Local repository location must be unique" );
@@ -213,6 +217,23 @@ public class DefaultRepositoryService
         catch ( ContinuumStoreException e )
         {
             throw new RepositoryServiceException( "Unable to retrieve local repository: " + repositoryId, e );
+        }
+    }
+
+    public LocalRepository getLocalRepositoryByName( String repositoryName )
+        throws RepositoryServiceException
+    {
+        try
+        {
+            return localRepositoryDao.getLocalRepositoryByName( repositoryName );
+        }
+        catch ( ContinuumObjectNotFoundException e )
+        {
+            throw new RepositoryServiceException( "No repository found with name: " + repositoryName, e );
+        }
+        catch ( ContinuumStoreException e )
+        {
+            throw new RepositoryServiceException( "Unable to retrieve local repository: " + repositoryName, e );
         }
     }
 

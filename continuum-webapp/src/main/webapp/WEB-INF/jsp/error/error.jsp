@@ -21,9 +21,9 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <html>
+<s:i18n name="localization.Continuum">
 <head>
-  <title>Error Occurred</title>
-  <s:head />
+  <title><s:text name="errorOccured.page.title"/></title>
   <script language=javascript type='text/javascript'>
     <!--
     var state = 'none';
@@ -58,17 +58,16 @@
 
 <body>
   <div id="h3">
-    <h3>Error Occurred</h3>
+    <h3><s:text name="errorOccured.section.title"/></h3>
 
     <div class="errormessage">
       <s:property value="exception"/>
     </div>
     <p><a href="#" onclick="showhide('stacktrace');">Show/hide Stack Trace</a></p>
     <div id="stacktrace" style="display: none;">
-      <pre>
-        <s:property value="exceptionStack"/>
-      </pre>
+      <div class="pre-wrap"><s:property value="exceptionStack"/></div>
     </div>
   </div>
 </body>
+</s:i18n>
 </html>

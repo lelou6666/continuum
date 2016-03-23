@@ -1,0 +1,213 @@
+ ------
+ Installing Continuum Standalone
+ ------
+ Emmanuel Venisse
+ ------
+ 2010-02-19
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Installing Continuum Standalone
+
+~~%{toc|section=0}
+
+* {Download and Configuration}
+
+    * Download the standalone version from the {{{http://continuum.apache.org/download.html} Download page}}
+
+    * Extract the file
+
+  <Note>: The standalone version ships with Jetty 8, which requires Java 6.
+
+** {Defining JNDI Resources}
+
+*** {Mail server configuration}
+
+    Before you start Continuum, you must configure your SMTP configuration for mail notification. In many servers, the
+    default of delivering to localhost with no authentication will be properly relayed. However, if you need to
+    configure a different SMTP server, the configuration is in <<<$CONTINUUM_HOME/contexts/continuum.xml>>>:
+
+%{snippet|id=mail|url=http://svn.apache.org/repos/asf/continuum/trunk/continuum-jetty/src/main/contexts/continuum.xml}
+
+*** {Database configuration}
+
+    By default, Continuum use an embedded {{{http://db.apache.org/derby}Derby}} database. If you want to use a different
+    database, you can modify the JNDI configuration in <<<$CONTINUUM_HOME/contexts/continuum.xml>>>:
+
+%{snippet|id=datasources|url=http://svn.apache.org/repos/asf/continuum/trunk/continuum-jetty/src/main/contexts/continuum.xml}
+
+    Please refer to the documentation for your JDBC driver for the correct settings to use. You may need to alter the
+    <<<validationQuery>>> to one that can successfully execute on your database (or remove the setting if you do not
+    want to validate connections before using them).
+
+    You must ensure the JDBC driver is available in the classpath, by copying it to the <<<$CONTINUUM_HOME/lib>>>
+    directory and updating <<<$CONTINUUM_HOME/conf/wrapper.conf>>> to ensure it is listed instead of the Derby JAR.
+
+    Refer to the {{{http://commons.apache.org/dbcp/} Commons DBCP}} documentation for more advanced configuration of the
+    connection pool.
+
+    More information on supported databases is available in the Administrator's Guide on
+    {{{../administrator_guides/external-db.html} External Databases}}.
+
+** Testing the Configuration
+
+  Start Continuum from the console in the <<<$CONTINUUM_HOME/bin/>>> directory:
+
+----
+continuum console
+----
+
+  If it appears to be working correctly, it is a good idea to set it up as a service so that it will run in the
+  background under a suitable role account, and can be set to start whenever the server has started.
+
+* {Installing as a Windows Service}
+
+    * Go to <<<$CONTINUUM_HOME/bin/>>> and run the following command:
+
+------------------
+continuum.bat install
+------------------
+
+    * Edit the <<Apache Continuum>> service
+
+        * To see the services that are on your computer go to <Start>|<Run> and enter <<<services.msc>>>.
+
+    * Select the <<Startup Type>>
+
+    * Go to the <<Log On>> tab and select a real user. A real user is required because you'll need a home directory for Maven repository and some other things
+
+    * Validate your changes
+
+* {Installing as a Linux Service}
+
+    Since the Continuum Linux script <<<bin/continuum>>> understands the same arguments as Linux boot scripts, there is no need to write a particular
+    startup script to add Continuum to the Linux boot process. All you need to do, as root, is:
+
+------------------
+ln -s /usr/local/continuum-[VERSION]/bin/continuum /etc/init.d/continuum
+------------------
+
+   This will allow you to run <<<service continuum start>>> and other commands.
+
+   To have the service start on boot, follow the instructions below for your particular family of operating system.
+
+** {On a Debian-based system}
+
+    At this point you have Continuum ready to be symlinked from different runlevels. Debian GNU/Linux comes with a very
+    handy utility to create these links, just run as root:
+
+------------------
+update-rc.d continuum defaults 80
+------------------
+
+    If you run this command, you will see something like this:
+
+------------------
+ Adding system startup for /etc/init.d/continuum ...
+   /etc/rc0.d/K80continuum -> ../init.d/continuum
+   /etc/rc1.d/K80continuum -> ../init.d/continuum
+   /etc/rc6.d/K80continuum -> ../init.d/continuum
+   /etc/rc2.d/S80continuum -> ../init.d/continuum
+   /etc/rc3.d/S80continuum -> ../init.d/continuum
+   /etc/rc4.d/S80continuum -> ../init.d/continuum
+   /etc/rc5.d/S80continuum -> ../init.d/continuum
+------------------
+
+    What you see is the symlinks that would be created.
+
+** {On a RedHat-based system}
+
+    Configuring Continuum on a RedHat-based system (like Fedora Core) is slightly different. Instead of running
+    <<<update-rc.d>>>, you need to add a new service using the <<<chkconfig>>> command.
+
+------------------
+chkconfig --add continuum
+chkconfig continuum on
+------------------
+
+* {Installing as a Mac OS X Service}
+
+  On OS X, you can use <<<launchd>>> to run a service. Create the following
+  as root in <<</Library/LaunchDaemons/org.apache.continuum.plist>>>:
+
++----+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>org.apache.continuum</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/Continuum/apache-continuum-${project.version}/bin/continuum</string>
+        <string>console</string>
+    </array>
+    <key>Disabled</key>
+    <false/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>UserName</key>
+    <string>continuum</string>
+    <key>StandardOutPath</key>
+    <string>/Applications/Continuum/apache-continuum-${project.version}/logs/launchd.log</string>
+    <!-- Optional - store data separate from installation -->
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>CONTINUUM_BASE</key>
+      <string>/Users/continuum/Library/Continuum</string>
+    </dict>
+    <!-- Optional: force it to keep running
+    <key>KeepAlive</key>
+    <true/>
+    -->
+</dict>
+</plist>
++----+
+
+  To install the service, run the following:
+
++----+
+$ sudo chown root:wheel /Library/LaunchDaemons/org.apache.continuum.plist
+$ sudo launchctl load -w /Library/LaunchDaemons/org.apache.continuum.plist
++----+
+
+  Start and stop the service with:
+
++----+
+$ sudo launchctl start org.apache.continuum.plist
+$ sudo launchctl stop org.apache.continuum.plist
++----+
+
+  To uninstall the service:
+
++----+
+$ sudo launchctl unload -w /Library/LaunchDaemons/org.apache.continuum.plist
++----+
+
+  You can follow the same steps to install build agents as a service by
+  replacing the appropriate paths, and changing <<<org.apache.continuum>>> to
+  <<<org.apache.continuum.buildagent>>> in the label and <<<plist>>> filename.
+
+* {Installing with Puppet}
+
+  If you use Puppet to manage your infrastructure, you can use a third-party Puppet module to install Continuum. This
+  will take care of adding the required users, databases and configuration based on official release tarballs.
+
+  * {{{https://github.com/maestrodev/puppet-continuum} Puppet module for Apache Continuum and Continuum build agents}}

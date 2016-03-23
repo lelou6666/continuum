@@ -35,6 +35,7 @@ import org.apache.maven.continuum.profile.ProfileService;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.springframework.stereotype.Service;
+<<<<<<< HEAD
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
@@ -43,6 +44,19 @@ import org.springframework.stereotype.Service;
  * @since 15 juin 07
  */
 @Service("profileService")
+=======
+
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Resource;
+
+/**
+ * @author <a href="mailto:olamy@codehaus.org">olamy</a>
+ *          TODO use some cache mechanism to prevent always reading from store ?
+ * @since 15 juin 07
+ */
+@Service( "profileService" )
+>>>>>>> refs/remotes/apache/trunk
 public class DefaultProfileService
     implements ProfileService
 {
@@ -55,7 +69,6 @@ public class DefaultProfileService
     public void updateProfile( Profile profile )
         throws ProfileException, AlreadyExistsProfileException
     {
-
         // already exists check should be done in the same transaction
         // but we assume we don't have a huge load and a lot of concurrent access ;-)
         if ( alreadyExistsProfileName( profile ) )
@@ -73,6 +86,7 @@ public class DefaultProfileService
             stored.setJdk( profile.getJdk() );
             stored.setName( profile.getName() );
             stored.setEnvironmentVariables( profile.getEnvironmentVariables() );
+            stored.setBuildAgentGroup( profile.getBuildAgentGroup() );
             profileDao.updateProfile( stored );
         }
         catch ( ContinuumStoreException e )
@@ -103,6 +117,7 @@ public class DefaultProfileService
             stored.setJdk( profile.getJdk() );
             stored.setName( profile.getName() );
             stored.setEnvironmentVariables( profile.getEnvironmentVariables() );
+            stored.setBuildAgentGroup( profile.getBuildAgentGroup() );
             profileDao.updateProfile( stored );
         }
         catch ( ContinuumStoreException e )
@@ -176,7 +191,7 @@ public class DefaultProfileService
     }
 
     /**
-     * @see org.apache.maven.continuum.profile.ProfileService#setBuilderInProfile(org.apache.maven.continuum.model.system.Profile,org.apache.maven.continuum.model.system.Installation)
+     * @see org.apache.maven.continuum.profile.ProfileService#setBuilderInProfile(org.apache.maven.continuum.model.system.Profile, org.apache.maven.continuum.model.system.Installation)
      */
     public void setBuilderInProfile( Profile profile, Installation builder )
         throws ProfileException
@@ -194,7 +209,7 @@ public class DefaultProfileService
     }
 
     /**
-     * @see org.apache.maven.continuum.profile.ProfileService#setJdkInProfile(org.apache.maven.continuum.model.system.Profile,org.apache.maven.continuum.model.system.Installation)
+     * @see org.apache.maven.continuum.profile.ProfileService#setJdkInProfile(org.apache.maven.continuum.model.system.Profile, org.apache.maven.continuum.model.system.Installation)
      */
     public void setJdkInProfile( Profile profile, Installation jdk )
         throws ProfileException
@@ -212,7 +227,7 @@ public class DefaultProfileService
     }
 
     /**
-     * @see org.apache.maven.continuum.profile.ProfileService#addEnvVarInProfile(org.apache.maven.continuum.model.system.Profile,org.apache.maven.continuum.model.system.Installation)
+     * @see org.apache.maven.continuum.profile.ProfileService#addEnvVarInProfile(org.apache.maven.continuum.model.system.Profile, org.apache.maven.continuum.model.system.Installation)
      */
     public void addEnvVarInProfile( Profile profile, Installation envVar )
         throws ProfileException
@@ -308,10 +323,11 @@ public class DefaultProfileService
      * @return true if profile with same name (<b>case sensitive</b>) exists
      * @throws ProfileException
      */
-    private boolean alreadyExistsProfileName( Profile profile )
+    public boolean alreadyExistsProfileName( Profile profile )
         throws ProfileException
     {
-        return getProfileWithName( profile.getName() ) != null;
+        Profile storedProfile = getProfileWithName( profile.getName() );
+        return ( storedProfile != null && storedProfile.getId() != profile.getId() );
     }
 
 }

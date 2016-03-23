@@ -1,6 +1,5 @@
 package org.apache.maven.continuum.release.tasks;
 
-import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.shared.release.ReleaseManagerListener;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
 
@@ -32,11 +31,6 @@ public class RollbackReleaseProjectTask
 {
     public RollbackReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, ReleaseManagerListener listener )
     {
-        this( releaseId, descriptor, listener, null );
-    }
-    
-    public RollbackReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, ReleaseManagerListener listener, Profile profile )
-    {
-        super( releaseId, descriptor, listener, profile );
+        super( releaseId, descriptor, listener );
     }
 }

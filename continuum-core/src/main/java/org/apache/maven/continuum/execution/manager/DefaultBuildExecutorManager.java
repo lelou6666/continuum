@@ -21,29 +21,38 @@ package org.apache.maven.continuum.execution.manager;
 
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.manager.BuildExecutorManager"
- * role-hint"default"
  */
+@Component( role = org.apache.maven.continuum.execution.manager.BuildExecutorManager.class, hint = "default" )
 public class DefaultBuildExecutorManager
     implements BuildExecutorManager, Initializable
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( DefaultBuildExecutorManager.class );
 
     /**
      * @plexus.requirement role="org.apache.maven.continuum.execution.ContinuumBuildExecutor"
      */
     private Map executors;
+=======
+    private static final Logger log = LoggerFactory.getLogger( DefaultBuildExecutorManager.class );
+
+    @Requirement( role = org.apache.maven.continuum.execution.ContinuumBuildExecutor.class )
+    private Map<String, ContinuumBuildExecutor> executors;
+>>>>>>> refs/remotes/apache/trunk
 
     // ----------------------------------------------------------------------
     // Component Lifecycle
@@ -53,7 +62,7 @@ public class DefaultBuildExecutorManager
     {
         if ( executors == null )
         {
-            executors = new HashMap();
+            executors = new HashMap<String, ContinuumBuildExecutor>();
         }
 
         if ( executors.size() == 0 )
@@ -64,9 +73,13 @@ public class DefaultBuildExecutorManager
         {
             log.info( "Build executors:" );
 
-            for ( Iterator it = executors.keySet().iterator(); it.hasNext(); )
+            for ( String key : executors.keySet() )
             {
+<<<<<<< HEAD
                 log.info( "  " + it.next().toString() );
+=======
+                log.info( "  " + key );
+>>>>>>> refs/remotes/apache/trunk
             }
         }
     }
@@ -78,7 +91,7 @@ public class DefaultBuildExecutorManager
     public ContinuumBuildExecutor getBuildExecutor( String builderType )
         throws ContinuumException
     {
-        ContinuumBuildExecutor executor = (ContinuumBuildExecutor) executors.get( builderType );
+        ContinuumBuildExecutor executor = executors.get( builderType );
 
         if ( executor == null )
         {

@@ -29,15 +29,19 @@ public interface ContinuumReleaseManagerListener
 {
     int INITIALIZED = 0, LISTENING = 1, FINISHED = 3;
 
-    List getCompletedPhases();
+    List<String> getCompletedPhases();
 
     String getInProgress();
 
     String getGoalName();
 
-    List getPhases();
+    List<String> getPhases();
 
     String getError();
 
     int getState();
+
+    String getUsername();
+
+    void setUsername( String username );
 }

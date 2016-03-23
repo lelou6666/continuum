@@ -24,6 +24,8 @@ import org.apache.xmlrpc.XmlRpcRequest;
 import org.apache.xmlrpc.server.RequestProcessorFactoryFactory;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
@@ -34,17 +36,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.xmlrpc.server.RequestProcessorFactoryFactory"
  */
+@Component( role = org.apache.xmlrpc.server.RequestProcessorFactoryFactory.class )
 public class ConfiguredBeanProcessorFactory
     implements RequestProcessorFactoryFactory, Initializable, Contextualizable
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( ConfiguredBeanProcessorFactory.class );
 
     /**
@@ -53,15 +54,22 @@ public class ConfiguredBeanProcessorFactory
     private Map xmlrpcComponents;
 
     private Map componentsMapping = new HashMap();
+=======
+    private static final Logger log = LoggerFactory.getLogger( ConfiguredBeanProcessorFactory.class );
+
+    @Requirement( role = org.apache.maven.continuum.xmlrpc.server.ContinuumXmlRpcComponent.class )
+    private Map<String, Object> xmlrpcComponents;
+
+    private Map<String, String> componentsMapping = new HashMap<String, String>();
+>>>>>>> refs/remotes/apache/trunk
 
     PlexusContainer container;
 
     public void initialize()
         throws InitializationException
     {
-        for ( Iterator i = xmlrpcComponents.keySet().iterator(); i.hasNext(); )
+        for ( String key : xmlrpcComponents.keySet() )
         {
-            String key = (String) i.next();
             String className = xmlrpcComponents.get( key ).getClass().getName();
             componentsMapping.put( className, key );
         }
@@ -112,7 +120,7 @@ public class ConfiguredBeanProcessorFactory
 
     private String getComponentKey( Class cls )
     {
-        return (String) componentsMapping.get( cls.getName() );
+        return componentsMapping.get( cls.getName() );
     }
 
     private Object getComponent( Class cls )

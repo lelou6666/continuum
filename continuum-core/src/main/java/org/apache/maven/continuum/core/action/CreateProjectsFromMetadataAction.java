@@ -19,15 +19,8 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.execution.maven.m2.SettingsConfigurationException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuilder;
@@ -40,58 +33,66 @@ import org.apache.maven.continuum.utils.URLUserInfo;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Resolve the project url being passed in and gather authentication information
  * if the url is so configured, then create the projects
- * <p/>
  * Supports:
- * <p/>
  * - standard maven-scm url
  * - MungedUrl https://username:password@host
  * - maven settings based, server = host and scm info set to username and password
  *
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="create-projects-from-metadata"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "create-projects-from-metadata" )
 public class CreateProjectsFromMetadataAction
     extends AbstractContinuumAction
 {
     /**
-     * @plexus.requirement
+     * Metadata url for adding projects.
      */
+    private static final String KEY_URL = "url";
+
+    private static final String KEY_PROJECT_BUILDER_ID = "builderId";
+
+    private static final String KEY_PROJECT_BUILDING_RESULT = "projectBuildingResult";
+
+    private static final String KEY_LOAD_RECURSIVE_PROJECTS = "loadRecursiveProjects";
+
+    public static final String KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY = "checkoutProjectsInSingleDirectory";
+
+    @Requirement
     private ContinuumProjectBuilderManager projectBuilderManager;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder mavenSettingsBuilder;
-    
-    /**
-     * @plexus.requirement role-hint="continuumUrl"
-     */
-    private ContinuumUrlValidator urlValidator;    
 
-    public static final String KEY_URL = "url";
-
-    public static final String KEY_PROJECT_BUILDER_ID = "builderId";
-
-    public static final String KEY_PROJECT_BUILDING_RESULT = "projectBuildingResult";
-
-    public static final String KEY_LOAD_RECURSIVE_PROJECTS = "loadRecursiveProjects";
+    @Requirement( hint = "continuumUrl" )
+    private ContinuumUrlValidator urlValidator;
 
     public void execute( Map context )
         throws ContinuumException, ContinuumProjectBuilderManagerException, ContinuumProjectBuilderException
     {
-        String projectBuilderId = getString( context, KEY_PROJECT_BUILDER_ID );
+        String projectBuilderId = getProjectBuilderId( context );
 
-        boolean loadRecursiveProjects = getBoolean( context, KEY_LOAD_RECURSIVE_PROJECTS );
+        boolean loadRecursiveProjects = isLoadRecursiveProject( context );
 
-        String curl = getString( context, KEY_URL );
+        boolean checkoutProjectsInSingleDirectory = getBoolean( context, KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY );
+
+        int projectGroupId = getProjectGroupId( context );
+
+        String curl = getUrl( context );
 
         URL url;
 
@@ -105,33 +106,45 @@ public class CreateProjectsFromMetadataAction
             if ( buildDefinitionTemplate == null )
             {
                 buildDefinitionTemplate = projectBuilder.getDefaultBuildDefinitionTemplate();
+<<<<<<< HEAD
             }            
+=======
+            }
+>>>>>>> refs/remotes/apache/trunk
             if ( !curl.startsWith( "http" ) )
             {
                 url = new URL( curl );
 
                 result = projectBuilder.buildProjectsFromMetadata( url, null, null, loadRecursiveProjects,
+<<<<<<< HEAD
                                                                    buildDefinitionTemplate );
+=======
+                                                                   buildDefinitionTemplate,
+                                                                   checkoutProjectsInSingleDirectory, projectGroupId );
+>>>>>>> refs/remotes/apache/trunk
 
             }
             else
             {
                 url = new URL( curl );
+                String host = url.getHost();
                 String username = null;
                 String password = null;
 
                 try
                 {
+                    getLogger().info( "consulting settings for credentials to " + host );
                     Settings settings = getSettings();
-
-                    getLogger().info( "checking for settings auth setup" );
-                    if ( settings != null && settings.getServer( url.getHost() ) != null )
+                    Server server = settings.getServer( url.getHost() );
+                    if ( server != null )
                     {
-                        getLogger().info( "found setting based auth setup, using" );
-                        Server server = settings.getServer( url.getHost() );
-
                         username = server.getUsername();
                         password = server.getPassword();
+                        getLogger().info( "credentials found in settings, will fetch metadata as " + username );
+                    }
+                    else
+                    {
+                        getLogger().info( "credentials not found for server " + host );
                     }
                 }
                 catch ( SettingsConfigurationException se )
@@ -150,7 +163,9 @@ public class CreateProjectsFromMetadataAction
                 {
 
                     result = projectBuilder.buildProjectsFromMetadata( url, username, password, loadRecursiveProjects,
-                                                                       buildDefinitionTemplate );
+                                                                       buildDefinitionTemplate,
+                                                                       checkoutProjectsInSingleDirectory,
+                                                                       projectGroupId );
 
                 }
                 else
@@ -160,11 +175,11 @@ public class CreateProjectsFromMetadataAction
                     result.addError( ContinuumProjectBuildingResult.ERROR_MALFORMED_URL );
                 }
             }
-     
+
             if ( result.getProjects() != null )
             {
                 String scmRootUrl = getScmRootUrl( result.getProjects() );
-         
+
                 if ( scmRootUrl == null || scmRootUrl.equals( "" ) )
                 {
                     if ( curl.indexOf( "pom.xml" ) > 0 )
@@ -177,7 +192,8 @@ public class CreateProjectsFromMetadataAction
                     }
                 }
 
-                context.put( KEY_URL, scmRootUrl );
+                //setUrl( context, scmRootUrl );
+                setProjectScmRootUrl( context, scmRootUrl );
             }
         }
         catch ( MalformedURLException e )
@@ -193,7 +209,7 @@ public class CreateProjectsFromMetadataAction
             result.addError( ContinuumProjectBuildingResult.ERROR_MALFORMED_URL );
         }
 
-        context.put( KEY_PROJECT_BUILDING_RESULT, result );
+        setProjectBuildingResult( context, result );
     }
 
     private String hidePasswordInUrl( String url )
@@ -233,14 +249,14 @@ public class CreateProjectsFromMetadataAction
     private String getScmRootUrl( List<Project> projects )
     {
         String scmRootUrl = "";
-        
+
         for ( Project project : projects )
         {
             String scmUrl = project.getScmUrl();
-            
+
             scmRootUrl = getCommonPath( scmUrl, scmRootUrl );
         }
-        
+
         return scmRootUrl;
     }
 
@@ -253,7 +269,18 @@ public class CreateProjectsFromMetadataAction
         else
         {
             int indexDiff = StringUtils.differenceAt( path1, path2 );
-            return path1.substring( 0, indexDiff );
+            String commonPath = path1.substring( 0, indexDiff );
+
+            if ( commonPath.lastIndexOf( '/' ) != commonPath.length() - 1 && !( path1.contains( new String(
+                commonPath + "/" ) ) || path2.contains( new String( commonPath + "/" ) ) ) )
+            {
+                while ( commonPath.lastIndexOf( '/' ) != commonPath.length() - 1 )
+                {
+                    commonPath = commonPath.substring( 0, commonPath.length() - 1 );
+                }
+            }
+
+            return commonPath;
         }
     }
 
@@ -285,5 +312,56 @@ public class CreateProjectsFromMetadataAction
     public void setUrlValidator( ContinuumUrlValidator urlValidator )
     {
         this.urlValidator = urlValidator;
+    }
+
+    public static String getUrl( Map<String, Object> context )
+    {
+        return getString( context, KEY_URL );
+    }
+
+    public static void setUrl( Map<String, Object> context, String url )
+    {
+        context.put( KEY_URL, url );
+    }
+
+    public static String getProjectBuilderId( Map<String, Object> context )
+    {
+        return getString( context, KEY_PROJECT_BUILDER_ID );
+    }
+
+    public static void setProjectBuilderId( Map<String, Object> context, String projectBuilderId )
+    {
+        context.put( KEY_PROJECT_BUILDER_ID, projectBuilderId );
+    }
+
+    public static ContinuumProjectBuildingResult getProjectBuildingResult( Map<String, Object> context )
+    {
+        return (ContinuumProjectBuildingResult) getObject( context, KEY_PROJECT_BUILDING_RESULT );
+    }
+
+    private static void setProjectBuildingResult( Map<String, Object> context, ContinuumProjectBuildingResult result )
+    {
+        context.put( KEY_PROJECT_BUILDING_RESULT, result );
+    }
+
+    public static boolean isLoadRecursiveProject( Map<String, Object> context )
+    {
+        return getBoolean( context, KEY_LOAD_RECURSIVE_PROJECTS );
+    }
+
+    public static void setLoadRecursiveProject( Map<String, Object> context, boolean loadRecursiveProject )
+    {
+        context.put( KEY_LOAD_RECURSIVE_PROJECTS, loadRecursiveProject );
+    }
+
+    public static boolean isCheckoutProjectsInSingleDirectory( Map<String, Object> context )
+    {
+        return getBoolean( context, KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY );
+    }
+
+    public static void setCheckoutProjectsInSingleDirectory( Map<String, Object> context,
+                                                             boolean checkoutProjectsInSingleDirectory )
+    {
+        context.put( KEY_CHECKOUT_PROJECTS_IN_SINGLE_DIRECTORY, checkoutProjectsInSingleDirectory );
     }
 }

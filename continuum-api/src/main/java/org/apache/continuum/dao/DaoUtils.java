@@ -21,25 +21,25 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.store.ContinuumStoreException;
 
-import javax.jdo.PersistenceManagerFactory;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public interface DaoUtils
 {
     void closeStore();
 
+    void rebuildStore();
+
     void eraseDatabase();
 
-    Map getProjectIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
+    Map<Integer, Object> getProjectIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
         throws ContinuumStoreException;
 
-    Map getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
+    Map<Integer, Object> getProjectGroupIdsAndBuildDefinitionsIdsBySchedule( int scheduleId )
         throws ContinuumStoreException;
 
-    Map getAggregatedProjectIdsAndBuildDefinitionIdsBySchedule( int scheduleId )
+    Map<Integer, Object> getAggregatedProjectIdsAndBuildDefinitionIdsBySchedule( int scheduleId )
         throws ContinuumStoreException;
 }

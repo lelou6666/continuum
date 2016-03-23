@@ -19,6 +19,7 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,15 +31,36 @@ import javax.jdo.Transaction;
 
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+=======
+import org.apache.maven.continuum.model.project.BuildQueue;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+<<<<<<< HEAD
 /**
  * 
  * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
  */
 @Repository("buildQueueDao")
+=======
+import javax.jdo.Extent;
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
+ */
+@Repository( "buildQueueDao" )
+@Component( role = org.apache.continuum.dao.BuildQueueDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class BuildQueueDaoImpl
     extends AbstractDao
     implements BuildQueueDao
@@ -48,7 +70,11 @@ public class BuildQueueDaoImpl
     public BuildQueue addBuildQueue( BuildQueue buildQueue )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (BuildQueue) addObject( buildQueue );
+=======
+        return addObject( buildQueue );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public List<BuildQueue> getAllBuildQueues()
@@ -81,7 +107,11 @@ public class BuildQueueDaoImpl
     public BuildQueue getBuildQueue( int buildQueueId )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (BuildQueue) getObjectById( BuildQueue.class, buildQueueId );
+=======
+        return getObjectById( BuildQueue.class, buildQueueId );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public BuildQueue getBuildQueueByName( String name )
@@ -125,7 +155,11 @@ public class BuildQueueDaoImpl
             rollback( tx );
         }
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void removeBuildQueue( BuildQueue buildQueue )
         throws ContinuumStoreException
     {

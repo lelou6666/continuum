@@ -25,66 +25,62 @@ import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.dao.SystemConfigurationDao;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
-import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Settings;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jpox.SchemaTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  * @todo use this, reintroduce default project group
- * @plexus.component role="org.apache.maven.continuum.initialization.ContinuumInitializer"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.initialization.ContinuumInitializer.class, hint = "default" )
 public class DefaultContinuumInitializer
     implements ContinuumInitializer
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( DefaultContinuumInitializer.class );
+=======
+    private static final Logger log = LoggerFactory.getLogger( DefaultContinuumInitializer.class );
+>>>>>>> refs/remotes/apache/trunk
 
     // ----------------------------------------------------------------------
     //  Requirements
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private LocalRepositoryDao localRepositoryDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectGroupDao projectGroupDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private SystemConfigurationDao systemConfigurationDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private BuildDefinitionService buildDefinitionService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private MavenSettingsBuilder mavenSettingsBuilder;
 
     // ----------------------------------------------------------------------
@@ -137,37 +133,48 @@ public class DefaultContinuumInitializer
         log.info( "Continuum initializer end running ..." );
     }
 
-
     private void createDefaultProjectGroup()
         throws ContinuumStoreException, BuildDefinitionServiceException
     {
         ProjectGroup group;
         try
         {
+<<<<<<< HEAD
             group = projectGroupDao.getProjectGroupByGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
+=======
+            group = projectGroupDao.getProjectGroupByGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
+>>>>>>> refs/remotes/apache/trunk
             log.info( "Default Project Group exists" );
         }
         catch ( ContinuumObjectNotFoundException e )
         {
+            Collection<ProjectGroup> pgs = projectGroupDao.getAllProjectGroups();
+            if ( pgs != null && pgs.isEmpty() )
+            {
+                log.info( "create Default Project Group" );
 
+<<<<<<< HEAD
             log.info( "create Default Project Group" );
+=======
+                group = new ProjectGroup();
+>>>>>>> refs/remotes/apache/trunk
 
-            group = new ProjectGroup();
+                group.setName( "Default Project Group" );
 
-            group.setName( "Default Project Group" );
+                group.setGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
 
-            group.setGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
+                group.setDescription( "Contains all projects that do not have a group of their own" );
 
-            group.setDescription( "Contains all projects that do not have a group of their own" );
+                LocalRepository localRepository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
 
-            LocalRepository localRepository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
+                group.setLocalRepository( localRepository );
 
-            group.setLocalRepository( localRepository );
+                group = projectGroupDao.addProjectGroup( group );
 
-            group.getBuildDefinitions().addAll(
-                buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate().getBuildDefinitions() );
+                BuildDefinitionTemplate bdt = buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate();
 
-            group = projectGroupDao.addProjectGroup( group );
+                buildDefinitionService.addBuildDefinitionTemplateToProjectGroup( group.getId(), bdt );
+            }
         }
     }
 

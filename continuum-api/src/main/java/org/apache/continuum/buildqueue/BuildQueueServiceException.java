@@ -20,9 +20,13 @@ package org.apache.continuum.buildqueue;
  */
 
 /**
+<<<<<<< HEAD
  * 
  * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
  *
+=======
+ * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
+>>>>>>> refs/remotes/apache/trunk
  */
 public class BuildQueueServiceException
     extends Exception
@@ -31,12 +35,20 @@ public class BuildQueueServiceException
     {
         super( message );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public BuildQueueServiceException( Throwable cause )
     {
         super( cause );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public BuildQueueServiceException( String message, Throwable cause )
     {
         super( message, cause );

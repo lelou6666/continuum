@@ -29,6 +29,7 @@ import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.notification.ContinuumNotificationDispatcher;
 import org.apache.maven.continuum.notification.MessageContext;
 import org.apache.maven.continuum.notification.NotificationException;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.msn.MsnClient;
 import org.codehaus.plexus.msn.MsnException;
 import org.codehaus.plexus.util.StringUtils;
@@ -39,18 +40,22 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Resource;
 
 import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
+<<<<<<< HEAD
 @Service("notifier#msn")
+=======
+@Service( "notifier#msn" )
+>>>>>>> refs/remotes/apache/trunk
 public class MsnContinuumNotifier
     extends AbstractContinuumNotifier
 {
-    private Logger log = LoggerFactory.getLogger( getClass() );
+    private static final Logger log = LoggerFactory.getLogger( MsnContinuumNotifier.class );
 
     // ----------------------------------------------------------------------
     // Requirements
@@ -66,14 +71,10 @@ public class MsnContinuumNotifier
     // Configuration
     // ----------------------------------------------------------------------
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromAddress;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String fromPassword;
 
     // ----------------------------------------------------------------------
@@ -102,8 +103,8 @@ public class MsnContinuumNotifier
 
         ProjectScmRoot projectScmRoot = context.getProjectScmRoot();
 
-        boolean isPrepareBuildComplete = 
-            messageId.equals( ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
+        boolean isPrepareBuildComplete = messageId.equals(
+            ContinuumNotificationDispatcher.MESSAGE_ID_PREPARE_BUILD_COMPLETE );
 
         if ( projectScmRoot == null && isPrepareBuildComplete )
         {
@@ -202,9 +203,9 @@ public class MsnContinuumNotifier
         {
             msnClient.login();
 
-            if ( configuration != null && StringUtils.isNotEmpty( (String) configuration.get( ADDRESS_FIELD ) ) )
+            if ( configuration != null && StringUtils.isNotEmpty( configuration.get( ADDRESS_FIELD ) ) )
             {
-                String address = (String) configuration.get( ADDRESS_FIELD );
+                String address = configuration.get( ADDRESS_FIELD );
                 String[] recipients = StringUtils.split( address, "," );
                 for ( String recipient : recipients )
                 {
@@ -229,21 +230,21 @@ public class MsnContinuumNotifier
         }
     }
 
-    private String getUsername( Map configuration )
+    private String getUsername( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "login" ) )
         {
-            return (String) configuration.get( "login" );
+            return configuration.get( "login" );
         }
 
         return fromAddress;
     }
 
-    private String getPassword( Map configuration )
+    private String getPassword( Map<String, String> configuration )
     {
         if ( configuration.containsKey( "password" ) )
         {
-            return (String) configuration.get( "password" );
+            return configuration.get( "password" );
         }
 
         return fromPassword;

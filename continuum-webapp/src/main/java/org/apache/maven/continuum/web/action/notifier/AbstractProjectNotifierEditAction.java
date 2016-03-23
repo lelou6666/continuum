@@ -27,7 +27,10 @@ import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public abstract class AbstractProjectNotifierEditAction
     extends AbstractNotifierEditActionSupport

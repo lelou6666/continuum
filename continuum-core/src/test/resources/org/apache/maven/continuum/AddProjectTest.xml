@@ -24,5 +24,13 @@
       <role-hint>continuumUrl</role-hint>
       <implementation>org.apache.maven.continuum.utils.ContinuumUrlValidator</implementation>
     </component>
+<<<<<<< HEAD
+=======
+    <component>
+      <role>org.codehaus.plexus.action.Action</role>
+      <role-hint>add-project-to-checkout-queue</role-hint>
+      <implementation>org.apache.maven.continuum.AddProjectToCheckoutQueueStub</implementation>
+    </component>
+>>>>>>> refs/remotes/apache/trunk
   </components>
 </plexus>

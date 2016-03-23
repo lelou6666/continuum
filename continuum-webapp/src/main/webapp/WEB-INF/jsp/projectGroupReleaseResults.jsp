@@ -19,8 +19,6 @@
 
 <%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c' %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
 
@@ -37,12 +35,13 @@
         <s:param name="tabName" value="'ReleaseResults'"/>
       </s:action>
     
-      <h3><s:text name="projectGroup.releaseResults.section.title"><s:param>${projectGroup.name}</s:param></s:text></h3>
+      <h3><s:property value="%{ getText('projectGroup.releaseResults.section.title', { projectGroup.name }) }"/></h3>
       
-      <form id="releaseResultsForm" action="removeReleaseResults.action" method="post">
-        <s:hidden name="projectGroupId"/>
+      <s:form id="releaseResultsForm" action="removeReleaseResults" theme="simple">
+        <s:token/>
         <ec:table items="releaseResults"
                 var="result"
+                autoIncludeParameters="false"
                 showExports="false"
                 showPagination="false"
                 showStatusBar="false"
@@ -59,29 +58,30 @@
             <ec:column property="startTime" title="releaseResults.startTime" cell="date"/>
             <ec:column property="endTime" title="releaseResults.endTime" cell="date"/>
             <ec:column property="resultCode" title="releaseResults.state">
-              <s:if test="pageScope.result.resultCode == 0">
-                <s:text name="releaseViewResult.success"/>
-              </s:if>
-              <s:else>
-                <s:text name="releaseViewResult.error"/>
-              </s:else>
+                <s:if test="#attr.result.resultCode == 0">
+                  <s:text name="releaseViewResult.success"/>
+                </s:if>
+                <s:else>
+                  <s:text name="releaseViewResult.error"/>
+                </s:else>
             </ec:column>
             <ec:column property="actions" title="&nbsp;">
                <s:url id="viewReleaseResultUrl" action="viewReleaseResult">
-                 <s:param name="releaseResultId">${pageScope.result.id}</s:param>
-                 <s:param name="projectGroupId">${projectGroupId}</s:param>
+                 <s:param name="releaseResultId" value="#attr.result.id"/>
+                 <s:param name="projectGroupId" value="projectGroupId"/>
                </s:url>
                <s:a href="%{viewReleaseResultUrl}"><s:text name="releaseResults.viewResult"/></s:a>
              </ec:column>
           </ec:row>
         </ec:table>
-        <c:if test="${not empty releaseResults}">
+        <s:if test="releaseResults.size() > 0">
           <div class="functnbar3">
             <table>
               <tbody>
                 <tr>
                   <td>
                     <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroup.name}">
+                      <s:hidden name="projectGroupId"/>
                       <input type="button" name="delete-release-results" value="<s:text name="delete"/>" onclick="document.forms.releaseResultsForm.submit();" />
                     </redback:ifAuthorized>
                   </td>
@@ -89,8 +89,8 @@
               </tbody>
             </table>
           </div>
-        </c:if>
-      </form>
+        </s:if>
+      </s:form>
       </div>
     </body>
   </s:i18n>

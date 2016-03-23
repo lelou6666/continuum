@@ -18,6 +18,10 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+<<<<<<< HEAD
+=======
+
+>>>>>>> refs/remotes/apache/trunk
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
@@ -26,7 +30,13 @@
            http://www.springframework.org/schema/context 
            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
+<<<<<<< HEAD
   <context:annotation-config />
   <context:component-scan base-package="org.apache.maven.continuum.notification"/>
  
+=======
+  <context:annotation-config/>
+  <context:component-scan base-package="org.apache.maven.continuum.notification"/>
+
+>>>>>>> refs/remotes/apache/trunk
 </beans>

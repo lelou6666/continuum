@@ -19,32 +19,33 @@ package org.apache.maven.continuum.core.action;
  * under the License.
  */
 
+<<<<<<< HEAD
+=======
+import org.apache.commons.lang.StringUtils;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.buildmanager.BuildsManager;
 import org.apache.continuum.dao.ProjectDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="add-project-to-checkout-queue"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-project-to-checkout-queue" )
 public class AddProjectToCheckOutQueueAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private ProjectDao projectDao;
+<<<<<<< HEAD
     
     /**
      * @plexus.requirement role-hint="parallel"
@@ -56,15 +57,49 @@ public class AddProjectToCheckOutQueueAction
         throws Exception
     {
         Project project = (Project) getObject( context, KEY_PROJECT, null );
+=======
+
+    @Requirement( hint = "parallel" )
+    private BuildsManager parallelBuildsManager;
+
+    @SuppressWarnings( "unchecked" )
+    public void execute( Map context )
+        throws Exception
+    {
+        Project project = getProject( context, null );
+>>>>>>> refs/remotes/apache/trunk
         if ( project == null )
         {
             project = projectDao.getProject( getProjectId( context ) );
         }
 
+<<<<<<< HEAD
         BuildDefinition defaultBuildDefinition = ( BuildDefinition ) getBuildDefinition( context );
         parallelBuildsManager.checkoutProject( project.getId(), project.getName(),
                                                workingDirectoryService.getWorkingDirectory( project ),
                                                project.getScmUsername(), project.getScmPassword(),
                                                defaultBuildDefinition );
+=======
+        String scmUsername = project.getScmUsername();
+        String scmPassword = project.getScmPassword();
+
+        if ( scmUsername == null || StringUtils.isEmpty( scmUsername ) )
+        {
+            scmUsername = CheckoutProjectContinuumAction.getScmUsername( context, null );
+        }
+
+        if ( scmPassword == null || StringUtils.isEmpty( scmPassword ) )
+        {
+            scmPassword = CheckoutProjectContinuumAction.getScmPassword( context, null );
+        }
+
+        String scmRootUrl = getProjectScmRootUrl( context, null );
+
+        BuildDefinition defaultBuildDefinition = getBuildDefinition( context );
+        parallelBuildsManager.checkoutProject( project.getId(), project.getName(),
+                                               workingDirectoryService.getWorkingDirectory( project ), scmRootUrl,
+                                               scmUsername, scmPassword, defaultBuildDefinition,
+                                               getListOfProjectsInGroupWithCommonScmRoot( context ) );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

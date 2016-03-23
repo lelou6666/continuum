@@ -21,6 +21,10 @@ package org.apache.continuum.dao;
 
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.springframework.stereotype.Repository;
 
 import javax.jdo.Extent;
@@ -33,9 +37,15 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  */
 @Repository("localRepositoryDao")
+=======
+ */
+@Repository( "localRepositoryDao" )
+@Component( role = org.apache.continuum.dao.LocalRepositoryDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class LocalRepositoryDaoImpl
     extends AbstractDao
     implements LocalRepositoryDao
@@ -43,7 +53,7 @@ public class LocalRepositoryDaoImpl
     public LocalRepository addLocalRepository( LocalRepository repository )
         throws ContinuumStoreException
     {
-        return (LocalRepository) addObject( repository );
+        return addObject( repository );
     }
 
     public void updateLocalRepository( LocalRepository repository )
@@ -98,7 +108,7 @@ public class LocalRepositoryDaoImpl
     public LocalRepository getLocalRepository( int repositoryId )
         throws ContinuumStoreException
     {
-        return (LocalRepository) getObjectById( LocalRepository.class, repositoryId );
+        return getObjectById( LocalRepository.class, repositoryId );
     }
 
     public LocalRepository getLocalRepositoryByName( String name )

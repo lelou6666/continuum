@@ -34,22 +34,24 @@ public class DefaultReleaseManagerListener
 {
     private String goalName;
 
-    private List completedPhases;
+    private List<String> completedPhases;
 
     private String inProgress;
 
-    private List phases;
+    private List<String> phases;
 
     private String error;
 
     private int state;
+
+    private String username;
 
     public void goalStart( String name, List phases )
     {
         state = LISTENING;
         goalName = name;
         this.phases = phases;
-        completedPhases = Collections.synchronizedList( new ArrayList() );
+        completedPhases = Collections.synchronizedList( new ArrayList<String>() );
         inProgress = null;
     }
 
@@ -81,7 +83,7 @@ public class DefaultReleaseManagerListener
         goalEnd();
     }
 
-    public List getCompletedPhases()
+    public List<String> getCompletedPhases()
     {
         return completedPhases;
     }
@@ -91,7 +93,7 @@ public class DefaultReleaseManagerListener
         return inProgress;
     }
 
-    public List getPhases()
+    public List<String> getPhases()
     {
         return phases;
     }
@@ -109,5 +111,15 @@ public class DefaultReleaseManagerListener
     public int getState()
     {
         return state;
+    }
+
+    public void setUsername( String username )
+    {
+        this.username = username;
+    }
+
+    public String getUsername()
+    {
+        return username;
     }
 }

@@ -42,8 +42,9 @@ public class CronExpressionValidator
         String dayOfWeek = (String) getFieldValue( "dayOfWeek", object );
         String year = (String) getFieldValue( "year", object );
 
-        String cronExpression = ( second + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " +
-            dayOfWeek + " " + year ).trim();
+        String cronExpression =
+            ( second + " " + minute + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek + " " +
+                year ).trim();
 
         org.codehaus.plexus.scheduler.CronExpressionValidator validator =
             new org.codehaus.plexus.scheduler.CronExpressionValidator();
@@ -54,7 +55,6 @@ public class CronExpressionValidator
         {
             // FIXME i18n
             ctxt.addActionError( "Invalid cron expression value(s)" );
-            return;
         }
     }
 

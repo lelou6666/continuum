@@ -20,12 +20,10 @@ package org.apache.continuum.configuration;
  */
 
 
-
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 24 juin 2008
  */
 public class ProxyConfiguration
@@ -37,12 +35,12 @@ public class ProxyConfiguration
     private String proxyUser;
 
     private String proxyPassword;
-    
+
     public ProxyConfiguration()
     {
         // nothing here
     }
-    
+
     public ProxyConfiguration( String proxyHost, String proxyPassword, int proxyPort, String proxyUser )
     {
         super();

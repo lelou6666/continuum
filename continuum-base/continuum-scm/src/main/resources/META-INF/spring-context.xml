@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< HEAD
+=======
+
+>>>>>>> refs/remotes/apache/trunk
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,6 +21,10 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+<<<<<<< HEAD
+=======
+
+>>>>>>> refs/remotes/apache/trunk
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
@@ -25,11 +33,19 @@
                 http://www.springframework.org/schema/context
                 http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
+<<<<<<< HEAD
   <context:annotation-config />
   <context:component-scan base-package="org.apache.continuum.scm"/>
 
   <bean id="scmManager" class="org.apache.continuum.scm.manager.ScmManager">
     <property name="scmLogger" ref="scmLogger" />
+=======
+  <context:annotation-config/>
+  <context:component-scan base-package="org.apache.continuum.scm"/>
+
+  <bean id="scmManager" class="org.apache.continuum.scm.manager.ScmManager">
+    <property name="scmLogger" ref="scmLogger"/>
+>>>>>>> refs/remotes/apache/trunk
     <property name="scmProviders">
       <bean class="org.apache.continuum.scm.manager.spring.ScmProviderFactoryBean"/>
     </property>

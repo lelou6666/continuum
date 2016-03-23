@@ -19,33 +19,54 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutor;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.scm.ChangeFile;
 import org.apache.maven.continuum.model.scm.ChangeSet;
+<<<<<<< HEAD
+=======
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * @author olamy
  * @since 1.2.3
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public class MavenTwoBuildExecutorTest
     extends AbstractContinuumTest
 {
+<<<<<<< HEAD
        
     
+=======
+>>>>>>> refs/remotes/apache/trunk
     @Override
     protected String getSpringConfigLocation()
     {
         return "applicationContextSlf4jPlexusLogger.xml";
     }
 
+<<<<<<< HEAD
     public void testShouldNotBuildNonRecursive()
         throws Exception
     {
@@ -53,10 +74,22 @@ public class MavenTwoBuildExecutorTest
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-N" );
         Project continuumProject = new Project(){
+=======
+    @Test
+    public void testShouldNotBuildNonRecursive()
+        throws Exception
+    {
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
+        BuildDefinition buildDefinition = new BuildDefinition();
+        buildDefinition.setArguments( "-N" );
+        Project continuumProject = new Project()
+        {
+>>>>>>> refs/remotes/apache/trunk
             {
                 setVersion( "1.0.3" );
             }
         };
+<<<<<<< HEAD
         assertFalse( executor.shouldBuild( new ArrayList<ChangeSet>(), continuumProject, new File( "target/test-classes/projects/continuum" ),
                                            buildDefinition ) );
     }
@@ -65,6 +98,17 @@ public class MavenTwoBuildExecutorTest
         throws Exception
     {
         MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) lookup( ContinuumBuildExecutor.class, "maven2" );
+=======
+        assertFalse( executor.shouldBuild( new ArrayList<ChangeSet>(), continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
+    }
+
+    @Test
+    public void testShouldNotBuildNonRecursiveChangeInAModule()
+        throws Exception
+    {
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
+>>>>>>> refs/remotes/apache/trunk
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-N -Dfoo=bar" );
         Project continuumProject = new Project()
@@ -74,7 +118,11 @@ public class MavenTwoBuildExecutorTest
             }
         };
         final ChangeFile changeFile = new ChangeFile();
+<<<<<<< HEAD
         changeFile.setName( "continuum-notifiers/pom.xml");
+=======
+        changeFile.setName( "continuum-notifiers/pom.xml" );
+>>>>>>> refs/remotes/apache/trunk
         ChangeSet changeSet = new ChangeSet()
         {
             {
@@ -83,6 +131,7 @@ public class MavenTwoBuildExecutorTest
         };
         List<ChangeSet> changeSets = new ArrayList<ChangeSet>();
         changeSets.add( changeSet );
+<<<<<<< HEAD
         assertFalse( executor.shouldBuild(changeSets , continuumProject,
                                            new File( "target/test-classes/projects/continuum" ), buildDefinition ) );
     }    
@@ -91,6 +140,17 @@ public class MavenTwoBuildExecutorTest
         throws Exception
     {
         MavenTwoBuildExecutor executor = (MavenTwoBuildExecutor) lookup( ContinuumBuildExecutor.class, "maven2" );
+=======
+        assertFalse( executor.shouldBuild( changeSets, continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
+    }
+
+    @Test
+    public void testShouldBuildRecursiveChangeInAModule()
+        throws Exception
+    {
+        ContinuumBuildExecutor executor = lookup( ContinuumBuildExecutor.class, "maven2" );
+>>>>>>> refs/remotes/apache/trunk
         BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setArguments( "-Dfoo=bar" );
         Project continuumProject = new Project()
@@ -109,7 +169,13 @@ public class MavenTwoBuildExecutorTest
         };
         List<ChangeSet> changeSets = new ArrayList<ChangeSet>();
         changeSets.add( changeSet );
+<<<<<<< HEAD
         assertTrue( executor.shouldBuild( changeSets, continuumProject,
                                           new File( "target/test-classes/projects/continuum" ), buildDefinition ) );
     }       
+=======
+        assertTrue( executor.shouldBuild( changeSets, continuumProject, new File(
+            "target/test-classes/projects/continuum" ), buildDefinition ) );
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

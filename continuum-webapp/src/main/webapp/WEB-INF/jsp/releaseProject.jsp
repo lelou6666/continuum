@@ -37,17 +37,17 @@
           <br/>
           &nbsp;&nbsp;&nbsp;
           <select name="preparedReleaseId">
-            <s:if test="preparedReleaseName != null">
-              <option selected value="<s:property value="preparedReleaseId"/>">
-                <s:property value="preparedReleaseName"/>
+            <s:iterator value="preparedReleases">
+              <option selected value="<s:property value="key"/>">
+                <s:property value="value"/>
               </option>
-            </s:if>
+            </s:iterator>
             <option value=""><s:text name="releaseProject.provideReleaseParameters"/></option>
           </select>
           <br/>
         </p>
         <input name="projectId" type="hidden" value="<s:property value="projectId"/>"/>
-        <s:submit value="Submit"/>
+        <s:submit value="%{getText('submit')}"/>
       </s:form>
     </body>
   </s:i18n>

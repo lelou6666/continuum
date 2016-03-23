@@ -25,6 +25,10 @@ import org.apache.maven.continuum.model.project.ProjectDeveloper;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
 import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.project.builder.ContinuumProjectBuildingResult;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
@@ -42,29 +46,33 @@ import java.util.Properties;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.execution.maven.m1.MavenOneMetadataHelper.class, hint = "default" )
 public class DefaultMavenOneMetadataHelper
     implements MavenOneMetadataHelper
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( DefaultMavenOneMetadataHelper.class );
+=======
+    private static final Logger log = LoggerFactory.getLogger( DefaultMavenOneMetadataHelper.class );
+>>>>>>> refs/remotes/apache/trunk
 
     // ----------------------------------------------------------------------
     // MavenOneMetadataHelper Implementation
     // ----------------------------------------------------------------------
 
     /**
-     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult,File,Project)} instead
+     * @deprecated Use {@link #mapMetadata(ContinuumProjectBuildingResult, File, Project)} instead
      */
+    @Deprecated
     public void mapMetadata( File metadata, Project project )
         throws MavenOneMetadataHelperException
     {
-        mapMetadata( new ContinuumProjectBuildingResult(), metadata, project );
+        mapMetadata( new ContinuumProjectBuildingResult(), metadata, project, true );
     }
 
-    public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project )
+    public void mapMetadata( ContinuumProjectBuildingResult result, File metadata, Project project,
+                             boolean updateDefinition )
         throws MavenOneMetadataHelperException
     {
         Xpp3Dom mavenProject;
@@ -349,9 +357,12 @@ public class DefaultMavenOneMetadataHelper
 
         project.setArtifactId( artifactId );
 
-        project.setVersion( version );
+        if ( updateDefinition )
+        {
+            project.setVersion( version );
 
-        project.setName( name );
+            project.setName( name );
+        }
 
         if ( StringUtils.isEmpty( shortDescription ) )
         {

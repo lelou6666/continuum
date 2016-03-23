@@ -19,27 +19,50 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+=======
+import com.opensymphony.xwork2.Preparable;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.web.exception.AuthenticationRequiredException;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+<<<<<<< HEAD
 import com.opensymphony.xwork2.Preparable;
 
 /**
  * @author Nik Gonzalez
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="schedule"
+=======
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * @author Nik Gonzalez
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "schedule", instantiationStrategy = "per-lookup"  )
 public class ScheduleAction
     extends ContinuumConfirmAction
     implements Preparable
 {
+    private static final Logger logger = LoggerFactory.getLogger( ScheduleAction.class );
+
     private int id;
 
     private boolean active = false;
@@ -116,6 +139,44 @@ public class ScheduleAction
         }
     }
 
+    private List<BuildQueue> availableBuildQueues;
+
+    private List<BuildQueue> selectedBuildQueues = new ArrayList<BuildQueue>();
+
+    private List<String> selectedBuildQueuesIds = new ArrayList<String>();
+
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+
+        populateBuildQueues();
+    }
+
+    private void populateBuildQueues()
+        throws ContinuumException
+    {
+        if ( schedule != null )
+        {
+            selectedBuildQueues = schedule.getBuildQueues();
+            for ( BuildQueue bq : selectedBuildQueues )
+            {
+                this.selectedBuildQueuesIds.add( Integer.toString( bq.getId() ) );
+            }
+        }
+
+        availableBuildQueues = getContinuum().getAllBuildQueues();
+
+        // remove selected build queues from available build queues
+        for ( BuildQueue buildQueue : selectedBuildQueues )
+        {
+            if ( availableBuildQueues.contains( buildQueue ) )
+            {
+                availableBuildQueues.remove( buildQueue );
+            }
+        }
+    }
+
     public String summary()
         throws ContinuumException
     {
@@ -132,6 +193,11 @@ public class ScheduleAction
         {
             addActionError( e.getMessage() );
             return REQUIRES_AUTHENTICATION;
+<<<<<<< HEAD
+=======
+
+        }
+>>>>>>> refs/remotes/apache/trunk
 
         }
         
@@ -211,16 +277,49 @@ public class ScheduleAction
             return REQUIRES_AUTHENTICATION;
         }
 
-        if ( ( "".equals( name ) ) || ( name == null ) )
+        if ( StringUtils.isBlank( name ) )
         {
+            logger.error( "Can't create schedule. No schedule name was supplied." );
+            addActionError( getText( "buildDefinition.noname.save.error.message" ) );
+        }
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() &&
+            ( selectedBuildQueuesIds == null || selectedBuildQueuesIds.isEmpty() ) )
+        {
+            addActionError( getText( "schedule.buildqueues.empty.error" ) );
+        }
+        if ( hasErrors() )
+        {
+<<<<<<< HEAD
             getLogger().error( "Can't create schedule. No schedule name was supplied." );
             addActionError( getText( "buildDefinition.noname.save.error.message" ) );
+=======
+>>>>>>> refs/remotes/apache/trunk
             return ERROR;
         }
-        else
+
+        try
         {
-            if ( id == 0 )
+            Schedule s = getContinuum().getScheduleByName( name );
+            if ( s != null && id != s.getId() )
             {
+                addActionError( getText( "schedule.name.already.exists" ) );
+                return ERROR;
+            }
+        }
+        catch ( ContinuumException e )
+        {
+            logger.debug( "Unexpected error getting schedule" );
+        }
+
+        AuditLog event = new AuditLog( getName(), AuditLogConstants.ADD_SCHEDULE );
+        event.setCategory( AuditLogConstants.SCHEDULE );
+        event.setCurrentUser( getPrincipal() );
+
+        if ( id == 0 )
+        {
+            try
+            {
+<<<<<<< HEAD
                 try
                 {
                     getContinuum().addSchedule( setFields( new Schedule() ) );
@@ -231,9 +330,23 @@ public class ScheduleAction
                     return ERROR;
                 }
                 return SUCCESS;
+=======
+                getContinuum().addSchedule( setFields( new Schedule() ) );
+                event.log();
             }
-            else
+            catch ( ContinuumException e )
             {
+                addActionError( getText( "schedule.buildqueues.add.error" ) );
+                return ERROR;
+>>>>>>> refs/remotes/apache/trunk
+            }
+            return SUCCESS;
+        }
+        else
+        {
+            try
+            {
+<<<<<<< HEAD
                 try
                 {
                     getContinuum().updateSchedule( setFields( getContinuum().getSchedule( id ) ) );
@@ -244,7 +357,18 @@ public class ScheduleAction
                     return ERROR;
                 }
                 return SUCCESS;
+=======
+                getContinuum().updateSchedule( setFields( getContinuum().getSchedule( id ) ) );
+                event.setAction( AuditLogConstants.MODIFY_SCHEDULE );
+                event.log();
             }
+            catch ( ContinuumException e )
+            {
+                addActionError( getText( "schedule.buildqueues.add.error" ) );
+                return ERROR;
+>>>>>>> refs/remotes/apache/trunk
+            }
+            return SUCCESS;
         }
     }
 
@@ -254,9 +378,19 @@ public class ScheduleAction
         schedule.setActive( active );
         schedule.setCronExpression( getCronExpression() );
         schedule.setDelay( delay );
-        schedule.setDescription( description );
+        schedule.setDescription( StringEscapeUtils.escapeXml( StringEscapeUtils.unescapeXml( description ) ) );
         schedule.setName( name );
         schedule.setMaxJobExecutionTime( maxJobExecutionTime );
+        if ( !getContinuum().getConfiguration().isDistributedBuildEnabled() )
+        {
+            // if distributed build don't update schedules
+            schedule.setBuildQueues( null );
+            for ( String id : selectedBuildQueuesIds )
+            {
+                BuildQueue buildQueue = getContinuum().getBuildQueue( Integer.parseInt( id ) );
+                schedule.addBuildQueue( buildQueue );
+            }
+        }
 
      // remove old build queues
         schedule.setBuildQueues( null );
@@ -331,6 +465,11 @@ public class ScheduleAction
 
             return CONFIRM;
         }
+
+        AuditLog event = new AuditLog( name, AuditLogConstants.REMOVE_SCHEDULE );
+        event.setCategory( AuditLogConstants.SCHEDULE );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
 
         return SUCCESS;
     }
@@ -513,5 +652,35 @@ public class ScheduleAction
     public void setSelectedBuildQueues( List<String> selectedBuildQueues )
     {
         this.selectedBuildQueues = selectedBuildQueues;
+    }
+
+    public List<BuildQueue> getAvailableBuildQueues()
+    {
+        return availableBuildQueues;
+    }
+
+    public void setAvailableBuildQueues( List<BuildQueue> availableBuildQueues )
+    {
+        this.availableBuildQueues = availableBuildQueues;
+    }
+
+    public List<BuildQueue> getSelectedBuildQueues()
+    {
+        return selectedBuildQueues;
+    }
+
+    public void setSelectedBuildQueues( List<BuildQueue> selectedBuildQueues )
+    {
+        this.selectedBuildQueues = selectedBuildQueues;
+    }
+
+    public List<String> getSelectedBuildQueuesIds()
+    {
+        return selectedBuildQueuesIds;
+    }
+
+    public void setSelectedBuildQueuesIds( List<String> selectedBuildQueuesIds )
+    {
+        this.selectedBuildQueuesIds = selectedBuildQueuesIds;
     }
 }

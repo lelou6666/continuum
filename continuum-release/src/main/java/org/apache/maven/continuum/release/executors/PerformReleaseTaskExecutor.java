@@ -31,14 +31,17 @@ import org.apache.maven.profiles.ProfileManager;
 import org.apache.maven.project.DuplicateProjectException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.MissingProjectException;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectSorter;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.shared.release.ReleaseManagerListener;
 import org.apache.maven.shared.release.ReleaseResult;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
+import org.apache.maven.shared.release.env.DefaultReleaseEnvironment;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
@@ -48,7 +51,7 @@ import org.codehaus.plexus.util.dag.CycleDetectedException;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -59,15 +62,14 @@ public class PerformReleaseTaskExecutor
     extends AbstractReleaseTaskExecutor
     implements Contextualizable
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private MavenProjectBuilder projectBuilder;
 
     private ProfileManager profileManager;
 
     private PlexusContainer container;
-    
+
     private LocalRepository repository;
 
     public void execute( ReleaseProjectTask task )
@@ -81,12 +83,48 @@ public class PerformReleaseTaskExecutor
         descriptor.setUseReleaseProfile( performTask.isUseReleaseProfile() );
         descriptor.setPerformGoals( performTask.getGoals() );
         descriptor.setCheckoutDirectory( performTask.getBuildDirectory().getAbsolutePath() );
-        
-        repository = performTask.getLocalRepository();
-        
-        List reactorProjects = getReactorProjects( performTask );
 
-        ReleaseResult result = releaseManager.performWithResult( descriptor, settings, reactorProjects, listener );
+        repository = performTask.getLocalRepository();
+
+        List reactorProjects;
+
+        try
+        {
+            if ( !StringUtils.isEmpty( descriptor.getWorkingDirectory() ) )
+            {
+                MavenProject mavenProject = getMavenProject( performTask );
+                reactorProjects = getReactorProjects( descriptor, mavenProject );
+            }
+            else
+            {
+                //Perform with provided release parameters (CONTINUUM-1541)
+                descriptor.setCheckoutDirectory( performTask.getBuildDirectory().getAbsolutePath() );
+
+                // Workaround bugs in maven-release-manager 2.1 that require a project even though it will ultimately
+                // not be used. TODO: check if upgrading will fix, and return to being an empty list
+                // The project is fake and won't exist in this location
+                MavenProject project = new MavenProject();
+                project.setFile( new File( descriptor.getCheckoutDirectory(), "pom.xml" ) );
+                reactorProjects = Collections.singletonList( project );
+                //                reactorProjects = Collections.emptyList();
+            }
+        }
+        catch ( ContinuumReleaseException e )
+        {
+            ReleaseResult result = createReleaseResult();
+
+            result.appendError( e );
+
+            continuumReleaseManager.getReleaseResults().put( performTask.getReleaseId(), result );
+
+            performTask.getListener().error( e.getMessage() );
+
+            throw new TaskExecutionException( "Failed to build reactor projects.", e );
+        }
+
+        ReleaseResult result = releaseManager.performWithResult( descriptor,
+                                                                 new DefaultReleaseEnvironment().setSettings(
+                                                                     settings ), reactorProjects, listener );
 
         //override to show the actual start time
         result.setStartTime( getStartTime() );
@@ -99,61 +137,17 @@ public class PerformReleaseTaskExecutor
         continuumReleaseManager.getReleaseResults().put( performTask.getReleaseId(), result );
     }
 
-    protected List<MavenProject> getReactorProjects( PerformReleaseProjectTask releaseTask )
-        throws TaskExecutionException
-    {
-        List<MavenProject> reactorProjects;
-        ReleaseDescriptor descriptor = releaseTask.getDescriptor();
-
-        if ( StringUtils.isEmpty( descriptor.getWorkingDirectory() ) )
-        {
-            //Perform with provided release parameters (CONTINUUM-1541)
-            descriptor.setCheckoutDirectory( releaseTask.getBuildDirectory().getAbsolutePath() );
-            return null;
-        }
-
-        try
-        {
-            reactorProjects = getReactorProjects( descriptor );
-        }
-        catch ( ContinuumReleaseException e )
-        {
-            ReleaseResult result = createReleaseResult();
-
-            result.appendError( e );
-
-            continuumReleaseManager.getReleaseResults().put( releaseTask.getReleaseId(), result );
-
-            releaseTask.getListener().error( e.getMessage() );
-
-            throw new TaskExecutionException( "Failed to build reactor projects.", e );
-        }
-
-        return reactorProjects;
-    }
-
     /**
      * @todo remove and use generate-reactor-projects phase
      */
-    protected List<MavenProject> getReactorProjects( ReleaseDescriptor descriptor )
+    protected List<MavenProject> getReactorProjects( ReleaseDescriptor descriptor, MavenProject project )
         throws ContinuumReleaseException
     {
         List<MavenProject> reactorProjects = new ArrayList<MavenProject>();
 
-        MavenProject project;
-        try
-        {
-            project = projectBuilder.build( getProjectDescriptorFile( descriptor ), getLocalRepository(),
-                                            getProfileManager( settings ) );
+        reactorProjects.add( project );
 
-            reactorProjects.add( project );
-
-            addModules( reactorProjects, project );
-        }
-        catch ( ProjectBuildingException e )
-        {
-            throw new ContinuumReleaseException( "Failed to build project.", e );
-        }
+        addModules( reactorProjects, project );
 
         try
         {
@@ -167,24 +161,27 @@ public class PerformReleaseTaskExecutor
         {
             throw new ContinuumReleaseException( "Failed to sort projects.", e );
         }
+        catch ( MissingProjectException e )
+        {
+            throw new ContinuumReleaseException( "Failed to sort projects.", e );
+        }
 
         return reactorProjects;
     }
 
-    private void addModules( List reactorProjects, MavenProject project )
+    private void addModules( List<MavenProject> reactorProjects, MavenProject project )
         throws ContinuumReleaseException
     {
-        for ( Iterator modules = project.getModules().iterator(); modules.hasNext(); )
+        for ( Object o : project.getModules() )
         {
-            String moduleDir = modules.next().toString();
+            String moduleDir = o.toString();
 
             File pomFile = new File( project.getBasedir(), moduleDir + "/pom.xml" );
-            System.out.println( pomFile.getAbsolutePath() );
 
             try
             {
-                MavenProject reactorProject =
-                    projectBuilder.build( pomFile, getLocalRepository(), getProfileManager( settings ) );
+                MavenProject reactorProject = projectBuilder.build( pomFile, getLocalRepository(), getProfileManager(
+                    settings ) );
 
                 reactorProjects.add( reactorProject );
 
@@ -238,5 +235,24 @@ public class PerformReleaseTaskExecutor
         throws ContextException
     {
         container = (PlexusContainer) context.get( PlexusConstants.PLEXUS_KEY );
+    }
+
+    protected MavenProject getMavenProject( PerformReleaseProjectTask releaseTask )
+        throws ContinuumReleaseException
+    {
+        ReleaseDescriptor descriptor = releaseTask.getDescriptor();
+
+        MavenProject project;
+        try
+        {
+            project = projectBuilder.build( getProjectDescriptorFile( descriptor ), getLocalRepository(),
+                                            getProfileManager( settings ) );
+        }
+        catch ( ProjectBuildingException e )
+        {
+            throw new ContinuumReleaseException( "Failed to build project.", e );
+        }
+
+        return project;
     }
 }

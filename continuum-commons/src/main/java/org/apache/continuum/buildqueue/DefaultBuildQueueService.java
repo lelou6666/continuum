@@ -19,19 +19,30 @@ package org.apache.continuum.buildqueue;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.dao.BuildQueueDao;
 import org.apache.continuum.dao.ScheduleDao;
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 
+<<<<<<< HEAD
+=======
+import java.util.List;
+>>>>>>> refs/remotes/apache/trunk
 import javax.annotation.Resource;
 
 /**
  * DefaultBuildQueueService
+<<<<<<< HEAD
  * 
+=======
+ *
+>>>>>>> refs/remotes/apache/trunk
  * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
  */
 public class DefaultBuildQueueService
@@ -39,17 +50,29 @@ public class DefaultBuildQueueService
 {
     @Resource
     private BuildQueueDao buildQueueDao;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     @Resource
     private ScheduleDao scheduleDao;
 
     public BuildQueue addBuildQueue( BuildQueue buildQueue )
         throws BuildQueueServiceException
+<<<<<<< HEAD
     {        
         try
         {
             return buildQueueDao.addBuildQueue( buildQueue );
         } 
+=======
+    {
+        try
+        {
+            return buildQueueDao.addBuildQueue( buildQueue );
+        }
+>>>>>>> refs/remotes/apache/trunk
         catch ( ContinuumStoreException e )
         {
             throw new BuildQueueServiceException( e );
@@ -97,23 +120,41 @@ public class DefaultBuildQueueService
 
     public void removeBuildQueue( BuildQueue buildQueue )
         throws BuildQueueServiceException
+<<<<<<< HEAD
     {   
+=======
+    {
+>>>>>>> refs/remotes/apache/trunk
         try
         {
             // detach from schedule(s) first
             List<Schedule> schedules = scheduleDao.getAllSchedulesByName();
+<<<<<<< HEAD
             for( Schedule schedule : schedules )
             {
                 List<BuildQueue> buildQueues = schedule.getBuildQueues();
                 if( buildQueues.contains( buildQueue ) )
+=======
+            for ( Schedule schedule : schedules )
+            {
+                List<BuildQueue> buildQueues = schedule.getBuildQueues();
+                if ( buildQueues.contains( buildQueue ) )
+>>>>>>> refs/remotes/apache/trunk
                 {
                     buildQueues.remove( buildQueue );
                 }
                 schedule.setBuildQueues( buildQueues );
+<<<<<<< HEAD
                 
                 scheduleDao.updateSchedule( schedule );
             }        
         
+=======
+
+                scheduleDao.updateSchedule( schedule );
+            }
+
+>>>>>>> refs/remotes/apache/trunk
             buildQueueDao.removeBuildQueue( buildQueue );
         }
         catch ( ContinuumStoreException e )

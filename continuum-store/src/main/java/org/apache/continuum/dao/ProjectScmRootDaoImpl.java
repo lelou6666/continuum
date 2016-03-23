@@ -19,14 +19,23 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+<<<<<<< HEAD
+=======
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+
+>>>>>>> refs/remotes/apache/trunk
 import java.util.Collection;
 import java.util.List;
-
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
+<<<<<<< HEAD
 import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
@@ -37,6 +46,13 @@ import org.springframework.stereotype.Repository;
  * @version $Id: $
  */
 @Repository("projectScmRootDao")
+=======
+/**
+ * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
+ */
+@Repository( "projectScmRootDao" )
+@Component( role = org.apache.continuum.dao.ProjectScmRootDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class ProjectScmRootDaoImpl
     extends AbstractDao
     implements ProjectScmRootDao
@@ -44,14 +60,14 @@ public class ProjectScmRootDaoImpl
     public ProjectScmRoot addProjectScmRoot( ProjectScmRoot projectScmRoot )
         throws ContinuumStoreException
     {
-        return (ProjectScmRoot) addObject( projectScmRoot );
+        return addObject( projectScmRoot );
     }
 
     public List<ProjectScmRoot> getAllProjectScmRoots()
     {
         return getAllObjectsDetached( ProjectScmRoot.class );
     }
-    
+
     public List<ProjectScmRoot> getProjectScmRootByProjectGroup( int projectGroupId )
     {
         PersistenceManager pm = getPersistenceManager();
@@ -116,7 +132,7 @@ public class ProjectScmRootDaoImpl
             Object[] params = new Object[2];
             params[0] = projectGroupId;
             params[1] = scmRootAddress;
-            
+
             Collection result = (Collection) query.executeWithArray( params );
 
             if ( result.size() == 0 )
@@ -137,10 +153,10 @@ public class ProjectScmRootDaoImpl
             rollback( tx );
         }
     }
-    
+
     public ProjectScmRoot getProjectScmRoot( int projectScmRootId )
         throws ContinuumObjectNotFoundException, ContinuumStoreException
     {
-        return (ProjectScmRoot) getObjectById( ProjectScmRoot.class, projectScmRootId );
+        return getObjectById( ProjectScmRoot.class, projectScmRootId );
     }
 }

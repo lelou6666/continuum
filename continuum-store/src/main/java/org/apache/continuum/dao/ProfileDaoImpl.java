@@ -21,6 +21,10 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.springframework.stereotype.Repository;
 
 import javax.jdo.Extent;
@@ -32,9 +36,15 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  */
 @Repository("profileDao")
+=======
+ */
+@Repository( "profileDao" )
+@Component( role = org.apache.continuum.dao.ProfileDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class ProfileDaoImpl
     extends AbstractDao
     implements ProfileDao
@@ -88,13 +98,13 @@ public class ProfileDaoImpl
 
     public Profile addProfile( Profile profile )
     {
-        return (Profile) addObject( profile );
+        return addObject( profile );
     }
 
     public Profile getProfile( int profileId )
         throws ContinuumStoreException
     {
-        return (Profile) getObjectById( Profile.class, profileId );
+        return getObjectById( Profile.class, profileId );
     }
 
     public void updateProfile( Profile profile )

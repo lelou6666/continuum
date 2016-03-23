@@ -21,39 +21,48 @@ package org.apache.maven.continuum.configuration;
 
 import org.apache.continuum.buildqueue.BuildQueueService;
 import org.apache.continuum.buildqueue.BuildQueueServiceException;
+<<<<<<< HEAD
+=======
+import org.apache.continuum.configuration.BuildAgentConfiguration;
+import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.configuration.ContinuumConfiguration;
 import org.apache.continuum.configuration.ContinuumConfigurationException;
 import org.apache.continuum.configuration.GeneralConfiguration;
 import org.apache.continuum.dao.ScheduleDao;
 import org.apache.continuum.dao.SystemConfigurationDao;
+<<<<<<< HEAD
+=======
+import org.apache.continuum.utils.file.FileSystemManager;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
-import org.codehaus.plexus.util.FileUtils;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  */
 public class DefaultConfigurationService
     implements ConfigurationService
 {
-    private Logger log = LoggerFactory.getLogger( this.getClass() );
+    private static final Logger log = LoggerFactory.getLogger( DefaultConfigurationService.class );
 
     // when adding a requirement, the template in spring-context.xml must be updated CONTINUUM-1207
 
-    /**
-     * @plexus.configuration default-value="${plexus.home}"
-     */
+    @Configuration( "${plexus.home}" )
     private File applicationHome;
 
     @Resource
@@ -66,7 +75,16 @@ public class DefaultConfigurationService
     private BuildQueueService buildQueueService;
 
     @Resource
+<<<<<<< HEAD
+=======
+    private BuildQueueService buildQueueService;
+
+    @Resource
+>>>>>>> refs/remotes/apache/trunk
     private ContinuumConfiguration configuration;
+
+    @Resource
+    private FileSystemManager fsManager;
 
     private GeneralConfiguration generalConfiguration;
 
@@ -103,11 +121,23 @@ public class DefaultConfigurationService
         return buildQueueService;
     }
 
+<<<<<<< HEAD
+=======
+    public BuildQueueService getBuildQueueService()
+    {
+        return buildQueueService;
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     public void setBuildQueueService( BuildQueueService buildQueueService )
     {
         this.buildQueueService = buildQueueService;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public SystemConfigurationDao getSystemConfigurationDao()
     {
         return systemConfigurationDao;
@@ -140,12 +170,12 @@ public class DefaultConfigurationService
 
     public void setInitialized( boolean initialized )
     {
-        systemConf.setInitialized( initialized );
+        generalConfiguration.setInitialized( initialized );
     }
 
     public boolean isInitialized()
     {
-        return systemConf.isInitialized();
+        return systemConf.isInitialized() || generalConfiguration.isInitialized();
     }
 
     public String getUrl()
@@ -164,7 +194,7 @@ public class DefaultConfigurationService
         generalConfiguration.setBaseUrl( url );
     }
 
-    /** 
+    /**
      * @see org.apache.maven.continuum.configuration.ConfigurationService#getBuildOutputDirectory()
      */
     public File getBuildOutputDirectory()
@@ -241,11 +271,11 @@ public class DefaultConfigurationService
         {
             if ( file.exists() )
             {
-                return FileUtils.fileRead( file.getAbsolutePath() );
+                return fsManager.fileContents( file );
             }
             else
             {
-                return "There are no output for this build.";
+                return "There is no output for this build.";
             }
         }
         catch ( IOException e )
@@ -287,10 +317,259 @@ public class DefaultConfigurationService
         generalConfiguration.setReleaseOutputDirectory( f );
     }
 
+    public List<BuildAgentConfiguration> getBuildAgents()
+    {
+        return generalConfiguration.getBuildAgents();
+    }
+
+    public void addBuildAgent( BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+        // trim trailing space
+        buildAgent.setUrl( buildAgent.getUrl().trim() );
+
+        List<BuildAgentConfiguration> buildAgents = generalConfiguration.getBuildAgents();
+        if ( buildAgents == null )
+        {
+            buildAgents = new ArrayList<BuildAgentConfiguration>();
+        }
+
+        for ( BuildAgentConfiguration agent : buildAgents )
+        {
+            if ( agent.getUrl().trim().equals( buildAgent.getUrl() ) )
+            {
+                throw new ConfigurationException( "Unable to add build agent: build agent already exist" );
+            }
+        }
+
+        buildAgents.add( buildAgent );
+        generalConfiguration.setBuildAgents( buildAgents );
+    }
+
+    public void removeBuildAgent( BuildAgentConfiguration buildAgent )
+    {
+        List<BuildAgentConfiguration> buildAgents = getBuildAgents();
+        if ( buildAgents != null )
+        {
+            for ( BuildAgentConfiguration agent : buildAgents )
+            {
+                if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+                {
+                    buildAgents.remove( agent );
+                    break;
+                }
+            }
+            generalConfiguration.setBuildAgents( buildAgents );
+        }
+    }
+
+    public void updateBuildAgent( BuildAgentConfiguration buildAgent )
+    {
+        // trim trailing space
+        buildAgent.setUrl( buildAgent.getUrl().trim() );
+
+        List<BuildAgentConfiguration> buildAgents = getBuildAgents();
+        if ( buildAgents != null )
+        {
+            for ( BuildAgentConfiguration agent : buildAgents )
+            {
+                if ( agent.getUrl().trim().equals( buildAgent.getUrl() ) )
+                {
+                    agent.setDescription( buildAgent.getDescription() );
+                    agent.setEnabled( buildAgent.isEnabled() );
+                    agent.setUrl( buildAgent.getUrl() );
+
+                    return;
+                }
+            }
+        }
+    }
+
+    public boolean isDistributedBuildEnabled()
+    {
+        return generalConfiguration.isDistributedBuildEnabled();
+    }
+
+    public void setDistributedBuildEnabled( boolean distributedBuildEnabled )
+    {
+        generalConfiguration.setDistributedBuildEnabled( distributedBuildEnabled );
+    }
+
+    public void addBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroups = generalConfiguration.getBuildAgentGroups();
+
+        if ( buildAgentGroups == null )
+        {
+            buildAgentGroups = new ArrayList<BuildAgentGroupConfiguration>();
+        }
+
+        for ( BuildAgentGroupConfiguration groups : buildAgentGroups )
+        {
+            if ( groups.getName().equals( buildAgentGroup.getName() ) )
+            {
+                throw new ConfigurationException( "Unable to add build agent group: build agent group already exist" );
+            }
+        }
+
+        buildAgentGroups.add( buildAgentGroup );
+        generalConfiguration.setBuildAgentGroups( buildAgentGroups );
+    }
+
+    public void removeBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroups = generalConfiguration.getBuildAgentGroups();
+        if ( buildAgentGroups != null )
+        {
+            for ( BuildAgentGroupConfiguration groups : buildAgentGroups )
+            {
+                if ( groups.getName().equals( buildAgentGroup.getName() ) )
+                {
+                    buildAgentGroups.remove( groups );
+                    break;
+                }
+            }
+            generalConfiguration.setBuildAgentGroups( buildAgentGroups );
+        }
+    }
+
+    public void updateBuildAgentGroup( BuildAgentGroupConfiguration buildAgentGroup )
+        throws ConfigurationException
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroups = generalConfiguration.getBuildAgentGroups();
+        if ( buildAgentGroups != null )
+        {
+            for ( BuildAgentGroupConfiguration groups : buildAgentGroups )
+            {
+                if ( groups.getName().equals( buildAgentGroup.getName() ) )
+                {
+                    groups.setName( buildAgentGroup.getName() );
+                    groups.setBuildAgents( buildAgentGroup.getBuildAgents() );
+
+                    return;
+                }
+            }
+        }
+
+    }
+
+    public void addBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroupConfiguration = generalConfiguration.getBuildAgentGroups();
+        if ( buildAgentGroupConfiguration != null )
+        {
+            for ( BuildAgentGroupConfiguration group : buildAgentGroupConfiguration )
+            {
+                if ( group.getName().equals( buildAgentGroup.getName() ) )
+                {
+                    List<BuildAgentConfiguration> agents = group.getBuildAgents();
+
+                    for ( BuildAgentConfiguration agent : agents )
+                    {
+                        if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+                        {
+                            throw new ConfigurationException( "Unable to add build agent : build agent already exist" );
+                        }
+                    }
+                    group.addBuildAgent( buildAgent );
+                    break;
+                }
+            }
+            generalConfiguration.setBuildAgentGroups( buildAgentGroupConfiguration );
+        }
+    }
+
+    public void removeBuildAgent( BuildAgentGroupConfiguration buildAgentGroup, BuildAgentConfiguration buildAgent )
+        throws ConfigurationException
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroupConfiguration = generalConfiguration.getBuildAgentGroups();
+        if ( buildAgentGroupConfiguration != null )
+        {
+            for ( BuildAgentGroupConfiguration group : buildAgentGroupConfiguration )
+            {
+                if ( group.getName().equals( buildAgentGroup.getName() ) )
+                {
+                    List<BuildAgentConfiguration> agents = group.getBuildAgents();
+
+                    for ( BuildAgentConfiguration agent : agents )
+                    {
+                        if ( agent.getUrl().equals( buildAgent.getUrl() ) )
+                        {
+                            group.removeBuildAgent( agent );
+                            break;
+                        }
+                    }
+                }
+            }
+            generalConfiguration.setBuildAgentGroups( buildAgentGroupConfiguration );
+        }
+    }
+
+    public BuildAgentGroupConfiguration getBuildAgentGroup( String name )
+    {
+        List<BuildAgentGroupConfiguration> buildAgentGroupConfiguration = generalConfiguration.getBuildAgentGroups();
+        if ( buildAgentGroupConfiguration != null )
+        {
+            for ( BuildAgentGroupConfiguration buildAgentGroup : buildAgentGroupConfiguration )
+            {
+                if ( buildAgentGroup.getName().equals( name ) )
+                {
+                    return buildAgentGroup;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public BuildAgentConfiguration getBuildAgent( String url )
+    {
+        List<BuildAgentConfiguration> buildAgents = generalConfiguration.getBuildAgents();
+        if ( buildAgents == null )
+        {
+            buildAgents = new ArrayList<BuildAgentConfiguration>();
+        }
+
+        for ( BuildAgentConfiguration agent : buildAgents )
+        {
+            if ( agent.getUrl().equals( url ) )
+            {
+                return agent;
+            }
+        }
+        return null;
+    }
+
+    public List<BuildAgentGroupConfiguration> getBuildAgentGroups()
+    {
+        return generalConfiguration.getBuildAgentGroups();
+    }
+
+    public boolean containsBuildAgentUrl( String buildAgentUrl, BuildAgentGroupConfiguration buildAgentGroup )
+    {
+        BuildAgentGroupConfiguration group = this.getBuildAgentGroup( buildAgentGroup.getName() );
+        List<BuildAgentConfiguration> buildAgents = group.getBuildAgents();
+        if ( buildAgents == null )
+        {
+            buildAgents = new ArrayList<BuildAgentConfiguration>();
+        }
+
+        for ( BuildAgentConfiguration agent : buildAgents )
+        {
+            if ( agent.getUrl().equals( buildAgentUrl ) )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
-
 
     public File getBuildOutputDirectory( int projectId )
     {
@@ -310,11 +589,15 @@ public class DefaultConfigurationService
     public File getTestReportsDirectory( int buildId, int projectId )
         throws ConfigurationException
     {
-        File ouputDirectory = getBuildOutputDirectory( projectId );
-
-        return new File(
-            ouputDirectory.getPath() + File.separatorChar + buildId + File.separatorChar + "surefire-reports" );
-
+        File outputDirectory = getBuildOutputDirectory( projectId );
+        File testDir = new File( outputDirectory.getPath() + File.separator + buildId + File.separator +
+                                     "surefire-reports" );
+        if ( !testDir.exists() && !testDir.mkdirs() )
+        {
+            throw new ConfigurationException(
+                String.format( "Could not make the test reports directory: '%s'.", testDir.getAbsolutePath() ) );
+        }
+        return testDir;
     }
 
     public File getBuildOutputFile( int buildId, int projectId )
@@ -337,9 +620,9 @@ public class DefaultConfigurationService
         {
             return null;
         }
-        
+
         File dir = new File( getReleaseOutputDirectory(), Integer.toString( projectGroupId ) );
-        
+
         try
         {
             dir = dir.getCanonicalFile();
@@ -347,7 +630,7 @@ public class DefaultConfigurationService
         catch ( IOException e )
         {
         }
-        
+
         return dir;
     }
 
@@ -360,7 +643,7 @@ public class DefaultConfigurationService
         {
             return null;
         }
-        
+
         if ( !dir.exists() && !dir.mkdirs() )
         {
             throw new ConfigurationException(
@@ -379,11 +662,11 @@ public class DefaultConfigurationService
         {
             if ( file.exists() )
             {
-                return FileUtils.fileRead( file.getAbsolutePath() );
+                return fsManager.fileContents( file );
             }
             else
             {
-                return "There are no output for this release.";
+                return "There is no output for this release.";
             }
         }
         catch ( IOException e )
@@ -392,17 +675,39 @@ public class DefaultConfigurationService
             return null;
         }
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public int getNumberOfBuildsInParallel()
     {
         return generalConfiguration.getNumberOfBuildsInParallel();
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setNumberOfBuildsInParallel( int num )
     {
         generalConfiguration.setNumberOfBuildsInParallel( num );
     }
+<<<<<<< HEAD
     
+=======
+
+    public String getSharedSecretPassword()
+    {
+        return generalConfiguration.getSharedSecretPassword();
+    }
+
+    public void setSharedSecretPassword( String sharedSecretPassword )
+    {
+        generalConfiguration.setSharedSecretPassword( sharedSecretPassword );
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
@@ -416,7 +721,7 @@ public class DefaultConfigurationService
 
         File f = null;
 
-        if ( filename != null && filename.length() != 0 )
+        if ( filename.length() != 0 )
         {
             f = new File( filename );
 
@@ -428,7 +733,11 @@ public class DefaultConfigurationService
 
         try
         {
-            return f.getCanonicalFile();
+            if ( f != null )
+            {
+                return f.getCanonicalFile();
+            }
+            return null;
         }
         catch ( IOException e )
         {
@@ -445,7 +754,6 @@ public class DefaultConfigurationService
         return loaded;
     }
 
-
     private void loadData()
         throws ConfigurationLoadingException, ContinuumConfigurationException
     {
@@ -458,7 +766,6 @@ public class DefaultConfigurationService
             if ( systemConf == null )
             {
                 systemConf = new SystemConfiguration();
-
                 systemConf = getSystemConfigurationDao().addSystemConfiguration( systemConf );
             }
 
@@ -481,19 +788,17 @@ public class DefaultConfigurationService
         throws ConfigurationStoringException, ContinuumConfigurationException
     {
         configuration.setGeneralConfiguration( generalConfiguration );
+
         configuration.save();
-        try
-        {
-            getSystemConfigurationDao().updateSystemConfiguration( systemConf );
-        }
-        catch ( ContinuumStoreException e )
-        {
-            throw new ConfigurationStoringException( "Error writting configuration to database.", e );
-        }
     }
 
     public Schedule getDefaultSchedule()
+<<<<<<< HEAD
         throws ContinuumStoreException, ConfigurationLoadingException, ContinuumConfigurationException, BuildQueueServiceException
+=======
+        throws ContinuumStoreException, ConfigurationLoadingException, ContinuumConfigurationException,
+        BuildQueueServiceException
+>>>>>>> refs/remotes/apache/trunk
     {
         // Schedule
         Schedule defaultSchedule = scheduleDao.getScheduleByName( DEFAULT_SCHEDULE_NAME );
@@ -507,6 +812,7 @@ public class DefaultConfigurationService
 
         return defaultSchedule;
     }
+<<<<<<< HEAD
     
     public BuildQueue getDefaultBuildQueue()
         throws BuildQueueServiceException
@@ -523,12 +829,35 @@ public class DefaultConfigurationService
         return defaultBuildQueue;
     }
     
+=======
+
+    public BuildQueue getDefaultBuildQueue()
+        throws BuildQueueServiceException
+    {
+        BuildQueue defaultBuildQueue = buildQueueService.getBuildQueueByName( DEFAULT_BUILD_QUEUE_NAME );
+
+        if ( defaultBuildQueue == null )
+        {
+            defaultBuildQueue = createDefaultBuildQueue();
+
+            defaultBuildQueue = buildQueueService.addBuildQueue( defaultBuildQueue );
+        }
+
+        return defaultBuildQueue;
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     // ----------------------------------------------------------------------
     //
     // ----------------------------------------------------------------------
 
     private Schedule createDefaultSchedule()
+<<<<<<< HEAD
         throws ConfigurationLoadingException, ContinuumConfigurationException, ContinuumStoreException, BuildQueueServiceException
+=======
+        throws ConfigurationLoadingException, ContinuumConfigurationException, ContinuumStoreException,
+        BuildQueueServiceException
+>>>>>>> refs/remotes/apache/trunk
     {
 
         log.info( "create Default Schedule" );
@@ -553,8 +882,13 @@ public class DefaultConfigurationService
         
         schedule.addBuildQueue( buildQueue );
 
+        BuildQueue buildQueue = getDefaultBuildQueue();
+
+        schedule.addBuildQueue( buildQueue );
+
         return schedule;
     }
+<<<<<<< HEAD
     
     private BuildQueue createDefaultBuildQueue()
     {
@@ -564,6 +898,17 @@ public class DefaultConfigurationService
         
         buildQueue.setName( DEFAULT_BUILD_QUEUE_NAME );        
         
+=======
+
+    private BuildQueue createDefaultBuildQueue()
+    {
+        log.info( "create Default Build Queue" );
+
+        BuildQueue buildQueue = new BuildQueue();
+
+        buildQueue.setName( DEFAULT_BUILD_QUEUE_NAME );
+
+>>>>>>> refs/remotes/apache/trunk
         return buildQueue;
     }
 }

@@ -19,11 +19,9 @@ package org.apache.maven.continuum.web.action.admin;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import com.opensymphony.xwork2.Preparable;
 import org.apache.commons.lang.StringUtils;
+import org.apache.continuum.configuration.BuildAgentGroupConfiguration;
 import org.apache.maven.continuum.installation.InstallationService;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
@@ -32,33 +30,34 @@ import org.apache.maven.continuum.profile.ProfileException;
 import org.apache.maven.continuum.profile.ProfileService;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
-import org.apache.struts2.ServletActionContext;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.rbac.Resource;
 import org.codehaus.redback.integration.interceptor.SecureAction;
 import org.codehaus.redback.integration.interceptor.SecureActionBundle;
 import org.codehaus.redback.integration.interceptor.SecureActionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.opensymphony.xwork2.Preparable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="profileAdministration"
  * @since 7 juin 07
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "profileAdministration", instantiationStrategy = "per-lookup" )
 public class ProfileAction
     extends ContinuumActionSupport
     implements Preparable, SecureAction
-
 {
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    private static final Logger logger = LoggerFactory.getLogger( ProfileAction.class );
+
+    @Requirement( hint = "default" )
     private ProfileService profileService;
 
-    /**
-     * @plexus.requirement role-hint="default"
-     */
+    @Requirement( hint = "default" )
     private InstallationService installationService;
 
     private List<Profile> profiles;
@@ -71,7 +70,20 @@ public class ProfileAction
 
     private List<Installation> profileInstallations;
 
-    private String message;
+    private List<BuildAgentGroupConfiguration> buildAgentGroups;
+
+    public void prepare()
+        throws Exception
+    {
+        super.prepare();
+
+        List<BuildAgentGroupConfiguration> agentGroups = getContinuum().getConfiguration().getBuildAgentGroups();
+        if ( agentGroups == null )
+        {
+            agentGroups = Collections.EMPTY_LIST;
+        }
+        this.setBuildAgentGroups( agentGroups );
+    }
 
     // -------------------------------------------------------
     //  Webwork Methods
@@ -87,13 +99,6 @@ public class ProfileAction
     public String list()
         throws Exception
     {
-        String errorMessage = ServletActionContext.getRequest().getParameter( "errorMessage" );
-
-        if ( errorMessage != null )
-        {
-            addActionError( errorMessage );
-        }
-        
         this.profiles = profileService.getAllProfiles();
         return SUCCESS;
     }
@@ -101,9 +106,9 @@ public class ProfileAction
     public String edit()
         throws Exception
     {
-        if ( getLogger().isDebugEnabled() )
+        if ( logger.isDebugEnabled() )
         {
-            getLogger().debug( "edit profile with id " + profile.getId() );
+            logger.debug( "edit profile with id " + profile.getId() );
         }
         this.profile = profileService.getProfile( profile.getId() );
         return SUCCESS;
@@ -139,11 +144,16 @@ public class ProfileAction
                 // but in the UI maybe some installations has been we retrieve it
                 // and only set the name related to CONTINUUM-1361
                 String name = profile.getName();
+                String buildAgentGroup = profile.getBuildAgentGroup();
+
                 profile = profileService.getProfile( profile.getId() );
                 // CONTINUUM-1746 we update the profile only if the name has changed 
-                if ( !StringUtils.equals( name, profile.getName() ) )
+                // jancajas: added build agent group. updated profile if agent group is changed also.
+                if ( !StringUtils.equals( name, profile.getName() ) || !StringUtils.equals( buildAgentGroup,
+                                                                                            profile.getBuildAgentGroup() ) )
                 {
                     profile.setName( name );
+                    profile.setBuildAgentGroup( buildAgentGroup );
                     profileService.updateProfile( profile );
                 }
             }
@@ -159,18 +169,18 @@ public class ProfileAction
 
     public String delete()
         throws Exception
-    {   
+    {
         try
         {
             profileService.deleteProfile( profile.getId() );
             this.profiles = profileService.getAllProfiles();
-            return SUCCESS;
         }
         catch ( ProfileException e )
         {
-            message = "profile.remove.error";
-            return ERROR;
+            // display action error in default/success page -- CONTINUUM-2250
+            addActionError( getText( "profile.remove.error" ) );
         }
+        return SUCCESS;
     }
 
     public String confirmDelete()
@@ -179,7 +189,7 @@ public class ProfileAction
         this.profile = getContinuum().getProfileService().getProfile( profile.getId() );
         return SUCCESS;
     }
-    
+
     public String addInstallation()
         throws Exception
     {
@@ -206,7 +216,7 @@ public class ProfileAction
     // -----------------------------------------------------
     // security
     // -----------------------------------------------------    
-    
+
     public SecureActionBundle getSecureActionBundle()
         throws SecureActionException
     {
@@ -215,8 +225,8 @@ public class ProfileAction
         bundle.addRequiredAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_PROFILES, Resource.GLOBAL );
 
         return bundle;
-    }    
-    
+    }
+
     // -------------------------------------------------------
     // Webwork setter/getter
     // -------------------------------------------------------
@@ -249,7 +259,7 @@ public class ProfileAction
             this.allInstallations = installationService.getAllInstallations();
         }
         // CONTINUUM-1742 (olamy) don't display already attached en var
-        if (this.profile != null)
+        if ( this.profile != null )
         {
             this.allInstallations.removeAll( this.profile.getEnvironmentVariables() );
         }
@@ -302,13 +312,13 @@ public class ProfileAction
         this.installationId = installationId;
     }
 
-    public String getMessage()
+    public List<BuildAgentGroupConfiguration> getBuildAgentGroups()
     {
-        return message;
+        return buildAgentGroups;
     }
 
-    public void setMessage( String message )
+    public void setBuildAgentGroups( List<BuildAgentGroupConfiguration> buildAgentGroups )
     {
-        this.message = message;
+        this.buildAgentGroups = buildAgentGroups;
     }
 }

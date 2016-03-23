@@ -17,11 +17,8 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-
 <html>
 <s:i18n name="localization.Continuum">
   <head>
@@ -33,9 +30,10 @@
       <s:text name="installationsList.section.title"/>
     </h3>  
 
-    <c:if test="${not empty installations}">
+    <s:if test="installations.size() > 0">
     <ec:table items="installations"
               var="installation"
+              autoIncludeParameters="false"
               showExports="false"
               showPagination="false"
               showStatusBar="false"
@@ -48,20 +46,27 @@
         <ec:column property="varValue" title="installation.value.label" style="white-space: nowrap" />
         
         <ec:column property="id" title="&nbsp;" width="1%">
-          <a href="editInstallation!edit.action?installation.installationId=<c:out value="${installation.installationId}"/>">
+          <s:url var="editUrl" action="editInstallation">
+            <s:param name="installation.installationId" value="#attr.installation.installationId" />
+          </s:url>
+          <s:a href="%{editUrl}">
             <img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" />
-          </a>  
+          </s:a>
         </ec:column>   
         <ec:column property="id" title="&nbsp;" width="1%">
-          <a href="deleteInstallation!delete.action?installation.installationId=<c:out value="${installation.installationId}"/>">
+          <s:url var="deleteUrl" action="deleteInstallation">
+            <s:param name="installation.installationId" value="#attr.installation.installationId" />
+            <s:param name="installation.name" value="#attr.installation.name" />
+          </s:url>
+          <s:a href="%{deleteUrl}">
             <img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0" />
-          </a>  
+          </s:a>
         </ec:column>             
       </ec:row>
     </ec:table>
-    </c:if>
+    </s:if>
     <div class="functnbar3">
-      <s:form action="installationsTypeChoice!listTypes.action" method="post">
+      <s:form action="installationsTypeChoice" method="post">
         <s:submit value="%{getText('add')}"/>
       </s:form>
     </div>  

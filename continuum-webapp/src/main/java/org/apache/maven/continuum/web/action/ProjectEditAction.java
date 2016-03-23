@@ -19,15 +19,17 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="projectEdit"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectEdit", instantiationStrategy = "per-lookup"  )
 public class ProjectEditAction
     extends ContinuumActionSupport
 {
@@ -78,6 +80,11 @@ public class ProjectEditAction
         project.setScmTag( scmTag );
 
         getContinuum().updateProject( project );
+
+        AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.MODIFY_PROJECT );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.log();
 
         return SUCCESS;
     }

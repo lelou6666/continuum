@@ -21,8 +21,12 @@ package org.apache.maven.continuum.security;
 /**
  * ContinuumRoleConstants:
  *
+<<<<<<< HEAD
  * @author: Jesse McConnell <jmcconnell@apache.org>
  * @version: $Id$
+=======
+ * @author Jesse McConnell <jmcconnell@apache.org>
+>>>>>>> refs/remotes/apache/trunk
  */
 public class ContinuumRoleConstants
 {
@@ -109,16 +113,24 @@ public class ContinuumRoleConstants
     public static final String USER_MANAGEMENT_USER_ROLE_OPERATION = "user-management-user-role";
 
     public static final String CONTINUUM_MANAGE_INSTALLATIONS = "continuum-manage-installations";
-    
+
     public static final String CONTINUUM_MANAGE_PROFILES = "continuum-manage-profiles";
-    
+
     public static final String CONTINUUM_MANAGE_BUILD_TEMPLATES = "continuum-manage-build-templates";
-    
+
     public static final String CONTINUUM_MANAGE_QUEUES = "continuum-manage-queues";
-    
+
     public static final String CONTINUUM_VIEW_QUEUES = "continuum-view-queues";
-    
+
     public static final String CONTINUUM_MANAGE_REPOSITORIES = "continuum-manage-repositories";
-    
+
     public static final String CONTINUUM_MANAGE_PURGING = "continuum-manage-purging";
+
+    public static final String CONTINUUM_MANAGE_DISTRIBUTED_BUILDS = "continuum-manage-distributed-builds";
+
+    public static final String CONTINUUM_VIEW_RELEASE = "continuum-view-release";
+
+    public static final String CONTINUUM_MANAGE_PARALLEL_BUILDS = "continuum-manage-parallel-builds";
+
+    public static final String CONTINUUM_VIEW_REPORT = "continuum-view-report";
 }

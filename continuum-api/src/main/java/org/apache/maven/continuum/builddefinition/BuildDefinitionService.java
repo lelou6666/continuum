@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.builddefinition;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,9 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.builddefinition;
-
-import java.util.List;
 
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
@@ -26,26 +25,29 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 15 sept. 07
- * @version $Id$
  */
 public interface BuildDefinitionService
 {
-    
+
     /**
      * @param buildDefinitionId
      * @return null if not in store
      * @throws BuildDefinitionServiceException
+     *
      */
     BuildDefinition getBuildDefinition( int buildDefinitionId )
         throws BuildDefinitionServiceException;
-    
-   /**
-    * @return List<BuildDefinition> all build defintions
-    * @throws BuildDefinitionServiceException
-    */
+
+    /**
+     * @return List<BuildDefinition> all build defintions
+     * @throws BuildDefinitionServiceException
+     *
+     */
     List<BuildDefinition> getAllBuildDefinitions()
         throws BuildDefinitionServiceException;
 
@@ -59,22 +61,25 @@ public interface BuildDefinitionService
         throws BuildDefinitionServiceException;
 
     List<BuildDefinition> getAllTemplates()
-        throws BuildDefinitionServiceException;    
-    
+        throws BuildDefinitionServiceException;
+
     /**
      * @param buildDefinition
      * @return clone of {@link BuildDefinition} template/continuumDefault set to false
      */
     BuildDefinition cloneBuildDefinition( BuildDefinition buildDefinition );
-    
+
+    boolean isBuildDefinitionInUse( BuildDefinition buildDefinition )
+        throws BuildDefinitionServiceException;
+
     // ------------------------------------------------------
     //  BuildDefinitionTemplate
     // ------------------------------------------------------
 
     void addTemplateInProject( int buildDefinitionTemplateId, Project project )
         throws BuildDefinitionServiceException;
-    
-    
+
+
     List<BuildDefinitionTemplate> getAllBuildDefinitionTemplate()
         throws BuildDefinitionServiceException;
 

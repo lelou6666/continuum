@@ -20,39 +20,61 @@ package org.apache.continuum.purge;
  */
 
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.DistributedDirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.DistributedRepositoryPurgeConfiguration;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.model.project.Schedule;
 
 /**
  * @author Maria Catherine Tan
- * @version $Id$
  * @since 25 jul 07
  */
 public interface ContinuumPurgeManager
-{   
+{
     String ROLE = ContinuumPurgeManager.class.getName();
-    
+
     /**
-     * Purge repositories and directories 
+     * Purge repositories and directories
+     *
      * @param schedule
      * @throws ContinuumPurgeManagerException
      */
     void purge( Schedule schedule )
         throws ContinuumPurgeManagerException;
-    
+
     /**
      * Purge repository
+     *
      * @param repoPurgeConfig
      * @throws ContinuumPurgeManagerException
      */
     void purgeRepository( RepositoryPurgeConfiguration repoPurgeConfig )
         throws ContinuumPurgeManagerException;
-    
+
     /**
-     * Purge directory 
+     * Purge directory
+     *
      * @param dirPurgeConfig
      * @throws ContinuumPurgeManagerException
      */
     void purgeDirectory( DirectoryPurgeConfiguration dirPurgeConfig )
+        throws ContinuumPurgeManagerException;
+
+    /**
+     * Purge directory in distributed build mode
+     *
+     * @param dirPurgeConfig distributed purge configuration
+     * @throws ContinuumPurgeManagerException
+     */
+    void purgeDistributedDirectory( DistributedDirectoryPurgeConfiguration dirPurgeConfig )
+        throws ContinuumPurgeManagerException;
+
+    /**
+     * Purge repository in distributed build mode
+     *
+     * @param repoPurgeConfig distributed purge configuration
+     * @throws ContinuumPurgeManagerException
+     */
+    void purgeDistributedRepository( DistributedRepositoryPurgeConfiguration repoPurgeConfig )
         throws ContinuumPurgeManagerException;
 }

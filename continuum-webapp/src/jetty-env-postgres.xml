@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,55 +18,55 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://www.eclipse.org/jetty/configure.dtd">
 
-<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd">
+<Configure id='wac' class="org.eclipse.jetty.webapp.WebAppContext">
 
-<Configure class="org.mortbay.jetty.webapp.WebAppContext">
+  <New id="validation_mail" class="org.eclipse.jetty.plus.jndi.Resource">
+    <Arg>
+      <Ref id="wac"/>
+    </Arg>
+    <Arg>mail/Session</Arg>
+    <Arg>
+      <New class="org.eclipse.jetty.jndi.factories.MailSessionReference">
+        <Set name="user"></Set>
+        <Set name="password"></Set>
+        <Set name="properties">
+          <New class="java.util.Properties">
+            <Put name="mail.smtp.host">localhost</Put>
+          </New>
+        </Set>
+      </New>
+    </Arg>
+  </New>
 
+  <New id="continuumDataSource" class="org.postgresql.ds.PGPoolingDataSource">
+    <Set name="serverName">localhost</Set>
+    <Set name="databaseName">continuum</Set>
+    <Set name="user">postgres</Set>
+    <Set name="password">sparky</Set>
+  </New>
 
+  <New id="continuum" class="org.eclipse.jetty.plus.jndi.Resource">
+    <Arg>
+      <Ref id="wac"/>
+    </Arg>
+    <Arg>jdbc/continuum</Arg>
+    <Arg>
+      <Ref id="continuumDataSource"/>
+    </Arg>
+  </New>
 
+  <!-- Users / Security Database -->
 
-<New id="validation_mail" class="org.mortbay.jetty.plus.naming.Resource">
-  <Arg>mail/Session</Arg>
-  <Arg>
-    <New class="org.mortbay.naming.factories.MailSessionReference">
-      <Set name="user"></Set>
-      <Set name="password"></Set>
-      <Set name="properties">
-        <New class="java.util.Properties">
-          <Put name="mail.smtp.host">localhost</Put>
-          <Put name="mail.from">continuum@localhost</Put>
-          <Put name="mail.senderName">Continuum</Put>
-          <Put name="mail.debug">true</Put>
-        </New>
-      </Set>
-    </New>
-  </Arg>
-</New>
-
-<New id="continuumDataSource" class="org.postgresql.ds.PGPoolingDataSource">
-  <Set name="serverName">localhost</Set>
-  <Set name="databaseName">continuum</Set>
-  <Set name="user">postgres</Set>
-  <Set name="password">sparky</Set>
-</New>
-
-<New id="continuum" class="org.mortbay.jetty.plus.naming.Resource">
-  <Arg>jdbc/continuum</Arg>
-  <Arg><Ref id="continuumDataSource"/></Arg>
-</New>
-<New id="continuum_shutdown" class="org.mortbay.jetty.plus.naming.Resource">
-  <Arg>jdbc/continuum_shutdown</Arg>
-  <Arg><Ref id="continuumDataSource"/></Arg>
-</New>
-<New id="users" class="org.mortbay.jetty.plus.naming.Resource">
-  <Arg>jdbc/users</Arg>
-  <Arg><Ref id="continuumDataSource"/></Arg>
-</New>
-<New id="users_shutdown" class="org.mortbay.jetty.plus.naming.Resource">
-  <Arg>jdbc/users_shutdown</Arg>
-  <Arg><Ref id="continuumDataSource"/></Arg>
-</New>
-
+  <New id="users" class="org.eclipse.jetty.plus.jndi.Resource">
+    <Arg>
+      <Ref id="wac"/>
+    </Arg>
+    <Arg>jdbc/users</Arg>
+    <Arg>
+      <Ref id="continuumDataSource"/>
+    </Arg>
+  </New>
 </Configure>
 

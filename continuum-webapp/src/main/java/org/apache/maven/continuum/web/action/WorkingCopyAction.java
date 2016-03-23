@@ -19,34 +19,41 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.builder.distributed.manager.DistributedBuildManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.apache.maven.continuum.web.util.UrlHelperFactory;
 import org.apache.maven.continuum.web.util.WorkingCopyContentGenerator;
 import org.apache.struts2.ServletActionContext;
 import org.apache.struts2.views.util.UrlHelper;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.StringUtils;
 
-import javax.activation.MimetypesFileTypeMap;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import javax.activation.MimetypesFileTypeMap;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="workingCopy"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "workingCopy", instantiationStrategy = "per-lookup" )
 public class WorkingCopyAction
     extends ContinuumActionSupport
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private WorkingCopyContentGenerator generator;
+
+    @Requirement
+    private DistributedBuildManager distributedBuildManager;
 
     private Project project;
 
@@ -66,9 +73,15 @@ public class WorkingCopyAction
 
     private String mimeType = "application/octet-stream";
 
-    private static String FILE_SEPARATOR = System.getProperty( "file.separator" );
+    private static final String FILE_SEPARATOR = System.getProperty( "file.separator" );
 
     private String projectGroupName = "";
+
+    private String downloadFileName = "";
+
+    private String downloadFileLength = "";
+
+    private InputStream downloadFileInputStream;
 
     public String execute()
         throws ContinuumException
@@ -87,61 +100,102 @@ public class WorkingCopyAction
             throw new ContinuumException( "release.properties is not accessible." );
         }
 
-        List<File> files = getContinuum().getFiles( projectId, userDirectory );
-
         project = getContinuum().getProject( projectId );
 
         projectName = project.getName();
 
-        HashMap params = new HashMap();
+        HashMap<String, Object> params = new HashMap<String, Object>();
 
-        params.put( "projectId", new Integer( projectId ) );
+        params.put( "projectId", projectId );
 
         params.put( "projectName", projectName );
 
-        String baseUrl = UrlHelper.buildUrl( "/workingCopy.action", ServletActionContext.getRequest(),
+        UrlHelper urlHelper = UrlHelperFactory.getInstance();
+
+        String baseUrl = urlHelper.buildUrl( "/workingCopy.action", ServletActionContext.getRequest(),
                                              ServletActionContext.getResponse(), params );
 
-        String imagesBaseUrl = UrlHelper.buildUrl( "/images/", ServletActionContext.getRequest(),
+        String imagesBaseUrl = urlHelper.buildUrl( "/images/", ServletActionContext.getRequest(),
                                                    ServletActionContext.getResponse(), params );
 
         imagesBaseUrl = imagesBaseUrl.substring( 0, imagesBaseUrl.indexOf( "/images/" ) + "/images/".length() );
 
-        output = generator.generate( files, baseUrl, imagesBaseUrl, getContinuum().getWorkingDirectory( projectId ) );
-
-        if ( currentFile != null && !currentFile.equals( "" ) )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            String dir;
+            output = distributedBuildManager.generateWorkingCopyContent( projectId, userDirectory, baseUrl,
+                                                                         imagesBaseUrl );
 
-            //TODO: maybe create a plexus component for this so that additional mimetypes can be easily added
-            MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-            mimeTypesMap.addMimeTypes( "application/java-archive jar war ear" );
-            mimeTypesMap.addMimeTypes( "application/java-class class" );
-            mimeTypesMap.addMimeTypes( "image/png png" );
-
-            if ( FILE_SEPARATOR.equals( userDirectory ) )
+            if ( currentFile != null && !currentFile.equals( "" ) )
             {
-                dir = userDirectory;
+                Map<String, Object> projectFile = distributedBuildManager.getFileContent( projectId, userDirectory,
+                                                                                          currentFile );
+
+                if ( projectFile == null )
+                {
+                    currentFileContent = "";
+                }
+                else
+                {
+                    downloadFileInputStream = new ByteArrayInputStream( (byte[]) projectFile.get( "downloadFile" ) );
+                    downloadFileLength = (String) projectFile.get( "downloadFileLength" );
+                    downloadFileName = (String) projectFile.get( "downloadFileName" );
+                    currentFileContent = (String) projectFile.get( "fileContent" );
+                    mimeType = (String) projectFile.get( "mimeType" );
+
+                    if ( (Boolean) projectFile.get( "isStream" ) )
+                    {
+                        return "stream";
+                    }
+                }
             }
             else
             {
-                dir = FILE_SEPARATOR + userDirectory + FILE_SEPARATOR;
+                currentFileContent = "";
             }
-
-            downloadFile = new File( getContinuum().getWorkingDirectory( projectId ) + dir + currentFile );
-            mimeType = mimeTypesMap.getContentType( downloadFile );
-
-            if ( ( mimeType.indexOf( "image" ) >= 0 ) || ( mimeType.indexOf( "java-archive" ) >= 0 ) ||
-                ( mimeType.indexOf( "java-class" ) >= 0 ) || ( downloadFile.length() > 100000 ) )
-            {
-                return "stream";
-            }
-
-            currentFileContent = getContinuum().getFileContent( projectId, userDirectory, currentFile );
         }
         else
         {
-            currentFileContent = "";
+            List<File> files = getContinuum().getFiles( projectId, userDirectory );
+
+            output = generator.generate( files, baseUrl, imagesBaseUrl, getContinuum().getWorkingDirectory(
+                projectId ) );
+
+            if ( currentFile != null && !currentFile.equals( "" ) )
+            {
+                String dir;
+
+                //TODO: maybe create a plexus component for this so that additional mimetypes can be easily added
+                MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+                mimeTypesMap.addMimeTypes( "application/java-archive jar war ear" );
+                mimeTypesMap.addMimeTypes( "application/java-class class" );
+                mimeTypesMap.addMimeTypes( "image/png png" );
+
+                if ( FILE_SEPARATOR.equals( userDirectory ) )
+                {
+                    dir = userDirectory;
+                }
+                else
+                {
+                    dir = FILE_SEPARATOR + userDirectory + FILE_SEPARATOR;
+                }
+
+                downloadFile = new File( getContinuum().getWorkingDirectory( projectId ) + dir + currentFile );
+                mimeType = mimeTypesMap.getContentType( downloadFile );
+                downloadFileLength = Long.toString( downloadFile.length() );
+                downloadFileName = downloadFile.getName();
+
+                if ( ( mimeType.indexOf( "image" ) >= 0 ) || ( mimeType.indexOf( "java-archive" ) >= 0 ) ||
+                    ( mimeType.indexOf( "java-class" ) >= 0 ) || ( downloadFile.length() > 100000 ) )
+                {
+                    return "stream";
+                }
+
+                currentFileContent = getContinuum().getFileContent( projectId, userDirectory, currentFile );
+            }
+            else
+            {
+                currentFileContent = "";
+            }
         }
 
         return SUCCESS;
@@ -192,31 +246,37 @@ public class WorkingCopyAction
         return currentFileContent;
     }
 
-
     public InputStream getInputStream()
         throws ContinuumException
     {
-        FileInputStream fis;
-        try
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            fis = new FileInputStream( downloadFile );
+            return downloadFileInputStream;
         }
-        catch ( FileNotFoundException fne )
+        else
         {
-            throw new ContinuumException( "Error accessing file.", fne );
-        }
+            FileInputStream fis;
+            try
+            {
+                fis = new FileInputStream( downloadFile );
+            }
+            catch ( FileNotFoundException fne )
+            {
+                throw new ContinuumException( "Error accessing file.", fne );
+            }
 
-        return fis;
+            return fis;
+        }
     }
 
     public String getFileLength()
     {
-        return Long.toString( downloadFile.length() );
+        return downloadFileLength;
     }
 
     public String getDownloadFilename()
     {
-        return downloadFile.getName();
+        return downloadFileName;
     }
 
     public String getMimeType()

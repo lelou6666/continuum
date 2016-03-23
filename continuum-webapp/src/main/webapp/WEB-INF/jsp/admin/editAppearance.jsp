@@ -22,6 +22,7 @@
 <s:i18n name="localization.Continuum">
 <head>
   <title><s:text name="appearance.page.title"/></title>
+<<<<<<< HEAD
   <s:head/>
 </head>
 
@@ -40,6 +41,25 @@
     <s:textfield name="companyPom.artifactId" label="%{getText('appearance.companyPom.artifactId')}"/>
     <s:submit value="%{getText('save')}"/>
   </s:form>
+=======
+</head>
+
+<body>
+  <div class="h3">
+    <h3><s:text name="appearance.companyDetails"/></h3>
+
+    <p>
+      <s:text name="appearance.enterCompanyPom"/>
+    </p>
+
+    <s:actionmessage/>
+    <s:form method="post" action="saveAppearance" namespace="/admin" validate="true">
+      <s:textfield name="companyPom.groupId" label="%{getText('appearance.companyPom.groupId')}" size="100"/>
+      <s:textfield name="companyPom.artifactId" label="%{getText('appearance.companyPom.artifactId')}" size="100"/>
+      <s:submit value="%{getText('save')}"/>
+    </s:form>
+  </div>
+>>>>>>> refs/remotes/apache/trunk
 </body>
 </s:i18n>
 </html>

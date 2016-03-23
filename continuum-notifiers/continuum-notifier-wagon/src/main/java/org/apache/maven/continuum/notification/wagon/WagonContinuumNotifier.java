@@ -60,6 +60,7 @@ import org.apache.maven.wagon.proxy.ProxyInfo;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Configuration;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
@@ -73,6 +74,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Resource;
 
 import javax.annotation.Resource;
 
@@ -80,17 +82,24 @@ import javax.annotation.Resource;
  * @author <a href="mailto:hisidro@exist.com">Henry Isidro</a>
  * @author <a href="mailto:nramirez@exist.com">Napoleon Esmundo C. Ramirez</a>
  */
+<<<<<<< HEAD
 @Service("notifier#wagon")
+=======
+@Service( "notifier#wagon" )
+>>>>>>> refs/remotes/apache/trunk
 public class WagonContinuumNotifier
     extends AbstractContinuumNotifier
     implements Contextualizable
 {
     public static final String BUILD_OUTPUT_FILE_NAME = "buildresult.txt";
 
-    private static final String CONTEXT_MAVEN_PROJECT = "CONTEXT_MAVEN_PROJECT";
+    private static final Logger log = LoggerFactory.getLogger( WagonContinuumNotifier.class );
 
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( getClass() );
 
+=======
+>>>>>>> refs/remotes/apache/trunk
     @Resource
     private ConfigurationService configurationService;
 
@@ -103,9 +112,7 @@ public class WagonContinuumNotifier
     @Resource
     private MavenSettingsBuilder settingsBuilder;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private String localRepository;
 
     private Settings settings;
@@ -113,6 +120,10 @@ public class WagonContinuumNotifier
     private ProfileManager profileManager;
 
     private PlexusContainer container;
+
+    public WagonContinuumNotifier()
+    {
+    }
 
     public String getType()
     {
@@ -295,8 +306,8 @@ public class WagonContinuumNotifier
     private MavenProject getMavenProject( Project project, BuildDefinition buildDefinition )
         throws ContinuumException
     {
-        File projectWorkingDir =
-            new File( configurationService.getWorkingDirectory(), Integer.toString( project.getId() ) );
+        File projectWorkingDir = new File( configurationService.getWorkingDirectory(), Integer.toString(
+            project.getId() ) );
         File pomFile = new File( projectWorkingDir, buildDefinition.getBuildFile() );
 
         MavenProject mavenProject;

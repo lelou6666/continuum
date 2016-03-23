@@ -21,20 +21,30 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+>>>>>>> refs/remotes/apache/trunk
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  */
 @Repository("scheduleDao")
+=======
+ */
+@Repository( "scheduleDao" )
+@Component( role = org.apache.continuum.dao.ScheduleDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class ScheduleDaoImpl
     extends AbstractDao
     implements ScheduleDao
@@ -46,7 +56,7 @@ public class ScheduleDaoImpl
 
     public Schedule addSchedule( Schedule schedule )
     {
-        return (Schedule) addObject( schedule );
+        return addObject( schedule );
     }
 
     public Schedule getScheduleByName( String name )
@@ -113,6 +123,6 @@ public class ScheduleDaoImpl
     public Schedule getSchedule( int scheduleId )
         throws ContinuumStoreException
     {
-        return (Schedule) getObjectById( Schedule.class, scheduleId );
+        return getObjectById( Schedule.class, scheduleId );
     }
 }

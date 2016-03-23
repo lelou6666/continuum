@@ -21,6 +21,7 @@ package org.apache.maven.continuum.web.action.notifier;
 
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
+import org.codehaus.plexus.component.annotations.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,10 +31,14 @@ import java.util.Map;
  * specified {@link ProjectGroup}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="ircGroupNotifierEdit"
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 1.1
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "ircGroupNotifierEdit", instantiationStrategy = "per-lookup" )
 public class IrcGroupNotifierEditAction
     extends AbstractGroupNotifierEditAction
 {
@@ -55,36 +60,36 @@ public class IrcGroupNotifierEditAction
 
     private boolean ssl = false;
 
-    protected void initConfiguration( Map configuration )
+    protected void initConfiguration( Map<String, String> configuration )
     {
-        host = (String) configuration.get( "host" );
+        host = configuration.get( "host" );
 
         if ( configuration.get( "port" ) != null )
         {
-            port = Integer.parseInt( (String) configuration.get( "port" ) );
+            port = Integer.parseInt( configuration.get( "port" ) );
         }
 
-        channel = (String) configuration.get( "channel" );
+        channel = configuration.get( "channel" );
 
-        nick = (String) configuration.get( "nick" );
+        nick = configuration.get( "nick" );
 
-        alternateNick = (String) configuration.get( "alternateNick" );
+        alternateNick = configuration.get( "alternateNick" );
 
-        username = (String) configuration.get( "username" );
+        username = configuration.get( "username" );
 
-        fullName = (String) configuration.get( "fullName" );
+        fullName = configuration.get( "fullName" );
 
-        password = (String) configuration.get( "password" );
+        password = configuration.get( "password" );
 
         if ( configuration.get( "ssl" ) != null )
         {
-            ssl = Boolean.parseBoolean( (String) configuration.get( "ssl" ) );
+            ssl = Boolean.parseBoolean( configuration.get( "ssl" ) );
         }
     }
 
     protected void setNotifierConfiguration( ProjectNotifier notifier )
     {
-        HashMap configuration = new HashMap();
+        HashMap<String, String> configuration = new HashMap<String, String>();
 
         configuration.put( "host", host );
 

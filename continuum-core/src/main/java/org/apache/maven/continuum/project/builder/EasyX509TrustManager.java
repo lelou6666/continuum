@@ -19,16 +19,26 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
+<<<<<<< HEAD
+=======
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+>>>>>>> refs/remotes/apache/trunk
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+<<<<<<< HEAD
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +52,18 @@ public class EasyX509TrustManager implements X509TrustManager
     private X509TrustManager standardTrustManager = null;
 
     private Logger log = LoggerFactory.getLogger( getClass() );
+=======
+/**
+ * @author olamy
+ * @since 1.2.3
+ */
+public class EasyX509TrustManager
+    implements X509TrustManager
+{
+    private static final Logger log = LoggerFactory.getLogger( EasyX509TrustManager.class );
+
+    private X509TrustManager standardTrustManager = null;
+>>>>>>> refs/remotes/apache/trunk
 
     /**
      * Constructor for EasyX509TrustManager.
@@ -61,7 +83,11 @@ public class EasyX509TrustManager implements X509TrustManager
     }
 
     /**
+<<<<<<< HEAD
      * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[],String authType)
+=======
+     * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[], String authType)
+>>>>>>> refs/remotes/apache/trunk
      */
     public void checkClientTrusted( X509Certificate[] certificates, String authType )
         throws CertificateException
@@ -70,7 +96,11 @@ public class EasyX509TrustManager implements X509TrustManager
     }
 
     /**
+<<<<<<< HEAD
      * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
+=======
+     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[], String authType)
+>>>>>>> refs/remotes/apache/trunk
      */
     public void checkServerTrusted( X509Certificate[] certificates, String authType )
         throws CertificateException

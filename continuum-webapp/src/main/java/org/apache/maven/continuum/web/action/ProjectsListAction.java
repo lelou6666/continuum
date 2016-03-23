@@ -19,30 +19,34 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.continuum.buildagent.NoBuildAgentException;
+import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.dag.CycleDetectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="projects"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projects", instantiationStrategy = "per-lookup" )
 public class ProjectsListAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( ProjectsListAction.class );
+
     private List<String> selectedProjects;
-    
+
     private List<String> selectedProjectsNames;
 
     private String projectGroupName = "";
@@ -69,14 +73,14 @@ public class ProjectsListAction
         {
             return remove();
         }
-        else if ("confirmRemove".equals( methodToCall ))
+        else if ( "confirmRemove".equals( methodToCall ) )
         {
             return confirmRemove();
         }
 
         return SUCCESS;
     }
-   
+
     private String remove()
         throws ContinuumException
     {
@@ -97,14 +101,23 @@ public class ProjectsListAction
 
                 try
                 {
-                    getLogger().info( "Removing Project with id=" + projectId );
+                    AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.REMOVE_PROJECT );
+                    event.setCategory( AuditLogConstants.PROJECT );
+                    event.setCurrentUser( getPrincipal() );
+                    event.log();
 
                     getContinuum().removeProject( projectId );
                 }
                 catch ( ContinuumException e )
                 {
+<<<<<<< HEAD
                     getLogger().error( "Error removing Project with id=" + projectId );
                     addActionError( getText( "Unable to remove Project with id=" + projectId ) );
+=======
+                    logger.error( "Error removing Project with id=" + projectId );
+                    addActionError( getText( "deleteProject.error", "Unable to delete project", new Integer(
+                        projectId ).toString() ) );
+>>>>>>> refs/remotes/apache/trunk
                 }
             }
         }
@@ -126,7 +139,7 @@ public class ProjectsListAction
         }
         return "confirmRemove";
     }
-    
+
     private String build()
         throws ContinuumException
     {
@@ -142,31 +155,45 @@ public class ProjectsListAction
         if ( selectedProjects != null && !selectedProjects.isEmpty() )
         {
             ArrayList<Project> projectsList = new ArrayList<Project>();
-            for ( Iterator i = selectedProjects.iterator(); i.hasNext(); )
+            for ( String pId : selectedProjects )
             {
-                int projectId = Integer.parseInt( (String) i.next() );
+                int projectId = Integer.parseInt( pId );
                 Project p = getContinuum().getProjectWithAllDetails( projectId );
                 projectsList.add( p );
+
+                AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.FORCE_BUILD );
+                event.setCategory( AuditLogConstants.PROJECT );
+                event.setCurrentUser( getPrincipal() );
+                event.log();
             }
 
-            List<Project> sortedProjects;
+            List<Project> sortedProjects = getContinuum().getProjectsInBuildOrder( projectsList );
+
             try
             {
-                sortedProjects = getContinuum().getProjectsInBuildOrder( projectsList );
+                if ( this.getBuildDefinitionId() <= 0 )
+                {
+                    List<BuildDefinition> groupDefaultBDs = getContinuum().getDefaultBuildDefinitionsForProjectGroup(
+                        projectGroupId );
+                    getContinuum().buildProjectsWithBuildDefinition( sortedProjects, groupDefaultBDs );
+                }
+                else
+                {
+                    getContinuum().buildProjectsWithBuildDefinition( sortedProjects, buildDefinitionId );
+                }
+                addActionMessage( getText( "build.projects.success" ) );
             }
-            catch ( CycleDetectedException e )
+            catch ( BuildException be )
             {
-                sortedProjects = projectsList;
+                addActionError( be.getLocalizedMessage() );
             }
-
-            if ( this.getBuildDefinitionId() <= 0 )
+            catch ( NoBuildAgentException e )
             {
-                List<BuildDefinition> groupDefaultBDs = getContinuum().getDefaultBuildDefinitionsForProjectGroup( projectGroupId );
-                getContinuum().buildProjectsWithBuildDefinition( sortedProjects, groupDefaultBDs );
+                addActionError( getText( "projectGroup.build.error.noBuildAgent" ) );
             }
-            else
+            catch ( NoBuildAgentInGroupException e )
             {
-                getContinuum().buildProjectsWithBuildDefinition( sortedProjects, buildDefinitionId );
+                addActionError( getText( "projectGroup.build.error.noBuildAgentInGroup" ) );
             }
         }
 

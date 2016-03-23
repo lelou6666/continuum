@@ -19,6 +19,20 @@ package org.apache.continuum.taskqueueexecutor;
  * under the License.
  */
 
+<<<<<<< HEAD
+=======
+import edu.emory.mathcs.backport.java.util.concurrent.CancellationException;
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.Future;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
+import org.apache.continuum.utils.ThreadNames;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Startable;
@@ -33,6 +47,7 @@ import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+<<<<<<< HEAD
 import edu.emory.mathcs.backport.java.util.concurrent.CancellationException;
 import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
 import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
@@ -41,16 +56,26 @@ import edu.emory.mathcs.backport.java.util.concurrent.Future;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 /**
  * Modified plexus ThreadedTaskQueueExecutor
  */
 public class ParallelBuildsThreadedTaskQueueExecutor
+<<<<<<< HEAD
     implements TaskQueueExecutor, Initializable, Startable
 {
+=======
+    implements TaskQueueExecutor, Initializable, Startable, Disposable
+{
+    private static final Logger log = LoggerFactory.getLogger( ParallelBuildsThreadedTaskQueueExecutor.class );
+
+>>>>>>> refs/remotes/apache/trunk
     private static final int SHUTDOWN = 1;
 
     private static final int CANCEL_TASK = 2;
 
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( getClass() );
 
     /**
@@ -66,6 +91,15 @@ public class ParallelBuildsThreadedTaskQueueExecutor
     /**
      * @configuration 
      */
+=======
+    @Requirement
+    private TaskQueue queue;
+
+    @Requirement
+    private TaskExecutor executor;
+
+    @Configuration( "" )
+>>>>>>> refs/remotes/apache/trunk
     private String name;
 
     // ----------------------------------------------------------------------
@@ -85,6 +119,14 @@ public class ParallelBuildsThreadedTaskQueueExecutor
 
         private boolean done;
 
+<<<<<<< HEAD
+=======
+        public ExecutorRunnable()
+        {
+            super( ThreadNames.formatNext( "%s-executor", name ) );
+        }
+
+>>>>>>> refs/remotes/apache/trunk
         public void run()
         {
             while ( command != SHUTDOWN )
@@ -99,8 +141,14 @@ public class ParallelBuildsThreadedTaskQueueExecutor
                 }
                 catch ( InterruptedException e )
                 {
+<<<<<<< HEAD
                     log.info( "Executor thread interrupted, command: " +
                         ( command == SHUTDOWN ? "Shutdown" : command == CANCEL_TASK ? "Cancel task" : "Unknown" ) );
+=======
+                    log.info( "Executor thread interrupted, command: " + ( command == SHUTDOWN
+                        ? "Shutdown"
+                        : command == CANCEL_TASK ? "Cancel task" : "Unknown" ) );
+>>>>>>> refs/remotes/apache/trunk
                     continue;
                 }
 
@@ -220,8 +268,14 @@ public class ParallelBuildsThreadedTaskQueueExecutor
                 }
                 else
                 {
+<<<<<<< HEAD
                     log.warn( "Task not cancelled (Flags: done: " + future.isDone() + " cancelled: " +
                         future.isCancelled() + ")" );
+=======
+                    log.warn(
+                        "Task not cancelled (Flags: done: " + future.isDone() + " cancelled: " + future.isCancelled() +
+                            ")" );
+>>>>>>> refs/remotes/apache/trunk
                 }
             }
             else
@@ -334,6 +388,14 @@ public class ParallelBuildsThreadedTaskQueueExecutor
         }
     }
 
+<<<<<<< HEAD
+=======
+    public void dispose()
+    {
+        executorRunnable.shutdown();
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     public Task getCurrentTask()
     {
         return currentTask;

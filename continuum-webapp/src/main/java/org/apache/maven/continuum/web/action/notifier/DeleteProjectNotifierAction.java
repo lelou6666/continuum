@@ -19,24 +19,27 @@ package org.apache.maven.continuum.web.action.notifier;
  * under the License.
  */
 
+import org.apache.continuum.web.util.GenerateRecipentNotifier;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.ProjectNotifier;
-import org.apache.maven.continuum.notification.AbstractContinuumNotifier;
 import org.apache.maven.continuum.web.action.ContinuumActionSupport;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
-
-import java.util.Map;
 
 /**
  * Action that deletes a {@link ProjectNotifier} from a specified {@link Project}.
  *
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="deleteProjectNotifier"
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "deleteProjectNotifier", instantiationStrategy = "per-lookup" )
 public class DeleteProjectNotifierAction
     extends ContinuumActionSupport
 {
@@ -95,27 +98,9 @@ public class DeleteProjectNotifierAction
 
         ProjectNotifier notifier = getContinuum().getNotifier( projectId, notifierId );
 
-        Map configuration = notifier.getConfiguration();
-
         notifierType = notifier.getType();
 
-        if ( ( "mail".equals( notifierType ) ) || ( "msn".equals( notifierType ) ) ||
-            ( "jabber".equals( notifierType ) ) )
-        {
-            recipient = (String) configuration.get( AbstractContinuumNotifier.ADDRESS_FIELD );
-        }
-
-        if ( "irc".equals( notifierType ) )
-        {
-            recipient = (String) configuration.get( "host" );
-
-            if ( configuration.get( "port" ) != null )
-            {
-                recipient = recipient + ":" + (String) configuration.get( "port" );
-            }
-
-            recipient = recipient + ":" + (String) configuration.get( "channel" );
-        }
+        recipient = GenerateRecipentNotifier.generate( notifier );
 
         return "delete";
     }

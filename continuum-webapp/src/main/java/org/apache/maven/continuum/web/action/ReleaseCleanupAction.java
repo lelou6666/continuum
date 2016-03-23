@@ -19,17 +19,28 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.configuration.BuildAgentConfigurationException;
+import org.apache.continuum.release.distributed.manager.DistributedReleaseManager;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.release.ContinuumReleaseManager;
 import org.apache.maven.continuum.release.ContinuumReleaseManagerListener;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Edwin Punzalan
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="releaseCleanup"
  * 
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "releaseCleanup", instantiationStrategy = "per-lookup"  )
 public class ReleaseCleanupAction
     extends ContinuumActionSupport
 {
@@ -51,24 +62,52 @@ public class ReleaseCleanupAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
-
-        releaseManager.getReleaseResults().remove( releaseId );
-
-        ContinuumReleaseManagerListener listener =
-            (ContinuumReleaseManagerListener) releaseManager.getListeners().remove( releaseId );
-
-        if ( listener != null )
+        if ( getContinuum().getConfiguration().isDistributedBuildEnabled() )
         {
-            String goal = listener.getGoalName();
+            DistributedReleaseManager releaseManager = getContinuum().getDistributedReleaseManager();
 
-            return goal + "Finished";
+            try
+            {
+                String goal = releaseManager.releaseCleanup( releaseId );
+
+                if ( StringUtils.isNotBlank( goal ) )
+                {
+                    return goal;
+                }
+                else
+                {
+                    throw new Exception( "No listener to cleanup for id " + releaseId );
+                }
+            }
+            catch ( BuildAgentConfigurationException e )
+            {
+                List<Object> args = new ArrayList<Object>();
+                args.add( e.getMessage() );
+
+                addActionError( getText( "releaseCleanup.error", args ) );
+                return RELEASE_ERROR;
+            }
         }
         else
         {
-            throw new Exception( "No listener to cleanup for id " + releaseId );
-        }
+            ContinuumReleaseManager releaseManager = getContinuum().getReleaseManager();
 
+            releaseManager.getReleaseResults().remove( releaseId );
+
+            ContinuumReleaseManagerListener listener =
+                (ContinuumReleaseManagerListener) releaseManager.getListeners().remove( releaseId );
+
+            if ( listener != null )
+            {
+                String goal = listener.getGoalName();
+
+                return goal + "Finished";
+            }
+            else
+            {
+                throw new Exception( "No listener to cleanup for id " + releaseId );
+            }
+        }
     }
 
     public String getReleaseId()
@@ -100,5 +139,11 @@ public class ReleaseCleanupAction
         }
 
         return projectGroupName;
+    }
+
+    public int getProjectGroupId()
+        throws ContinuumException
+    {
+        return getContinuum().getProjectGroupByProjectId( projectId ).getId();
     }
 }

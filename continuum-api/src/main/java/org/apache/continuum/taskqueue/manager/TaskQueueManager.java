@@ -19,7 +19,11 @@ package org.apache.continuum.taskqueue.manager;
  * under the License.
  */
 
+<<<<<<< HEAD
 import org.codehaus.plexus.taskqueue.TaskQueue;;
+=======
+import org.codehaus.plexus.taskqueue.TaskQueue;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * @author <a href="mailto:ctan@apache.org">Maria Catherine Tan</a>
@@ -27,7 +31,11 @@ import org.codehaus.plexus.taskqueue.TaskQueue;;
 public interface TaskQueueManager
 {            
     String ROLE = TaskQueueManager.class.getName();
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     TaskQueue getPurgeQueue();
 
     boolean isInPurgeQueue( int purgeConfigurationId )
@@ -35,7 +43,7 @@ public interface TaskQueueManager
 
     /**
      * Check if the repository is already in the purging queue
-     * 
+     *
      * @param repositoryId the id of the repository purge configuration
      * @return true if the repository is in the purging queue, otherwise false
      * @throws TaskQueueManagerException
@@ -45,7 +53,7 @@ public interface TaskQueueManager
 
     /**
      * Check if the repository is being used by a project that is currently building
-     * 
+     *
      * @param repositoryId the id of the local repository
      * @return true if the repository is in use, otherwise false
      * @throws TaskQueueManagerException
@@ -55,20 +63,32 @@ public interface TaskQueueManager
 
     /**
      * Check whether a project is in the release stage based on the given releaseId.
+<<<<<<< HEAD
      * 
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param releaseId
      * @return
      * @throws TaskQueueManagerException
      */
     boolean isProjectInReleaseStage( String releaseId )
+<<<<<<< HEAD
         throws TaskQueueManagerException;        
     
     boolean releaseInProgress()
         throws TaskQueueManagerException;
 
+=======
+        throws TaskQueueManagerException;
+
+    boolean releaseInProgress()
+        throws TaskQueueManagerException;
+
+>>>>>>> refs/remotes/apache/trunk
     /**
      * Remove local repository from the purge queue
-     * 
+     *
      * @param purgeConfigId the id of the purge configuration
      * @return true if the purge configuration was successfully removed from the purge queue, otherwise false
      * @throws TaskQueueManagerException
@@ -78,7 +98,7 @@ public interface TaskQueueManager
 
     /**
      * Remove local repositories from the purge queue
-     * 
+     *
      * @param purgeConfigIds the ids of the purge configuration
      * @return true if the purge configurations were successfully removed from the purge queue, otherwise false
      * @throws TaskQueueManagerException
@@ -88,7 +108,7 @@ public interface TaskQueueManager
 
     /**
      * Remove local repository from the purge queue
-     * 
+     *
      * @param repositoryId the id of the local repository
      * @throws TaskQueueManagerException
      */

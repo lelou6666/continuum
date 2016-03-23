@@ -55,13 +55,13 @@
           <role>org.apache.maven.continuum.reports.surefire.ReportTestSuiteGenerator</role>
           <field-name>reportTestSuiteGenerator</field-name>
           <role-hint>default</role-hint>
-        </requirement>         
+        </requirement>
       </requirements>
       <configuration>
         <fromMailbox>continuum@localhost</fromMailbox>
         <fromName>Continuum</fromName>
         <timestampFormat>EEE, d MMM yyyy HH:mm:ss Z</timestampFormat>
-        <includeBuildResult>true</includeBuildResult>
+        <includeBuildOutput>true</includeBuildOutput>
       </configuration>
     </component>
 

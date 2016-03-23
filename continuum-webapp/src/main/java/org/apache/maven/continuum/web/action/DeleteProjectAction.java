@@ -19,18 +19,25 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork2.Action" role-hint="deleteProject"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "deleteProject", instantiationStrategy = "per-lookup"  )
 public class DeleteProjectAction
     extends ContinuumActionSupport
 {
+    private Logger logger = LoggerFactory.getLogger( this.getClass() );
+
     private int projectId;
 
     private String projectName;
@@ -51,7 +58,21 @@ public class DeleteProjectAction
             return REQUIRES_AUTHORIZATION;
         }
 
-        getContinuum().removeProject( projectId );
+        AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.REMOVE_PROJECT );
+        event.setCurrentUser( getPrincipal() );
+        event.setCategory( AuditLogConstants.PROJECT );
+        event.log();
+
+        try
+        {
+            getContinuum().removeProject( projectId );
+        }
+        catch ( ContinuumException e )
+        {
+            logger.error( "Error removing project with id " + projectId, e );
+            addActionError( getText( "deleteProject.error", "Unable to delete project", new Integer(
+                projectId ).toString() ) );
+        }
 
         return SUCCESS;
     }
@@ -115,7 +136,9 @@ public class DeleteProjectAction
             }
             else
             {
-                projectGroupName = getContinuum().getProjectGroupByProjectId( projectId ).getName();
+                ProjectGroup group = getContinuum().getProjectGroupByProjectId( projectId );
+                projectGroupName = group.getName();
+                projectGroupId = group.getId();
             }
         }
 

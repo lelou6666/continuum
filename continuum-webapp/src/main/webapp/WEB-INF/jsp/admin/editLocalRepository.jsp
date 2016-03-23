@@ -17,9 +17,7 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/struts-tags" prefix="s" %>
-<%@ taglib uri="continuum" prefix="c1" %>
 <html>
   <s:i18n name="localization.Continuum">
 <head>
@@ -28,10 +26,22 @@
 <body>
 <div class="app">
   <div id="axial" class="h3">
-    <h3><s:text name="repository.page.title"/></h3>
+    <h3><s:text name="repository.section.title"/></h3>
+
+    <s:if test="hasActionErrors()">
+      <div class="errormessage">
+        <s:actionerror/>
+      </div>
+    </s:if>
+    <s:if test="hasActionMessages()">
+      <div class="warningmessage">
+        <s:actionmessage/>
+      </div>
+    </s:if>
 
     <div class="axial">
       <s:form action="saveRepository" method="post" validate="true">
+<<<<<<< HEAD
         <c:if test="${!empty actionErrors}">
           <div class="errormessage">
             <s:iterator value="actionErrors">
@@ -40,9 +50,11 @@
           </div>
         </c:if>
 
+=======
+>>>>>>> refs/remotes/apache/trunk
           <table>
-            <s:textfield label="%{getText('repository.name.label')}" name="repository.name" required="true" disabled="%{defaultRepo}"/>
-            <s:textfield label="%{getText('repository.location.label')}" name="repository.location" required="true" disabled="%{defaultRepo}"/>
+            <s:textfield label="%{getText('repository.name.label')}" name="repository.name" requiredLabel="true" disabled="%{defaultRepo}" size="100"/>
+            <s:textfield label="%{getText('repository.location.label')}" name="repository.location" requiredLabel="true" disabled="%{defaultRepo}" size="100"/>
             <s:select label="%{getText('repository.layout.label')}" name="repository.layout" list="layouts" disabled="%{defaultRepo}"/>
           </table>
           <s:hidden name="repository.id"/>
@@ -52,7 +64,8 @@
             <s:hidden name="repository.layout"/>
           </s:if>
           <div class="functnbar3">
-            <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
           </div>
         
       </s:form>

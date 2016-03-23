@@ -25,6 +25,8 @@ import org.apache.xmlrpc.server.PropertyHandlerMapping;
 import org.apache.xmlrpc.server.RequestProcessorFactoryFactory;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
@@ -32,18 +34,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.xmlrpc.server.PropertyHandlerMapping"
  */
+@Component( role = org.apache.xmlrpc.server.PropertyHandlerMapping.class )
 public class PropertiesHandlerMapping
     extends PropertyHandlerMapping
     implements Contextualizable
 {
+<<<<<<< HEAD
     private Logger log = LoggerFactory.getLogger( PropertiesHandlerMapping.class );
 
     /**
@@ -51,14 +52,20 @@ public class PropertiesHandlerMapping
      */
     private Map xmlrpcComponents;
 
+=======
+    private static final Logger log = LoggerFactory.getLogger( PropertiesHandlerMapping.class );
+
+    @Requirement( role = org.apache.maven.continuum.xmlrpc.server.ContinuumXmlRpcComponent.class )
+    private Map<String, Object> xmlrpcComponents;
+
+>>>>>>> refs/remotes/apache/trunk
     private PlexusContainer container;
 
     public void load()
         throws XmlRpcException
     {
-        for ( Iterator i = xmlrpcComponents.keySet().iterator(); i.hasNext(); )
+        for ( String key : xmlrpcComponents.keySet() )
         {
-            String key = (String) i.next();
             Class cl = xmlrpcComponents.get( key ).getClass();
             if ( log.isDebugEnabled() )
             {
@@ -71,9 +78,13 @@ public class PropertiesHandlerMapping
         if ( log.isDebugEnabled() )
         {
             String[] methods = getListMethods();
-            for ( int i = 0; i < methods.length; i++ )
+            for ( String method : methods )
             {
+<<<<<<< HEAD
                 log.debug( methods[i] );
+=======
+                log.debug( method );
+>>>>>>> refs/remotes/apache/trunk
             }
         }
     }

@@ -19,10 +19,17 @@ package org.apache.continuum.buildqueue;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 
 import org.apache.maven.continuum.model.project.BuildQueue;
 
+=======
+import org.apache.maven.continuum.model.project.BuildQueue;
+
+import java.util.List;
+
+>>>>>>> refs/remotes/apache/trunk
 /**
  * @author <a href="mailto:oching@apache.org">Maria Odea Ching</a>
  */
