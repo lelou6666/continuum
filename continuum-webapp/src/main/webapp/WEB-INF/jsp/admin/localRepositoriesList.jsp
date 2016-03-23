@@ -17,6 +17,7 @@
   ~ under the License.
   --%>
   
+<<<<<<< HEAD
 <%@ taglib uri="/webwork" prefix="ww" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
@@ -38,6 +39,32 @@
         <ww:set name="repositories" value="repositories" scope="request"/>
         <ec:table items="repositories"
                   var="repository"
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
+<html>
+  <s:i18n name="localization.Continuum">
+    <head>
+        <title><s:text name="repositories.page.title"/></title>
+    </head>
+    <body>
+      <div id="h3">
+        <h3><s:text name="repositories.section.title"/></h3>
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+        <s:set name="repositories" value="repositories" scope="request"/>
+        <ec:table items="repositories"
+                  var="repository"
+                  autoIncludeParameters="false"
+>>>>>>> refs/remotes/apache/trunk
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -48,6 +75,7 @@
             <ec:column property="location" title="repositories.table.location"/>
             <ec:column property="layout" title="repositories.table.layout"/>
             <ec:column property="editActions" title="&nbsp;" width="1%">
+<<<<<<< HEAD
                 <ww:url id="editRepositoryUrl" action="editRepository">
                   <ww:param name="repository.id" value="${pageScope.repository.id}"/>
                 </ww:url>
@@ -86,15 +114,62 @@
                     <ww:a href="%{removeRepositoryUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
                   </c:otherwise>
                 </c:choose>
+=======
+                <s:url id="editRepositoryUrl" action="editRepository">
+                  <s:param name="repository.id" value="#attr['repository'].id"/>
+                </s:url>
+                <s:if test="#attr['repository'].name == 'DEFAULT'">
+                    <img src="<s:url value='/images/edit_disabled.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" />
+                </s:if>
+                <s:else>
+                    <s:a href="%{editRepositoryUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" /></s:a>
+                </s:else>
+            </ec:column>
+            <ec:column property="purgeActions" title="&nbsp;" width="1%">
+              <s:set var="repositoryName" value="#attr['repository'].name" scope="request"/>
+              <s:if test="defaultPurgeMap[#attr['repositoryName']]">
+                  <s:url id="purgeRepositoryUrl" action="purgeRepository">
+                    <s:param name="repository.id" value="#attr['repository'].id"/>
+                  </s:url>
+                  <s:a href="%{purgeRepositoryUrl}"><img src="<s:url value='/images/purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+              </s:if>
+              <s:else>
+                  <s:a href="%{purgeRepositoryUrl}"><img src="<s:url value='/images/disabled_purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+              </s:else>
+            </ec:column>
+            <ec:column property="deleteActions" title="&nbsp;" width="1%">
+                <s:set var="tname" value="'remRepoToken' + #attr['repository'].id" scope="page"/>
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removeRepositoryUrl" action="removeRepository">
+                  <s:param name="repository.id" value="#attr['repository'].id"/>
+                  <s:param name="struts.token.name" value="#attr['tname']"/>
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+                </s:url>
+                <s:if test="#attr['repository'].name == 'DEFAULT'">
+                    <img src="<s:url value='/images/delete_disabled.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0">
+                </s:if>
+                <s:else>
+                    <s:a href="%{removeRepositoryUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+                </s:else>
+>>>>>>> refs/remotes/apache/trunk
             </ec:column>
           </ec:row>
         </ec:table>
       </div>
       <div class="functnbar3">
+<<<<<<< HEAD
         <ww:form action="editRepository" method="post">
           <ww:submit value="%{getText('add')}"/>
         </ww:form>
       </div>
     </body>
   </ww:i18n>
+=======
+        <s:form action="editRepository" method="post">
+          <s:submit value="%{getText('add')}"/>
+        </s:form>
+      </div>
+    </body>
+  </s:i18n>
+>>>>>>> refs/remotes/apache/trunk
 </html>

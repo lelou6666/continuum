@@ -19,7 +19,6 @@ package org.apache.maven.continuum.web.util;
  * under the License.
  */
 
-import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
@@ -31,16 +30,14 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class WorkingCopyContentGenerator
-    extends AbstractLogEnabled
 {
     private File basedir;
 
     private String urlParamSeparator;
 
-    private static DecimalFormat decFormatter = new DecimalFormat( "###.##" );
+    private static final DecimalFormat decFormatter = new DecimalFormat( "###.##" );
 
     private static final long KILO = 1024;
 
@@ -106,8 +103,8 @@ public class WorkingCopyContentGenerator
                 }
                 else
                 {
-                    userDirectory =
-                        f.getParentFile().getAbsolutePath().substring( basedir.getAbsolutePath().length() + 1 );
+                    userDirectory = f.getParentFile().getAbsolutePath().substring(
+                        basedir.getAbsolutePath().length() + 1 );
                 }
 
                 userDirectory = StringUtils.replace( userDirectory, "\\", "/" );
@@ -118,8 +115,8 @@ public class WorkingCopyContentGenerator
                     imagesBaseUrl ).append( "file.gif\">&nbsp;<a href=\"" ).append( baseUrl ).append(
                     urlParamSeparator ).append( "userDirectory=" ).append( userDirectory ).append( "&file=" ).append(
                     fileName ).append( "\">" ).append( fileName ).append( "</a></td><td width=\"1%\">" ).append(
-                    getReadableFileSize( f.length() ) ).append( "</td><td width=\"1%\">" ).append(
-                    getFormattedDate( f.lastModified() ) ).append( "</td>\n" );
+                    getReadableFileSize( f.length() ) ).append( "</td><td width=\"1%\">" ).append( getFormattedDate(
+                    f.lastModified() ) ).append( "</td>\n" );
                 buf.append( "</tr>\n" );
 
                 odd = !odd;

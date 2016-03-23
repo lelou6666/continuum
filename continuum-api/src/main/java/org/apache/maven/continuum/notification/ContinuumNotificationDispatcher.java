@@ -19,13 +19,13 @@ package org.apache.maven.continuum.notification;
  * under the License.
  */
 
+import org.apache.continuum.model.project.ProjectScmRoot;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  * @todo use build result for all of these? need project for those that do?
  */
 public interface ContinuumNotificationDispatcher
@@ -47,6 +47,8 @@ public interface ContinuumNotificationDispatcher
     String MESSAGE_ID_GOALS_COMPLETED = "GoalsCompleted";
 
     String MESSAGE_ID_BUILD_COMPLETE = "BuildComplete";
+
+    String MESSAGE_ID_PREPARE_BUILD_COMPLETE = "PrepareBuildComplete";
 
     String CONTEXT_BUILD = "build";
 
@@ -77,4 +79,6 @@ public interface ContinuumNotificationDispatcher
     void goalsCompleted( Project project, BuildDefinition buildDefinition, BuildResult buildResult );
 
     void buildComplete( Project project, BuildDefinition buildDefinition, BuildResult buildResult );
+
+    void prepareBuildComplete( ProjectScmRoot projectScmRoot );
 }

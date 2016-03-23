@@ -23,18 +23,18 @@ import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
  * AddBuildDefinitionToProjectAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="add-build-definition-to-project-group"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "add-build-definition-to-project-group" )
 public class AddBuildDefinitionToProjectGroupAction
     extends AbstractBuildDefinitionContinuumAction
 {
@@ -44,35 +44,52 @@ public class AddBuildDefinitionToProjectGroupAction
     private ProjectGroupDao projectGroupDao;
 
 
-    public void execute( Map map )
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    public void execute( Map context )
         throws Exception
     {
+<<<<<<< HEAD
         int projectGroupId = getProjectGroupId( map );
         ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
         BuildDefinitionTemplate buildDefinitionTemplate = getBuildDefinitionTemplate( map );
+=======
+        int projectGroupId = getProjectGroupId( context );
+        ProjectGroup projectGroup = projectGroupDao.getProjectGroupWithBuildDetailsByProjectGroupId( projectGroupId );
+        BuildDefinitionTemplate buildDefinitionTemplate = getBuildDefinitionTemplate( context );
+>>>>>>> refs/remotes/apache/trunk
         if ( buildDefinitionTemplate != null )
         {
-            for ( Iterator<BuildDefinition> iterator = buildDefinitionTemplate.getBuildDefinitions().iterator();
-                  iterator.hasNext(); )
+            for ( BuildDefinition buildDefinition : (List<BuildDefinition>) buildDefinitionTemplate.getBuildDefinitions() )
             {
-                BuildDefinition buildDefinition = iterator.next();
                 resolveDefaultBuildDefinitionsForProjectGroup( buildDefinition, projectGroup );
 
                 projectGroup.addBuildDefinition( buildDefinition );
+<<<<<<< HEAD
 
                 projectGroupDao.updateProjectGroup( projectGroup );
+=======
+>>>>>>> refs/remotes/apache/trunk
             }
         }
         else
         {
-            BuildDefinition buildDefinition = getBuildDefinition( map );
+            BuildDefinition buildDefinition = getBuildDefinition( context );
 
             resolveDefaultBuildDefinitionsForProjectGroup( buildDefinition, projectGroup );
 
             projectGroup.addBuildDefinition( buildDefinition );
+<<<<<<< HEAD
 
             projectGroupDao.updateProjectGroup( projectGroup );
+=======
+>>>>>>> refs/remotes/apache/trunk
         }
+
+        // Save the project group
+        projectGroupDao.updateProjectGroup( projectGroup );
+
         //map.put( AbstractContinuumAction.KEY_BUILD_DEFINITION, buildDefinition );
     }
 }

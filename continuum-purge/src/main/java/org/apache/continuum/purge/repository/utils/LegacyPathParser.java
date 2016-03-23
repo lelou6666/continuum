@@ -25,12 +25,21 @@ import org.apache.maven.archiva.repository.content.ArtifactClassifierMapping;
 import org.apache.maven.archiva.repository.content.ArtifactExtensionMapping;
 import org.apache.maven.archiva.repository.content.PathParser;
 import org.apache.maven.archiva.repository.layout.LayoutException;
+<<<<<<< HEAD
 
 /**
  * Codes were taken from Archiva's LegacyPathParser and made some few changes.
  *
  * @plexus.component role="org.apache.maven.archiva.repository.content.PathParser" role-hint="legacy-parser"
  */
+=======
+import org.codehaus.plexus.component.annotations.Component;
+
+/**
+ * Codes were taken from Archiva's LegacyPathParser and made some few changes.
+ */
+@Component( role = org.apache.maven.archiva.repository.content.PathParser.class, hint = "legacy-parser" )
+>>>>>>> refs/remotes/apache/trunk
 public class LegacyPathParser
     implements PathParser
 {
@@ -57,8 +66,13 @@ public class LegacyPathParser
         {
             // Illegal Path Parts Length.
             throw new LayoutException( INVALID_ARTIFACT_PATH +
+<<<<<<< HEAD
                 "legacy paths should only have 3 parts [groupId]/[type]s/[artifactId]-[version].[type], found " +
                 pathParts.length + " instead." );
+=======
+                                           "legacy paths should only have 3 parts [groupId]/[type]s/[artifactId]-[version].[type], found "
+                                           + pathParts.length + " instead." );
+>>>>>>> refs/remotes/apache/trunk
         }
 
         // The Group ID.
@@ -71,7 +85,11 @@ public class LegacyPathParser
         if ( !expectedType.endsWith( "s" ) )
         {
             throw new LayoutException( INVALID_ARTIFACT_PATH +
+<<<<<<< HEAD
                 "legacy paths should have an expected type ending in [s] in the second part of the path." );
+=======
+                                           "legacy paths should have an expected type ending in [s] in the second part of the path." );
+>>>>>>> refs/remotes/apache/trunk
         }
 
         // The Filename.
@@ -148,8 +166,13 @@ public class LegacyPathParser
 
         // Set Type
         String defaultExtension = expectedType.substring( 0, expectedType.length() - 1 );
+<<<<<<< HEAD
         artifact.setType(
             ArtifactExtensionMapping.mapExtensionAndClassifierToType( classifier, extension, defaultExtension ) );
+=======
+        artifact.setType( ArtifactExtensionMapping.mapExtensionAndClassifierToType( classifier, extension,
+                                                                                    defaultExtension ) );
+>>>>>>> refs/remotes/apache/trunk
 
         // Sanity Check: does it have an extension?
         if ( StringUtils.isEmpty( artifact.getType() ) )
@@ -170,8 +193,14 @@ public class LegacyPathParser
             if ( !expectedExtension.equals( extension ) )
             {
                 throw new LayoutException( INVALID_ARTIFACT_PATH + "mismatch on extension [" + extension +
+<<<<<<< HEAD
                     "] and layout specified type [" + artifact.getType() + "] (which maps to extension: [" +
                     expectedExtension + "]) on path [" + path + "]" );
+=======
+                                               "] and layout specified type [" + artifact.getType() +
+                                               "] (which maps to extension: [" +
+                                               expectedExtension + "]) on path [" + path + "]" );
+>>>>>>> refs/remotes/apache/trunk
             }
         }
 

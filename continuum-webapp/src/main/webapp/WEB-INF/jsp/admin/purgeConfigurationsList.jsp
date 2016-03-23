@@ -17,6 +17,7 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri="/webwork" prefix="ww" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
@@ -41,6 +42,34 @@
         <ww:set name="repoPurgeConfigs" value="repoPurgeConfigs" scope="request"/>
         <ec:table items="repoPurgeConfigs"
                   var="repoPurge"
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
+<%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
+
+<html>
+  <s:i18n name="localization.Continuum">
+    <head>
+      <title><s:text name="purgeConfigs.page.title"/></title>
+    </head>
+    <body>
+      <div id="h3">
+        <h3><s:text name="purgeConfigs.repo.section.title"/></h3>
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
+        <s:set name="repoPurgeConfigs" value="repoPurgeConfigs" scope="request"/>
+        <ec:table items="repoPurgeConfigs"
+                  var="repoPurge"
+                  autoIncludeParameters="false"
+>>>>>>> refs/remotes/apache/trunk
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -49,6 +78,7 @@
          <ec:row>
             <ec:column property="repository.name" title="purgeConfigs.table.repository">
               <redback:ifAuthorized permission="continuum-manage-repositories">
+<<<<<<< HEAD
                 <ww:url id="editRepositoryUrl" action="editRepository" namespace="/admin" includeParams="none">
                   <ww:param name="repository.id">${pageScope.repoPurge.repository.id}</ww:param>
                 </ww:url>
@@ -56,6 +86,15 @@
               </redback:ifAuthorized>
               <redback:elseAuthorized>
                 ${pageScope.repoPurge.repository.name}
+=======
+                <s:url id="editRepositoryUrl" action="editRepository" namespace="/admin" includeParams="none">
+                  <s:param name="repository.id" value="#attr['repoPurge'].repository.id"/>
+                </s:url>
+                <s:a href="%{editRepositoryUrl}"><s:property value="#attr['repoPurge'].repository.name"/></s:a>
+              </redback:ifAuthorized>
+              <redback:elseAuthorized>
+                <s:property value="#attr['repoPurge'].repository.name}"/>
+>>>>>>> refs/remotes/apache/trunk
               </redback:elseAuthorized>
             </ec:column>
             <ec:column property="daysOlder" title="purgeConfigs.table.daysOlder"/>
@@ -67,6 +106,7 @@
             <ec:column property="enabled" title="purgeConfigs.table.enabled"/>
             <ec:column property="description" title="purgeConfigs.table.description"/>
             <ec:column property="editActions" title="&nbsp;" width="1%">
+<<<<<<< HEAD
                 <ww:url id="editPurgeConfigUrl" action="editPurgeConfig">
                   <ww:param name="purgeConfigId" value="${pageScope.repoPurge.id}"/>
                 </ww:url>
@@ -83,11 +123,35 @@
                   <ww:param name="purgeConfigId" value="${pageScope.repoPurge.id}"/>                 
                 </ww:url>
                 <ww:a href="%{removePurgeConfigUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
+=======
+                <s:url id="editPurgeConfigUrl" action="editPurgeConfig">
+                  <s:param name="purgeConfigId"><s:property value="#attr['repoPurge'].id"/></s:param>
+                </s:url>
+                <s:a href="%{editPurgeConfigUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" /></s:a>
+            </ec:column>
+            <ec:column property="purgeActions" title="&nbsp;" width="1%">
+                <s:url id="purgeUrl" action="doPurge">
+                  <s:param name="purgeConfigId" value="#attr['repoPurge'].id"/>
+                </s:url>
+                <s:a href="%{purgeUrl}"><img src="<s:url value='/images/purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+            </ec:column>
+            <ec:column property="deleteActions" title="&nbsp;" width="1%">
+                <s:set var="tname" value="'repoPurgeToken' + #attr['repoPurge'].id" scope="page"/>
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removePurgeConfigUrl" action="removePurgeConfig">
+                  <s:param name="purgeConfigId" value="#attr['repoPurge'].id"/>
+                  <s:param name="description" value="#attr['repoPurge'].description"/>
+                  <s:param name="struts.token.name" value="#attr['tname']"/>
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+                </s:url>
+                <s:a href="%{removePurgeConfigUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+>>>>>>> refs/remotes/apache/trunk
             </ec:column>
           </ec:row>
         </ec:table>
       </div>
       <div class="functnbar3">
+<<<<<<< HEAD
         <ww:form name="addRepoPurgeConfig" action="editPurgeConfig" method="post">
           <ww:hidden name="purgeType" value="repository"/>
           <ww:submit value="%{getText('add')}"/>
@@ -99,6 +163,20 @@
         <ww:set name="dirPurgeConfigs" value="dirPurgeConfigs" scope="request"/>
         <ec:table items="dirPurgeConfigs"
                   var="dirPurge"
+=======
+        <s:form name="addRepoPurgeConfig" action="editPurgeConfig" method="post">
+          <s:hidden name="purgeType" value="repository"/>
+          <s:submit value="%{getText('add')}" theme="simple"/>
+        </s:form>
+      </div>
+        
+      <div id="h3">
+        <h3><s:text name="purgeConfigs.dir.section.title"/></h3>
+        <s:set name="dirPurgeConfigs" value="dirPurgeConfigs" scope="request"/>
+        <ec:table items="dirPurgeConfigs"
+                  var="dirPurge"
+                  autoIncludeParameters="false"
+>>>>>>> refs/remotes/apache/trunk
                   showExports="false"
                   showPagination="false"
                   showStatusBar="false"
@@ -114,6 +192,7 @@
             <ec:column property="enabled" title="purgeConfigs.table.enabled"/>
             <ec:column property="description" title="purgeConfigs.table.description"/>
             <ec:column property="editActions" title="&nbsp;" width="1%">
+<<<<<<< HEAD
                 <ww:url id="editPurgeConfigUrl" action="editPurgeConfig">
                   <ww:param name="purgeConfigId" value="${pageScope.dirPurge.id}"/>
                 </ww:url>
@@ -130,11 +209,35 @@
                   <ww:param name="purgeConfigId" value="${pageScope.dirPurge.id}"/>                 
                 </ww:url>
                 <ww:a href="%{removePurgeConfigUrl}"><img src="<ww:url value='/images/delete.gif' includeParams="none"/>" alt="<ww:text name='delete'/>" title="<ww:text name='delete'/>" border="0"></ww:a>
+=======
+                <s:url id="editPurgeConfigUrl" action="editPurgeConfig">
+                  <s:param name="purgeConfigId" value="#attr['dirPurge'].id"/>
+                </s:url>
+                <s:a href="%{editPurgeConfigUrl}"><img src="<s:url value='/images/edit.gif' includeParams="none"/>" alt="<s:text name='edit'/>" title="<s:text name='edit'/>" border="0" /></s:a>
+            </ec:column>
+            <ec:column property="purgeActions" title="&nbsp;" width="1%">
+                <s:url id="purgeUrl" action="doPurge">
+                  <s:param name="purgeConfigId" value="#attr['dirPurge'].id"/>
+                </s:url>
+                <s:a href="%{purgeUrl}"><img src="<s:url value='/images/purgenow.gif' includeParams="none"/>" alt="<s:text name='purge'/>" title="<s:text name='purge'/>" border="0" /></s:a>
+            </ec:column>
+            <ec:column property="deleteActions" title="&nbsp;" width="1%">
+                <s:set var="tname" value="'dirPurgeToken' + #attr['dirPurge'].id" scope="page"/>
+                <s:token name="%{#attr['tname']}"/>
+                <s:url id="removePurgeConfigUrl" action="removePurgeConfig">
+                  <s:param name="purgeConfigId" value="#attr['dirPurge'].id"/>
+                  <s:param name="description" value="#attr['dirPurge'].description"/>
+                  <s:param name="struts.token.name" value="#attr['tname']"/>
+                  <s:param name="%{#attr['tname']}" value="#session['struts.tokens.' + #attr['tname']]"/>
+                </s:url>
+                <s:a href="%{removePurgeConfigUrl}"><img src="<s:url value='/images/delete.gif' includeParams="none"/>" alt="<s:text name='delete'/>" title="<s:text name='delete'/>" border="0"></s:a>
+>>>>>>> refs/remotes/apache/trunk
             </ec:column>
           </ec:row>
         </ec:table>
       </div>
       <div class="functnbar3">
+<<<<<<< HEAD
         <ww:form name="addDirPurgeConfig" action="editPurgeConfig" method="post">
           <ww:hidden name="purgeType" value="directory"/>
           <ww:submit value="%{getText('add')}"/>
@@ -142,4 +245,13 @@
       </div>
     </body>
   </ww:i18n>
+=======
+        <s:form name="addDirPurgeConfig" action="editPurgeConfig" method="post">
+          <s:hidden name="purgeType" value="directory"/>
+          <s:submit value="%{getText('add')}" theme="simple"/>
+        </s:form>
+      </div>
+    </body>
+  </s:i18n>
+>>>>>>> refs/remotes/apache/trunk
 </html>

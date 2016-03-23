@@ -23,15 +23,22 @@ import org.apache.continuum.dao.DaoUtils;
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.Schedule;
+<<<<<<< HEAD
+=======
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * @author <a href="mailto:olamy@codehaus.org">olamy</a>
- * @version $Id$
  * @since 4 juin 07
  */
 public class DefaultContinuumInitializerTest
     extends AbstractContinuumTest
 {
+<<<<<<< HEAD
     protected void setUp()
         throws Exception
     {
@@ -43,6 +50,19 @@ public class DefaultContinuumInitializerTest
         continuumInitializer.initialize();
     }
 
+=======
+    @Before
+    public void setUp()
+        throws Exception
+    {
+        DaoUtils daoUtils = lookup( DaoUtils.class );
+        daoUtils.eraseDatabase();
+        ContinuumInitializer continuumInitializer = lookup( ContinuumInitializer.class, "default" );
+        continuumInitializer.initialize();
+    }
+
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testDefaultSchedule()
         throws Exception
     {

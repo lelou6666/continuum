@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.appareance;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,58 +18,82 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.appareance;
 
-import java.util.Calendar;
-
+import org.apache.continuum.web.appearance.ContinuumAppearance;
+import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Reader;
+import org.apache.continuum.web.appearance.io.xpp3.ContinuumAppearanceModelsXpp3Writer;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
-import org.codehaus.plexus.registry.Registry;
-import org.codehaus.plexus.registry.RegistryException;
+import org.codehaus.plexus.util.ReaderFactory;
 import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Calendar;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 10 nov. 07
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.web.appareance.AppareanceConfiguration" role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.web.appareance.AppareanceConfiguration.class, hint = "default" )
 public class DefaultAppareanceConfiguration
     implements AppareanceConfiguration, Initializable
 {
+    private static final Logger log = LoggerFactory.getLogger( DefaultAppareanceConfiguration.class );
 
-    private String FOOTER_REGISTRY_KEY = "footer";
-    
-    private String REGISTRY_SECTION_KEY = "org.apache.maven.continuum.user";
-    
     private String footer;
-    
-    /**
-     * @plexus.requirement role-hint="commons-configuration"
-     */
-    private Registry registry;
-    
+
+    public static final String APPEARANCE_FILE_NAME = "continuum-appearance.xml";
+
+    private ContinuumAppearance continuumAppearance = new ContinuumAppearance();
+
     // ------------------------------------------------
     //  Plexus Lifecycle
     // ------------------------------------------------
-    
+
     public void initialize()
         throws InitializationException
     {
-        Registry continuumRegistry = getContinuumRegistry();
-        if (continuumRegistry != null)
-        {
-            this.footer = continuumRegistry.getString( FOOTER_REGISTRY_KEY );
-        }
 
+        File appearanceConfFile = getAppearanceConfigurationFile();
+
+        if ( appearanceConfFile.exists() )
+        {
+            try
+            {
+                ContinuumAppearanceModelsXpp3Reader appearanceReader = new ContinuumAppearanceModelsXpp3Reader();
+                this.continuumAppearance = appearanceReader.read( ReaderFactory.newXmlReader( appearanceConfFile ) );
+                if ( continuumAppearance != null )
+                {
+                    this.footer = continuumAppearance.getFooter();
+                }
+            }
+            catch ( IOException e )
+            {
+                log.warn(
+                    "skip IOException reading appearance file " + APPEARANCE_FILE_NAME + ", msg " + e.getMessage() );
+            }
+            catch ( XmlPullParserException e )
+            {
+                log.warn( "skip XmlPullParserException reading appearance file " + APPEARANCE_FILE_NAME + ", msg " +
+                              e.getMessage() );
+            }
+        }
         if ( StringUtils.isEmpty( this.footer ) )
         {
             // initiate with default footer (save in registry ?)
             this.footer = getDefaultFooter();
         }
     }
-    
-    /** 
+
+    /**
      * @see org.apache.maven.continuum.web.appareance.AppareanceConfiguration#getFooter()
      */
     public String getFooter()
@@ -75,26 +101,25 @@ public class DefaultAppareanceConfiguration
         return this.footer;
     }
 
-    /** 
+    /**
      * @see org.apache.maven.continuum.web.appareance.AppareanceConfiguration#saveFooter(java.lang.String)
      */
     public void saveFooter( String footerHtmlContent )
-        throws RegistryException
+        throws IOException
     {
-        Registry continuumRegistry = getContinuumRegistry();
-        
-        continuumRegistry.setString( FOOTER_REGISTRY_KEY, footerHtmlContent );
-        continuumRegistry.save();
-        this.footer = footerHtmlContent;
-    }
+        String safeFooterHtmlContent = Jsoup.clean( footerHtmlContent, Whitelist.basic() );
 
-    // ------------------------------------------------
-    //  Internal stuff
-    // ------------------------------------------------
-
-    private Registry getContinuumRegistry()
-    {
-        return registry.getSection( REGISTRY_SECTION_KEY );
+        continuumAppearance.setFooter( safeFooterHtmlContent );
+        ContinuumAppearanceModelsXpp3Writer writer = new ContinuumAppearanceModelsXpp3Writer();
+        File confFile = getAppearanceConfigurationFile();
+        if ( !confFile.exists() )
+        {
+            confFile.getParentFile().mkdirs();
+        }
+        FileWriter fileWriter = new FileWriter( confFile );
+        writer.write( fileWriter, continuumAppearance );
+        fileWriter.close();
+        this.footer = safeFooterHtmlContent;
     }
 
     private String getDefaultFooter()
@@ -104,10 +129,15 @@ public class DefaultAppareanceConfiguration
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append( "<div class=\"xright\">" );
         stringBuilder.append( "Copyright &copy; " );
-        stringBuilder.append( String.valueOf( inceptionYear ) + "-" + String.valueOf( currentYear ) );
+        stringBuilder.append( String.valueOf( inceptionYear ) ).append( "-" ).append( String.valueOf( currentYear ) );
         stringBuilder.append( "&nbsp;The Apache Software Foundation" );
         stringBuilder.append( "</div> <div class=\"clear\"><hr/></div>" );
         return stringBuilder.toString();
-    }    
-    
+    }
+
+    private File getAppearanceConfigurationFile()
+    {
+        return new File( System.getProperty( "appserver.base" ) + File.separator + "conf" + File.separator +
+                             APPEARANCE_FILE_NAME );
+    }
 }

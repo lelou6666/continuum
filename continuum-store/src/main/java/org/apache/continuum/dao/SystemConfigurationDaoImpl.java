@@ -21,21 +21,36 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+>>>>>>> refs/remotes/apache/trunk
 
 import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.SystemConfigurationDao"
  */
+=======
+ */
+@Repository( "systemConfigurationDao" )
+@Component( role = org.apache.continuum.dao.SystemConfigurationDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class SystemConfigurationDaoImpl
     extends AbstractDao
     implements SystemConfigurationDao
 {
     public SystemConfiguration addSystemConfiguration( SystemConfiguration systemConf )
     {
+<<<<<<< HEAD
         return (SystemConfiguration) addObject( systemConf );
+=======
+        return addObject( systemConf );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void updateSystemConfiguration( SystemConfiguration systemConf )

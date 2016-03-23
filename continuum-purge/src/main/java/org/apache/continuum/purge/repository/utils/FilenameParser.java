@@ -37,12 +37,21 @@ public class FilenameParser
 
     private static final Pattern mavenPluginPattern = Pattern.compile( "(maven-.*-plugin)|(.*-maven-plugin)" );
 
+<<<<<<< HEAD
     private static final Pattern extensionPattern =
         Pattern.compile( "(\\.tar\\.gz$)|(\\.tar\\.bz2$)|(\\.[\\-a-z0-9]*$)", Pattern.CASE_INSENSITIVE );
 
     private static final Pattern section = Pattern.compile( "([^-]*)" );
 
     private Matcher matcher;
+=======
+    private static final Pattern extensionPattern = Pattern.compile(
+        "(\\.tar\\.gz$)|(\\.tar\\.bz2$)|(\\.[\\-a-z0-9]*$)", Pattern.CASE_INSENSITIVE );
+
+    private static final Pattern section = Pattern.compile( "([^-]*)" );
+
+    private final Matcher matcher;
+>>>>>>> refs/remotes/apache/trunk
 
     public FilenameParser( String filename )
     {

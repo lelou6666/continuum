@@ -19,6 +19,14 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
+=======
+import org.apache.maven.continuum.PlexusSpringTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+>>>>>>> refs/remotes/apache/trunk
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
@@ -26,42 +34,46 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
+<<<<<<< HEAD
 import org.codehaus.plexus.spring.PlexusInSpringTestCase;
+=======
+import static org.junit.Assert.assertTrue;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * TestContinuumActionLogging:
  *
  * @author jesse
- * @version $Id$
  */
 public class ContinuumActionLoggingTest
+<<<<<<< HEAD
     extends PlexusInSpringTestCase
+=======
+    extends PlexusSpringTestCase
+>>>>>>> refs/remotes/apache/trunk
 {
-
     StringBuffer testOutput = new StringBuffer();
 
-
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
-
         PrintStream systemPrintStream = new PrintStream( new FilteredStream( System.out ), true );
         System.setOut( systemPrintStream );
     }
 
-
+    @After
     public void tearDown()
     {
-        System.setOut( new PrintStream(
-            new BufferedOutputStream( new FileOutputStream( java.io.FileDescriptor.out ), 128 ), true ) );
+        System.setOut( new PrintStream( new BufferedOutputStream( new FileOutputStream( java.io.FileDescriptor.out ),
+                                                                  128 ), true ) );
     }
 
-
+    @Test
     public void testActionLogging()
         throws Exception
     {
-        TestAction testAction = (TestAction) lookup( "com.opensymphony.xwork.Action", "testAction" );
+        TestAction testAction = (TestAction) lookup( "com.opensymphony.xwork2.Action", "testAction" );
         String testString = "action test string";
         testAction.setTestString( testString );
 
@@ -69,7 +81,6 @@ public class ContinuumActionLoggingTest
 
         assertTrue( testOutput.toString().indexOf( testString ) != -1 );
     }
-
 
     class FilteredStream
         extends FilterOutputStream

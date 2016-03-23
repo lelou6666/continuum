@@ -18,34 +18,32 @@
   --%>
 
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
 
 <html>
-<ww:i18n name="localization.Continuum">
+<s:i18n name="localization.Continuum">
   <head>
-    <title><ww:text name="installationTypeChoice.page.title"/></title>
+    <title><s:text name="installationTypeChoice.page.title"/></title>
   </head>
-  
   <div id="h3">
     <h3>
-      <ww:text name="installationTypeChoice.section.title"/>
+      <s:text name="installationTypeChoice.section.title"/>
     </h3>  
-    <form action="editInstallation!input.action">
+    <s:form action="editInstallation_input" theme="simple">
       <div class="axial">
-
         <table>
           <tbody>    
-            <ww:select name="installationType" list="installationTypes" 
+            <s:select name="installationType" list="installationTypes"
                        label="%{getText('installationTypeChoice.action.label')}" />
           </tbody>
         </table>
         <div class="functnbar3">
-          <c1:submitcancel value="%{getText('add')}" cancel="%{getText('cancel')}"/>
+          <s:submit value="%{getText('add')}" />
+          <s:submit type="button" name="Cancel" value="%{getText('cancel')}" onclick="history.back();" />
         </div>        
       </div>
-  
+    </s:form>
   </div>
-  
-</ww:i18n>
+</s:i18n>
+</html>

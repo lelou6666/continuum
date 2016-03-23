@@ -20,6 +20,7 @@ package org.apache.continuum.purge;
  */
 
 import org.apache.continuum.dao.DirectoryPurgeConfigurationDao;
+<<<<<<< HEAD
 import org.apache.continuum.dao.LocalRepositoryDao;
 import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
@@ -33,6 +34,28 @@ import org.codehaus.plexus.taskqueue.TaskQueue;
 /**
  * @author Maria Catherine Tan
  * @version $Id$
+=======
+import org.apache.continuum.dao.DistributedDirectoryPurgeConfigurationDao;
+import org.apache.continuum.dao.LocalRepositoryDao;
+import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
+import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.DistributedDirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
+import org.apache.continuum.purge.task.PurgeTask;
+import org.apache.continuum.taskqueue.manager.TaskQueueManager;
+import org.apache.maven.continuum.AbstractContinuumTest;
+import org.codehaus.plexus.taskqueue.Task;
+import org.codehaus.plexus.taskqueue.TaskQueue;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+/**
+ * @author Maria Catherine Tan
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public class DefaultContinuumPurgeManagerTest
@@ -42,6 +65,11 @@ public class DefaultContinuumPurgeManagerTest
 
     private DirectoryPurgeConfigurationDao directoryPurgeConfigurationDao;
 
+<<<<<<< HEAD
+=======
+    private DistributedDirectoryPurgeConfigurationDao distributedDirectoryPurgeConfigurationDao;
+
+>>>>>>> refs/remotes/apache/trunk
     private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
 
     private ContinuumPurgeManager purgeManager;
@@ -52,6 +80,7 @@ public class DefaultContinuumPurgeManagerTest
 
     private DirectoryPurgeConfiguration dirPurge;
 
+<<<<<<< HEAD
     @Override
     protected void setUp()
         throws Exception
@@ -73,6 +102,27 @@ public class DefaultContinuumPurgeManagerTest
         setupDefaultPurgeConfigurations();
     }
 
+=======
+    private DistributedDirectoryPurgeConfiguration distDirPurge;
+
+    private TaskQueueManager taskQueueManager;
+
+    @Before
+    public void setUp()
+        throws Exception
+    {
+        localRepositoryDao = lookup( LocalRepositoryDao.class );
+        directoryPurgeConfigurationDao = lookup( DirectoryPurgeConfigurationDao.class );
+        repositoryPurgeConfigurationDao = lookup( RepositoryPurgeConfigurationDao.class );
+        distributedDirectoryPurgeConfigurationDao = lookup( DistributedDirectoryPurgeConfigurationDao.class );
+        purgeManager = lookup( ContinuumPurgeManager.class );
+        purgeQueue = lookup( TaskQueue.class, "purge" );
+        taskQueueManager = lookup( TaskQueueManager.class );
+        setupDefaultPurgeConfigurations();
+    }
+
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testPurgingWithSinglePurgeConfiguration()
         throws Exception
     {
@@ -91,6 +141,10 @@ public class DefaultContinuumPurgeManagerTest
         assertNextBuildIsNull();
     }
 
+<<<<<<< HEAD
+=======
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testPurgingWithMultiplePurgeConfiguration()
         throws Exception
     {
@@ -112,26 +166,46 @@ public class DefaultContinuumPurgeManagerTest
         assertNextBuildIsNull();
     }
 
+<<<<<<< HEAD
+=======
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testRemoveFromPurgeQueue()
         throws Exception
     {
         purgeManager.purgeRepository( repoPurge );
         purgeManager.purgeDirectory( dirPurge );
+<<<<<<< HEAD
 
         assertNextBuildIs( repoPurge.getId() );
         assertNextBuildIs( dirPurge.getId() );
+=======
+        purgeManager.purgeDistributedDirectory( distDirPurge );
+
+        assertNextBuildIs( repoPurge.getId() );
+        assertNextBuildIs( dirPurge.getId() );
+        assertNextBuildIs( distDirPurge.getId() );
+>>>>>>> refs/remotes/apache/trunk
         assertNextBuildIsNull();
 
         purgeManager.purgeRepository( repoPurge );
         purgeManager.purgeDirectory( dirPurge );
+<<<<<<< HEAD
         purgeManager.removeFromPurgeQueue( repoPurge.getId() );
+=======
+        taskQueueManager.removeFromPurgeQueue( repoPurge.getId() );
+>>>>>>> refs/remotes/apache/trunk
 
         assertNextBuildIs( dirPurge.getId() );
         assertNextBuildIsNull();
 
         purgeManager.purgeRepository( repoPurge );
         purgeManager.purgeDirectory( dirPurge );
+<<<<<<< HEAD
         purgeManager.removeFromPurgeQueue( dirPurge.getId() );
+=======
+        taskQueueManager.removeFromPurgeQueue( dirPurge.getId() );
+>>>>>>> refs/remotes/apache/trunk
 
         assertNextBuildIs( repoPurge.getId() );
         assertNextBuildIsNull();
@@ -153,6 +227,15 @@ public class DefaultContinuumPurgeManagerTest
         dirPurge.setDirectoryType( "releases" );
         dirPurge.setLocation( getTestFile( "target/working-directory" ).getAbsolutePath() );
         dirPurge = directoryPurgeConfigurationDao.addDirectoryPurgeConfiguration( dirPurge );
+<<<<<<< HEAD
+=======
+
+        distDirPurge = new DistributedDirectoryPurgeConfiguration();
+        distDirPurge.setDirectoryType( "releases" );
+        distDirPurge.setBuildAgentUrl( "http://localhost:8186/continuum-buildagent/xmlrpc" );
+        distDirPurge = distributedDirectoryPurgeConfigurationDao.addDistributedDirectoryPurgeConfiguration(
+            distDirPurge );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     private void assertNextBuildIs( int expectedPurgeConfigId )
@@ -176,7 +259,11 @@ public class DefaultContinuumPurgeManagerTest
         if ( task != null )
         {
             fail( "Got a non-null purge task returned. Purge Config id: " +
+<<<<<<< HEAD
                 ( (PurgeTask) task ).getPurgeConfigurationId() );
+=======
+                      ( (PurgeTask) task ).getPurgeConfigurationId() );
+>>>>>>> refs/remotes/apache/trunk
         }
     }
 }

@@ -26,7 +26,10 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public interface InstallationDao
 {
@@ -45,4 +48,9 @@ public interface InstallationDao
     Installation getInstallation( int installationId )
         throws ContinuumStoreException;
 
+<<<<<<< HEAD
+=======
+    Installation getInstallation( String installationName )
+        throws ContinuumStoreException;
+>>>>>>> refs/remotes/apache/trunk
 }

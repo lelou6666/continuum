@@ -20,11 +20,17 @@ package org.apache.continuum.purge;
  */
 
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+<<<<<<< HEAD
+=======
+import org.apache.continuum.model.repository.DistributedDirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.DistributedRepositoryPurgeConfiguration;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
 import org.apache.maven.continuum.model.project.Schedule;
 
 /**
  * @author Maria Catherine Tan
+<<<<<<< HEAD
  * @version $Id$
  * @since 25 jul 07
  */
@@ -34,27 +40,53 @@ public interface ContinuumPurgeManager
     
     /**
      * Purge repositories and directories 
+=======
+ * @since 25 jul 07
+ */
+public interface ContinuumPurgeManager
+{
+    String ROLE = ContinuumPurgeManager.class.getName();
+
+    /**
+     * Purge repositories and directories
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param schedule
      * @throws ContinuumPurgeManagerException
      */
     void purge( Schedule schedule )
         throws ContinuumPurgeManagerException;
+<<<<<<< HEAD
     
     /**
      * Purge repository
+=======
+
+    /**
+     * Purge repository
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param repoPurgeConfig
      * @throws ContinuumPurgeManagerException
      */
     void purgeRepository( RepositoryPurgeConfiguration repoPurgeConfig )
         throws ContinuumPurgeManagerException;
+<<<<<<< HEAD
     
     /**
      * Purge directory 
+=======
+
+    /**
+     * Purge directory
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param dirPurgeConfig
      * @throws ContinuumPurgeManagerException
      */
     void purgeDirectory( DirectoryPurgeConfiguration dirPurgeConfig )
         throws ContinuumPurgeManagerException;
+<<<<<<< HEAD
     
     /**
      * Check if the repository is already in the purging queue
@@ -103,5 +135,24 @@ public interface ContinuumPurgeManager
      * @throws ContinuumPurgeManagerException
      */
     boolean removeFromPurgeQueue( int[] purgeConfigIds )
+=======
+
+    /**
+     * Purge directory in distributed build mode
+     *
+     * @param dirPurgeConfig distributed purge configuration
+     * @throws ContinuumPurgeManagerException
+     */
+    void purgeDistributedDirectory( DistributedDirectoryPurgeConfiguration dirPurgeConfig )
+        throws ContinuumPurgeManagerException;
+
+    /**
+     * Purge repository in distributed build mode
+     *
+     * @param repoPurgeConfig distributed purge configuration
+     * @throws ContinuumPurgeManagerException
+     */
+    void purgeDistributedRepository( DistributedRepositoryPurgeConfiguration repoPurgeConfig )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumPurgeManagerException;
 }

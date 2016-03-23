@@ -16,6 +16,7 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   --%>
+<<<<<<< HEAD
 
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/webwork" prefix="ww" %>
@@ -24,10 +25,18 @@
   <ww:i18n name="localization.Continuum">
   <head>
     <title><ww:text name="purgeConfig.page.title"/></title>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<html>
+  <s:i18n name="localization.Continuum">
+  <head>
+    <title><s:text name="purgeConfig.page.title"/></title>
+>>>>>>> refs/remotes/apache/trunk
   </head>
   <body>
   <div class="app">
     <div id="axial" class="h3">
+<<<<<<< HEAD
       <h3><ww:text name="purgeConfig.section.title"/></h3>
 
     <div class="axial">
@@ -80,10 +89,64 @@
         </c:otherwise>
       </c:choose>
       </ww:form>
+=======
+      <h3><s:text name="purgeConfig.section.title"/></h3>
+
+    <div class="axial">
+      <s:form action="savePurgeConfig" method="post" validate="true">
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:iterator value="actionErrors">
+              <p><s:property/></p>
+            </s:iterator>
+          </div>
+        </s:if>
+        <s:if test="repositories.size() > 0 || purgeType == 'directory'">
+          <table>
+            <s:if test="purgeType == 'repository'">
+                <s:select label="%{getText('purgeConfig.repository.label')}" name="repositoryId" list="repositories" requiredLabel="true"/>
+            </s:if>
+            <s:else>
+                <s:select label="%{getText('purgeConfig.directoryType.label')}" name="directoryType" list="directoryTypes"/>
+            </s:else>
+            <s:textfield label="%{getText('purgeConfig.daysOlder.label')}" name="daysOlder" size="100"/>
+            <s:textfield label="%{getText('purgeConfig.retentionCount.label')}" name="retentionCount" size="100"/>
+            <s:checkbox label="%{getText('purgeConfig.deleteAll.label')}" name="deleteAll"/>
+            <s:if test="purgeType == 'repository'">
+              <s:checkbox label="%{getText('purgeConfig.deleteReleasedSnapshots.label')}" name="deleteReleasedSnapshots"/>
+            </s:if>
+            <s:if test="defaultPurgeConfiguration">
+                <s:hidden name="defaultPurgeConfiguration"/>
+                <s:label label="%{getText('purgeConfig.defaultPurge.label')}" value="true"/>
+            </s:if>
+            <s:else>
+                <s:checkbox label="%{getText('purgeConfig.defaultPurge.label')}" name="defaultPurgeConfiguration" value="defaultPurgeConfiguration" fieldValue="true"/>
+            </s:else>
+            <s:select label="%{getText('purgeConfig.schedule.label')}" name="scheduleId" list="schedules"
+                       headerKey="-1" headerValue=""/>
+            <s:textfield label="%{getText('purgeConfig.description.label')}" name="description" size="100"/>
+            <s:checkbox label="%{getText('purgeConfig.enabled.label')}" name="enabled"/>
+          </table>
+          <s:hidden name="purgeConfigId"/>
+          <s:hidden name="purgeType"/>
+          <div class="functnbar3">
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+          </div>
+        </s:if>
+        <s:else>
+          <div class="warningmessage" style="color: red"><s:text name="purgeConfig.no.repositories" /></div>
+        </s:else>
+      </s:form>
+>>>>>>> refs/remotes/apache/trunk
     </div>
   </div>
 </div>
 
 </body>
+<<<<<<< HEAD
 </ww:i18n>
+=======
+</s:i18n>
+>>>>>>> refs/remotes/apache/trunk
 </html>

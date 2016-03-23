@@ -23,6 +23,7 @@ import org.apache.continuum.purge.ContinuumPurgeManager;
 import org.apache.continuum.purge.ContinuumPurgeManagerException;
 import org.apache.maven.continuum.Continuum;
 import org.apache.maven.continuum.model.project.Schedule;
+<<<<<<< HEAD
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.scheduler.AbstractJob;
 import org.quartz.JobDetail;
@@ -31,11 +32,25 @@ import org.quartz.JobExecutionContext;
 /**
  * @author Maria Catherine Tan
  * @version $Id$
+=======
+import org.codehaus.plexus.scheduler.AbstractJob;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.slf4j.Logger;
+
+/**
+ * @author Maria Catherine Tan
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public class ContinuumPurgeJob
     extends AbstractJob
 {
+<<<<<<< HEAD
+=======
+    public static final String PURGE_GROUP = "PURGE_GROUP";
+
+>>>>>>> refs/remotes/apache/trunk
     public void execute( JobExecutionContext context )
     {
         if ( isInterrupted() )
@@ -62,7 +77,11 @@ public class ContinuumPurgeJob
         Continuum continuum = (Continuum) jobDetail.getJobDataMap().get( ContinuumSchedulerConstants.CONTINUUM );
 
         ContinuumPurgeManager purgeManager = continuum.getPurgeManager();
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> refs/remotes/apache/trunk
         Schedule schedule = (Schedule) jobDetail.getJobDataMap().get( ContinuumSchedulerConstants.SCHEDULE );
 
         try

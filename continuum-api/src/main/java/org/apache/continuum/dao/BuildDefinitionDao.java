@@ -29,7 +29,10 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public interface BuildDefinitionDao
 {
@@ -48,7 +51,17 @@ public interface BuildDefinitionDao
     List<BuildDefinition> getAllBuildDefinitions()
         throws ContinuumStoreException;
 
+<<<<<<< HEAD
     Map getDefaultBuildDefinitions();
+=======
+    /**
+     * Returns the default build definition of all projects. The key is the project id and the value is the build
+     * definition id.
+     *
+     * @return a map of all default build definitions
+     */
+    Map<Integer, Integer> getDefaultBuildDefinitions();
+>>>>>>> refs/remotes/apache/trunk
 
     /**
      * returns the default build definitions for the project group and there

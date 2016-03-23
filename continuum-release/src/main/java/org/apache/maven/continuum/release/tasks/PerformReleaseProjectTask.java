@@ -39,6 +39,8 @@ public class PerformReleaseProjectTask
     
     private LocalRepository localRepository;
 
+    private LocalRepository localRepository;
+
     public PerformReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, File buildDirectory, String goals,
                                       boolean useReleaseProfile, ReleaseManagerListener listener )
     {
@@ -46,7 +48,12 @@ public class PerformReleaseProjectTask
     }
 
     public PerformReleaseProjectTask( String releaseId, ReleaseDescriptor descriptor, File buildDirectory, String goals,
+<<<<<<< HEAD
                                       boolean useReleaseProfile, ReleaseManagerListener listener, LocalRepository repository )
+=======
+                                      boolean useReleaseProfile, ReleaseManagerListener listener,
+                                      LocalRepository repository )
+>>>>>>> refs/remotes/apache/trunk
     {
         super( releaseId, descriptor, listener );
         setBuildDirectory( buildDirectory );
@@ -84,12 +91,20 @@ public class PerformReleaseProjectTask
     {
         this.buildDirectory = buildDirectory;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public LocalRepository getLocalRepository()
     {
         return localRepository;
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public void setLocalRepository( LocalRepository localRepository )
     {
         this.localRepository = localRepository;

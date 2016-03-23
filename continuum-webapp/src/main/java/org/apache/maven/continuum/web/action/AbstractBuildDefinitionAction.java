@@ -19,19 +19,18 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.web.model.BuildDefinitionSummary;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 16 sept. 07
- * @version $Id$
  */
 public abstract class AbstractBuildDefinitionAction
-    extends ContinuumActionSupport
+    extends ContinuumConfirmAction
 {
 
     protected BuildDefinitionSummary generateBuildDefinitionSummary( BuildDefinition buildDefinition )

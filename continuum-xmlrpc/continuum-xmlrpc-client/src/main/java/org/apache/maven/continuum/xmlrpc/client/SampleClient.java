@@ -19,10 +19,15 @@ package org.apache.maven.continuum.xmlrpc.client;
  * under the License.
  */
 
+import org.apache.continuum.xmlrpc.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.xmlrpc.repository.LocalRepository;
+import org.apache.continuum.xmlrpc.repository.RepositoryPurgeConfiguration;
+import org.apache.continuum.xmlrpc.utils.BuildTrigger;
 import org.apache.maven.continuum.xmlrpc.project.AddingResult;
 import org.apache.maven.continuum.xmlrpc.project.BuildDefinition;
 import org.apache.maven.continuum.xmlrpc.project.BuildResult;
 import org.apache.maven.continuum.xmlrpc.project.BuildResultSummary;
+import org.apache.maven.continuum.xmlrpc.project.ContinuumProjectState;
 import org.apache.maven.continuum.xmlrpc.project.ProjectDependency;
 import org.apache.maven.continuum.xmlrpc.project.ProjectGroupSummary;
 import org.apache.maven.continuum.xmlrpc.project.ProjectSummary;
@@ -30,12 +35,12 @@ import org.apache.maven.continuum.xmlrpc.scm.ChangeSet;
 import org.apache.maven.continuum.xmlrpc.scm.ScmResult;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
  */
 public class SampleClient
 {
@@ -46,8 +51,45 @@ public class SampleClient
     {
         client = new ContinuumXmlRpcClient( new URL( args[0] ), args[1], args[2] );
 
+        // Test for [CONTINUUM-2641]: (test with distributed builds with multiple build agents or parallel builds with > 1 build queue)
+        // make sure to set the projectIds to the actual projectIds of your projects added in Continuum
+        int projectIds[] = new int[] { 2, 3, 4, 5, 6 };
+
+        List<Thread> threads = new ArrayList<Thread>();
+
+        for ( int i = 0; i < projectIds.length; i++ )
+        {
+            final int order = i;
+            final int projectId = projectIds[i];
+            Runnable task = new Runnable()
+            {
+                public void run()
+                {
+                    BuildTrigger buildTrigger = new BuildTrigger();
+                    buildTrigger.setTrigger( ContinuumProjectState.TRIGGER_FORCED );
+                    buildTrigger.setTriggeredBy( "admin" );
+                    System.out.println( "Building project #" + order + " '" + projectId + "'.." );
+                    try
+                    {
+                        client.buildProject( projectId, buildTrigger );
+                    }
+                    catch ( Exception e )
+                    {
+                        throw new RuntimeException( e );
+                    }
+                }
+            };
+            threads.add( new Thread( task ) );
+        }
+
+        for ( Thread thread : threads )
+        {
+            thread.start();
+        }
+
         System.out.println( "Adding project..." );
-        AddingResult result = client.addMavenTwoProject( "http://svn.apache.org/repos/asf/continuum/sandbox/simple-example/pom.xml" );
+        AddingResult result = client.addMavenTwoProject(
+            "http://svn.apache.org/repos/asf/continuum/sandbox/simple-example/pom.xml" );
         if ( result.hasErrors() )
         {
             System.out.println( result.getErrorsAsString() );
@@ -60,10 +102,7 @@ public class SampleClient
         {
             ProjectGroupSummary pg = (ProjectGroupSummary) i.next();
             projectGroupId = pg.getId();
-            System.out.println( "Id: " + pg.getId() );
-            System.out.println( "Group Id" + pg.getGroupId() );
-            System.out.println( "Name: " + pg.getName() );
-            System.out.println( "Description:" + pg.getDescription() );
+            printProjectGroupSummary( client.getProjectGroupSummary( projectGroupId ) );
         }
 
         System.out.println();
@@ -86,14 +125,23 @@ public class SampleClient
         {
             ps = client.refreshProjectSummary( ps );
             System.out.println( "State of " + ps.getName() + "(" + ps.getId() + "): " +
-                client.getProjectStatusAsString( ps.getState() ) );
+                                    client.getProjectStatusAsString( ps.getState() ) );
             Thread.sleep( 1000 );
         }
 
         System.out.println();
 
+        BuildDefinition buildDef = new BuildDefinition();
+        buildDef.setArguments( "A-Za-z0-9_./=,\": \\-" );
+        buildDef.setSchedule( client.getSchedule( 1 ) );
+        client.addBuildDefinitionToProjectGroup( 1, buildDef );
+
+        ps = client.getProjectSummary( 1 );
         System.out.println( "Add the project to the build queue." );
-        client.buildProject( ps.getId() );
+        BuildTrigger trigger = new BuildTrigger();
+        trigger.setTrigger( 1 );
+        trigger.setTriggeredBy( "<script>alert('hahaha' )</script>" );
+        client.buildProject( ps.getId(), trigger );
         while ( !"Building".equals( client.getProjectStatusAsString( ps.getState() ) ) )
         {
             ps = client.refreshProjectSummary( ps );
@@ -102,8 +150,8 @@ public class SampleClient
 
         System.out.println( "Building..." );
         String state = "unknown";
-        while ( "Updating".equals( client.getProjectStatusAsString( ps.getState() ) ) ||
-                "Building".equals( client.getProjectStatusAsString( ps.getState() ) ) )
+        while ( "Updating".equals( client.getProjectStatusAsString( ps.getState() ) ) || "Building".equals(
+            client.getProjectStatusAsString( ps.getState() ) ) )
         {
             ps = client.refreshProjectSummary( ps );
             state = client.getProjectStatusAsString( ps.getState() );
@@ -126,16 +174,21 @@ public class SampleClient
 
         System.out.println( "Removing build results." );
         System.out.println( "============================" );
-        BuildResultSummary brs;
-        List results = client.getBuildResultsForProject( ps.getId() );
-        for ( Iterator i = results.iterator(); i.hasNext(); )
+
+        int batchSize = 100;
+        List<BuildResultSummary> results;
+        do
         {
-            brs = (BuildResultSummary) i.next();
-            System.out.print( "Removing build result (" + brs.getId() + ") - " );
-            BuildResult br = client.getBuildResult( ps.getId(), brs.getId() );
-            System.out.println( (client.removeBuildResult( br ) == 0 ? "OK" : "Error" ) );
+            results = client.getBuildResultsForProject( ps.getId(), 0, batchSize );
+            for ( BuildResultSummary brs : results )
+            {
+                System.out.print( "Removing build result (" + brs.getId() + ") - " );
+                BuildResult br = client.getBuildResult( ps.getId(), brs.getId() );
+                System.out.println( ( client.removeBuildResult( br ) == 0 ? "OK" : "Error" ) );
+            }
         }
-        System.out.println( "Done.");
+        while ( results != null && results.size() > 0 );
+        System.out.println( "Done." );
 
         System.out.println();
 
@@ -170,6 +223,70 @@ public class SampleClient
             "Removing Project Group '" + pg.getName() + "' - " + pg.getGroupId() + " (" + pg.getId() + ")'..." );
         client.removeProjectGroup( pg.getId() );
         System.out.println( "Done." );
+        System.out.println();
+
+        LocalRepository repository = new LocalRepository();
+        repository.setLocation( "/home/marica/repository" );
+        repository.setName( "Repository" );
+        repository.setLayout( "default" );
+        System.out.println( "Adding local repository..." );
+        repository = client.addLocalRepository( repository );
+        System.out.println();
+
+        System.out.println( "Repository list" );
+        System.out.println( "=====================" );
+        List<LocalRepository> repositories = client.getAllLocalRepositories();
+        for ( LocalRepository repo : repositories )
+        {
+            printLocalRepository( repo );
+            System.out.println();
+        }
+
+        DirectoryPurgeConfiguration dirPurgeConfig = new DirectoryPurgeConfiguration();
+        dirPurgeConfig.setDirectoryType( "buildOutput" );
+        System.out.println( "Adding Directory Purge Configuration..." );
+        dirPurgeConfig = client.addDirectoryPurgeConfiguration( dirPurgeConfig );
+        System.out.println();
+
+        RepositoryPurgeConfiguration purgeConfig = new RepositoryPurgeConfiguration();
+        purgeConfig.setDeleteAll( true );
+        purgeConfig.setRepository( repository );
+        purgeConfig.setDescription( "Delete all artifacts from repository" );
+        System.out.println( "Adding Repository Purge Configuration..." );
+        purgeConfig = client.addRepositoryPurgeConfiguration( purgeConfig );
+        System.out.println();
+
+        System.out.println( "Repository Purge list" );
+        System.out.println( "=====================" );
+        List<RepositoryPurgeConfiguration> repoPurges = client.getAllRepositoryPurgeConfigurations();
+        for ( RepositoryPurgeConfiguration repoPurge : repoPurges )
+        {
+            printRepositoryPurgeConfiguration( repoPurge );
+        }
+        System.out.println();
+
+        System.out.println( "Remove local repository" );
+        System.out.println( "=====================" );
+        System.out.println( "Removing Local Repository '" + repository.getName() + "' (" +
+                                repository.getId() + ")..." );
+        client.removeLocalRepository( repository.getId() );
+        System.out.println( "Done." );
+    }
+
+    public static void printProjectGroupSummary( ProjectGroupSummary pg )
+    {
+        System.out.println( "Id: " + pg.getId() );
+        System.out.println( "Group Id" + pg.getGroupId() );
+        System.out.println( "Name: " + pg.getName() );
+        System.out.println( "Description:" + pg.getDescription() );
+        if ( pg.getLocalRepository() != null )
+        {
+            System.out.println( "Local Repository:" + pg.getLocalRepository().getName() );
+        }
+        else
+        {
+            System.out.println( "Local Repository:" );
+        }
     }
 
     public static void printProjectSummary( ProjectSummary project )
@@ -262,4 +379,23 @@ public class SampleClient
         System.out.println( buildDef.isDefaultForProject() );
     }
 
+    public static void printLocalRepository( LocalRepository repo )
+    {
+        System.out.println( "Id: " + repo.getId() );
+        System.out.println( "Layout: " + repo.getLayout() );
+        System.out.println( "Location: " + repo.getLocation() );
+        System.out.println( "Name: " + repo.getName() );
+    }
+
+    public static void printRepositoryPurgeConfiguration( RepositoryPurgeConfiguration repoPurge )
+    {
+        System.out.println( "Id: " + repoPurge.getId() );
+        System.out.println( "Description: " + repoPurge.getDescription() );
+        System.out.println( "Local Repository: " + repoPurge.getRepository().getName() );
+        System.out.println( "Days Older: " + repoPurge.getDaysOlder() );
+        System.out.println( "Retention Count: " + repoPurge.getRetentionCount() );
+        System.out.println( "Delete All: " + repoPurge.isDeleteAll() );
+        System.out.println( "Delete Released Snapshots: " + repoPurge.isDeleteReleasedSnapshots() );
+        System.out.println( "Default Purge: " + repoPurge.isDefaultPurge() );
+    }
 }

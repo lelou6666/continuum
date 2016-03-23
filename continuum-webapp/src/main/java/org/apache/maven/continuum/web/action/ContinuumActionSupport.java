@@ -19,27 +19,29 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.text.SimpleDateFormat;
-import java.util.ResourceBundle;
-
-import com.opensymphony.xwork.ActionContext;
-import com.opensymphony.xwork.Preparable;
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.Preparable;
 import org.apache.maven.continuum.Continuum;
+import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.security.ContinuumRoleConstants;
 import org.apache.maven.continuum.web.exception.AuthenticationRequiredException;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.redback.authorization.AuthorizationException;
 import org.codehaus.plexus.redback.system.SecuritySession;
 import org.codehaus.plexus.redback.system.SecuritySystem;
 import org.codehaus.plexus.redback.system.SecuritySystemConstants;
+import org.codehaus.plexus.redback.users.User;
+import org.codehaus.plexus.redback.users.UserNotFoundException;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.xwork.action.PlexusActionSupport;
+
+import java.text.SimpleDateFormat;
+import java.util.ResourceBundle;
 
 /**
  * ContinuumActionSupport
  *
  * @author Jesse McConnell <jesse@codehaus.org>
- * @version $Id$
  */
 public class ContinuumActionSupport
     extends PlexusActionSupport
@@ -47,14 +49,14 @@ public class ContinuumActionSupport
 {
     private SecuritySession securitySession;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private SecuritySystem securitySystem;
 
     protected static final String REQUIRES_AUTHENTICATION = "requires-authentication";
 
     protected static final String REQUIRES_AUTHORIZATION = "requires-authorization";
+
+    protected static final String RELEASE_ERROR = "releaseError";
 
     protected static final String ERROR_MSG_AUTHORIZATION_REQUIRED = "You are not authorized to access this page. " +
         "Please contact your administrator to be granted the appropriate permissions.";
@@ -62,21 +64,29 @@ public class ContinuumActionSupport
     protected static final String ERROR_MSG_PROCESSING_AUTHORIZATION =
         "An error occurred while performing authorization.";
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
     private Continuum continuum;
-    
-    protected SimpleDateFormat dateFormatter = new SimpleDateFormat("MMM dd, yyyy hh:mm:ss aaa z");
+
+    protected final SimpleDateFormat dateFormatter = new SimpleDateFormat( "MMM dd, yyyy hh:mm:ss aaa z" );
 
     public void prepare()
         throws Exception
     {
         if ( securitySession == null )
         {
-            securitySession =
-                (SecuritySession) getContext().getSession().get( SecuritySystemConstants.SECURITY_SESSION_KEY );
+            securitySession = (SecuritySession) getContext().getSession().get(
+                SecuritySystemConstants.SECURITY_SESSION_KEY );
         }
+    }
+
+    /**
+     * Here for unit testing support, it allows configuring a mock security session.
+     *
+     * @param securitySession
+     */
+    protected void setSecuritySession( SecuritySession securitySession )
+    {
+        this.securitySession = securitySession;
     }
 
     public Continuum getContinuum()
@@ -428,9 +438,8 @@ public class ContinuumActionSupport
     /**
      * Check if the current user is authorized to manage the application's configuration
      *
-     * @throws AuthenticationRequiredException
-     *                                        if the user isn't authorized if the user isn't authenticated
-     * @throws AuthorizationRequiredException if the user isn't authorized if the user isn't authorized
+     * @throws AuthenticationRequiredException if the user isn't authorized if the user isn't authenticated
+     * @throws AuthorizationRequiredException  if the user isn't authorized if the user isn't authorized
      */
     protected void checkManageConfigurationAuthorization()
         throws AuthenticationRequiredException, AuthorizationRequiredException
@@ -446,9 +455,8 @@ public class ContinuumActionSupport
     /**
      * Check if the current user is authorized to manage the project build schedules
      *
-     * @throws AuthenticationRequiredException
-     *                                        if the user isn't authorized if the user isn't authenticated
-     * @throws AuthorizationRequiredException if the user isn't authorized if the user isn't authorized
+     * @throws AuthenticationRequiredException if the user isn't authorized if the user isn't authenticated
+     * @throws AuthorizationRequiredException  if the user isn't authorized if the user isn't authorized
      */
     protected void checkManageSchedulesAuthorization()
         throws AuthenticationRequiredException, AuthorizationRequiredException
@@ -462,10 +470,10 @@ public class ContinuumActionSupport
     }
 
     /**
-     * Check if the current user is authorized to manage queues 
-     * 
+     * Check if the current user is authorized to manage queues
+     *
      * @throws AuthenticationRequiredException if the user isn't authenticated
-     * @throws AuthorizationRequiredException if the user isn't authorized
+     * @throws AuthorizationRequiredException  if the user isn't authorized
      */
     protected void checkManageQueuesAuthorization()
         throws AuthenticationRequiredException, AuthorizationRequiredException
@@ -474,10 +482,22 @@ public class ContinuumActionSupport
         {
             throw new AuthenticationRequiredException( "Authentication required" );
         }
-        
+
         checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_QUEUES );
     }
-    
+
+    protected void checkManageLocalRepositoriesAuthorization()
+        throws AuthorizationRequiredException
+    {
+        checkAuthorization( ContinuumRoleConstants.CONTINUUM_MANAGE_REPOSITORIES );
+    }
+
+    protected void checkViewReportsAuthorization()
+        throws AuthorizationRequiredException
+    {
+        checkAuthorization( ContinuumRoleConstants.CONTINUUM_VIEW_REPORT );
+    }
+
     /**
      * Get the security session
      *
@@ -532,9 +552,45 @@ public class ContinuumActionSupport
 
         return true;
     }
-    
+
     protected ResourceBundle getResourceBundle()
     {
         return getTexts( "localization/Continuum" );
-    }    
+    }
+
+    protected String getPrincipal()
+    {
+        String principal = "guest";
+
+        if ( getSecuritySession() != null )
+        {
+            if ( getSecuritySession().getUser() != null )
+            {
+                principal = (String) getSecuritySession().getUser().getPrincipal();
+            }
+        }
+        else
+        {
+            principal = "unknown-user";
+        }
+        return principal;
+    }
+
+    protected User getUser( String principal )
+        throws UserNotFoundException
+    {
+        return getSecuritySystem().getUserManager().findUser( principal );
+    }
+
+    /**
+     * Convenience method to determine whether a build is a maven build. We could call the static method directly,
+     * but for struts2 validator access, we would need to enable static method invocation.
+     *
+     * @param buildType
+     * @return true if the build type is will result in a maven 1 or 2+ build.
+     */
+    public boolean isMavenBuildType( String buildType )
+    {
+        return ContinuumBuildExecutorConstants.isMaven( buildType );
+    }
 }

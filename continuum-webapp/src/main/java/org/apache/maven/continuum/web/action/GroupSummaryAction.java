@@ -19,41 +19,58 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+=======
+import org.apache.continuum.model.project.ProjectGroupSummary;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.ContinuumException;
-import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
 import org.apache.maven.continuum.web.model.GroupSummary;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="groupSummary"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "groupSummary", instantiationStrategy = "per-lookup"  )
 public class GroupSummaryAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( GroupSummaryAction.class );
+
     private String infoMessage;
 
     private List<GroupSummary> groups;
 
-    public String execute()
+    public String browse()
         throws ContinuumException
     {
         groups = new ArrayList<GroupSummary>();
 
-        Collection<ProjectGroup> projectGroups = getContinuum().getAllProjectGroupsWithProjects();
+        //TODO: Merge this two requests to one
+        Collection<ProjectGroup> projectGroups = getContinuum().getAllProjectGroups();
+        Map<Integer, ProjectGroupSummary> summaries = getContinuum().getProjectsSummaryByGroups();
 
         for ( ProjectGroup projectGroup : projectGroups )
         {
 
             if ( isAuthorized( projectGroup.getName() ) )
             {
-                getLogger().debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: building group " + projectGroup.getName() );
+                }
 
                 GroupSummary groupModel = new GroupSummary();
                 groupModel.setId( projectGroup.getId() );
@@ -67,40 +84,23 @@ public class GroupSummaryAction
                     groupModel.setRepositoryName( projectGroup.getLocalRepository().getName() );
                 }
 
-                //TODO: Create a summary jpox request so code will be more simple and performance will be better
-                Collection<Project> projects = projectGroup.getProjects();
+                ProjectGroupSummary summary = summaries.get( projectGroup.getId() );
 
-                groupModel.setNumProjects( projects.size() );
-
-                int numSuccesses = 0;
-                int numFailures = 0;
-                int numErrors = 0;
-
-                for ( Project project : projects )
+                if ( summary != null )
                 {
-                    
-                    if ( project.getState() == 2 )
-                    {
-                        numSuccesses++;
-                    }
-                    else if ( project.getState() == 3 )
-                    {
-                        numFailures++;
-                    }
-                    else if ( project.getState() == 4 )
-                    {
-                        numErrors++;
-                    }
+                    groupModel.setNumProjects( summary.getNumberOfProjects() );
+                    groupModel.setNumErrors( summary.getNumberOfErrors() );
+                    groupModel.setNumFailures( summary.getNumberOfFailures() );
+                    groupModel.setNumSuccesses( summary.getNumberOfSuccesses() );
                 }
 
                 //todo wire in the next scheduled build for the project group and a meaningful status message
                 //groupModel.setNextScheduledBuild( "unknown" );
                 //groupModel.setStatusMessage( "none" );
-
-                groupModel.setNumSuccesses( numSuccesses );
-                groupModel.setNumFailures( numFailures );
-                groupModel.setNumErrors( numErrors );
-                getLogger().debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                if ( logger.isDebugEnabled() )
+                {
+                    logger.debug( "GroupSummaryAction: adding group to groups list " + groupModel.getName() );
+                }
                 groups.add( groupModel );
             }
         }
@@ -112,7 +112,6 @@ public class GroupSummaryAction
     {
         return groups;
     }
-
 
     public String getInfoMessage()
     {

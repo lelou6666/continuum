@@ -19,9 +19,12 @@ package org.apache.continuum.purge.repository.content;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.io.File;
 import java.util.Set;
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.maven.archiva.model.ArtifactReference;
 import org.apache.maven.archiva.model.ProjectReference;
@@ -29,14 +32,25 @@ import org.apache.maven.archiva.model.VersionedReference;
 import org.apache.maven.archiva.repository.ContentNotFoundException;
 import org.apache.maven.archiva.repository.layout.LayoutException;
 
+<<<<<<< HEAD
 /**
  * Taken from Archiva's ManagedRepositoryContent interface and made some few changes.
  * @author Maria Catherine Tan
  * @version $Id$
+=======
+import java.io.File;
+import java.util.Set;
+
+/**
+ * Taken from Archiva's ManagedRepositoryContent interface and made some few changes.
+ *
+ * @author Maria Catherine Tan
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public interface RepositoryManagedContent
 {
+<<<<<<< HEAD
     /**
      * Delete from the local repository all files / directories associated with the
      * provided version reference.
@@ -47,10 +61,25 @@ public interface RepositoryManagedContent
     public void deleteVersion( VersionedReference reference )
         throws ContentNotFoundException;
     
+=======
+    String ROLE = RepositoryManagedContent.class.getName();
+
+    /**
+     * Delete from the local repository all files / directories associated with the
+     * provided version reference.
+     *
+     * @param reference the version reference to delete.
+     * @throws ContentNotFoundException
+     */
+    public void deleteVersion( VersionedReference reference )
+        throws ContentNotFoundException;
+
+>>>>>>> refs/remotes/apache/trunk
     /**
      * <p>
      * Convenience method to get the repository id.
      * </p>
+<<<<<<< HEAD
      * 
      * <p>
      * Equivalent to calling <code>.getRepository().getId()</code>
@@ -75,6 +104,30 @@ public interface RepositoryManagedContent
      * @return the set of ArtifactReferences for related artifacts.
      * @throws ContentNotFoundException if the initial artifact reference does not exist within the repository.
      * @throws LayoutException 
+=======
+     * <p>
+     * Equivalent to calling <code>.getRepository().getId()</code>
+     * </p>
+     *
+     * @return the repository id.
+     */
+    public int getId();
+
+    /**
+     * <p>
+     * Gather up the list of related artifacts to the ArtifactReference provided.
+     * This typically inclues the pom files, and those things with
+     * classifiers (such as doc, source code, test libs, etc...)
+     * </p>
+     * <p>
+     * <strong>NOTE:</strong> Some layouts (such as maven 1 "legacy") are not compatible with this query.
+     * </p>
+     *
+     * @param reference the reference to work off of.
+     * @return the set of ArtifactReferences for related artifacts.
+     * @throws ContentNotFoundException if the initial artifact reference does not exist within the repository.
+     * @throws LayoutException
+>>>>>>> refs/remotes/apache/trunk
      */
     public Set<ArtifactReference> getRelatedArtifacts( ArtifactReference reference )
         throws ContentNotFoundException, LayoutException;
@@ -83,11 +136,18 @@ public interface RepositoryManagedContent
      * <p>
      * Convenience method to get the repository (on disk) root directory.
      * </p>
+<<<<<<< HEAD
      * 
      * <p>
      * Equivalent to calling <code>.getLocalRepository().getDirectory()</code>
      * </p>
      * 
+=======
+     * <p>
+     * Equivalent to calling <code>.getLocalRepository().getDirectory()</code>
+     * </p>
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @return the repository (on disk) root directory.
      */
     public String getRepoRoot();
@@ -95,7 +155,11 @@ public interface RepositoryManagedContent
     /**
      * Get the local repository associated with this
      * repository content.
+<<<<<<< HEAD
      * 
+=======
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @return the local repository that is associated with this repository content.
      */
     public LocalRepository getRepository();
@@ -103,11 +167,19 @@ public interface RepositoryManagedContent
     /**
      * Given a specific {@link ProjectReference}, return the list of available versions for
      * that project reference.
+<<<<<<< HEAD
      * 
      * @param reference the project reference to work off of.
      * @return the list of versions found for that project reference.
      * @throws ContentNotFoundException if the project reference does not exist within the repository.
      * @throws LayoutException 
+=======
+     *
+     * @param reference the project reference to work off of.
+     * @return the list of versions found for that project reference.
+     * @throws ContentNotFoundException if the project reference does not exist within the repository.
+     * @throws LayoutException
+>>>>>>> refs/remotes/apache/trunk
      */
     public Set<String> getVersions( ProjectReference reference )
         throws ContentNotFoundException, LayoutException;
@@ -117,6 +189,7 @@ public interface RepositoryManagedContent
      * Given a specific {@link VersionedReference}, return the list of available versions for that
      * versioned reference.
      * </p>
+<<<<<<< HEAD
      * 
      * <p>
      * <strong>NOTE:</strong> This is really only useful when working with SNAPSHOTs.
@@ -134,6 +207,24 @@ public interface RepositoryManagedContent
      * Set the local repository to associate with this
      * repository content.
      * 
+=======
+     * <p>
+     * <strong>NOTE:</strong> This is really only useful when working with SNAPSHOTs.
+     * </p>
+     *
+     * @param reference the versioned reference to work off of.
+     * @return the set of versions found.
+     * @throws ContentNotFoundException if the versioned reference does not exist within the repository.
+     * @throws LayoutException
+     */
+    public Set<String> getVersions( VersionedReference reference )
+        throws ContentNotFoundException, LayoutException;
+
+    /**
+     * Set the local repository to associate with this
+     * repository content.
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param repo the repository to associate with this repository content.
      */
     public void setRepository( LocalRepository repo );
@@ -143,7 +234,11 @@ public interface RepositoryManagedContent
      *
      * @param path the path relative to the repository base dir for the artifact.
      * @return the {@link ArtifactReference} representing the path.  (or null if path cannot be converted to
+<<<<<<< HEAD
      *         a {@link ArtifactReference})
+=======
+     * a {@link ArtifactReference})
+>>>>>>> refs/remotes/apache/trunk
      * @throws LayoutException if there was a problem converting the path to an artifact.
      */
     public ArtifactReference toArtifactReference( String path )
@@ -159,8 +254,13 @@ public interface RepositoryManagedContent
 
     /**
      * Given a {@link ProjectReference}, return the path to the metadata for
+<<<<<<< HEAD
      * the project. 
      * 
+=======
+     * the project.
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param reference the reference to use.
      * @return the path to the metadata file, or null if no metadata is appropriate.
      */
@@ -168,8 +268,13 @@ public interface RepositoryManagedContent
 
     /**
      * Given a {@link VersionedReference}, return the path to the metadata for
+<<<<<<< HEAD
      * the specific version of the project. 
      * 
+=======
+     * the specific version of the project.
+     *
+>>>>>>> refs/remotes/apache/trunk
      * @param reference the reference to use.
      * @return the path to the metadata file, or null if no metadata is appropriate.
      */

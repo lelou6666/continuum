@@ -7,20 +7,37 @@
  Oct 3 2007
  ------
 
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
 Edit a Project
 
 ~~%{toc|section=0}
 
 * {Project View}
 
-  When you edit a project from the groupSummary, you will see basics informations.
-  First part of the page contains some informations regarding :
+  When you edit a project from the <<Group Summary>> page, you will see basic information.
+  The first part of the page contains information regarding:
 
   * project name
 
-  * project version 
+  * project version
 
-  * project scm url
+  * project SCM URL
 
   * project Last Build Date
 
@@ -30,16 +47,16 @@ Edit a Project
 
 [../../images/project-view-top.png] Project View Top
 
-  With the <<<'Edit'>>> button, you can change some project informations like the scm url if your project was moved.
-  With the <<<'Build Now'>>> button, you build the project manually with the default build definition.
+  With the <<Edit>> button, you can change some project information like the SCM URL if your project was moved.
+  With the <<Build Now>> button, you build the project manually with the default build definition.
 
-  Second part contains informations regarding :
+  The second part contains information regarding:
 
   * project notifiers
 
   * project dependencies
 
-  * project developpers
+  * project developers
 
   []
 
@@ -47,9 +64,9 @@ Edit a Project
 
 * {Build Results}
 
-  You can view all project's Build Results with the link Builds 
-  You will see all build results summary : start/end Time, result.
-  It's possible to delete some build results with checkboxes
+  You can view all project's <<Build Results>> with the link <<Builds>>.
+  You will see all build results summary: start/end time, result.
+  It's possible to delete some build results with checkboxes.
 
 [../../images/build-results.png] Build Results
 
@@ -57,11 +74,11 @@ Edit a Project
 
 * {Build Result}
 
-  Editing a build result will display :
+  Editing a build result will display:
 
-  * scm changes (author and file path)
+  * SCM changes (author and file path)
 
-  * project dependencies (project recorded in this continuum instance)
+  * project dependencies (project recorded in this Continuum instance)
 
   * detail of the build definition used
 
@@ -70,7 +87,10 @@ Edit a Project
   []
 
 [../../images/build-result.png] Build Result
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> refs/remotes/apache/trunk

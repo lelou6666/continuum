@@ -30,6 +30,11 @@ import org.apache.maven.archiva.repository.ContentNotFoundException;
 import org.apache.maven.archiva.repository.content.ArtifactExtensionMapping;
 import org.apache.maven.archiva.repository.content.PathParser;
 import org.apache.maven.archiva.repository.layout.LayoutException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 
 import java.io.File;
 import java.util.HashMap;
@@ -39,11 +44,16 @@ import java.util.Set;
 
 /**
  * Taken from Archiva's ManagedLegacyRepositoryContent and made some few changes
+<<<<<<< HEAD
  *
  * @plexus.component role="org.apache.continuum.purge.repository.content.RepositoryManagedContent"
  * role-hint="legacy"
  * instantiation-strategy="per-lookup"
  */
+=======
+ */
+@Component( role = RepositoryManagedContent.class, hint = "legacy", instantiationStrategy = "per-lookup" )
+>>>>>>> refs/remotes/apache/trunk
 public class ManagedLegacyRepositoryContent
     implements RepositoryManagedContent
 {
@@ -62,6 +72,7 @@ public class ManagedLegacyRepositoryContent
         typeToDirectoryMap.put( "javadoc", "javadoc.jar" );
     }
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement role-hint="legacy-parser"
      */
@@ -70,6 +81,12 @@ public class ManagedLegacyRepositoryContent
     /**
      * @plexus.requirement role-hint="file-types"
      */
+=======
+    @Requirement( hint = "legacy-parser" )
+    private PathParser legacyPathParser;
+
+    @Requirement( hint = "file-types" )
+>>>>>>> refs/remotes/apache/trunk
     private FileTypes filetypes;
 
     private LocalRepository repository;
@@ -338,8 +355,13 @@ public class ManagedLegacyRepositoryContent
             throw new IllegalArgumentException( "Artifact reference cannot be null" );
         }
 
+<<<<<<< HEAD
         return toPath( reference.getGroupId(), reference.getArtifactId(), reference.getVersion(), reference
             .getClassifier(), reference.getType() );
+=======
+        return toPath( reference.getGroupId(), reference.getArtifactId(), reference.getVersion(),
+                       reference.getClassifier(), reference.getType() );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void setRepository( LocalRepository repo )
@@ -380,16 +402,26 @@ public class ManagedLegacyRepositoryContent
 
     private void getRelatedArtifacts( File typeDir, ArtifactReference reference, Set<ArtifactReference> foundArtifacts )
     {
+<<<<<<< HEAD
         File repoFiles[] = typeDir.listFiles();
         for ( int i = 0; i < repoFiles.length; i++ )
         {
             if ( repoFiles[i].isDirectory() )
+=======
+        for ( File repoFile : typeDir.listFiles() )
+        {
+            if ( repoFile.isDirectory() )
+>>>>>>> refs/remotes/apache/trunk
             {
                 // Skip it. it's a directory.
                 continue;
             }
 
+<<<<<<< HEAD
             String relativePath = PathUtil.getRelative( repository.getLocation(), repoFiles[i] );
+=======
+            String relativePath = PathUtil.getRelative( repository.getLocation(), repoFile );
+>>>>>>> refs/remotes/apache/trunk
 
             if ( filetypes.matchesArtifactPattern( relativePath ) )
             {
@@ -412,16 +444,26 @@ public class ManagedLegacyRepositoryContent
 
     private void getVersionedVersions( File typeDir, VersionedReference reference, Set<String> foundVersions )
     {
+<<<<<<< HEAD
         File repoFiles[] = typeDir.listFiles();
         for ( int i = 0; i < repoFiles.length; i++ )
         {
             if ( repoFiles[i].isDirectory() )
+=======
+        for ( File repoFile : typeDir.listFiles() )
+        {
+            if ( repoFile.isDirectory() )
+>>>>>>> refs/remotes/apache/trunk
             {
                 // Skip it. it's a directory.
                 continue;
             }
 
+<<<<<<< HEAD
             String relativePath = PathUtil.getRelative( repository.getLocation(), repoFiles[i] );
+=======
+            String relativePath = PathUtil.getRelative( repository.getLocation(), repoFile );
+>>>>>>> refs/remotes/apache/trunk
 
             if ( filetypes.matchesArtifactPattern( relativePath ) )
             {
@@ -447,7 +489,11 @@ public class ManagedLegacyRepositoryContent
         StringBuffer path = new StringBuffer();
 
         path.append( groupId ).append( PATH_SEPARATOR );
+<<<<<<< HEAD
         path.append( getDirectory( classifier, type ) ).append( PATH_SEPARATOR );
+=======
+        path.append( getDirectory( type ) ).append( PATH_SEPARATOR );
+>>>>>>> refs/remotes/apache/trunk
 
         if ( version != null )
         {
@@ -464,9 +510,15 @@ public class ManagedLegacyRepositoryContent
         return path.toString();
     }
 
+<<<<<<< HEAD
     private String getDirectory( String classifier, String type )
     {
         String dirname = (String) typeToDirectoryMap.get( type );
+=======
+    private String getDirectory( String type )
+    {
+        String dirname = typeToDirectoryMap.get( type );
+>>>>>>> refs/remotes/apache/trunk
 
         if ( dirname != null )
         {

@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.web.appareance;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,14 +18,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.maven.continuum.web.appareance;
 
 import org.codehaus.plexus.registry.RegistryException;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @since 10 nov. 07
- * @version $Id$
  */
 public interface AppareanceConfiguration
 {
@@ -33,14 +35,14 @@ public interface AppareanceConfiguration
      * @throws RegistryException
      */
     public void saveFooter( String footerHtmlContent )
-        throws RegistryException;
+        throws IOException;
 
     /**
-     * If no user configuration a default one will be user 
+     * If no user configuration a default one will be user
      * with Apache copyright content
-     * 
+     *
      * @return htmlFooter
      */
     public String getFooter();
-    
+
 }

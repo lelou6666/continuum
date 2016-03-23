@@ -21,14 +21,13 @@ package org.apache.maven.continuum.execution.maven.m1;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class MavenOneMetadataHelperException
     extends Exception
 {
-	private static final long serialVersionUID = -5868938464601717160L;
+    private static final long serialVersionUID = -5868938464601717160L;
 
-	public MavenOneMetadataHelperException( String message )
+    public MavenOneMetadataHelperException( String message )
     {
         super( message );
     }

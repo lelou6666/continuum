@@ -25,6 +25,7 @@ import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,21 +34,45 @@ import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+>>>>>>> refs/remotes/apache/trunk
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+<<<<<<< HEAD
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.BuildDefinitionDao"
  */
+=======
+import javax.annotation.Resource;
+import javax.jdo.Extent;
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
+
+/**
+ * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+ */
+@Repository( "buildDefinitionDao" )
+@Component( role = org.apache.continuum.dao.BuildDefinitionDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class BuildDefinitionDaoImpl
     extends AbstractDao
     implements BuildDefinitionDao
 {
+<<<<<<< HEAD
     private static Logger log = LoggerFactory.getLogger( BuildDefinitionDaoImpl.class );
 
     /**
@@ -58,12 +83,26 @@ public class BuildDefinitionDaoImpl
     /**
      * @plexus.requirement role="org.apache.continuum.dao.ProjectGroupDao"
      */
+=======
+    private static final Logger log = LoggerFactory.getLogger( BuildDefinitionDaoImpl.class );
+
+    @Resource
+    @Requirement( role = org.apache.continuum.dao.ProjectDao.class )
+    private ProjectDao projectDao;
+
+    @Resource
+    @Requirement( role = org.apache.continuum.dao.ProjectGroupDao.class )
+>>>>>>> refs/remotes/apache/trunk
     private ProjectGroupDao projectGroupDao;
 
     public BuildDefinition getBuildDefinition( int buildDefinitionId )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (BuildDefinition) getObjectById( BuildDefinition.class, buildDefinitionId );
+=======
+        return getObjectById( BuildDefinition.class, buildDefinitionId );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void removeBuildDefinition( BuildDefinition buildDefinition )
@@ -80,11 +119,18 @@ public class BuildDefinitionDaoImpl
         return buildDefinition;
     }
 
+<<<<<<< HEAD
 
     public BuildDefinition addBuildDefinition( BuildDefinition buildDefinition )
         throws ContinuumStoreException
     {
         return (BuildDefinition) addObject( buildDefinition );
+=======
+    public BuildDefinition addBuildDefinition( BuildDefinition buildDefinition )
+        throws ContinuumStoreException
+    {
+        return addObject( buildDefinition );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public List<BuildDefinition> getAllBuildDefinitions()
@@ -348,7 +394,11 @@ public class BuildDefinitionDaoImpl
 
             query.setFilter( "this.schedule.id == scheduleId" );
 
+<<<<<<< HEAD
             List result = (List) query.execute( new Integer( scheduleId ) );
+=======
+            List result = (List) query.execute( scheduleId );
+>>>>>>> refs/remotes/apache/trunk
 
             return result == null ? Collections.EMPTY_LIST : (List) pm.detachCopyAll( result );
         }

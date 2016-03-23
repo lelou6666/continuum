@@ -19,12 +19,15 @@ package org.apache.maven.continuum.execution.maven.m2;
  * under the License.
  */
 
+<<<<<<< HEAD
 import org.apache.continuum.model.repository.LocalRepository;
+=======
+import org.apache.continuum.utils.m2.LocalRepositoryHelper;
+import org.apache.continuum.utils.m2.SettingsHelper;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.artifact.manager.WagonManager;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.continuum.execution.SettingsConfigurationException;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
 import org.apache.maven.continuum.model.project.ProjectDeveloper;
@@ -47,7 +50,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.validation.ModelValidationResult;
-import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Server;
@@ -55,59 +57,44 @@ import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Writer;
 import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLifecycleException;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.context.ContextException;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper" role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.execution.maven.m2.MavenBuilderHelper.class, hint = "default" )
 public class DefaultMavenBuilderHelper
-    extends AbstractLogEnabled
     implements MavenBuilderHelper, Contextualizable, Initializable
 {
-    /**
-     * @plexus.requirement
-     */
+    private static final Logger log = LoggerFactory.getLogger( DefaultMavenBuilderHelper.class );
+
+    @Requirement
     private MavenProjectBuilder projectBuilder;
 
-    /**
-     * @plexus.requirement
-     */
-    private ArtifactRepositoryFactory artifactRepositoryFactory;
+    @Requirement
+    private SettingsHelper settingsHelper;
 
-    /**
-     * @plexus.requirement
-     */
-    private ArtifactRepositoryLayout repositoryLayout;
-
-    /**
-     * @plexus.requirement
-     */
-    private MavenSettingsBuilder mavenSettingsBuilder;
-
-    /**
-     * @plexus.configuration default-value="${plexus.home}/local-repository"
-     */
-    private String localRepository;
+    @Requirement
+    private LocalRepositoryHelper localRepoHelper;
 
     private PlexusContainer container;
 
@@ -117,7 +104,8 @@ public class DefaultMavenBuilderHelper
     // MavenBuilderHelper Implementation
     // ----------------------------------------------------------------------
 
-    public void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project continuumProject )
+    public void mapMetadataToProject( ContinuumProjectBuildingResult result, File metadata, Project continuumProject,
+                                      boolean update )
     {
         MavenProject mavenProject = getMavenProject( result, metadata );
 
@@ -128,11 +116,11 @@ public class DefaultMavenBuilderHelper
             return;
         }
 
-        mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, false );
+        mapMavenProjectToContinuumProject( result, mavenProject, continuumProject, update );
     }
 
     public void mapMavenProjectToContinuumProject( ContinuumProjectBuildingResult result, MavenProject mavenProject,
-                                                   Project continuumProject, boolean groupPom )
+                                                   Project continuumProject, boolean update )
     {
         if ( mavenProject == null )
         {
@@ -140,11 +128,26 @@ public class DefaultMavenBuilderHelper
             return;
         }
 
-        // ----------------------------------------------------------------------
-        // Name
-        // ----------------------------------------------------------------------
+        if ( update )
+        {
+            // ----------------------------------------------------------------------
+            // Name
+            // ----------------------------------------------------------------------
 
-        continuumProject.setName( getProjectName( mavenProject ) );
+            continuumProject.setName( getProjectName( mavenProject ) );
+
+            // ----------------------------------------------------------------------
+            // Version
+            // ----------------------------------------------------------------------
+
+            continuumProject.setVersion( getVersion( mavenProject ) );
+
+            // ----------------------------------------------------------------------
+            // Description
+            // ----------------------------------------------------------------------
+
+            continuumProject.setDescription( mavenProject.getDescription() );
+        }
 
         // ----------------------------------------------------------------------
         // SCM Url
@@ -162,12 +165,6 @@ public class DefaultMavenBuilderHelper
                 continuumProject.setScmTag( mavenProject.getScm().getTag() );
             }
         }
-
-        // ----------------------------------------------------------------------
-        // Version
-        // ----------------------------------------------------------------------
-
-        continuumProject.setVersion( getVersion( mavenProject ) );
 
         // ----------------------------------------------------------------------
         // GroupId
@@ -214,7 +211,7 @@ public class DefaultMavenBuilderHelper
         {
             List<ProjectDeveloper> developers = new ArrayList<ProjectDeveloper>();
 
-            for ( Developer d : (List<Developer>)mavenProject.getDevelopers() )
+            for ( Developer d : (List<Developer>) mavenProject.getDevelopers() )
             {
                 ProjectDeveloper cd = new ProjectDeveloper();
 
@@ -255,7 +252,7 @@ public class DefaultMavenBuilderHelper
 
         List<ProjectDependency> dependencies = new ArrayList<ProjectDependency>();
 
-        for ( Dependency dependency : (List<Dependency>)mavenProject.getDependencies() )
+        for ( Dependency dependency : (List<Dependency>) mavenProject.getDependencies() )
         {
             ProjectDependency cd = new ProjectDependency();
 
@@ -268,7 +265,7 @@ public class DefaultMavenBuilderHelper
             dependencies.add( cd );
         }
 
-        for ( Plugin dependency : (List<Plugin>)mavenProject.getBuildPlugins() )
+        for ( Plugin dependency : (List<Plugin>) mavenProject.getBuildPlugins() )
         {
             ProjectDependency cd = new ProjectDependency();
 
@@ -281,7 +278,7 @@ public class DefaultMavenBuilderHelper
             dependencies.add( cd );
         }
 
-        for ( ReportPlugin dependency : (List<ReportPlugin>)mavenProject.getReportPlugins() )
+        for ( ReportPlugin dependency : (List<ReportPlugin>) mavenProject.getReportPlugins() )
         {
             ProjectDependency cd = new ProjectDependency();
 
@@ -294,7 +291,7 @@ public class DefaultMavenBuilderHelper
             dependencies.add( cd );
         }
 
-        for ( Extension dependency : (List<Extension>)mavenProject.getBuildExtensions() )
+        for ( Extension dependency : (List<Extension>) mavenProject.getBuildExtensions() )
         {
             ProjectDependency cd = new ProjectDependency();
 
@@ -343,12 +340,14 @@ public class DefaultMavenBuilderHelper
 
                     userNotifier.setSendOnWarning( notifier.isSendOnWarning() );
 
+                    userNotifier.setSendOnScmFailure( notifier.isSendOnScmFailure() );
+
                     userNotifiers.add( userNotifier );
                 }
             }
         }
 
-        List<ProjectNotifier> notifiers = getNotifiers( result, mavenProject, continuumProject );
+        List<ProjectNotifier> notifiers = getNotifiers( result, mavenProject );
         if ( notifiers != null )
         {
             continuumProject.setNotifiers( notifiers );
@@ -369,18 +368,18 @@ public class DefaultMavenBuilderHelper
             //   TODO: This seems like code that is shared with DefaultMaven, so it should be moved to the project
             //   builder perhaps
 
-            Settings settings = getSettings();
+            Settings settings = settingsHelper.getSettings();
 
-            if ( getLogger().isDebugEnabled() )
+            if ( log.isDebugEnabled() )
             {
                 writeSettings( settings );
             }
 
             ProfileManager profileManager = new DefaultProfileManager( container, settings );
 
-            project = projectBuilder.build( file, getLocalRepository(), profileManager, false );
+            project = projectBuilder.build( file, localRepoHelper.getLocalRepository(), profileManager, true );
 
-            if ( getLogger().isDebugEnabled() )
+            if ( log.isDebugEnabled() )
             {
                 writePom( project );
                 writeActiveProfileStatement( project );
@@ -409,9 +408,8 @@ public class DefaultMavenBuilderHelper
 
                 if ( validationResult != null && validationResult.getMessageCount() > 0 )
                 {
-                    for ( Iterator<String> i = validationResult.getMessages().iterator(); i.hasNext(); )
+                    for ( String valmsg : (List<String>) validationResult.getMessages() )
                     {
-                        String valmsg = i.next();
                         result.addError( ContinuumProjectBuildingResult.ERROR_VALIDATION, valmsg );
                         messages.append( valmsg );
                         messages.append( "\n" );
@@ -421,8 +419,7 @@ public class DefaultMavenBuilderHelper
 
             if ( cause instanceof ArtifactNotFoundException )
             {
-                result.addError( ContinuumProjectBuildingResult.ERROR_ARTIFACT_NOT_FOUND,
-                                 ( (ArtifactNotFoundException) cause ).toString() );
+                result.addError( ContinuumProjectBuildingResult.ERROR_ARTIFACT_NOT_FOUND, ( cause ).toString() );
                 return null;
             }
 
@@ -430,9 +427,7 @@ public class DefaultMavenBuilderHelper
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").\n" + messages;
 
-            file.delete();
-
-            getLogger().error( msg );
+            log.error( msg );
 
             return null;
         }
@@ -443,9 +438,7 @@ public class DefaultMavenBuilderHelper
 
             String msg = "Cannot build maven project from " + file + " (" + e.getMessage() + ").";
 
-            file.delete();
-
-            getLogger().error( msg );
+            log.error( msg );
 
             return null;
         }
@@ -461,7 +454,7 @@ public class DefaultMavenBuilderHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM, getProjectName( project ) );
 
-            getLogger().error( "Missing 'scm' element in the " + getProjectName( project ) + " POM." );
+            log.error( "Missing 'scm' element in the " + getProjectName( project ) + " POM." );
 
             return null;
         }
@@ -472,19 +465,13 @@ public class DefaultMavenBuilderHelper
         {
             result.addError( ContinuumProjectBuildingResult.ERROR_MISSING_SCM_CONNECTION, getProjectName( project ) );
 
-            getLogger().error(
-                "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) + " POM." );
+            log.error( "Missing 'connection' element in the 'scm' element in the " + getProjectName( project ) +
+                           " POM." );
 
             return null;
         }
 
         return project;
-    }
-
-    public ArtifactRepository getLocalRepository()
-        throws SettingsConfigurationException
-    {
-        return getRepository( getSettings() );
     }
 
     // ----------------------------------------------------------------------
@@ -508,14 +495,13 @@ public class DefaultMavenBuilderHelper
         return project.getScm().getConnection();
     }
 
-    private List<ProjectNotifier> getNotifiers( ContinuumProjectBuildingResult result, MavenProject mavenProject,
-                               Project continuumProject )
+    private List<ProjectNotifier> getNotifiers( ContinuumProjectBuildingResult result, MavenProject mavenProject )
     {
         List<ProjectNotifier> notifiers = new ArrayList<ProjectNotifier>();
 
         if ( mavenProject.getCiManagement() != null && mavenProject.getCiManagement().getNotifiers() != null )
         {
-            for ( Notifier projectNotifier : (List<Notifier>)mavenProject.getCiManagement().getNotifiers() )
+            for ( Notifier projectNotifier : (List<Notifier>) mavenProject.getCiManagement().getNotifiers() )
             {
                 ProjectNotifier notifier = new ProjectNotifier();
 
@@ -545,6 +531,8 @@ public class DefaultMavenBuilderHelper
 
                 notifier.setSendOnWarning( projectNotifier.isSendOnWarning() );
 
+                notifier.setSendOnScmFailure( false );
+
                 notifiers.add( notifier );
             }
         }
@@ -561,6 +549,7 @@ public class DefaultMavenBuilderHelper
     //
     // ----------------------------------------------------------------------
 
+<<<<<<< HEAD
     private Settings getSettings()
         throws SettingsConfigurationException
     {
@@ -605,6 +594,8 @@ public class DefaultMavenBuilderHelper
                                                                    null, null );
     }
 
+=======
+>>>>>>> refs/remotes/apache/trunk
     private void writeSettings( Settings settings )
     {
         StringWriter sWriter = new StringWriter();
@@ -625,11 +616,11 @@ public class DefaultMavenBuilderHelper
             message.append( "\n************************************************************************************" );
             message.append( "\n\n" );
 
-            getLogger().debug( message.toString() );
+            log.debug( message.toString() );
         }
         catch ( IOException e )
         {
-            getLogger().warn( "Cannot serialize Settings to XML.", e );
+            log.warn( "Cannot serialize Settings to XML.", e );
         }
     }
 
@@ -655,11 +646,11 @@ public class DefaultMavenBuilderHelper
             message.append( "\n************************************************************************************" );
             message.append( "\n\n" );
 
-            getLogger().debug( message.toString() );
+            log.debug( message.toString() );
         }
         catch ( IOException e )
         {
-            getLogger().warn( "Cannot serialize POM to XML.", e );
+            log.warn( "Cannot serialize POM to XML.", e );
         }
     }
 
@@ -686,8 +677,8 @@ public class DefaultMavenBuilderHelper
 
             for ( Profile profile : profiles )
             {
-                message.append( "\n - " ).append( profile.getId() ).append( " (source: " )
-                    .append( profile.getSource() ).append( ")" );
+                message.append( "\n - " ).append( profile.getId() ).append( " (source: " ).append(
+                    profile.getSource() ).append( ")" );
             }
 
         }
@@ -695,7 +686,7 @@ public class DefaultMavenBuilderHelper
         message.append( "\n************************************************************************************" );
         message.append( "\n\n" );
 
-        getLogger().debug( message.toString() );
+        log.debug( message.toString() );
     }
 
     /**
@@ -724,10 +715,8 @@ public class DefaultMavenBuilderHelper
                                        proxy.getPassword(), proxy.getNonProxyHosts() );
             }
 
-            for ( Iterator<Server> i = settings.getServers().iterator(); i.hasNext(); )
+            for ( Server server : (List<Server>) settings.getServers() )
             {
-                Server server = i.next();
-
                 wagonManager.addAuthenticationInfo( server.getId(), server.getUsername(), server.getPassword(),
                                                     server.getPrivateKey(), server.getPassphrase() );
 
@@ -740,10 +729,8 @@ public class DefaultMavenBuilderHelper
                 }
             }
 
-            for ( Iterator<Mirror> i = settings.getMirrors().iterator(); i.hasNext(); )
+            for ( Mirror mirror : (List<Mirror>) settings.getMirrors() )
             {
-                Mirror mirror = i.next();
-
                 wagonManager.addMirror( mirror.getId(), mirror.getMirrorOf(), mirror.getUrl() );
             }
         }
@@ -768,7 +755,7 @@ public class DefaultMavenBuilderHelper
     {
         try
         {
-            Settings settings = getSettings();
+            Settings settings = settingsHelper.getSettings();
 
             resolveParameters( settings );
         }

@@ -19,30 +19,27 @@ package org.apache.maven.continuum.utils;
  * under the License.
  */
 
-import java.io.File;
-
 import org.apache.maven.continuum.configuration.ConfigurationService;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
-import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.component.annotations.Configuration;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.util.List;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
- * @plexus.component role="org.apache.maven.continuum.utils.WorkingDirectoryService" role-hint="chrootJail"
  */
+@Service( "workingDirectoryService#chrootJail" )
 public class ChrootJailWorkingDirectoryService
-    extends AbstractLogEnabled
     implements WorkingDirectoryService
 {
-    /**
-     * @plexus.requirement
-     */
+    @Resource
     private ConfigurationService configurationService;
 
-    /**
-     * @plexus.configuration
-     */
+    @Configuration( "" )
     private File chrootJailDirectory;
 
     public void setConfigurationService( ConfigurationService configurationService )
@@ -67,10 +64,25 @@ public class ChrootJailWorkingDirectoryService
 
     public File getWorkingDirectory( Project project )
     {
+        return getWorkingDirectory( project, true );
+    }
+
+    public File getWorkingDirectory( Project project, boolean shouldSet )
+    {
         ProjectGroup projectGroup = project.getProjectGroup();
 
         File f = new File( getChrootJailDirectory(), projectGroup.getGroupId() );
         f = new File( f, getConfigurationService().getWorkingDirectory().getPath() );
         return new File( f, Integer.toString( project.getId() ) );
+    }
+
+    public File getWorkingDirectory( Project project, String projectScmRoot, List<Project> projects )
+    {
+        return getWorkingDirectory( project, true );
+    }
+
+    public File getWorkingDirectory( Project project, String projectScmRoot, List<Project> projects, boolean shouldSet )
+    {
+        return getWorkingDirectory( project, shouldSet );
     }
 }

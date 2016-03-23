@@ -20,49 +20,63 @@ package org.apache.maven.continuum.core.action;
  */
 
 import org.apache.continuum.dao.ProjectDao;
+<<<<<<< HEAD
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.utils.WorkingDirectoryService;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+=======
+import org.apache.continuum.utils.file.FileSystemManager;
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.utils.WorkingDirectoryService;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id:$
- * @plexus.component role="org.codehaus.plexus.action.Action"
- * role-hint="clean-working-directory"
  */
+@Component( role = org.codehaus.plexus.action.Action.class, hint = "clean-working-directory" )
 public class CleanWorkingDirectoryAction
     extends AbstractContinuumAction
 {
-    /**
-     * @plexus.requirement
-     */
+
+    @Requirement
     private WorkingDirectoryService workingDirectoryService;
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
     private ProjectDao projectDao;
+=======
+    @Requirement
+    private ProjectDao projectDao;
+
+    @Requirement
+    FileSystemManager fsManager;
+>>>>>>> refs/remotes/apache/trunk
 
     public void execute( Map context )
         throws Exception
     {
         Project project = projectDao.getProject( getProjectId( context ) );
+<<<<<<< HEAD
+=======
+        List<Project> projectsWithCommonScmRoot = getListOfProjectsInGroupWithCommonScmRoot( context );
+        String projectScmRootUrl = getProjectScmRootUrl( context, project.getScmUrl() );
+>>>>>>> refs/remotes/apache/trunk
 
-        File workingDirectory = workingDirectoryService.getWorkingDirectory( project );
+        File workingDirectory = workingDirectoryService.getWorkingDirectory( project, projectScmRootUrl,
+                                                                             projectsWithCommonScmRoot );
 
         if ( workingDirectory.exists() )
         {
-            FileSetManager fileSetManager = new FileSetManager();
-            FileSet fileSet = new FileSet();
-            fileSet.setDirectory( workingDirectory.getPath() );
-            fileSet.addInclude( "**/**" );
-            // TODO : this with a configuration option somewhere ?
-            fileSet.setFollowSymlinks( false );
-            fileSetManager.delete( fileSet );
+            fsManager.removeDir( workingDirectory );
         }
     }
 }

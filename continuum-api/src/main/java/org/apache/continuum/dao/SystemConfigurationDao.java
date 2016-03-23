@@ -23,7 +23,10 @@ import org.apache.maven.continuum.store.ContinuumStoreException;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public interface SystemConfigurationDao
 {

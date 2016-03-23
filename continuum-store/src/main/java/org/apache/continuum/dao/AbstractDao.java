@@ -21,10 +21,18 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.jdo.PlexusJdoUtils;
 import org.codehaus.plexus.jdo.PlexusObjectNotFoundException;
 import org.codehaus.plexus.jdo.PlexusStoreException;
 
+<<<<<<< HEAD
+=======
+import javax.annotation.Resource;
+>>>>>>> refs/remotes/apache/trunk
 import javax.jdo.FetchPlan;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
@@ -33,7 +41,10 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public class AbstractDao
 {
@@ -57,19 +68,33 @@ public class AbstractDao
 
     protected static final String BUILD_TEMPLATE_BUILD_DEFINITIONS = "build-template-build-definitions";
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
     private StoreUtilities storeUtilities;
 
     protected Object addObject( Object object )
+=======
+    @Resource
+    @Requirement
+    protected StoreUtilities storeUtilities;
+
+    protected <T> T addObject( T object )
+>>>>>>> refs/remotes/apache/trunk
     {
         return addObject( getPersistenceManager(), object );
     }
 
+<<<<<<< HEAD
     private Object addObject( PersistenceManager pmf, Object object )
     {
         return PlexusJdoUtils.addObject( pmf, object );
+=======
+    private <T> T addObject( PersistenceManager pmf, T object )
+    {
+        return (T) PlexusJdoUtils.addObject( pmf, object );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     protected void removeObject( Object o )
@@ -96,18 +121,30 @@ public class AbstractDao
         }
     }
 
+<<<<<<< HEAD
     protected Object getObjectById( Class clazz, int id )
+=======
+    protected <T> T getObjectById( Class<T> clazz, int id )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumStoreException
     {
         return getObjectById( clazz, id, null );
     }
 
+<<<<<<< HEAD
     protected Object getObjectById( Class clazz, int id, String fetchGroup )
+=======
+    protected <T> T getObjectById( Class<T> clazz, int id, String fetchGroup )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumStoreException
     {
         try
         {
+<<<<<<< HEAD
             return PlexusJdoUtils.getObjectById( getPersistenceManager(), clazz, id, fetchGroup );
+=======
+            return (T) PlexusJdoUtils.getObjectById( getPersistenceManager(), clazz, id, fetchGroup );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( PlexusObjectNotFoundException e )
         {
@@ -119,12 +156,20 @@ public class AbstractDao
         }
     }
 
+<<<<<<< HEAD
     protected Object getObjectFromQuery( Class clazz, String idField, String id, String fetchGroup )
+=======
+    protected <T> T getObjectFromQuery( Class<T> clazz, String idField, String id, String fetchGroup )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumStoreException
     {
         try
         {
+<<<<<<< HEAD
             return PlexusJdoUtils.getObjectFromQuery( getPersistenceManager(), clazz, idField, id, fetchGroup );
+=======
+            return (T) PlexusJdoUtils.getObjectFromQuery( getPersistenceManager(), clazz, idField, id, fetchGroup );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( PlexusObjectNotFoundException e )
         {
@@ -136,22 +181,39 @@ public class AbstractDao
         }
     }
 
+<<<<<<< HEAD
     protected List getAllObjectsDetached( Class clazz )
+=======
+    protected <T> List<T> getAllObjectsDetached( Class<T> clazz )
+>>>>>>> refs/remotes/apache/trunk
     {
         return getAllObjectsDetached( clazz, null );
     }
 
+<<<<<<< HEAD
     protected List getAllObjectsDetached( Class clazz, String fetchGroup )
+=======
+    protected <T> List<T> getAllObjectsDetached( Class<T> clazz, String fetchGroup )
+>>>>>>> refs/remotes/apache/trunk
     {
         return getAllObjectsDetached( clazz, null, fetchGroup );
     }
 
+<<<<<<< HEAD
     protected List getAllObjectsDetached( Class clazz, String ordering, String fetchGroup )
+=======
+    protected <T> List<T> getAllObjectsDetached( Class<T> clazz, String ordering, String fetchGroup )
+>>>>>>> refs/remotes/apache/trunk
     {
         return getAllObjectsDetached( getPersistenceManager(), clazz, ordering, fetchGroup );
     }
 
+<<<<<<< HEAD
     protected List getAllObjectsDetached( PersistenceManager pmf, Class clazz, String ordering, String fetchGroup )
+=======
+    protected <T> List<T> getAllObjectsDetached( PersistenceManager pmf, Class<T> clazz, String ordering,
+                                                 String fetchGroup )
+>>>>>>> refs/remotes/apache/trunk
     {
         return PlexusJdoUtils.getAllObjectsDetached( pmf, clazz, ordering, fetchGroup );
     }
@@ -186,9 +248,15 @@ public class AbstractDao
         return storeUtilities.getContinuumPersistenceManagerFactory();
     }
 
+<<<<<<< HEAD
     protected Object makePersistent( PersistenceManager pm, Object object, boolean detach )
     {
         return PlexusJdoUtils.makePersistent( pm, object, detach );
+=======
+    protected <T> T makePersistent( PersistenceManager pm, T object, boolean detach )
+    {
+        return (T) PlexusJdoUtils.makePersistent( pm, object, detach );
+>>>>>>> refs/remotes/apache/trunk
     }
 
 }

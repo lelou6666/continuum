@@ -24,16 +24,21 @@ import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.project.ContinuumProjectState;
+<<<<<<< HEAD
+=======
+import org.junit.Before;
+import org.junit.Test;
+>>>>>>> refs/remotes/apache/trunk
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
- * @version $Id$
  */
 public class ContinuumNotificationDispatcherTest
     extends AbstractContinuumTest
 {
     private BuildResultDao buildResultDao;
 
+<<<<<<< HEAD
     @Override
     protected void setUp()
         throws Exception
@@ -43,11 +48,24 @@ public class ContinuumNotificationDispatcherTest
     }
 
     public void testNotificationDispatcher()
+=======
+    @Before
+    public void setUp()
+>>>>>>> refs/remotes/apache/trunk
         throws Exception
     {
-        ContinuumNotificationDispatcher notificationDispatcher =
-            (ContinuumNotificationDispatcher) lookup( ContinuumNotificationDispatcher.ROLE );
+        buildResultDao = lookup( BuildResultDao.class );
+    }
 
+<<<<<<< HEAD
+=======
+    @Test
+    public void testNotificationDispatcher()
+        throws Exception
+    {
+        ContinuumNotificationDispatcher notificationDispatcher = lookup( ContinuumNotificationDispatcher.class );
+
+>>>>>>> refs/remotes/apache/trunk
         Project project = addProject( "Notification Dispatcher Test Project" );
 
         project = getProjectDao().getProjectWithBuildDetails( project.getId() );

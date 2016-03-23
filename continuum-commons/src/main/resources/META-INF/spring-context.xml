@@ -18,13 +18,23 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
+
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           http://www.springframework.org/schema/context 
+           http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+  <context:annotation-config/>
+  <context:component-scan
+      base-package="org.apache.continuum.installation,org.apache.continuum.profile,
+                  org.apache.maven.continuum.configuration,org.apache.maven.continuum.utils"/>
 
   <bean id="configurationService" class="org.apache.maven.continuum.configuration.DefaultConfigurationService"
         init-method="initialize">
+<<<<<<< HEAD
     <property name="applicationHome" value="target"/>
     <property name="scheduleDao" ref="scheduleDao"/>
     <property name="systemConfigurationDao" ref="systemConfigurationDao"/>
@@ -32,5 +42,9 @@
   </bean>
   <bean id="workingDirectoryService" class="org.apache.maven.continuum.utils.DefaultWorkingDirectoryService">
     <property name="configurationService" ref="configurationService"/>
+=======
+    <property name="applicationHome" value="data"/>
+>>>>>>> refs/remotes/apache/trunk
   </bean>
+  <bean id="buildQueueService" class="org.apache.continuum.buildqueue.DefaultBuildQueueService"/>
 </beans>

@@ -21,6 +21,11 @@ package org.apache.continuum.dao;
 
 import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+>>>>>>> refs/remotes/apache/trunk
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
@@ -31,9 +36,15 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.DirectoryPurgeConfigurationDao"
  */
+=======
+ */
+@Repository( "directoryPurgeConfigurationDao" )
+@Component( role = org.apache.continuum.dao.DirectoryPurgeConfigurationDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class DirectoryPurgeConfigurationDaoImpl
     extends AbstractDao
     implements DirectoryPurgeConfigurationDao
@@ -61,7 +72,41 @@ public class DirectoryPurgeConfigurationDaoImpl
 
             query.setFilter( "this.schedule.id == scheduleId" );
 
+<<<<<<< HEAD
             List result = (List) query.execute( new Integer( scheduleId ) );
+=======
+            List result = (List) query.execute( scheduleId );
+
+            return result == null ? Collections.EMPTY_LIST : (List) pm.detachCopyAll( result );
+        }
+        finally
+        {
+            tx.commit();
+
+            rollback( tx );
+        }
+    }
+
+    public List<DirectoryPurgeConfiguration> getEnableDirectoryPurgeConfigurationsBySchedule( int scheduleId )
+    {
+        PersistenceManager pm = getPersistenceManager();
+
+        Transaction tx = pm.currentTransaction();
+
+        try
+        {
+            tx.begin();
+
+            Extent extent = pm.getExtent( DirectoryPurgeConfiguration.class, true );
+
+            Query query = pm.newQuery( extent );
+
+            query.declareParameters( "int scheduleId" );
+
+            query.setFilter( "this.schedule.id == scheduleId && this.enabled == true" );
+
+            List result = (List) query.execute( scheduleId );
+>>>>>>> refs/remotes/apache/trunk
 
             return result == null ? Collections.EMPTY_LIST : (List) pm.detachCopyAll( result );
         }
@@ -140,13 +185,21 @@ public class DirectoryPurgeConfigurationDaoImpl
     public DirectoryPurgeConfiguration getDirectoryPurgeConfiguration( int configurationId )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (DirectoryPurgeConfiguration) getObjectById( DirectoryPurgeConfiguration.class, configurationId );
+=======
+        return getObjectById( DirectoryPurgeConfiguration.class, configurationId );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public DirectoryPurgeConfiguration addDirectoryPurgeConfiguration( DirectoryPurgeConfiguration purgeConfiguration )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (DirectoryPurgeConfiguration) addObject( purgeConfiguration );
+=======
+        return addObject( purgeConfiguration );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void updateDirectoryPurgeConfiguration( DirectoryPurgeConfiguration purgeConfiguration )

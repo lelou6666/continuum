@@ -19,14 +19,14 @@ package org.apache.maven.continuum.project.builder;
  * under the License.
  */
 
+import org.apache.maven.continuum.model.project.Project;
+import org.apache.maven.continuum.model.project.ProjectGroup;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.model.project.ProjectGroup;
 
 /**
  * Holder for results of adding projects to Continuum. Contains added projects, project groups
@@ -34,7 +34,6 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
  *
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
  * @author <a href="mailto:carlos@apache.org">Carlos Sanchez</a>
- * @version $Id$
  */
 public class ContinuumProjectBuildingResult
 {
@@ -83,13 +82,17 @@ public class ContinuumProjectBuildingResult
 
     public static final String ERROR_UNKNOWN = "add.project.unknown.error";
 
-    private List<Project> projects = new ArrayList<Project>();
+    public static final String ERROR_DUPLICATE_PROJECTS = "add.project.duplicate.error";
 
-    private List<ProjectGroup> projectGroups = new ArrayList<ProjectGroup>();
+    private final List<Project> projects = new ArrayList<Project>();
 
-    private Map<String, String> errors = new HashMap<String, String>();
-    
-    public static final String LS = System.getProperty( "line.separator" );
+    private final List<ProjectGroup> projectGroups = new ArrayList<ProjectGroup>();
+
+    private final Map<String, String> errors = new HashMap<String, String>();
+
+    private static final String LS = System.getProperty( "line.separator" );
+
+    private Project rootProject;
 
     public void addProject( Project project )
     {
@@ -184,11 +187,11 @@ public class ContinuumProjectBuildingResult
     {
         return new ArrayList<String>( errors.keySet() );
     }
-    
-    public Map<String,String> getErrorsWithCause()
+
+    public Map<String, String> getErrorsWithCause()
     {
         return errors;
-    }    
+    }
 
     /**
      * Quick check to see if there are any errors.
@@ -219,5 +222,15 @@ public class ContinuumProjectBuildingResult
             message.append( LS );
         }
         return message.toString();
+    }
+
+    public Project getRootProject()
+    {
+        return rootProject;
+    }
+
+    public void setRootProject( Project rootProject )
+    {
+        this.rootProject = rootProject;
     }
 }

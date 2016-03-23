@@ -24,12 +24,24 @@ import org.apache.continuum.dao.ProjectGroupDao;
 import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
+<<<<<<< HEAD
 import org.apache.continuum.purge.ContinuumPurgeManager;
 import org.apache.continuum.purge.ContinuumPurgeManagerException;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
+=======
+import org.apache.continuum.taskqueue.manager.TaskQueueManager;
+import org.apache.continuum.taskqueue.manager.TaskQueueManagerException;
+import org.apache.maven.continuum.model.project.ProjectGroup;
+import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
+import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+>>>>>>> refs/remotes/apache/trunk
 
 import java.util.List;
 
@@ -37,6 +49,7 @@ import java.util.List;
  * DefaultRepositoryService
  *
  * @author Maria Catherine Tan
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.repository.RepositoryService" role-hint="default"
  * @since 25 jul 07
@@ -64,6 +77,27 @@ public class DefaultRepositoryService
      * @plexus.requirement
      */
     private ContinuumPurgeManager purgeManager;
+=======
+ * @since 25 jul 07
+ */
+@Component( role = org.apache.continuum.repository.RepositoryService.class, hint = "default" )
+public class DefaultRepositoryService
+    implements RepositoryService
+{
+    private static final Logger log = LoggerFactory.getLogger( DefaultRepositoryService.class );
+
+    @Requirement
+    private LocalRepositoryDao localRepositoryDao;
+
+    @Requirement
+    private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement
+    private TaskQueueManager taskQueueManager;
+>>>>>>> refs/remotes/apache/trunk
 
     public LocalRepository addLocalRepository( LocalRepository localRepository )
         throws RepositoryServiceException
@@ -72,12 +106,33 @@ public class DefaultRepositoryService
 
         try
         {
+<<<<<<< HEAD
+=======
+            List<LocalRepository> repos = getAllLocalRepositories();
+            for ( LocalRepository repo : repos )
+            {
+                if ( repo.getName().equals( localRepository.getName() ) )
+                {
+                    throw new RepositoryServiceException( "Local repository name must be unique" );
+                }
+
+                if ( repo.getLocation().equals( localRepository.getLocation() ) )
+                {
+                    throw new RepositoryServiceException( "Local repository location must be unique" );
+                }
+            }
+
+>>>>>>> refs/remotes/apache/trunk
             localRepository.setName( localRepository.getName().trim() );
             localRepository.setLocation( localRepository.getLocation().trim() );
 
             repository = localRepositoryDao.addLocalRepository( localRepository );
 
+<<<<<<< HEAD
             getLogger().info( "Added new local repository: " + repository.getName() );
+=======
+            log.info( "Added new local repository: " + repository.getName() );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( ContinuumStoreException e )
         {
@@ -94,17 +149,30 @@ public class DefaultRepositoryService
         {
             LocalRepository repository = getLocalRepository( repositoryId );
 
+<<<<<<< HEAD
             if ( purgeManager.isRepositoryInUse( repositoryId ) )
+=======
+            if ( taskQueueManager.isRepositoryInUse( repositoryId ) )
+>>>>>>> refs/remotes/apache/trunk
             {
                 return;
             }
 
+<<<<<<< HEAD
             if ( purgeManager.isRepositoryInPurgeQueue( repositoryId ) )
             {
                 purgeManager.removeRepositoryFromPurgeQueue( repositoryId );
             }
 
             getLogger().info( "Remove purge configurations of " + repository.getName() );
+=======
+            if ( taskQueueManager.isRepositoryInPurgeQueue( repositoryId ) )
+            {
+                taskQueueManager.removeRepositoryFromPurgeQueue( repositoryId );
+            }
+
+            log.info( "Remove purge configurations of " + repository.getName() );
+>>>>>>> refs/remotes/apache/trunk
             removePurgeConfigurationsOfRepository( repositoryId );
 
             List<ProjectGroup> groups = projectGroupDao.getProjectGroupByRepository( repositoryId );
@@ -117,9 +185,15 @@ public class DefaultRepositoryService
 
             localRepositoryDao.removeLocalRepository( repository );
 
+<<<<<<< HEAD
             getLogger().info( "Removed local repository: " + repository.getName() );
         }
         catch ( ContinuumPurgeManagerException e )
+=======
+            log.info( "Removed local repository: " + repository.getName() );
+        }
+        catch ( TaskQueueManagerException e )
+>>>>>>> refs/remotes/apache/trunk
         {
             // swallow?
         }
@@ -137,16 +211,26 @@ public class DefaultRepositoryService
 
         try
         {
+<<<<<<< HEAD
             if ( purgeManager.isRepositoryInUse( localRepository.getId() ) )
+=======
+            if ( taskQueueManager.isRepositoryInUse( localRepository.getId() ) )
+>>>>>>> refs/remotes/apache/trunk
             {
                 return;
             }
 
             localRepositoryDao.updateLocalRepository( localRepository );
 
+<<<<<<< HEAD
             getLogger().info( "Updated local repository: " + localRepository.getName() );
         }
         catch ( ContinuumPurgeManagerException e )
+=======
+            log.info( "Updated local repository: " + localRepository.getName() );
+        }
+        catch ( TaskQueueManagerException e )
+>>>>>>> refs/remotes/apache/trunk
         {
             // swallow?
         }
@@ -200,6 +284,26 @@ public class DefaultRepositoryService
         }
     }
 
+<<<<<<< HEAD
+=======
+    public LocalRepository getLocalRepositoryByName( String repositoryName )
+        throws RepositoryServiceException
+    {
+        try
+        {
+            return localRepositoryDao.getLocalRepositoryByName( repositoryName );
+        }
+        catch ( ContinuumObjectNotFoundException e )
+        {
+            throw new RepositoryServiceException( "No repository found with name: " + repositoryName, e );
+        }
+        catch ( ContinuumStoreException e )
+        {
+            throw new RepositoryServiceException( "Unable to retrieve local repository: " + repositoryName, e );
+        }
+    }
+
+>>>>>>> refs/remotes/apache/trunk
     private void removePurgeConfigurationsOfRepository( int repositoryId )
         throws RepositoryServiceException
     {

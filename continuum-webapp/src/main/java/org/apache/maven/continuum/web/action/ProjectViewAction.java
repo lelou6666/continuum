@@ -19,38 +19,37 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.Date;
-
 import org.apache.maven.continuum.ContinuumException;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.apache.maven.continuum.web.view.buildresults.StateCell;
+import org.codehaus.plexus.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Date;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="projectView"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projectView", instantiationStrategy = "per-lookup" )
 public class ProjectViewAction
     extends ContinuumActionSupport
 {
+    private static final Logger log = LoggerFactory.getLogger( ProjectViewAction.class );
 
     private Project project;
 
-    private int projectId;
-    
-    private String lastBuildDateTime;
+    private BuildResult latestResult;
 
-    /**
-     * Target {@link ProjectGroup} to view.
-     */
-    private ProjectGroup projectGroup;
+    private int projectId;
 
     public String execute()
         throws ContinuumException
     {
-        projectGroup = getProjectGroup();
+        ProjectGroup projectGroup = getProjectGroup();
 
         try
         {
@@ -62,24 +61,22 @@ public class ProjectViewAction
         }
 
         project = getContinuum().getProjectWithAllDetails( projectId );
-        if ( project.getLatestBuildId() > 0 )
+        int latestResultId = project.getLatestBuildId();
+        if ( latestResultId > 0 )
         {
             try
             {
-            BuildResult lastBuildResult = getContinuum().getBuildResult( project.getLatestBuildId() );
-            if ( lastBuildResult != null )
-            {
-                this.setLastBuildDateTime( dateFormatter.format( new Date( lastBuildResult.getEndTime() ) ) );
+                latestResult = getContinuum().getBuildResult( latestResultId );
             }
-            } catch (ContinuumException e)
+            catch ( ContinuumException e )
             {
-                getLogger().info( "buildResult with id " + project.getLatestBuildId() + " has been deleted" );
+                log.debug( "project {} lists non-existent result {} as its latest", projectId, latestResult );
             }
         }
 
         return SUCCESS;
     }
-    
+
     public void setProjectId( int projectId )
     {
         this.projectId = projectId;
@@ -107,13 +104,43 @@ public class ProjectViewAction
         return getContinuum().getProjectGroupByProjectId( projectId );
     }
 
-    public String getLastBuildDateTime()
+    public BuildResult getLatestResult()
     {
-        return lastBuildDateTime;
+        return latestResult;
     }
 
-    public void setLastBuildDateTime( String lastBuildDateTime )
+    /**
+     * Maps the time to an alternative range.
+     *
+     * @param time the time to translate
+     * @return current time in milliseconds if time == 0, otherwise original time value
+     */
+    public long mapZeroTime( long time )
     {
-        this.lastBuildDateTime = lastBuildDateTime;
+        if ( time == 0 )
+            return System.currentTimeMillis();
+        return time;
+    }
+
+    /**
+     * Convenience method for using time values as dates in views.
+     *
+     * @param time the time to convert to a date
+     * @return a {@link Date} created with the specified time
+     */
+    public Date timeToDate( long time )
+    {
+        return new Date( time );
+    }
+
+    /**
+     * Converts the specified result to an html icon.
+     *
+     * @param result the build result to convert.
+     * @return icon as html, either an img or if appropriate, a clickable link containing the img
+     */
+    public String resultIcon( BuildResult result )
+    {
+        return StateCell.iconifyResult( result, result.getState() );
     }
 }

@@ -25,36 +25,50 @@ import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.dao.SystemConfigurationDao;
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.continuum.model.repository.RepositoryPurgeConfiguration;
+<<<<<<< HEAD
 import org.apache.maven.continuum.Continuum;
+=======
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.builddefinition.BuildDefinitionService;
 import org.apache.maven.continuum.builddefinition.BuildDefinitionServiceException;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.system.SystemConfiguration;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
 import org.apache.maven.settings.MavenSettingsBuilder;
 import org.apache.maven.settings.Settings;
+<<<<<<< HEAD
 import org.codehaus.plexus.logging.AbstractLogEnabled;
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+>>>>>>> refs/remotes/apache/trunk
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jpox.SchemaTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Collection;
 
 import java.io.IOException;
 
 /**
  * @author <a href="mailto:jason@maven.org">Jason van Zyl</a>
- * @version $Id$
  * @todo use this, reintroduce default project group
- * @plexus.component role="org.apache.maven.continuum.initialization.ContinuumInitializer"
- * role-hint="default"
  */
+@Component( role = org.apache.maven.continuum.initialization.ContinuumInitializer.class, hint = "default" )
 public class DefaultContinuumInitializer
-    extends AbstractLogEnabled
     implements ContinuumInitializer
 {
+    private static final Logger log = LoggerFactory.getLogger( DefaultContinuumInitializer.class );
+
     // ----------------------------------------------------------------------
     //  Requirements
     // ----------------------------------------------------------------------
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
@@ -74,15 +88,30 @@ public class DefaultContinuumInitializer
      * @plexus.requirement
      */
     private SystemConfigurationDao systemConfigurationDao;
+=======
+    @Requirement
+    private LocalRepositoryDao localRepositoryDao;
 
-    /**
-     * @plexus.requirement
-     */
+    @Requirement
+    private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
+>>>>>>> refs/remotes/apache/trunk
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement
+    private SystemConfigurationDao systemConfigurationDao;
+
+    @Requirement
     private BuildDefinitionService buildDefinitionService;
 
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
+=======
+    @Requirement
+>>>>>>> refs/remotes/apache/trunk
     private MavenSettingsBuilder mavenSettingsBuilder;
 
     // ----------------------------------------------------------------------
@@ -92,11 +121,11 @@ public class DefaultContinuumInitializer
     public void initialize()
         throws ContinuumInitializationException
     {
-        getLogger().info( "Continuum initializer running ..." );
+        log.info( "Continuum initializer running ..." );
 
-        if ( getLogger().isDebugEnabled() )
+        if ( log.isDebugEnabled() )
         {
-            getLogger().debug( "Dumping JPOX/JDO Schema Details ..." );
+            log.debug( "Dumping JPOX/JDO Schema Details ..." );
             try
             {
                 SchemaTool.outputDBInfo( null, true );
@@ -104,7 +133,7 @@ public class DefaultContinuumInitializer
             }
             catch ( Exception e )
             {
-                getLogger().debug( "Error while dumping the database schema", e );
+                log.debug( "Error while dumping the database schema", e );
             }
         }
 
@@ -132,9 +161,8 @@ public class DefaultContinuumInitializer
         {
             throw new ContinuumInitializationException( "Can't get default build definition", e );
         }
-        getLogger().info( "Continuum initializer end running ..." );
+        log.info( "Continuum initializer end running ..." );
     }
-
 
     private void createDefaultProjectGroup()
         throws ContinuumStoreException, BuildDefinitionServiceException
@@ -142,22 +170,81 @@ public class DefaultContinuumInitializer
         ProjectGroup group;
         try
         {
+<<<<<<< HEAD
             group = projectGroupDao.getProjectGroupByGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
             getLogger().info( "Default Project Group exists" );
+=======
+            group = projectGroupDao.getProjectGroupByGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
+            log.info( "Default Project Group exists" );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( ContinuumObjectNotFoundException e )
         {
+            Collection<ProjectGroup> pgs = projectGroupDao.getAllProjectGroups();
+            if ( pgs != null && pgs.isEmpty() )
+            {
+                log.info( "create Default Project Group" );
 
-            getLogger().info( "create Default Project Group" );
+                group = new ProjectGroup();
 
-            group = new ProjectGroup();
+                group.setName( "Default Project Group" );
 
-            group.setName( "Default Project Group" );
+                group.setGroupId( DEFAULT_PROJECT_GROUP_GROUP_ID );
 
-            group.setGroupId( Continuum.DEFAULT_PROJECT_GROUP_GROUP_ID );
+                group.setDescription( "Contains all projects that do not have a group of their own" );
 
-            group.setDescription( "Contains all projects that do not have a group of their own" );
+                LocalRepository localRepository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
 
+                group.setLocalRepository( localRepository );
+
+                group = projectGroupDao.addProjectGroup( group );
+
+                BuildDefinitionTemplate bdt = buildDefinitionService.getDefaultMavenTwoBuildDefinitionTemplate();
+
+                buildDefinitionService.addBuildDefinitionTemplateToProjectGroup( group.getId(), bdt );
+            }
+        }
+    }
+
+    private void createDefaultLocalRepository()
+        throws ContinuumStoreException, ContinuumInitializationException
+    {
+        LocalRepository repository;
+
+        repository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
+
+        Settings settings = getSettings();
+
+        if ( repository == null )
+        {
+            log.info( "create Default Local Repository" );
+
+            repository = new LocalRepository();
+
+            repository.setName( "DEFAULT" );
+
+            repository.setLocation( settings.getLocalRepository() );
+
+            repository = localRepositoryDao.addLocalRepository( repository );
+
+            createDefaultPurgeConfiguration( repository );
+        }
+        else if ( !repository.getLocation().equals( settings.getLocalRepository() ) )
+        {
+            log.info( "updating location of Default Local Repository" );
+
+            repository.setLocation( settings.getLocalRepository() );
+
+            localRepositoryDao.updateLocalRepository( repository );
+        }
+    }
+
+    private void createDefaultPurgeConfiguration( LocalRepository repository )
+        throws ContinuumStoreException
+    {
+        RepositoryPurgeConfiguration repoPurge = new RepositoryPurgeConfiguration();
+
+<<<<<<< HEAD
             LocalRepository localRepository = localRepositoryDao.getLocalRepositoryByName( "DEFAULT" );
 
             group.setLocalRepository( localRepository );
@@ -209,6 +296,10 @@ public class DefaultContinuumInitializer
 
         repoPurge.setRepository( repository );
 
+=======
+        repoPurge.setRepository( repository );
+
+>>>>>>> refs/remotes/apache/trunk
         repoPurge.setDefaultPurge( true );
 
         repositoryPurgeConfigurationDao.addRepositoryPurgeConfiguration( repoPurge );

@@ -17,83 +17,84 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
-<%@ taglib uri="continuum" prefix="c1" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="buildDefinition.template.page.title"/></title>
+        <title><s:text name="buildDefinition.template.page.title"/></title>
     </head>
     <body>
       <div id="axial" class="h3">
-        <h3><ww:text name="buildDefinition.template.section.title"/></h3>
+        <h3><s:text name="buildDefinition.template.section.title"/></h3>
+
+        <s:if test="hasActionErrors()">
+          <div class="errormessage">
+            <s:actionerror/>
+          </div>
+          <input type="button" value="Back" onClick="history.go(-1)">
+        </s:if>
+        <s:if test="hasActionMessages()">
+          <div class="warningmessage">
+            <s:actionmessage/>
+          </div>
+        </s:if>
 
         <div class="axial">
-          <ww:form action="saveBuildDefinitionAsTemplate" method="post" validate="true">
-            <c:choose>
-            
-              <c:when test="${!empty actionErrors}">
-                <div class="errormessage">
-                  <c:forEach items="${actionErrors}" var="actionError">
-                    <p><ww:text name="${actionError}"/></p>
-                  </c:forEach>
-                </div>
-                <input type="button" value="Back" onClick="history.go(-1)">
-              </c:when>
-  
-              <c:when test="${empty actionErrors}">
+          <s:form action="saveBuildDefinitionAsTemplate" method="post" validate="true">
+              <s:if test="!hasActionErrors()">
                 <table>
                   <tbody>
-                    <ww:if test="buildDefinition.type == 'ant'">
-                      <ww:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildDefinition.buildFile"  required="true"/>
-                    </ww:if>
-                    <ww:elseif test="buildDefinition.type == 'shell'">
-                      <ww:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildDefinition.buildFile" required="true"/>
-                    </ww:elseif>
-                    <ww:else>
-                      <ww:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildDefinition.buildFile" required="true"/>
-                    </ww:else>
+                    <s:if test="buildDefinition.type == 'ant'">
+                      <s:textfield label="%{getText('buildDefinition.buildFile.ant.label')}" name="buildDefinition.buildFile"  requiredLabel="true" size="100"/>
+                    </s:if>
+                    <s:elseif test="buildDefinition.type == 'shell'">
+                      <s:textfield label="%{getText('buildDefinition.buildFile.shell.label')}" name="buildDefinition.buildFile" requiredLabel="true" size="100"/>
+                    </s:elseif>
+                    <s:else>
+                      <s:textfield label="%{getText('buildDefinition.buildFile.maven.label')}" name="buildDefinition.buildFile" requiredLabel="true" size="100"/>
+                    </s:else>
     
-                    <ww:if test="buildDefinition.type == 'ant'">
-                      <ww:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="buildDefinition.goals"/>
-                    </ww:if>
-                    <ww:elseif test="buildDefinition.type == 'shell'">
-                    </ww:elseif>
-                    <ww:else>
-                      <ww:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="buildDefinition.goals"/>
-                    </ww:else>
+                    <s:if test="buildDefinition.type == 'ant'">
+                      <s:textfield label="%{getText('buildDefinition.goals.ant.label')}" name="buildDefinition.goals" size="100"/>
+                    </s:if>
+                    <s:elseif test="buildDefinition.type == 'shell'">
+                    </s:elseif>
+                    <s:else>
+                      <s:textfield label="%{getText('buildDefinition.goals.maven.label')}" name="buildDefinition.goals" requiredLabel="true" size="100"/>
+                    </s:else>
     
-                    <ww:textfield label="%{getText('buildDefinition.arguments.label')}" name="buildDefinition.arguments"/>
-                    <ww:checkbox label="%{getText('buildDefinition.buildFresh.label')}" name="buildDefinition.buildFresh"/>
-                    <ww:checkbox label="%{getText('buildDefinition.alwaysBuild.label')}" name="buildDefinition.alwaysBuild" />
-                    <ww:checkbox label="%{getText('buildDefinition.defaultForProject.label')}" name="buildDefinition.defaultForProject" />
-                    <ww:select label="%{getText('buildDefinition.schedule.label')}" name="buildDefinition.schedule.id" list="schedules" listValue="name"
+                    <s:textfield label="%{getText('buildDefinition.arguments.label')}" name="buildDefinition.arguments" size="100"/>
+                    <s:checkbox label="%{getText('buildDefinition.buildFresh.label')}" name="buildDefinition.buildFresh"/>
+                    <s:checkbox label="%{getText('buildDefinition.alwaysBuild.label')}" name="buildDefinition.alwaysBuild" />
+                    <s:checkbox label="%{getText('buildDefinition.defaultForProject.label')}" name="buildDefinition.defaultForProject" />
+                    <s:select label="%{getText('buildDefinition.schedule.label')}" name="buildDefinition.schedule.id" list="schedules" listValue="name"
                                listKey="id"/>
-                    <ww:if test="buildDefinition.profile == null">
-                      <ww:select label="%{getText('buildDefinition.profile.label')}" name="buildDefinition.profile.id" list="profiles" listValue="name" 
+                    <s:if test="buildDefinition.profile == null">
+                      <s:select label="%{getText('buildDefinition.profile.label')}" name="buildDefinition.profile.id" list="profiles" listValue="name"
                                  value="-1" listKey="id" headerKey="-1" headerValue=""/>
-                    </ww:if>
-                    <ww:else>
-                      <ww:select label="%{getText('buildDefinition.profile.label')}" name="buildDefinition.profile.id" list="profiles" listValue="name" 
+                    </s:if>
+                    <s:else>
+                      <s:select label="%{getText('buildDefinition.profile.label')}" name="buildDefinition.profile.id" list="profiles" listValue="name"
                                  listKey="id" headerKey="-1" headerValue=""/>
-                    </ww:else>
-                    <ww:select label="%{getText('buildDefinition.type.label')}" name="buildDefinition.type" list="buildDefinitionTypes"/>
-                    <ww:textfield label="%{getText('buildDefinition.description.label')}" name="buildDefinition.description" required="true"/>
+                    </s:else>
+                    <s:select label="%{getText('buildDefinition.type.label')}" name="buildDefinition.type" list="buildDefinitionTypes"/>
+                    <s:if test="buildDefinition.type != 'ant' || buildDefinition.type != 'shell'">
+                        <s:select label="%{getText('buildDefinition.updatePolicy.label')}" name="buildDefinition.updatePolicy" list="buildDefinitionUpdatePolicies"/>
+                    </s:if>
+                    <s:textfield label="%{getText('buildDefinition.description.label')}" name="buildDefinition.description" requiredLabel="true" size="100"/>
                   </tbody>
                 </table>
                 <div class="functnbar3">
-                  <c1:submitcancel value="%{getText('save')}" cancel="%{getText('cancel')}"/>
+                  <s:submit value="%{getText('save')}" theme="simple"/>
+                  <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
                 </div>
 
-                <ww:hidden name="buildDefinition.id"/>
-                <ww:hidden name="buildDefinition.template" value="true"/>
-              </c:when>
-            
-            </c:choose>
-          </ww:form>
+                <s:hidden name="buildDefinition.id"/>
+                <s:hidden name="buildDefinition.template" value="true"/>
+              </s:if>
+          </s:form>
         </div>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

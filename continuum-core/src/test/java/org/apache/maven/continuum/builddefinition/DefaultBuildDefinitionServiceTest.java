@@ -1,3 +1,5 @@
+package org.apache.maven.continuum.builddefinition;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,14 +18,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+<<<<<<< HEAD
 package org.apache.maven.continuum.builddefinition;
 
 import org.apache.log4j.Logger;
+=======
+
+import org.apache.continuum.dao.DaoUtils;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.AbstractContinuumTest;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
+<<<<<<< HEAD
 import org.apache.continuum.dao.DaoUtils;
 
 import java.util.List;
@@ -31,11 +39,25 @@ import java.util.List;
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
  * @version $Id$
+=======
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+/**
+ * @author <a href="mailto:olamy@apache.org">olamy</a>
+>>>>>>> refs/remotes/apache/trunk
  * @since 15 sept. 07
  */
 public class DefaultBuildDefinitionServiceTest
     extends AbstractContinuumTest
 {
+<<<<<<< HEAD
     private Logger logger = Logger.getLogger( getClass() );
 
     private ProjectGroup projectGroup;
@@ -44,16 +66,27 @@ public class DefaultBuildDefinitionServiceTest
 
     private BuildDefinition buildDefinition;
 
+=======
+    private static final Logger logger = LoggerFactory.getLogger( DefaultBuildDefinitionServiceTest.class );
+
+    private Project project;
+
+>>>>>>> refs/remotes/apache/trunk
     private BuildDefinitionTemplate buildDefinitionTemplate;
 
-    protected void setUp()
+    @Before
+    public void setUp()
         throws Exception
     {
+<<<<<<< HEAD
         super.setUp();
         DaoUtils daoUtils = (DaoUtils) lookup( DaoUtils.class.getName() );
+=======
+        DaoUtils daoUtils = lookup( DaoUtils.class );
+>>>>>>> refs/remotes/apache/trunk
         daoUtils.eraseDatabase();
 
-        projectGroup = new ProjectGroup();
+        ProjectGroup projectGroup = new ProjectGroup();
         projectGroup.setName( "test" );
         projectGroup = getProjectGroupDao().addProjectGroup( projectGroup );
 
@@ -64,7 +97,7 @@ public class DefaultBuildDefinitionServiceTest
         projectGroup.addProject( project );
         getProjectGroupDao().updateProjectGroup( projectGroup );
 
-        buildDefinition = new BuildDefinition();
+        BuildDefinition buildDefinition = new BuildDefinition();
         buildDefinition.setTemplate( true );
         buildDefinition.setArguments( "-N" );
         buildDefinition.setGoals( "clean test-compile" );
@@ -75,19 +108,25 @@ public class DefaultBuildDefinitionServiceTest
         buildDefinitionTemplate = new BuildDefinitionTemplate();
         buildDefinitionTemplate.setName( "test" );
         buildDefinitionTemplate = getBuildDefinitionService().addBuildDefinitionTemplate( buildDefinitionTemplate );
+<<<<<<< HEAD
         buildDefinitionTemplate =
             getBuildDefinitionService().addBuildDefinitionInTemplate( buildDefinitionTemplate, buildDefinition, false );
 
+=======
+        buildDefinitionTemplate = getBuildDefinitionService().addBuildDefinitionInTemplate( buildDefinitionTemplate,
+                                                                                            buildDefinition, false );
+>>>>>>> refs/remotes/apache/trunk
 
     }
 
     protected BuildDefinitionService getBuildDefinitionService()
         throws Exception
     {
-        return (BuildDefinitionService) lookup( BuildDefinitionService.class );
+        return lookup( BuildDefinitionService.class );
     }
 
-    public void testaddTemplateInProject()
+    @Test
+    public void testAddTemplateInProject()
         throws Exception
     {
         try
@@ -121,18 +160,24 @@ public class DefaultBuildDefinitionServiceTest
         }
     }
 
+<<<<<<< HEAD
 
+=======
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testGetDefaultBuildDef()
         throws Exception
     {
-        BuildDefinition bd = (BuildDefinition) getBuildDefinitionService().getDefaultAntBuildDefinitionTemplate()
-            .getBuildDefinitions().get( 0 );
+        BuildDefinition bd =
+            getBuildDefinitionService().getDefaultAntBuildDefinitionTemplate().getBuildDefinitions().get(
+                0 );
         assertNotNull( bd );
         assertEquals( "build.xml", bd.getBuildFile() );
 
-        bd = (BuildDefinition) getBuildDefinitionService().getDefaultMavenTwoBuildDefinitionTemplate()
-            .getBuildDefinitions().get( 0 );
-        BuildDefinitionService buildDefinitionService = (BuildDefinitionService) lookup( BuildDefinitionService.class );
+        bd =
+            getBuildDefinitionService().getDefaultMavenTwoBuildDefinitionTemplate().getBuildDefinitions().get(
+                0 );
+        BuildDefinitionService buildDefinitionService = lookup( BuildDefinitionService.class );
 
         assertEquals( 5, buildDefinitionService.getAllBuildDefinitionTemplate().size() );
         assertNotNull( bd );
@@ -140,22 +185,30 @@ public class DefaultBuildDefinitionServiceTest
         assertEquals( "clean install", bd.getGoals() );
     }
 
+<<<<<<< HEAD
 
+=======
+    @Test
+>>>>>>> refs/remotes/apache/trunk
     public void testAddBuildDefinitionTemplate()
         throws Exception
     {
         BuildDefinitionTemplate template = new BuildDefinitionTemplate();
-        template.setName( "test" );
+        template.setName( "testTemplate" );
 
         template = getBuildDefinitionService().addBuildDefinitionTemplate( template );
         template = getBuildDefinitionService().getBuildDefinitionTemplate( template.getId() );
         assertNotNull( template );
-        assertEquals( "test", template.getName() );
+        assertEquals( "testTemplate", template.getName() );
         List<BuildDefinition> all = getBuildDefinitionService().getAllBuildDefinitions();
         assertEquals( 5, all.size() );
-        BuildDefinition bd = (BuildDefinition) getBuildDefinitionService().getDefaultMavenTwoBuildDefinitionTemplate()
-            .getBuildDefinitions().get( 0 );
+        BuildDefinition bd =
+            getBuildDefinitionService().getDefaultMavenTwoBuildDefinitionTemplate().getBuildDefinitions().get(
+                0 );
         template = getBuildDefinitionService().addBuildDefinitionInTemplate( template, bd, false );
+
+        assertEquals( true, getBuildDefinitionService().isBuildDefinitionInUse( bd ) );
+
         assertEquals( 1, template.getBuildDefinitions().size() );
         all = getBuildDefinitionService().getAllBuildDefinitions();
         assertEquals( 5, all.size() );
@@ -167,5 +220,34 @@ public class DefaultBuildDefinitionServiceTest
         all = getBuildDefinitionService().getAllBuildDefinitions();
         assertEquals( 5, all.size() );
 
+<<<<<<< HEAD
+=======
+    }
+
+    @Test
+    public void testAddDuplicateBuildDefinitionTemplate()
+        throws Exception
+    {
+        BuildDefinitionTemplate template = new BuildDefinitionTemplate();
+        template.setName( "test" );
+
+        template = getBuildDefinitionService().addBuildDefinitionTemplate( template );
+        assertNull( template );
+    }
+
+    @Test
+    public void testUnusedBuildDefinition()
+        throws Exception
+    {
+        BuildDefinition unused = new BuildDefinition();
+
+        unused.setTemplate( true );
+        unused.setArguments( "-N" );
+        unused.setGoals( "clean test-compile" );
+        unused.setBuildFile( "pom.xml" );
+        unused.setDescription( "desc template" );
+
+        assertFalse( getBuildDefinitionService().isBuildDefinitionInUse( unused ) );
+>>>>>>> refs/remotes/apache/trunk
     }
 }

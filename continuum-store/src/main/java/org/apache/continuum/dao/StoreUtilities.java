@@ -19,12 +19,22 @@ package org.apache.continuum.dao;
  * under the License.
  */
 
+<<<<<<< HEAD
 import org.codehaus.plexus.jdo.JdoFactory;
 
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.jdo.JdoFactory;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+>>>>>>> refs/remotes/apache/trunk
 import javax.jdo.PersistenceManagerFactory;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.StoreUtilities"
  */
@@ -33,6 +43,16 @@ public class StoreUtilities
     /**
      * @plexus.requirement role-hint="continuum"
      */
+=======
+ */
+@Service( "storeUtilities" )
+@Component( role = org.apache.continuum.dao.StoreUtilities.class )
+public class StoreUtilities
+{
+
+    @Resource( name = "jdoFactory#continuum" )
+    @Requirement( hint = "continuum" )
+>>>>>>> refs/remotes/apache/trunk
     private JdoFactory continuumJdoFactory;
 
     private PersistenceManagerFactory continuumPersistenceManagerFactory;
@@ -41,8 +61,25 @@ public class StoreUtilities
     {
         if ( continuumPersistenceManagerFactory == null )
         {
+<<<<<<< HEAD
             continuumPersistenceManagerFactory = continuumJdoFactory.getPersistenceManagerFactory();
         }
         return continuumPersistenceManagerFactory;
     }
+=======
+            buildFactory();
+        }
+        return continuumPersistenceManagerFactory;
+    }
+
+    /**
+     * Useful when reconfiguring the {@link JdoFactory} since it is cached. Caller should ensure existing
+     * {@link PersistenceManagerFactory} is gracefully torn down since this simply replaces its reference with a newly
+     * configured one.
+     */
+    public void buildFactory()
+    {
+        continuumPersistenceManagerFactory = continuumJdoFactory.getPersistenceManagerFactory();
+    }
+>>>>>>> refs/remotes/apache/trunk
 }

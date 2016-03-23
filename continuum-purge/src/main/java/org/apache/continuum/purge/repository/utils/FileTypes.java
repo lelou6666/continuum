@@ -35,7 +35,13 @@ public class FileTypes
 
     public static final List<String> DEFAULT_EXCLUSIONS = Arrays.asList( "**/maven-metadata.xml",
                                                                          "**/maven-metadata-*.xml", "**/*.sha1",
+<<<<<<< HEAD
                                                                          "**/*.asc", "**/*.md5", "**/*.pgp" );
+=======
+                                                                         "**/*.asc", "**/*.md5", "**/*.pgp",
+                                                                         "**/*.repositories",
+                                                                         "**/resolver-status.properties" );
+>>>>>>> refs/remotes/apache/trunk
 
     public List<String> getIgnoredFileTypePatterns()
     {
@@ -62,7 +68,11 @@ public class FileTypes
             return false;
         }
 
+<<<<<<< HEAD
         for ( String pattern : (List<String>) artifactFileTypePatterns )
+=======
+        for ( String pattern : artifactFileTypePatterns )
+>>>>>>> refs/remotes/apache/trunk
         {
             if ( SelectorUtils.matchPath( pattern, relativePath, false ) )
             {

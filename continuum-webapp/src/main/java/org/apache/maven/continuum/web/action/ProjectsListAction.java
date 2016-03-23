@@ -19,28 +19,34 @@ package org.apache.maven.continuum.web.action;
  * under the License.
  */
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
+import org.apache.continuum.buildagent.NoBuildAgentException;
+import org.apache.continuum.buildagent.NoBuildAgentInGroupException;
+import org.apache.continuum.web.util.AuditLog;
+import org.apache.continuum.web.util.AuditLogConstants;
 import org.apache.maven.continuum.ContinuumException;
+import org.apache.maven.continuum.build.BuildException;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.Project;
-import org.apache.maven.continuum.project.ContinuumProjectState;
 import org.apache.maven.continuum.web.exception.AuthorizationRequiredException;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.dag.CycleDetectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
- * @version $Id$
- * @plexus.component role="com.opensymphony.xwork.Action" role-hint="projects"
  */
+@Component( role = com.opensymphony.xwork2.Action.class, hint = "projects", instantiationStrategy = "per-lookup" )
 public class ProjectsListAction
     extends ContinuumActionSupport
 {
+    private static final Logger logger = LoggerFactory.getLogger( ProjectsListAction.class );
+
     private List<String> selectedProjects;
-    
+
     private List<String> selectedProjectsNames;
 
     private String projectGroupName = "";
@@ -67,14 +73,14 @@ public class ProjectsListAction
         {
             return remove();
         }
-        else if ("confirmRemove".equals( methodToCall ))
+        else if ( "confirmRemove".equals( methodToCall ) )
         {
             return confirmRemove();
         }
 
         return SUCCESS;
     }
-   
+
     private String remove()
         throws ContinuumException
     {
@@ -95,14 +101,18 @@ public class ProjectsListAction
 
                 try
                 {
-                    getLogger().info( "Removing Project with id=" + projectId );
+                    AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.REMOVE_PROJECT );
+                    event.setCategory( AuditLogConstants.PROJECT );
+                    event.setCurrentUser( getPrincipal() );
+                    event.log();
 
                     getContinuum().removeProject( projectId );
                 }
                 catch ( ContinuumException e )
                 {
-                    getLogger().error( "Error removing Project with id=" + projectId );
-                    addActionError( "Unable to remove Project with id=" + projectId );
+                    logger.error( "Error removing Project with id=" + projectId );
+                    addActionError( getText( "deleteProject.error", "Unable to delete project", new Integer(
+                        projectId ).toString() ) );
                 }
             }
         }
@@ -124,7 +134,7 @@ public class ProjectsListAction
         }
         return "confirmRemove";
     }
-    
+
     private String build()
         throws ContinuumException
     {
@@ -140,79 +150,46 @@ public class ProjectsListAction
         if ( selectedProjects != null && !selectedProjects.isEmpty() )
         {
             ArrayList<Project> projectsList = new ArrayList<Project>();
-            for ( Iterator i = selectedProjects.iterator(); i.hasNext(); )
+            for ( String pId : selectedProjects )
             {
-                int projectId = Integer.parseInt( (String) i.next() );
+                int projectId = Integer.parseInt( pId );
                 Project p = getContinuum().getProjectWithAllDetails( projectId );
                 projectsList.add( p );
+
+                AuditLog event = new AuditLog( "Project id=" + projectId, AuditLogConstants.FORCE_BUILD );
+                event.setCategory( AuditLogConstants.PROJECT );
+                event.setCurrentUser( getPrincipal() );
+                event.log();
             }
 
-            List sortedProjects;
+            List<Project> sortedProjects = getContinuum().getProjectsInBuildOrder( projectsList );
+
             try
             {
-                sortedProjects = getContinuum().getProjectsInBuildOrder( projectsList );
-            }
-            catch ( CycleDetectedException e )
-            {
-                sortedProjects = projectsList;
-            }
-
-            //TODO : Change this part because it's a duplicate of DefaultContinuum.buildProjectGroup*
-            List<BuildDefinition> groupDefaultBDs = null;
-
-            if ( getBuildDefinitionId() <= 0 )
-            {
-                groupDefaultBDs = getContinuum().getDefaultBuildDefinitionsForProjectGroup( projectGroupId );
-            }
-            for ( Iterator i = sortedProjects.iterator(); i.hasNext(); )
-            {
-                Project project = (Project) i.next();
                 if ( this.getBuildDefinitionId() <= 0 )
                 {
-                    int buildDefId = -1;
-
-                    if ( groupDefaultBDs != null )
-                    {
-                        for ( BuildDefinition bd : groupDefaultBDs )
-                        {
-                            if ( project.getExecutorId().equals( bd.getType() ) )
-                            {
-                                buildDefId = bd.getId();
-                                break;
-                            }
-                        }
-                    }
-
-                    BuildDefinition projectDefaultBD = null;
-                    if ( this.getBuildDefinitionId() == -1 )
-                    {
-                        try
-                        {
-                            projectDefaultBD = getContinuum().getDefaultBuildDefinition( project.getId() );
-                        }
-                        catch ( ContinuumException e )
-                        {
-                            // here skip ObjectNotException
-                            getLogger().debug( e.getMessage() );
-                        }
-
-                        if ( projectDefaultBD != null )
-                        {
-                            buildDefId = projectDefaultBD.getId();
-                            getLogger().debug( "Project " + project.getId() +
-                                " has own default build definition, will use it instead of group's." );
-                        }
-                    }
-
-                    getContinuum().buildProject( project.getId(), buildDefId, ContinuumProjectState.TRIGGER_FORCED );
+                    List<BuildDefinition> groupDefaultBDs = getContinuum().getDefaultBuildDefinitionsForProjectGroup(
+                        projectGroupId );
+                    getContinuum().buildProjectsWithBuildDefinition( sortedProjects, groupDefaultBDs );
                 }
                 else
                 {
-                    getContinuum().buildProject( project.getId(), this.getBuildDefinitionId(),
-                                                 ContinuumProjectState.TRIGGER_FORCED );
+                    getContinuum().buildProjectsWithBuildDefinition( sortedProjects, buildDefinitionId );
                 }
+                addActionMessage( getText( "build.projects.success" ) );
             }
-
+            catch ( BuildException be )
+            {
+                addActionError( be.getLocalizedMessage() );
+            }
+            catch ( NoBuildAgentException e )
+            {
+                addActionError( getText( "projectGroup.build.error.noBuildAgent" ) );
+            }
+            catch ( NoBuildAgentInGroupException e )
+            {
+                addActionError( getText( "projectGroup.build.error.noBuildAgentInGroup" ) );
+            }
         }
 
         return SUCCESS;

@@ -26,7 +26,10 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  */
 public interface RepositoryPurgeConfigurationDao
 {
@@ -34,6 +37,11 @@ public interface RepositoryPurgeConfigurationDao
 
     List<RepositoryPurgeConfiguration> getRepositoryPurgeConfigurationsBySchedule( int scheduleId );
 
+<<<<<<< HEAD
+=======
+    List<RepositoryPurgeConfiguration> getEnableRepositoryPurgeConfigurationsBySchedule( int scheduleId );
+
+>>>>>>> refs/remotes/apache/trunk
     List<RepositoryPurgeConfiguration> getRepositoryPurgeConfigurationsByLocalRepository( int repositoryId );
 
     RepositoryPurgeConfiguration getRepositoryPurgeConfiguration( int configurationId )

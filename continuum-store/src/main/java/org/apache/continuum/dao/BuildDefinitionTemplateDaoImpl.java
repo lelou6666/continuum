@@ -21,6 +21,11 @@ package org.apache.continuum.dao;
 
 import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+>>>>>>> refs/remotes/apache/trunk
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
@@ -31,9 +36,15 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.BuildDefinitionTemplateDao"
  */
+=======
+ */
+@Repository( "buildDefinitionTemplateDao" )
+@Component( role = org.apache.continuum.dao.BuildDefinitionTemplateDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class BuildDefinitionTemplateDaoImpl
     extends AbstractDao
     implements BuildDefinitionTemplateDao
@@ -74,14 +85,22 @@ public class BuildDefinitionTemplateDaoImpl
     public BuildDefinitionTemplate getBuildDefinitionTemplate( int id )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (BuildDefinitionTemplate) getObjectById( BuildDefinitionTemplate.class, id,
+=======
+        return getObjectById( BuildDefinitionTemplate.class, id,
+>>>>>>> refs/remotes/apache/trunk
                                                         BUILD_TEMPLATE_BUILD_DEFINITIONS );
     }
 
     public BuildDefinitionTemplate addBuildDefinitionTemplate( BuildDefinitionTemplate buildDefinitionTemplate )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (BuildDefinitionTemplate) addObject( buildDefinitionTemplate );
+=======
+        return addObject( buildDefinitionTemplate );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public BuildDefinitionTemplate updateBuildDefinitionTemplate( BuildDefinitionTemplate buildDefinitionTemplate )

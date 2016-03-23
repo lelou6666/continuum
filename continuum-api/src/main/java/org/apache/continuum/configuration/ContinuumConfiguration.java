@@ -1,5 +1,7 @@
 package org.apache.continuum.configuration;
 
+import java.io.File;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,11 +23,15 @@ package org.apache.continuum.configuration;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 17 juin 2008
  */
 public interface ContinuumConfiguration
 {
+    /**
+     * @return an empty or a filled on but never null !
+     * @throws ContinuumConfigurationException
+     *
+     */
     GeneralConfiguration getGeneralConfiguration()
         throws ContinuumConfigurationException;
 
@@ -35,6 +41,12 @@ public interface ContinuumConfiguration
     void save()
         throws ContinuumConfigurationException;
 
+    void save( File file )
+        throws ContinuumConfigurationException;
+
     void reload()
+        throws ContinuumConfigurationException;
+
+    void reload( File file )
         throws ContinuumConfigurationException;
 }

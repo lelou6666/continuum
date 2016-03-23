@@ -1,6 +1,9 @@
 package org.apache.continuum.purge.executor;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/apache/trunk
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,13 +25,20 @@ package org.apache.continuum.purge.executor;
 
 /**
  * @author Maria Catherine Tan
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public interface ContinuumPurgeExecutor
 {
     String ROLE = ContinuumPurgeExecutor.class.getName();
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     void purge( String path )
         throws ContinuumPurgeExecutorException;
 }

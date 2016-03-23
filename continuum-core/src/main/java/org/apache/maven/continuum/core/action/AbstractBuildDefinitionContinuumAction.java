@@ -29,6 +29,9 @@ import org.apache.maven.continuum.model.project.ProjectGroup;
 import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.store.ContinuumObjectNotFoundException;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Requirement;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -36,11 +39,11 @@ import java.util.List;
  * AbstractBuildDefinitionContinuumAction:
  *
  * @author Jesse McConnell <jmcconnell@apache.org>
- * @version $Id$
  */
 public abstract class AbstractBuildDefinitionContinuumAction
     extends AbstractContinuumAction
 {
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
@@ -49,6 +52,12 @@ public abstract class AbstractBuildDefinitionContinuumAction
     /**
      * @plexus.requirement
      */
+=======
+    @Requirement
+    private BuildDefinitionDao buildDefinitionDao;
+
+    @Requirement
+>>>>>>> refs/remotes/apache/trunk
     private ScheduleDao scheduleDao;
 
     protected void resolveDefaultBuildDefinitionsForProject( BuildDefinition buildDefinition, Project project )
@@ -59,8 +68,13 @@ public abstract class AbstractBuildDefinitionContinuumAction
             // if buildDefinition passed in is not default then we are done
             if ( buildDefinition.isDefaultForProject() )
             {
+<<<<<<< HEAD
                 BuildDefinition storedDefinition =
                     buildDefinitionDao.getDefaultBuildDefinitionForProject( project.getId() );
+=======
+                BuildDefinition storedDefinition = buildDefinitionDao.getDefaultBuildDefinitionForProject(
+                    project.getId() );
+>>>>>>> refs/remotes/apache/trunk
 
                 if ( storedDefinition != null )
                 {
@@ -73,7 +87,7 @@ public abstract class AbstractBuildDefinitionContinuumAction
         catch ( ContinuumObjectNotFoundException nfe )
         {
             getLogger().debug( getClass().getName() +
-                ": safely ignoring the resetting of old build definition becuase it didn't exist" );
+                                   ": safely ignoring the resetting of old build definition becuase it didn't exist" );
         }
         catch ( ContinuumStoreException cse )
         {
@@ -99,8 +113,13 @@ public abstract class AbstractBuildDefinitionContinuumAction
     {
         try
         {
+<<<<<<< HEAD
             List<BuildDefinition> storedDefinitions =
                 buildDefinitionDao.getDefaultBuildDefinitionsForProjectGroup( projectGroup.getId() );
+=======
+            List<BuildDefinition> storedDefinitions = buildDefinitionDao.getDefaultBuildDefinitionsForProjectGroup(
+                projectGroup.getId() );
+>>>>>>> refs/remotes/apache/trunk
 
             for ( BuildDefinition storedDefinition : storedDefinitions )
             {
@@ -109,8 +128,8 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 {
                     if ( storedDefinition != null && storedDefinition.getId() != buildDefinition.getId() )
                     {
-                        if ( buildDefinition.getType() != null &&
-                            buildDefinition.getType().equals( storedDefinition.getType() ) )
+                        if ( buildDefinition.getType() != null && buildDefinition.getType().equals(
+                            storedDefinition.getType() ) )
                         {
                             //Required to get build def from store because storedDefinition is readonly
                             BuildDefinition def = buildDefinitionDao.getBuildDefinition( storedDefinition.getId() );
@@ -148,8 +167,13 @@ public abstract class AbstractBuildDefinitionContinuumAction
      * @param buildDefinition
      * @throws ContinuumException
      */
+<<<<<<< HEAD
     protected BuildDefinition updateBuildDefinitionInList( List<BuildDefinition> buildDefinitions,
                                                            BuildDefinition buildDefinition )
+=======
+    protected void updateBuildDefinitionInList( List<BuildDefinition> buildDefinitions,
+                                                BuildDefinition buildDefinition )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumException
     {
         try
@@ -170,6 +194,7 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 storedDefinition.setArguments( buildDefinition.getArguments() );
                 storedDefinition.setBuildFile( buildDefinition.getBuildFile() );
                 storedDefinition.setBuildFresh( buildDefinition.isBuildFresh() );
+                storedDefinition.setUpdatePolicy( buildDefinition.getUpdatePolicy() );
 
                 // special case of this is resolved in the resolveDefaultBuildDefinitionsForProjectGroup method
                 storedDefinition.setDefaultForProject( buildDefinition.isDefaultForProject() );
@@ -202,8 +227,11 @@ public abstract class AbstractBuildDefinitionContinuumAction
                 storedDefinition.setAlwaysBuild( buildDefinition.isAlwaysBuild() );
 
                 buildDefinitionDao.storeBuildDefinition( storedDefinition );
+<<<<<<< HEAD
 
                 return storedDefinition;
+=======
+>>>>>>> refs/remotes/apache/trunk
             }
             else
             {

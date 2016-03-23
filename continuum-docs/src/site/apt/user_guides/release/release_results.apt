@@ -1,0 +1,40 @@
+ ------
+ Release Results Management
+ ------
+ ------
+ Feb 23 2009
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+Release Results Management
+
+    The <<Release Results>> tab from the <<Project Information>> page displays all the release results of a
+    project when executing the release goals prepare and perform.
+
+~~TODO What does the last part of the above mean?
+
+[../../images/release_result-1.png] Release Results page
+
+    To view the release result, click the <<View Result>> link in-line with the release goal being executed.
+    
+    The <<Triggered by>> field displays the username of the person who initiated the release.
+
+[../../images/release_result-2.png] Release Summary
+
+    To delete release results, select the boxes beside the project name then click <<Delete>>.

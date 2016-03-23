@@ -21,6 +21,11 @@ package org.apache.continuum.dao;
 
 import org.apache.continuum.model.repository.LocalRepository;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+<<<<<<< HEAD
+=======
+import org.codehaus.plexus.component.annotations.Component;
+import org.springframework.stereotype.Repository;
+>>>>>>> refs/remotes/apache/trunk
 
 import javax.jdo.Extent;
 import javax.jdo.PersistenceManager;
@@ -32,9 +37,15 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:evenisse@apache.org">Emmanuel Venisse</a>
+<<<<<<< HEAD
  * @version $Id$
  * @plexus.component role="org.apache.continuum.dao.LocalRepositoryDao"
  */
+=======
+ */
+@Repository( "localRepositoryDao" )
+@Component( role = org.apache.continuum.dao.LocalRepositoryDao.class )
+>>>>>>> refs/remotes/apache/trunk
 public class LocalRepositoryDaoImpl
     extends AbstractDao
     implements LocalRepositoryDao
@@ -42,7 +53,11 @@ public class LocalRepositoryDaoImpl
     public LocalRepository addLocalRepository( LocalRepository repository )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (LocalRepository) addObject( repository );
+=======
+        return addObject( repository );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public void updateLocalRepository( LocalRepository repository )
@@ -97,7 +112,11 @@ public class LocalRepositoryDaoImpl
     public LocalRepository getLocalRepository( int repositoryId )
         throws ContinuumStoreException
     {
+<<<<<<< HEAD
         return (LocalRepository) getObjectById( LocalRepository.class, repositoryId );
+=======
+        return getObjectById( LocalRepository.class, repositoryId );
+>>>>>>> refs/remotes/apache/trunk
     }
 
     public LocalRepository getLocalRepositoryByName( String name )

@@ -21,7 +21,10 @@ package org.apache.continuum.repository;
 
 /**
  * @author Maria Catherine Tan
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public class RepositoryServiceException
@@ -31,12 +34,20 @@ public class RepositoryServiceException
     {
         super( message );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public RepositoryServiceException( Throwable cause )
     {
         super( cause );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public RepositoryServiceException( String message, Throwable cause )
     {
         super( message, cause );

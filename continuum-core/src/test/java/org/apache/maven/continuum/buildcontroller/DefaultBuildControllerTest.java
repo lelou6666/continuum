@@ -21,21 +21,41 @@ package org.apache.maven.continuum.buildcontroller;
 
 import org.apache.continuum.dao.BuildDefinitionDao;
 import org.apache.continuum.dao.BuildResultDao;
+<<<<<<< HEAD
+=======
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.continuum.utils.build.BuildTrigger;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.AbstractContinuumTest;
+import org.apache.maven.continuum.core.action.AbstractContinuumAction;
 import org.apache.maven.continuum.execution.ContinuumBuildExecutorConstants;
 import org.apache.maven.continuum.model.project.BuildDefinition;
 import org.apache.maven.continuum.model.project.BuildResult;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectDependency;
+import org.apache.maven.continuum.model.project.Schedule;
 import org.apache.maven.continuum.model.scm.ScmResult;
 import org.apache.maven.continuum.project.ContinuumProjectState;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class DefaultBuildControllerTest
     extends AbstractContinuumTest
 {
     private DefaultBuildController controller;
+
+    private static String FORCED_BUILD_USER = "TestUsername";
+
+    private static String SCHEDULE_NAME = "TEST_SCHEDULE";
 
     int projectId1;
 
@@ -45,10 +65,13 @@ public class DefaultBuildControllerTest
 
     int buildDefinitionId2;
 
+    @Before
     public void setUp()
         throws Exception
     {
-        super.setUp();
+        BuildDefinitionDao buildDefinitionDao = lookup( BuildDefinitionDao.class );
+
+        BuildResultDao buildResultDao = lookup( BuildResultDao.class );
 
         BuildDefinitionDao buildDefinitionDao = (BuildDefinitionDao) lookup( BuildDefinitionDao.class.getName() );
 
@@ -75,6 +98,10 @@ public class DefaultBuildControllerTest
         buildResult2.setState( ContinuumProjectState.OK );
         buildResult2.setBuildDefinition( bd1 );
         buildResultDao.addBuildResult( project1, buildResult2 );
+<<<<<<< HEAD
+=======
+        createPomFile( getProjectDao().getProjectWithAllDetails( projectId1 ) );
+>>>>>>> refs/remotes/apache/trunk
 
         Project project2 = createProject( "project2" );
         ProjectDependency dep1 = new ProjectDependency();
@@ -92,8 +119,12 @@ public class DefaultBuildControllerTest
         project2.setState( ContinuumProjectState.OK );
         projectId2 = addProject( project2 ).getId();
         buildDefinitionId2 = buildDefinitionDao.getDefaultBuildDefinition( projectId2 ).getId();
+<<<<<<< HEAD
+=======
+        createPomFile( getProjectDao().getProjectWithAllDetails( projectId2 ) );
+>>>>>>> refs/remotes/apache/trunk
 
-        controller = (DefaultBuildController) lookup( BuildController.ROLE );
+        controller = (DefaultBuildController) lookup( BuildController.class );
     }
 
     private Project createProject( String artifactId )
@@ -110,30 +141,48 @@ public class DefaultBuildControllerTest
     private BuildDefinition createBuildDefinition()
     {
         BuildDefinition builddef = new BuildDefinition();
+        Schedule schedule = new Schedule();
+        schedule.setName( SCHEDULE_NAME );
+        builddef.setSchedule( schedule );
         builddef.setBuildFile( "pom.xml" );
         builddef.setGoals( "clean" );
         builddef.setDefaultForProject( true );
         return builddef;
     }
 
-    private BuildContext getContext()
+    private BuildContext getScheduledBuildContext()
         throws Exception
     {
-        return controller.initializeBuildContext( projectId2, buildDefinitionId2,
-                                                  ContinuumProjectState.TRIGGER_SCHEDULED );
+        return controller.initializeBuildContext( projectId2, buildDefinitionId2, new BuildTrigger(
+            ContinuumProjectState.TRIGGER_SCHEDULED ), new ScmResult() );
+    }
+
+    private BuildContext getForcedBuildContext()
+        throws Exception
+    {
+        return controller.initializeBuildContext( projectId2, buildDefinitionId2, new BuildTrigger(
+            ContinuumProjectState.TRIGGER_FORCED, FORCED_BUILD_USER ), new ScmResult() );
     }
 
     private BuildContext getContext( int hourOfLastExecution )
         throws Exception
     {
-        BuildContext context = getContext();
+        BuildContext context = getScheduledBuildContext();
         BuildResult oldBuildResult = new BuildResult();
         oldBuildResult.setEndTime( Calendar.getInstance().getTimeInMillis() + ( hourOfLastExecution * 3600000 ) );
         context.setOldBuildResult( oldBuildResult );
         context.setScmResult( new ScmResult() );
+
+        Map<String, Object> actionContext = context.getActionContext();
+        ProjectScmRoot projectScmRoot = new ProjectScmRoot();
+        projectScmRoot.setId( 1 );
+        projectScmRoot.setScmRootAddress( "scm:local:src/test-projects:flat-multi-module" );
+        AbstractContinuumAction.setProjectScmRoot( actionContext, projectScmRoot );
+
         return context;
     }
 
+    @Test
     public void testWithoutDependencyChanges()
         throws Exception
     {
@@ -143,6 +192,7 @@ public class DefaultBuildControllerTest
         assertFalse( controller.shouldBuild( context ) );
     }
 
+    @Test
     public void testWithNewProjects()
         throws Exception
     {
@@ -154,20 +204,22 @@ public class DefaultBuildControllerTest
         p2.setState( ContinuumProjectState.NEW );
         getProjectDao().updateProject( p2 );
 
-        BuildContext context = getContext();
+        BuildContext context = getScheduledBuildContext();
         controller.checkProjectDependencies( context );
         assertEquals( 0, context.getModifiedDependencies().size() );
         assertTrue( controller.shouldBuild( context ) );
     }
 
+    @Test
     public void testWithNewBuildDefinition()
         throws Exception
     {
-        BuildContext context = getContext();
+        BuildContext context = getScheduledBuildContext();
         assertNull( context.getOldBuildResult() );
         assertTrue( controller.shouldBuild( context ) );
     }
 
+    @Test
     public void testWithDependencyChanges()
         throws Exception
     {
@@ -175,5 +227,114 @@ public class DefaultBuildControllerTest
         controller.checkProjectDependencies( context );
         assertEquals( 1, context.getModifiedDependencies().size() );
         assertTrue( controller.shouldBuild( context ) );
+    }
+
+    @Test
+    public void testWithNullScmResult()
+        throws Exception
+    {
+        BuildContext context = getContext( +1 );
+        context.setScmResult( null );
+        controller.checkProjectDependencies( context );
+        assertEquals( 0, context.getModifiedDependencies().size() );
+        assertFalse( controller.shouldBuild( context ) );
+    }
+
+    @Test
+    public void testForcedBuildTriggeredByField()
+        throws Exception
+    {
+        BuildContext context = getForcedBuildContext();
+        assertEquals( FORCED_BUILD_USER, context.getBuildTrigger().getTriggeredBy() );
+    }
+
+    @Test
+    public void testScheduledBuildTriggeredByField()
+        throws Exception
+    {
+        BuildContext context = getScheduledBuildContext();
+        assertEquals( SCHEDULE_NAME, context.getBuildTrigger().getTriggeredBy() );
+    }
+
+    @Test
+    public void testScheduledBuildTriggeredByField_UsernameProvided()
+        throws Exception
+    {
+        BuildTrigger buildTrigger = new BuildTrigger( ContinuumProjectState.TRIGGER_SCHEDULED, "test-user" );
+
+        BuildContext context = controller.initializeBuildContext( projectId2, buildDefinitionId2, buildTrigger,
+                                                                  new ScmResult() );
+
+        String contextTriggeredBy = context.getBuildTrigger().getTriggeredBy();
+        assertFalse( "test-user".equals( contextTriggeredBy ) );
+        assertEquals( SCHEDULE_NAME, contextTriggeredBy );
+    }
+
+    private File getWorkingDirectory()
+        throws Exception
+    {
+        File workingDirectory = getTestFile( "target/working-directory" );
+
+        if ( !workingDirectory.exists() )
+        {
+            workingDirectory.mkdir();
+        }
+
+        return workingDirectory;
+    }
+
+    private File getWorkingDirectory( Project project )
+        throws Exception
+    {
+        File projectDir = new File( getWorkingDirectory(), Integer.toString( project.getId() ) );
+
+        if ( !projectDir.exists() )
+        {
+            projectDir.mkdirs();
+            System.out.println( "projectdirectory created" + projectDir.getAbsolutePath() );
+        }
+
+        return projectDir;
+    }
+
+    private void createPomFile( Project project )
+        throws Exception
+    {
+        File pomFile = new File( getWorkingDirectory( project ), "pom.xml" );
+
+        BufferedWriter out = new BufferedWriter( new FileWriter( pomFile ) );
+        out.write( "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" " +
+                       "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+                       "xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd\">\n" );
+        out.write( "<modelVersion>4.0.0</modelVersion>\n" );
+        out.write( "<groupId>" + project.getGroupId() + "</groupId>\n" );
+        out.write( "<artifactId>" + project.getArtifactId() + "</artifactId>\n" );
+        out.write( "<version>" + project.getVersion() + "</version>\n" );
+        out.write( "<scm>\n" );
+        out.write( "<connection>" + "scm:local|" + getWorkingDirectory().getAbsolutePath() +
+                       "|" + project.getId() + "</connection>\n" );
+        out.write( "</scm>" );
+
+        if ( project.getDependencies().size() > 0 )
+        {
+            out.write( "<dependencies>\n" );
+
+            List<ProjectDependency> dependencies = project.getDependencies();
+
+            for ( ProjectDependency dependency : dependencies )
+            {
+                out.write( "<dependency>\n" );
+                out.write( "<groupId>" + dependency.getGroupId() + "</groupId>\n" );
+                out.write( "<artifactId>" + dependency.getArtifactId() + "</artifactId>\n" );
+                out.write( "<version>" + dependency.getVersion() + "</version>\n" );
+                out.write( "</dependency>\n" );
+            }
+            out.write( "</dependencies>\n" );
+        }
+
+        out.write( "</project>" );
+        out.close();
+
+        System.out.println( "pom file created" );
     }
 }

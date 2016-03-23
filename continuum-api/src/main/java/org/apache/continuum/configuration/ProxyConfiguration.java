@@ -19,11 +19,11 @@ package org.apache.continuum.configuration;
  * under the License.
  */
 
+
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 /**
  * @author <a href="mailto:olamy@apache.org">olamy</a>
- * @version $Id$
  * @since 24 juin 2008
  */
 public class ProxyConfiguration
@@ -39,6 +39,15 @@ public class ProxyConfiguration
     public ProxyConfiguration()
     {
         // nothing here
+    }
+
+    public ProxyConfiguration( String proxyHost, String proxyPassword, int proxyPort, String proxyUser )
+    {
+        super();
+        this.proxyHost = proxyHost;
+        this.proxyPassword = proxyPassword;
+        this.proxyPort = proxyPort;
+        this.proxyUser = proxyUser;
     }
 
     public String getProxyHost()
@@ -86,4 +95,5 @@ public class ProxyConfiguration
     {
         return ReflectionToStringBuilder.toString( this );
     }
+
 }

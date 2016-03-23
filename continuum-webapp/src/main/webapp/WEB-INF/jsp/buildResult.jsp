@@ -17,15 +17,93 @@
   ~ under the License.
   --%>
 
-<%@ taglib uri="/webwork" prefix="ww" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
 <%@ taglib uri="http://www.extremecomponents.org" prefix="ec" %>
-<%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib prefix="c1" uri="continuum" %>
 <%@ taglib uri="http://plexus.codehaus.org/redback/taglib-1.0" prefix="redback" %>
+
 <html>
-  <ww:i18n name="localization.Continuum">
+  <s:i18n name="localization.Continuum">
     <head>
-        <title><ww:text name="buildResult.page.title"/></title>
+        <title><s:text name="buildResult.page.title"/></title>
+        <script type="text/javascript">
+          <s:url id="outputAsyncUrl" action="buildOutputJSON" escapeAmp="false">
+            <s:param name="projectId" value="projectId"/>
+            <s:param name="buildId" value="buildId"/>
+          </s:url>
+          jQuery(document).ready(function($) {
+
+            var buildInProgress = <s:property value="buildInProgress" />;
+            var outputUrl = '<s:property value="#outputAsyncUrl" escapeHtml="false" />';
+            var refreshPending = false;
+
+            var $ta = $('#outputArea');
+
+            function toggleOutput() {
+              if ($ta.html()) {
+                $('#noBuildOutput').hide();
+                $('#buildOutput').show();
+              } else {
+                $('#buildOutput').hide();
+                $('#noBuildOutput').show();
+              }
+            }
+            toggleOutput();  // Show appropriate initial controls
+
+            function scrollToBottom($textArea) {
+              var newHeight = $textArea.attr('scrollHeight');
+              $textArea.attr('scrollTop', newHeight);
+            }
+            scrollToBottom($ta);  // Scroll text area to bottom on intial page load
+
+            function isScrolledToBottom($textArea) {
+              return $textArea.attr('scrollHeight') - $textArea.attr('clientHeight') == $textArea.attr('scrollTop')
+            }
+
+            function showStatus(building, loading) {
+              if (loading) {
+                $ta.addClass('cmd-loading');
+                $ta.removeClass('cmd-building');
+              } else if (building) {
+                $ta.addClass('cmd-building');
+                $ta.removeClass('cmd-loading');
+              } else {
+                $ta.removeClass('cmd-building');
+                $ta.removeClass('cmd-loading');
+              }
+            }
+            showStatus(buildInProgress);
+
+            setInterval(function() {
+              if (buildInProgress && !refreshPending) {
+                refreshPending = true;
+                var autoScroll = isScrolledToBottom($ta);
+                showStatus(buildInProgress, true);
+                $.ajax({
+                  url: outputUrl,
+                  contentType: 'application/json;charset=utf-8',
+                  success: function(data) {
+                    parsed = JSON.parse(data);
+                    var output = parsed.buildOutput;
+                    buildInProgress = parsed.buildInProgress;
+                    $ta.html(output);
+                    toggleOutput();
+                    if (autoScroll) {
+                      scrollToBottom($ta);
+                    }
+                    if (!buildInProgress) {
+                      location.reload();  // reload page when complete
+                    }
+                  },
+                  complete: function() {
+                    refreshPending = false;
+                    showStatus(buildInProgress, false);
+                  }
+                });
+              }
+            }, 1000);
+          });
+        </script>
     </head>
     <body>
       <div id="h3">
@@ -33,39 +111,54 @@
         <jsp:include page="/WEB-INF/jsp/navigations/ProjectMenu.jsp"/>
 
         <h3>
-            <ww:text name="buildResult.section.title">
-                <ww:param><ww:property value="project.name"/></ww:param>
-            </ww:text>
+            <s:text name="buildResult.section.title">
+                <s:param><s:property value="project.name"/></s:param>
+            </s:text>
         </h3>
 
         <div class="axial">
           <table border="1" cellspacing="2" cellpadding="3" width="100%">
-            <c1:data label="%{getText('buildResult.startTime')}">
-                <ww:param name="after"><c1:date name="buildResult.startTime"/></ww:param>
-            </c1:data>
-            <c1:data label="%{getText('buildResult.endTime')}">
-                <ww:param name="after"><c1:date name="buildResult.endTime"/></ww:param>
-            </c1:data>
-            <c1:data label="%{getText('buildResult.duration')}">
-                <ww:param name="after">
-                    <ww:if test="${buildResult.endTime == 0}"><ww:text name="buildResult.startedSince"/></ww:if> <ww:property value="buildResult.durationTime"/></ww:param>
-            </c1:data>
-            <c1:data label="%{getText('buildResult.trigger')}">
-                <ww:param name="after"><ww:text name="buildResult.trigger.%{buildResult.trigger}"/></ww:param>
-            </c1:data>
-            <c1:data label="%{getText('buildResult.state')}">
-                <ww:param name="after" value="state"/>
-            </c1:data>
-            <c1:data label="%{getText('buildResult.buildNumber')}">
-                <ww:param name="after">
-                    <ww:if test="buildResult.buildNumber != 0">
-                        <ww:property value="buildResult.buildNumber"/>
-                    </ww:if>
-                    <ww:else>
-                        &nbsp;
-                    </ww:else>
-                </ww:param>
-            </c1:data>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.startTime'/>:</label></th>
+              <td><c1:date name="buildResult.startTime"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.endTime'/>:</label></th>
+              <td><c1:date name="buildResult.endTime"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.duration'/>:</label></th>
+              <td><s:if test="buildResult.endTime == 0"><s:text name="buildResult.startedSince"/></s:if> <s:property value="buildResult.durationTime"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.trigger'/>:</label></th>
+              <td><s:text name="buildResult.trigger.%{buildResult.trigger}"/></td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.state'/>:</label></th>
+              <td>${state}</td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.buildNumber'/>:</label></th>
+              <td>
+                <s:if test="showBuildNumber">
+                  <s:property value="buildResult.buildNumber"/>
+                </s:if>
+                <s:else>
+                  &nbsp;
+                </s:else>
+              </td>
+            </tr>
+            <tr class="b">
+              <th><label class="label"><s:text name='buildResult.username'/>:</label></th>
+              <td><s:property value="buildResult.username"/></td>
+            </tr>
+            <s:if test="buildResult.buildUrl.length() > 0">
+              <tr class="b">
+                <th><label class="label"><s:text name='buildResult.buildUrl'/>:</label></th>
+                <td><s:property value="buildResult.buildUrl"/></td>
+              </tr>
+            </s:if>
           </table>
         </div>
         <div class="functnbar3">
@@ -74,16 +167,17 @@
             <tr>
               <td>
                 <redback:ifAuthorized permission="continuum-modify-group" resource="${projectGroupName}">
-                  <form action="removeBuildResult.action">
-                    <input type="hidden" name="projectId" value="<ww:property value="projectId"/>"/>
-                    <input type="hidden" name="buildId" value="<ww:property value="buildId"/>"/>
-                    <ww:if test="canDelete">
-                      <input type="submit" name="delete-project" value="<ww:text name="delete"/>"/>
-                    </ww:if>
-                    <ww:else>
-                      <input type="submit" disabled="true" name="delete-project" value="<ww:text name="delete"/>"/>
-                    </ww:else>                    
-                  </form>
+                  <s:form action="removeBuildResult" theme="simple">
+                    <s:hidden name="projectId" />
+                    <s:hidden name="buildId" />
+                    <s:token/>
+                    <s:if test="canDelete">
+                      <input type="submit" name="delete-project" value="<s:text name="delete"/>"/>
+                    </s:if>
+                    <s:else>
+                      <input type="submit" disabled="true" name="delete-project" value="<s:text name="delete"/>"/>
+                    </s:else>
+                  </s:form>
                 </redback:ifAuthorized>
               </td>
             </tr>
@@ -91,10 +185,11 @@
           </table>
         </div>
 
-        <h4><ww:text name="buildResult.scmResult.changes"/></h4>
-        <ww:if test="buildResult.scmResult.changes != null && buildResult.scmResult.changes.size() > 0">
-            <ww:set name="changes" value="buildResult.scmResult.changes" scope="request"/>
+        <h4><s:text name="buildResult.scmResult.changes"/></h4>
+        <s:if test="buildResult.scmResult.changes != null && buildResult.scmResult.changes.size() > 0">
+            <s:set name="changes" value="buildResult.scmResult.changes" scope="request"/>
             <ec:table items="changes"
+                      autoIncludeParameters="false"
                       var="change"
                       showExports="false"
                       showPagination="false"
@@ -104,23 +199,24 @@
               <ec:row>
                 <ec:column property="author" title="buildResult.scmResult.changes.author"/>
                 <ec:column property="date" title="buildResult.scmResult.changes.date" cell="date"/>
-                <ec:column property="comment" title="buildResult.scmResult.changes.comment" />
+                <ec:column property="comment" title="buildResult.scmResult.changes.comment" cell="escapeHtml" />
                 <ec:column property="files" title="buildResult.scmResult.changes.files">
-                    <c:forEach var="scmFile" items="${pageScope.change.files}">
-                        <c:out value="${scmFile.name}"/><br />
-                    </c:forEach>
+                    <s:iterator value="#attr.change.files">
+                        <s:property value="name"/><br />
+                    </s:iterator>
                 </ec:column>
               </ec:row>
             </ec:table>
-        </ww:if>
-        <ww:else>
-          <b><ww:text name="buildResult.scmResult.noChanges"/></b>
-        </ww:else>
+        </s:if>
+        <s:else>
+          <b><s:text name="buildResult.scmResult.noChanges"/></b>
+        </s:else>
 
-        <ww:if test="changesSinceLastSuccess != null && changesSinceLastSuccess.size() > 0">
-            <h4><ww:text name="buildResult.changesSinceLastSuccess"/></h4>
-            <ww:set name="changes" value="changesSinceLastSuccess" scope="request"/>
+        <s:if test="changesSinceLastSuccess != null && changesSinceLastSuccess.size() > 0">
+            <h4><s:text name="buildResult.changesSinceLastSuccess"/></h4>
+            <s:set name="changes" value="changesSinceLastSuccess" scope="request"/>
             <ec:table items="changes"
+                      autoIncludeParameters="false"
                       var="change"
                       showExports="false"
                       showPagination="false"
@@ -132,19 +228,20 @@
                 <ec:column property="date" title="buildResult.changes.date" cell="date"/>
                 <ec:column property="comment" title="buildResult.changes.comment" />
                 <ec:column property="files" title="buildResult.changes.files">
-                    <c:forEach var="scmFile" items="${pageScope.change.files}">
-                        <c:out value="${scmFile.name}"/><br />
-                    </c:forEach>
+                    <s:iterator value="#attr.change.files">
+                        <s:property value="name"/><br />
+                    </s:iterator>
                 </ec:column>
               </ec:row>
             </ec:table>
-        </ww:if>
+        </s:if>
 
-        <h4><ww:text name="buildResult.dependencies.changes"/></h4>
-        <ww:if test="buildResult.modifiedDependencies != null && buildResult.modifiedDependencies.size() > 0">
-            <ww:set name="dependencies" value="buildResult.modifiedDependencies" scope="request"/>
+        <h4><s:text name="buildResult.dependencies.changes"/></h4>
+        <s:if test="buildResult.modifiedDependencies != null && buildResult.modifiedDependencies.size() > 0">
+            <s:set name="dependencies" value="buildResult.modifiedDependencies" scope="request"/>
             <ec:table items="dependencies"
                       var="dep"
+                      autoIncludeParameters="false"
                       showExports="false"
                       showPagination="false"
                       showStatusBar="false"
@@ -156,105 +253,100 @@
                 <ec:column property="version" title="buildResult.dependencies.version"/>
               </ec:row>
             </ec:table>
-        </ww:if>
-        <ww:else>
-          <b><ww:text name="buildResult.dependencies.noChanges"/></b>
-        </ww:else>
+        </s:if>
+        <s:else>
+          <b><s:text name="buildResult.dependencies.noChanges"/></b>
+        </s:else>
         
-        <h4><ww:text name="buildResult.buildDefinition"/></h4>
+        <h4><s:text name="buildResult.buildDefinition"/></h4>
           <table border="1" cellspacing="2" cellpadding="3" width="80%">
             <tbody>
-              <ww:if test="buildResult.buildDefinition.type='ant'">
+              <s:if test="buildResult.buildDefinition.type='ant'">
                 <tr class="b">
-                  <th><ww:text name="buildResult.buildDefinition.ant.label"/></th>
-                  <td><ww:property value="buildResult.buildDefinition.buildFile"/></td>
+                  <th><s:text name="buildResult.buildDefinition.ant.label"/></th>
+                  <td><s:property value="buildResult.buildDefinition.buildFile"/></td>
                 </tr>               
-              </ww:if>
-              <ww:elseif test="buildResult.buildDefinition.type='shell'">
+              </s:if>
+              <s:elseif test="buildResult.buildDefinition.type='shell'">
                 <tr class="b">
-                  <th><ww:text name="buildResult.buildDefinition.shell.label"/></th>
-                  <td><ww:property value="buildResult.buildDefinition.buildFile"/></td>
+                  <th><s:text name="buildResult.buildDefinition.shell.label"/></th>
+                  <td><s:property value="buildResult.buildDefinition.buildFile"/></td>
                 </tr>               
-              </ww:elseif> 
-              <ww:else>
+              </s:elseif>
+              <s:else>
                 <tr class="b">
-                  <th><ww:text name="buildResult.buildDefinition.maven.label"/></th>
-                  <td><ww:property value="buildResult.buildDefinition.buildFile"/></td>
+                  <th><s:text name="buildResult.buildDefinition.maven.label"/></th>
+                  <td><s:property value="buildResult.buildDefinition.buildFile"/></td>
                 </tr>               
-              </ww:else>                        
+              </s:else>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.goals"/></th>
-                <td><ww:property value="buildResult.buildDefinition.goals"/></td>
+                <th><s:text name="buildResult.buildDefinition.goals"/></th>
+                <td><s:property value="buildResult.buildDefinition.goals"/></td>
               </tr>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.arguments"/></th>
-                <td><ww:property value="buildResult.buildDefinition.arguments"/></td>
+                <th><s:text name="buildResult.buildDefinition.arguments"/></th>
+                <td><s:property value="buildResult.buildDefinition.arguments"/></td>
               </tr>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.buildFresh"/></th>
-                <td><ww:property value="buildResult.buildDefinition.buildFresh"/></td>
+                <th><s:text name="buildResult.buildDefinition.buildFresh"/></th>
+                <td><s:property value="buildResult.buildDefinition.buildFresh"/></td>
               </tr>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.alwaysBuild"/></th>
-                <td><ww:property value="buildResult.buildDefinition.alwaysBuild"/></td>
+                <th><s:text name="buildResult.buildDefinition.alwaysBuild"/></th>
+                <td><s:property value="buildResult.buildDefinition.alwaysBuild"/></td>
               </tr>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.defaultForProject"/></th>
-                <td><ww:property value="buildResult.buildDefinition.defaultForProject"/></td>
+                <th><s:text name="buildResult.buildDefinition.defaultForProject"/></th>
+                <td><s:property value="buildResult.buildDefinition.defaultForProject"/></td>
               </tr>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.schedule"/></th>
-                <td><ww:property value="buildResult.buildDefinition.schedule.name"/></td>
+                <th><s:text name="buildResult.buildDefinition.schedule"/></th>
+                <td><s:property value="buildResult.buildDefinition.schedule.name"/></td>
               </tr>
-              <ww:if test="buildResult.buildDefinition.profile != null">
+              <s:if test="buildResult.buildDefinition.profile != null">
                 <tr class="b">
-                  <th><ww:text name="buildResult.buildDefinition.profileName"/></th>
-                  <td><ww:property value="buildResult.buildDefinition.profile.name"/></td>
+                  <th><s:text name="buildResult.buildDefinition.profileName"/></th>
+                  <td><s:property value="buildResult.buildDefinition.profile.name"/></td>
                 </tr>          
-              </ww:if>
+              </s:if>
               <tr class="b">
-                <th><ww:text name="buildResult.buildDefinition.description"/></th>
-                <td><ww:property value="buildResult.buildDefinition.description"/></td>
+                <th><s:text name="buildResult.buildDefinition.description"/></th>
+                <td><s:property value="buildResult.buildDefinition.description"/></td>
               </tr>              
             </tbody>
           </table> 
 
-        <ww:if test="hasSurefireResults">
-          <h4><ww:text name="buildResult.generatedReports.title"/></h4>
+        <s:if test="hasSurefireResults">
+          <h4><s:text name="buildResult.generatedReports.title"/></h4>
 
-          <ww:url id="surefireReportUrl" action="surefireReport">
-            <ww:param name="projectId" value="projectId"/>
-            <ww:param name="buildId" value="buildId"/>
-            <ww:param name="projectName" value="projectName"/>
-          </ww:url>
-          <ww:a href="%{surefireReportUrl}"><ww:text name="buildResult.generatedReports.surefire"/></ww:a>
-        </ww:if>
+          <s:url id="surefireReportUrl" action="surefireReport">
+            <s:param name="projectId" value="projectId"/>
+            <s:param name="buildId" value="buildId"/>
+            <s:param name="projectName" value="projectName"/>
+          </s:url>
+          <s:a href="%{surefireReportUrl}"><s:text name="buildResult.generatedReports.surefire"/></s:a>
+        </s:if>
 
-        <ww:if test="buildResult.state == 4">
-          <h4><ww:text name="buildResult.buildError"/></h4>
-          <div style="width:100%; height:500px; overflow:auto; border-style: solid; border-width: 1px">
-            <pre><ww:property value="buildResult.error"/></pre>
+        <s:if test="showBuildError">
+          <h4><s:text name="buildResult.buildError"/></h4>
+          <div class="cmd-output pre-wrap"><s:property value="buildResult.error"/></div>
+        </s:if>
+
+        <h4><s:text name="buildResult.buildOutput"/></h4>
+        <p>
+          <span id="noBuildOutput">
+            <s:text name="buildResult.noOutput"/>
+          </span>
+          <div id="buildOutput" style="display: none;">
+            <s:url id="buildOutputTextUrl" action="buildOutputText">
+              <s:param name="projectId" value="projectId"/>
+              <s:param name="buildId" value="buildId"/>
+            </s:url>
+            <s:a href="%{buildOutputTextUrl}"><s:text name="buildResult.buildOutput.text"/></s:a>
+            <div id="outputArea" class="cmd-output cmd-window pre-wrap"><s:property value="buildOutput"/></div>
           </div>
-        </ww:if>
-        <ww:else>
-          <h4><ww:text name="buildResult.buildOutput"/></h4>
-          <p>
-            <ww:if test="buildOutput == ''">
-                <ww:text name="buildResult.noOutput"/>
-            </ww:if>
-            <ww:else>
-              <ww:url id="buildOutputTextUrl" action="buildOutputText">
-                <ww:param name="projectId" value="projectId"/>
-                <ww:param name="buildId" value="buildId"/>
-              </ww:url>
-              <ww:a href="%{buildOutputTextUrl}"><ww:text name="buildResult.buildOutput.text"/></ww:a>
-              <div style="width:100%; height:500px; overflow:auto; border-style: solid; border-width: 1px">
-                <pre><ww:property value="buildOutput"/></pre>
-              </div>
-            </ww:else>
-          </p>
-        </ww:else>
+        </p>
       </div>
     </body>
-  </ww:i18n>
+  </s:i18n>
 </html>

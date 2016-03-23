@@ -19,32 +19,39 @@ package org.apache.continuum.scm;
  * under the License.
  */
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
 import org.apache.maven.scm.ScmTag;
 import org.apache.maven.scm.ScmVersion;
+import org.apache.maven.scm.command.changelog.ChangeLogScmResult;
 import org.apache.maven.scm.command.checkout.CheckOutScmResult;
 import org.apache.maven.scm.command.update.UpdateScmResult;
 import org.apache.maven.scm.manager.NoSuchScmProviderException;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.repository.ScmRepository;
 import org.apache.maven.scm.repository.ScmRepositoryException;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import javax.annotation.Resource;
 
 /**
  * @author <a href="mailto:trygvis@inamo.no">Trygve Laugst&oslash;l</a>
  * @todo consider folding some of this into Maven SCM itself
- * 
- * @version $Id$
  */
+@Service( "continuumScm" )
 public class DefaultContinuumScm
     implements ContinuumScm
 {
-    /** The Maven SCM manager to use. */
+    /**
+     * The Maven SCM manager to use.
+     */
+    @Resource
     private ScmManager scmManager;
 
     public CheckOutScmResult checkout( ContinuumScmConfiguration configuration )
@@ -103,8 +110,9 @@ public class DefaultContinuumScm
         if ( !workingDirectory.exists() )
         {
             // TODO: maybe we could check it out - it seems we currently rely on Continuum figuring this out
-            throw new IllegalStateException( "The working directory for the project doesn't exist " + "("
-                + workingDirectory.getAbsolutePath() + ")." );
+            throw new IllegalStateException(
+                "The working directory for the project doesn't exist " + "(" + workingDirectory.getAbsolutePath() +
+                    ")." );
         }
 
         ScmRepository repository = getScmRepository( configuration );
@@ -132,12 +140,43 @@ public class DefaultContinuumScm
         return result;
     }
 
+    public ChangeLogScmResult changeLog( ContinuumScmConfiguration configuration )
+        throws ScmException
+    {
+        ScmVersion scmVersion = getScmVersion( configuration );
+        Date startDate = null;
+
+        // TODO: probably need to base this from a working directory in the main configuration
+        File workingDirectory = configuration.getWorkingDirectory();
+
+        ScmRepository repository = getScmRepository( configuration );
+
+        ChangeLogScmResult result;
+
+        ScmFileSet fileSet = new ScmFileSet( workingDirectory );
+
+        if ( scmVersion == null || StringUtils.isBlank( scmVersion.getName() ) )
+        {
+            // let's get the start date instead
+            startDate = getScmStartDate( configuration );
+
+            result = scmManager.changeLog( repository, fileSet, startDate, null, 0, null, null );
+        }
+        else
+        {
+            result = scmManager.changeLog( repository, fileSet, scmVersion, scmVersion );
+        }
+
+        return result;
+    }
+
     /**
      * Create a Maven SCM repository for obtaining the checkout from.
-     * 
-     * @param scmUrl the SCM URL to obtain the checkout from
-     * @param useCredentialsCache whether to allow the use of cached credentials for SVN
+     *
+     * @param configuration the configuration for the working copy and SCM
      * @return the repository created
+     * @throws NoSuchScmProviderException
+     * @throws ScmRepositoryException
      */
     private ScmRepository getScmRepository( ContinuumScmConfiguration configuration )
         throws ScmRepositoryException, NoSuchScmProviderException
@@ -176,6 +215,21 @@ public class DefaultContinuumScm
         }
 
         return repository;
+    }
+
+    private Date getScmStartDate( ContinuumScmConfiguration configuration )
+    {
+        Date startDate = configuration.getLatestUpdateDate();
+
+        if ( startDate == null )
+        {
+            // start date defaults to January 1, 1970
+            Calendar cal = Calendar.getInstance();
+            cal.set( 1970, Calendar.JANUARY, 1 );
+            startDate = cal.getTime();
+        }
+
+        return startDate;
     }
 
     public ScmManager getScmManager()

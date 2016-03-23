@@ -21,7 +21,10 @@ package org.apache.continuum.purge;
 
 /**
  * @author Maria Catherine Tan
+<<<<<<< HEAD
  * @version $Id$
+=======
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public class PurgeConfigurationServiceException
@@ -31,12 +34,20 @@ public class PurgeConfigurationServiceException
     {
         super( message );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public PurgeConfigurationServiceException( Throwable cause )
     {
         super( cause );
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/apache/trunk
     public PurgeConfigurationServiceException( String message, Throwable cause )
     {
         super( message, cause );

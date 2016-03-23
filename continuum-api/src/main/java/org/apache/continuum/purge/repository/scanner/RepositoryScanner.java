@@ -19,6 +19,7 @@ package org.apache.continuum.purge.repository.scanner;
  * under the License.
  */
 
+<<<<<<< HEAD
 import java.util.List;
 
 import org.apache.continuum.model.repository.LocalRepository;
@@ -29,10 +30,22 @@ import org.apache.continuum.purge.executor.ContinuumPurgeExecutorException;
  * Codes were taken from Archiva and made some changes.
  * @author Maria Catherine Tan
  * @version $Id$
+=======
+import org.apache.continuum.purge.executor.ContinuumPurgeExecutorException;
+
+import java.io.File;
+import java.util.List;
+
+/**
+ * Codes were taken from Archiva and made some changes.
+ *
+ * @author Maria Catherine Tan
+>>>>>>> refs/remotes/apache/trunk
  * @since 25 jul 07
  */
 public interface RepositoryScanner
 {
+<<<<<<< HEAD
     /**
      * <p>
      * Typical Ignorable Content patterns.
@@ -61,5 +74,12 @@ public interface RepositoryScanner
     
     public void scan( LocalRepository repository, PurgeController purgeController,
                       List<String> ignoredContentPatterns )
+=======
+
+    void scan( File repoLocation, ScannerHandler handler )
+        throws ContinuumPurgeExecutorException;
+
+    void scan( File repoLocation, ScannerHandler handler, List<String> ignoredContentPatterns )
+>>>>>>> refs/remotes/apache/trunk
         throws ContinuumPurgeExecutorException;
 }

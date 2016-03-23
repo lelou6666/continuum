@@ -1,16 +1,59 @@
 package org.apache.maven.continuum.management;
 
+<<<<<<< HEAD
 import org.apache.continuum.dao.DaoUtils;
 import org.apache.continuum.dao.DirectoryPurgeConfigurationDao;
+=======
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.continuum.dao.BuildDefinitionDao;
+import org.apache.continuum.dao.BuildDefinitionTemplateDao;
+import org.apache.continuum.dao.BuildQueueDao;
+import org.apache.continuum.dao.ContinuumReleaseResultDao;
+import org.apache.continuum.dao.DaoUtils;
+import org.apache.continuum.dao.DirectoryPurgeConfigurationDao;
+import org.apache.continuum.dao.DistributedDirectoryPurgeConfigurationDao;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.continuum.dao.InstallationDao;
 import org.apache.continuum.dao.LocalRepositoryDao;
 import org.apache.continuum.dao.ProfileDao;
 import org.apache.continuum.dao.ProjectGroupDao;
+<<<<<<< HEAD
 import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
 import org.apache.continuum.dao.ScheduleDao;
 import org.apache.continuum.dao.SystemConfigurationDao;
 import org.apache.continuum.model.repository.LocalRepository;
+=======
+import org.apache.continuum.dao.ProjectScmRootDao;
+import org.apache.continuum.dao.RepositoryPurgeConfigurationDao;
+import org.apache.continuum.dao.ScheduleDao;
+import org.apache.continuum.dao.SystemConfigurationDao;
+import org.apache.continuum.model.project.ProjectScmRoot;
+import org.apache.continuum.model.release.ContinuumReleaseResult;
+import org.apache.continuum.model.repository.DirectoryPurgeConfiguration;
+import org.apache.continuum.model.repository.LocalRepository;
+import org.apache.continuum.utils.ProjectSorter;
+>>>>>>> refs/remotes/apache/trunk
 import org.apache.maven.continuum.model.project.BuildDefinition;
+import org.apache.maven.continuum.model.project.BuildDefinitionTemplate;
+import org.apache.maven.continuum.model.project.BuildQueue;
 import org.apache.maven.continuum.model.project.ContinuumDatabase;
 import org.apache.maven.continuum.model.project.Project;
 import org.apache.maven.continuum.model.project.ProjectGroup;
@@ -20,13 +63,14 @@ import org.apache.maven.continuum.model.project.io.stax.ContinuumStaxWriter;
 import org.apache.maven.continuum.model.system.Installation;
 import org.apache.maven.continuum.model.system.Profile;
 import org.apache.maven.continuum.store.ContinuumStoreException;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.jdo.ConfigurableJdoFactory;
 import org.codehaus.plexus.jdo.PlexusJdoUtils;
 import org.codehaus.plexus.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.jdo.JDOHelper;
-import javax.jdo.PersistenceManagerFactory;
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -42,15 +86,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManagerFactory;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * JDO implementation the database management tool API.
- *
- * @plexus.component role="org.apache.maven.continuum.management.DataManagementTool" role-hint="continuum-jdo"
  */
+@Component( role = org.apache.maven.continuum.management.DataManagementTool.class, hint = "continuum-jdo" )
 public class JdoDataManagementTool
     implements DataManagementTool
 {
+<<<<<<< HEAD
     /**
      * @plexus.requirement
      */
@@ -95,12 +143,58 @@ public class JdoDataManagementTool
      * @plexus.requirement
      */
     private SystemConfigurationDao systemConfigurationDao;
+=======
+    private Logger log = LoggerFactory.getLogger( JdoDataManagementTool.class );
+
+    @Requirement
+    private DaoUtils daoUtils;
+
+    @Requirement
+    private LocalRepositoryDao localRepositoryDao;
+
+    @Requirement
+    private DirectoryPurgeConfigurationDao directoryPurgeConfigurationDao;
+
+    @Requirement
+    private RepositoryPurgeConfigurationDao repositoryPurgeConfigurationDao;
+
+    @Requirement
+    private DistributedDirectoryPurgeConfigurationDao distributedDirectoryPurgeConfigurationDao;
+
+    @Requirement
+    private InstallationDao installationDao;
+
+    @Requirement
+    private ProfileDao profileDao;
+
+    @Requirement
+    private ProjectGroupDao projectGroupDao;
+
+    @Requirement
+    private ScheduleDao scheduleDao;
+
+    @Requirement
+    private SystemConfigurationDao systemConfigurationDao;
+
+    @Requirement
+    private ProjectScmRootDao projectScmRootDao;
+
+    @Requirement
+    private BuildDefinitionTemplateDao buildDefinitionTemplateDao;
+
+    @Requirement
+    private ContinuumReleaseResultDao releaseResultDao;
+
+    @Requirement
+    private BuildQueueDao buildQueueDao;
+
+    @Requirement
+    private BuildDefinitionDao buildDefinitionDao;
+>>>>>>> refs/remotes/apache/trunk
 
     protected static final String BUILDS_XML = "builds.xml";
 
-    /**
-     * @plexus.requirement role="org.codehaus.plexus.jdo.JdoFactory" role-hint="continuum"
-     */
+    @Requirement( role = org.codehaus.plexus.jdo.JdoFactory.class, hint = "continuum" )
     protected ConfigurableJdoFactory factory;
 
     public void backupDatabase( File backupDirectory )
@@ -122,6 +216,15 @@ public class JdoDataManagementTool
         try
         {
             database.setInstallations( installationDao.getAllInstallations() );
+<<<<<<< HEAD
+=======
+
+            database.setBuildDefinitionTemplates( buildDefinitionTemplateDao.getAllBuildDefinitionTemplate() );
+
+            database.setBuildQueues( buildQueueDao.getAllBuildQueues() );
+
+            database.setBuildDefinitions( buildDefinitionDao.getAllTemplates() );
+>>>>>>> refs/remotes/apache/trunk
         }
         catch ( ContinuumStoreException e )
         {
@@ -129,11 +232,21 @@ public class JdoDataManagementTool
         }
         database.setSchedules( scheduleDao.getAllSchedulesByName() );
         database.setProfiles( profileDao.getAllProfilesByName() );
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/apache/trunk
         database.setLocalRepositories( localRepositoryDao.getAllLocalRepositories() );
         database.setRepositoryPurgeConfigurations(
             repositoryPurgeConfigurationDao.getAllRepositoryPurgeConfigurations() );
         database.setDirectoryPurgeConfigurations( directoryPurgeConfigurationDao.getAllDirectoryPurgeConfigurations() );
+<<<<<<< HEAD
+=======
+        database.setDistributedDirectoryPurgeConfigurations(
+            distributedDirectoryPurgeConfigurationDao.getAllDistributedDirectoryPurgeConfigurations() );
+        database.setProjectScmRoots( projectScmRootDao.getAllProjectScmRoots() );
+        database.setContinuumReleaseResults( releaseResultDao.getAllContinuumReleaseResults() );
+>>>>>>> refs/remotes/apache/trunk
 
         ContinuumStaxWriter writer = new ContinuumStaxWriter();
 
@@ -163,7 +276,7 @@ public class JdoDataManagementTool
         daoUtils.eraseDatabase();
     }
 
-    public void restoreDatabase( File backupDirectory )
+    public void restoreDatabase( File backupDirectory, boolean strict )
         throws IOException
     {
         ContinuumStaxReader reader = new ContinuumStaxReader();
@@ -173,7 +286,7 @@ public class JdoDataManagementTool
         ContinuumDatabase database;
         try
         {
-            database = reader.read( fileReader );
+            database = reader.read( fileReader, strict );
         }
         catch ( XMLStreamException e )
         {
@@ -193,10 +306,18 @@ public class JdoDataManagementTool
 
         PlexusJdoUtils.addObject( pmf.getPersistenceManager(), database.getSystemConfiguration() );
 
+        Map<Integer, BuildQueue> buildQueues = new HashMap<Integer, BuildQueue>();
+        for ( BuildQueue buildQueue : (List<BuildQueue>) database.getBuildQueues() )
+        {
+            buildQueue = (BuildQueue) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), buildQueue );
+            buildQueues.put( buildQueue.getId(), buildQueue );
+        }
+
         Map<Integer, Schedule> schedules = new HashMap<Integer, Schedule>();
         for ( Iterator i = database.getSchedules().iterator(); i.hasNext(); )
         {
             Schedule schedule = (Schedule) i.next();
+            schedule.setBuildQueues( getBuildQueuesBySchedule( buildQueues, schedule ) );
 
             schedule = (Schedule) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), schedule );
             schedules.put( Integer.valueOf( schedule.getId() ), schedule );
@@ -225,11 +346,19 @@ public class JdoDataManagementTool
             {
                 profile.setBuilder( installations.get( profile.getBuilder().getInstallationId() ) );
             }
-
+            List environmentVariables = new ArrayList();
+            for ( Iterator envIt = profile.getEnvironmentVariables().listIterator(); envIt.hasNext(); )
+            {
+                Installation installation = (Installation) envIt.next();
+                environmentVariables.add( installations.get( installation.getInstallationId() ) );
+                envIt.remove();
+            }
+            profile.setEnvironmentVariables( environmentVariables );
             profile = (Profile) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), profile );
             profiles.put( Integer.valueOf( profile.getId() ), profile );
         }
 
+<<<<<<< HEAD
         Map<Integer, LocalRepository> localRepositories = new HashMap<Integer, LocalRepository>();
         for ( LocalRepository localRepository : (List<LocalRepository>) database.getLocalRepositories() )
         {
@@ -238,47 +367,244 @@ public class JdoDataManagementTool
             localRepositories.put( Integer.valueOf( localRepository.getId() ), localRepository );
         }
 
+=======
+        Map<Integer, BuildDefinition> buildDefinitions = new HashMap<Integer, BuildDefinition>();
+        for ( BuildDefinition buildDefinition : (List<BuildDefinition>) database.getBuildDefinitions() )
+        {
+            if ( buildDefinition.getSchedule() != null )
+            {
+                buildDefinition.setSchedule( schedules.get( Integer.valueOf(
+                    buildDefinition.getSchedule().getId() ) ) );
+            }
+
+            if ( buildDefinition.getProfile() != null )
+            {
+                buildDefinition.setProfile( profiles.get( Integer.valueOf( buildDefinition.getProfile().getId() ) ) );
+            }
+
+            buildDefinition = (BuildDefinition) PlexusJdoUtils.addObject( pmf.getPersistenceManager(),
+                                                                          buildDefinition );
+            buildDefinitions.put( Integer.valueOf( buildDefinition.getId() ), buildDefinition );
+        }
+
+        Map<Integer, LocalRepository> localRepositories = new HashMap<Integer, LocalRepository>();
+        for ( LocalRepository localRepository : (List<LocalRepository>) database.getLocalRepositories() )
+        {
+            localRepository = (LocalRepository) PlexusJdoUtils.addObject( pmf.getPersistenceManager(),
+                                                                          localRepository );
+            localRepositories.put( Integer.valueOf( localRepository.getId() ), localRepository );
+        }
+
+        Map<Integer, ProjectGroup> projectGroups = new HashMap<Integer, ProjectGroup>();
+>>>>>>> refs/remotes/apache/trunk
         for ( Iterator i = database.getProjectGroups().iterator(); i.hasNext(); )
         {
             ProjectGroup projectGroup = (ProjectGroup) i.next();
 
             // first, we must map up any schedules, etc.
+<<<<<<< HEAD
             processBuildDefinitions( projectGroup.getBuildDefinitions(), schedules, profiles, localRepositories );
+=======
+            projectGroup.setBuildDefinitions( processBuildDefinitions( projectGroup.getBuildDefinitions(), schedules,
+                                                                       profiles, buildDefinitions ) );
+>>>>>>> refs/remotes/apache/trunk
 
             for ( Iterator j = projectGroup.getProjects().iterator(); j.hasNext(); )
             {
                 Project project = (Project) j.next();
 
+<<<<<<< HEAD
                 processBuildDefinitions( project.getBuildDefinitions(), schedules, profiles, localRepositories );
+=======
+                project.setBuildDefinitions( processBuildDefinitions( project.getBuildDefinitions(), schedules,
+                                                                      profiles, buildDefinitions ) );
+>>>>>>> refs/remotes/apache/trunk
             }
 
             if ( projectGroup.getLocalRepository() != null )
             {
+<<<<<<< HEAD
                 projectGroup.setLocalRepository(
                     localRepositories.get( Integer.valueOf( projectGroup.getLocalRepository().getId() ) ) );
+=======
+                projectGroup.setLocalRepository( localRepositories.get( Integer.valueOf(
+                    projectGroup.getLocalRepository().getId() ) ) );
+>>>>>>> refs/remotes/apache/trunk
             }
 
-            PlexusJdoUtils.addObject( pmf.getPersistenceManager(), projectGroup );
+            projectGroup = (ProjectGroup) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), projectGroup );
+            projectGroups.put( Integer.valueOf( projectGroup.getId() ), projectGroup );
+        }
+
+        // create project scm root data (CONTINUUM-2040)
+        Map<Integer, ProjectScmRoot> projectScmRoots = new HashMap<Integer, ProjectScmRoot>();
+        Set<Integer> keys = projectGroups.keySet();
+        int id = 1;
+        for ( Integer key : keys )
+        {
+            ProjectGroup projectGroup = projectGroups.get( key );
+            String url = " ";
+            List<Project> projects = ProjectSorter.getSortedProjects( getProjectsByGroupIdWithDependencies( pmf,
+                                                                                                            projectGroup.getId() ),
+                                                                      log );
+            for ( Iterator j = projects.iterator(); j.hasNext(); )
+            {
+                Project project = (Project) j.next();
+                if ( !project.getScmUrl().trim().startsWith( url ) )
+                {
+                    url = project.getScmUrl();
+                    ProjectScmRoot projectScmRoot = new ProjectScmRoot();
+                    projectScmRoot.setId( id );
+                    projectScmRoot.setProjectGroup( projectGroup );
+                    projectScmRoot.setScmRootAddress( url );
+                    projectScmRoot.setState( project.getState() );
+
+                    projectScmRoot = (ProjectScmRoot) PlexusJdoUtils.addObject( pmf.getPersistenceManager(),
+                                                                                projectScmRoot );
+                    projectScmRoots.put( Integer.valueOf( projectScmRoot.getId() ), projectScmRoot );
+                    id++;
+                }
+            }
+        }
+
+        /*
+        for ( RepositoryPurgeConfiguration repoPurge : (List<RepositoryPurgeConfiguration>) database.getRepositoryPurgeConfigurations() )
+        {
+            repoPurge.setRepository( localRepositories.get(
+                                     Integer.valueOf( repoPurge.getRepository().getId() ) ) );
+
+            if ( repoPurge.getSchedule() != null )
+            {
+                repoPurge.setSchedule( schedules.get(
+                                       Integer.valueOf( repoPurge.getSchedule().getId() ) ) );
+            }
+
+            repoPurge = (RepositoryPurgeConfiguration) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), repoPurge );
+        }*/
+
+        for ( DirectoryPurgeConfiguration dirPurge : (List<DirectoryPurgeConfiguration>) database.getDirectoryPurgeConfigurations() )
+        {
+            if ( dirPurge.getSchedule() != null )
+            {
+                dirPurge.setSchedule( schedules.get( Integer.valueOf( dirPurge.getSchedule().getId() ) ) );
+            }
+
+            dirPurge = (DirectoryPurgeConfiguration) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), dirPurge );
+        }
+
+        for ( ContinuumReleaseResult releaseResult : (List<ContinuumReleaseResult>) database.getContinuumReleaseResults() )
+        {
+            releaseResult.setProjectGroup( projectGroups.get( Integer.valueOf(
+                releaseResult.getProjectGroup().getId() ) ) );
+
+            ProjectGroup group = releaseResult.getProjectGroup();
+
+            for ( Project project : (List<Project>) group.getProjects() )
+            {
+                if ( project.getId() == releaseResult.getProject().getId() )
+                {
+                    try
+                    {
+                        Project proj = (Project) PlexusJdoUtils.getObjectById( pmf.getPersistenceManager(),
+                                                                               Project.class, project.getId(), null );
+                        releaseResult.setProject( proj );
+                    }
+                    catch ( Exception e )
+                    {
+                        throw new DataManagementException( e );
+                    }
+                }
+            }
+
+            releaseResult = (ContinuumReleaseResult) PlexusJdoUtils.addObject( pmf.getPersistenceManager(),
+                                                                               releaseResult );
+        }
+
+        for ( BuildDefinitionTemplate template : (List<BuildDefinitionTemplate>) database.getBuildDefinitionTemplates() )
+        {
+            template.setBuildDefinitions( processBuildDefinitions( template.getBuildDefinitions(), buildDefinitions ) );
+
+            template = (BuildDefinitionTemplate) PlexusJdoUtils.addObject( pmf.getPersistenceManager(), template );
         }
     }
 
+<<<<<<< HEAD
     private static void processBuildDefinitions( List buildDefinitions, Map<Integer, Schedule> schedules,
                                                  Map<Integer, Profile> profiles,
                                                  Map<Integer, LocalRepository> localRepositories )
+=======
+    private List<Project> getProjectsByGroupIdWithDependencies( PersistenceManagerFactory pmf, int projectGroupId )
+>>>>>>> refs/remotes/apache/trunk
     {
-        for ( Iterator i = buildDefinitions.iterator(); i.hasNext(); )
+        List<Project> allProjects = PlexusJdoUtils.getAllObjectsDetached( pmf.getPersistenceManager(), Project.class,
+                                                                          "name ascending", "project-dependencies" );
+        List<Project> groupProjects = new ArrayList<Project>();
+
+        for ( Project project : allProjects )
         {
-            BuildDefinition def = (BuildDefinition) i.next();
-
-            if ( def.getSchedule() != null )
+            if ( project.getProjectGroup().getId() == projectGroupId )
             {
-                def.setSchedule( schedules.get( Integer.valueOf( def.getSchedule().getId() ) ) );
-            }
-
-            if ( def.getProfile() != null )
-            {
-                def.setProfile( profiles.get( Integer.valueOf( def.getProfile().getId() ) ) );
+                groupProjects.add( project );
             }
         }
+
+        return groupProjects;
+    }
+
+    private List<BuildDefinition> processBuildDefinitions( List<BuildDefinition> buildDefinitions,
+                                                           Map<Integer, Schedule> schedules,
+                                                           Map<Integer, Profile> profiles,
+                                                           Map<Integer, BuildDefinition> buildDefs )
+    {
+        List<BuildDefinition> buildDefsList = new ArrayList<BuildDefinition>();
+
+        for ( BuildDefinition def : buildDefinitions )
+        {
+            if ( buildDefs.get( Integer.valueOf( def.getId() ) ) != null )
+            {
+                buildDefsList.add( buildDefs.get( Integer.valueOf( def.getId() ) ) );
+            }
+            else
+            {
+                if ( def.getSchedule() != null )
+                {
+                    def.setSchedule( schedules.get( Integer.valueOf( def.getSchedule().getId() ) ) );
+                }
+
+                if ( def.getProfile() != null )
+                {
+                    def.setProfile( profiles.get( Integer.valueOf( def.getProfile().getId() ) ) );
+                }
+
+                buildDefsList.add( def );
+            }
+        }
+
+        return buildDefsList;
+    }
+
+    private List<BuildDefinition> processBuildDefinitions( List<BuildDefinition> buildDefinitions,
+                                                           Map<Integer, BuildDefinition> buildDefs )
+    {
+        List<BuildDefinition> buildDefsList = new ArrayList<BuildDefinition>();
+
+        for ( BuildDefinition buildDefinition : buildDefinitions )
+        {
+            buildDefsList.add( buildDefs.get( Integer.valueOf( buildDefinition.getId() ) ) );
+        }
+
+        return buildDefsList;
+    }
+
+    private List<BuildQueue> getBuildQueuesBySchedule( Map<Integer, BuildQueue> allBuildQueues, Schedule schedule )
+    {
+        List<BuildQueue> buildQueues = new ArrayList<BuildQueue>();
+
+        for ( BuildQueue buildQueue : (List<BuildQueue>) schedule.getBuildQueues() )
+        {
+            buildQueues.add( allBuildQueues.get( Integer.valueOf( buildQueue.getId() ) ) );
+        }
+
+        return buildQueues;
     }
 }

@@ -17,6 +17,7 @@
   ~ under the License.
   --%>
 
+<<<<<<< HEAD
 <%@ taglib uri='http://java.sun.com/jsp/jstl/core' prefix='c'%>
 <%@ taglib uri="/webwork" prefix="ww" %>
 <%@ taglib uri="continuum" prefix="c1" %>
@@ -24,10 +25,18 @@
   <ww:i18n name="localization.Continuum">
 <head>
 <title><ww:text name="repository.page.title"/></title>
+=======
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<html>
+  <s:i18n name="localization.Continuum">
+<head>
+<title><s:text name="repository.page.title"/></title>
+>>>>>>> refs/remotes/apache/trunk
 </head>
 <body>
 <div class="app">
   <div id="axial" class="h3">
+<<<<<<< HEAD
     <h3><ww:text name="repository.page.title"/></h3>
 
     <div class="axial">
@@ -56,10 +65,48 @@
           </div>
         
       </ww:form>
+=======
+    <h3><s:text name="repository.section.title"/></h3>
+
+    <s:if test="hasActionErrors()">
+      <div class="errormessage">
+        <s:actionerror/>
+      </div>
+    </s:if>
+    <s:if test="hasActionMessages()">
+      <div class="warningmessage">
+        <s:actionmessage/>
+      </div>
+    </s:if>
+
+    <div class="axial">
+      <s:form action="saveRepository" method="post" validate="true">
+          <table>
+            <s:textfield label="%{getText('repository.name.label')}" name="repository.name" requiredLabel="true" disabled="%{defaultRepo}" size="100"/>
+            <s:textfield label="%{getText('repository.location.label')}" name="repository.location" requiredLabel="true" disabled="%{defaultRepo}" size="100"/>
+            <s:select label="%{getText('repository.layout.label')}" name="repository.layout" list="layouts" disabled="%{defaultRepo}"/>
+          </table>
+          <s:hidden name="repository.id"/>
+          <s:if test="defaultRepo">
+            <s:hidden name="repository.name"/>
+            <s:hidden name="repository.location"/>
+            <s:hidden name="repository.layout"/>
+          </s:if>
+          <div class="functnbar3">
+            <s:submit value="%{getText('save')}" theme="simple"/>
+            <input type="button" name="Cancel" value="<s:text name='cancel'/>" onclick="history.back();"/>
+          </div>
+        
+      </s:form>
+>>>>>>> refs/remotes/apache/trunk
     </div>
   </div>
 </div>
 
 </body>
+<<<<<<< HEAD
 </ww:i18n>
+=======
+</s:i18n>
+>>>>>>> refs/remotes/apache/trunk
 </html>
